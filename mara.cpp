@@ -1062,7 +1062,6 @@ int luaC_set_eos(lua_State *L)
     new_f = BuildThermalBarotropicEos(L);
   }
   else if (strcmp("shen", key) == 0) {
-    PhysicalUnits units(1,1,1);
     new_f = BuildShenTabulatedNuclearEos(L);
   }
   else {

@@ -41,7 +41,7 @@
 #define LUNUM_API_NOCOMPLEX
 extern "C" {
 #include "lunum.h"
-#include "fft/fft_3d.h"
+#include "fft_3d.h"
 }
 
 #define NBINS 128
