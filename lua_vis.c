@@ -19,8 +19,6 @@ static int draw_texture(lua_State *L);
 
 int lua_vis_load(lua_State *L)
 {
-  printf("opening!\n");
-
   luaL_Reg vis_api[] = { { "open_window", open_window },
 			 { "draw_texture", draw_texture },
 			 { NULL, NULL} };
@@ -33,7 +31,7 @@ int lua_vis_load(lua_State *L)
 }
 
 
-
+static int Autoplay     = 0;
 static int WindowOpen   = 0;
 static int WindowWidth  = 768;
 static int WindowHeight = 768;
@@ -119,14 +117,13 @@ int draw_texture(lua_State *L)
     glFlush();
     glfwSwapBuffers();
 
-
-    if (glfwGetKey(GLFW_KEY_SPACE)) {
-      break;
-    }
-
     if (glfwGetKey(GLFW_KEY_ESC) || !glfwGetWindowParam(GLFW_OPENED)) {
       glfwCloseWindow();
       WindowOpen = 0;
+      break;
+    }
+
+    if (Autoplay || glfwGetKey(GLFW_KEY_SPACE)) {
       break;
     }
   }
@@ -217,6 +214,10 @@ void CharacterInput(int key, int state)
 
   case 'Z':
     ZoomFactor *= 1.1;
+    break;
+
+  case 'p':
+    Autoplay ^= 1;
     break;
 
   default:

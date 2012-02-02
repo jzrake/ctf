@@ -843,7 +843,7 @@ int luaC_get_prim(lua_State *L)
       break;
     }
     lua_pushstring(L, pnames[n].c_str());
-    luaU_pusharray(L, &var[0], var.size());
+    luaU_pusharray_wshape(L, &var[0], Mara->domain->GetLocalShape(), Nd);
     lua_settable(L, 1);
   }
 

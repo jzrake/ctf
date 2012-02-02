@@ -13,6 +13,15 @@ void luaU_pusharray_i(lua_State *L, int *A, int N)
   lunum_pusharray2(L, A, ARRAY_TYPE_INT, N);
 }
 
+void luaU_pusharray_wshape(lua_State *L, double *A, const int *shape, int Nd)
+{
+  int ntot=1;
+  for (int i=0; i<Nd; ++i) ntot *= shape[i];
+  lunum_pusharray2(L, A, ARRAY_TYPE_DOUBLE, ntot);
+  struct Array *B = lunum_checkarray1(L, -1);
+  array_resize(B, shape, Nd);
+}
+
 void luaU_pusharray_astable(lua_State *L, double *A, int N)
 {
   lunum_pusharray2(L, A, ARRAY_TYPE_DOUBLE, N);
