@@ -35,7 +35,6 @@
 #include "srhd.hpp"
 #include "subgrids.hpp"
 #include "valman.hpp"
-#include "vis.hpp"
 #include "weno-split.hpp"
 
 
