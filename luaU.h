@@ -13,6 +13,7 @@ void lua_h5_load(lua_State *L);
 void lua_mpi_load(lua_State *L);
 void lua_measure_load(lua_State *L);
 void lua_fft_load(lua_State *L);
+void lua_vis_load(lua_State *L);
 
 void    luaU_stack_dump(lua_State *L);
 void    luaU_pusharray(lua_State *L, double *A, int N);

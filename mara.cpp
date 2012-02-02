@@ -183,6 +183,7 @@ int main(int argc, char **argv)
   lua_mpi_load(L);
   lua_measure_load(L);
   lua_fft_load(L);
+  lua_vis_load(L);
 
   lua_getglobal(L, "package");
   lua_pushfstring(L, "./?.lua;%s/conf/?.lua;%s/lib/lua/5.2/?.lua",
