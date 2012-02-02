@@ -2,10 +2,12 @@
 
 #include "config.h"
 #if (__MARA_USE_GLFW)
+
 #include <stdlib.h>
 #include <math.h>
 #include "vis.hpp"
 #include "valman.hpp"
+
 extern "C" {
 #include "lualib.h"
 #include "lauxlib.h"
