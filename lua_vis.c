@@ -34,7 +34,7 @@ int lua_vis_load(lua_State *L)
 
 
 
-
+static int WindowOpen   = 0;
 static int WindowWidth  = 768;
 static int WindowHeight = 768;
 
@@ -75,11 +75,17 @@ int open_window(lua_State *L)
   gluPerspective(45.0, (float) WindowWidth / WindowHeight, 0.1, 100.0);
   glMatrixMode(GL_MODELVIEW);
 
+  WindowOpen = 1;
+
   return 0;
 }
 
 int draw_texture(lua_State *L)
 {
+  if (!WindowOpen) {
+    luaL_error(L, "there is no open window to draw in");
+  }
+
   LoadTexture(L);
 
   const double Lx0 = -0.5;
@@ -120,6 +126,7 @@ int draw_texture(lua_State *L)
 
     if (glfwGetKey(GLFW_KEY_ESC) || !glfwGetWindowParam(GLFW_OPENED)) {
       glfwCloseWindow();
+      WindowOpen = 0;
       break;
     }
   }
