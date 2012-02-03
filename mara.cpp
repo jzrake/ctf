@@ -1017,7 +1017,7 @@ int luaC_write_ppm(lua_State *L)
   const int Nx = Mara->domain->get_N(1);
   const int Ny = Mara->domain->get_N(2);
 
-  Mara_write_ppm(fname, data, cmap, Nx, Ny, range);
+  Mara_image_write_ppm(fname, data, cmap, Nx, Ny, range);
 
   return 0;
 }

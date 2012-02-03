@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <math.h>
 
+#include "image.h"
 #include "lualib.h"
 #include "lauxlib.h"
 #include "lunum.h"
@@ -31,6 +32,7 @@ int lua_vis_load(lua_State *L)
 }
 
 
+
 static int Autoplay     = 0;
 static int WindowOpen   = 0;
 static int WindowWidth  = 768;
@@ -44,6 +46,7 @@ static float RotationAngleX = 220;
 static float RotationAngleY =   0;
 static float ZoomFactor = 1.0;
 static GLuint TextureMap;
+static int ColormapIndex = 0;
 
 
 static void LoadTexture(lua_State *L);
@@ -163,21 +166,17 @@ void LoadTexture(lua_State *L)
     }
   }
 
+  const float *cmap_data = Mara_image_get_colormap(ColormapIndex);
+
   for (int i=0; i<Nx; ++i) {
     for (int j=0; j<Ny; ++j) {
 
       const int m = i*sx + j*sy;
-      const float v = (zdata[m] - zmin) / (zmax-zmin);
+      int cm = 255.0 * (zdata[m] - zmin) / (zmax - zmin);
 
-      float ColorWidth = 0.05;
-      float A = pow(0.5 / ColorWidth, 2);
-      float r = exp(-A*pow(v-0.1,2)) + exp(-A*pow(v-0.4,2)) + exp(-A*pow(v-0.7,2));
-      float g = exp(-A*pow(v-0.2,2)) + exp(-A*pow(v-0.5,2)) + exp(-A*pow(v-0.8,2));
-      float b = exp(-A*pow(v-0.3,2)) + exp(-A*pow(v-0.6,2)) + exp(-A*pow(v-0.9,2));
-
-      TextureData[3*m + 0] = r;
-      TextureData[3*m + 1] = g;
-      TextureData[3*m + 2] = b;
+      TextureData[3*m + 0] = cmap_data[3*cm + 0];
+      TextureData[3*m + 1] = cmap_data[3*cm + 1];
+      TextureData[3*m + 2] = cmap_data[3*cm + 2];
     }
   }
 
@@ -218,6 +217,12 @@ void CharacterInput(int key, int state)
 
   case 'p':
     Autoplay ^= 1;
+    break;
+
+  case 'c':
+    if (Mara_image_get_colormap(++ColormapIndex) == NULL) {
+      ColormapIndex = 0;
+    }
     break;
 
   default:
