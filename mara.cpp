@@ -182,6 +182,7 @@ int main(int argc, char **argv)
   lua_h5_load(L);
   lua_mpi_load(L);
   lua_measure_load(L);
+  lua_sampling_load(L);
   lua_fft_load(L);
   lua_vis_load(L);
 
