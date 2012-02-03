@@ -735,8 +735,8 @@ int luaC_init_prim(lua_State *L)
     for (int i=0; i<Ninter[0]; ++i) {
       for (int j=0; j<Ninter[1]; ++j) {
 
-        const double x = domain->x_at(i);
-        const double y = domain->y_at(j);
+        const double x = domain->x_at(i+Ng);
+        const double y = domain->y_at(j+Ng);
         const double z = 0.0;
 
         if (data == NULL) {

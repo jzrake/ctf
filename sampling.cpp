@@ -15,27 +15,31 @@ void Mara_prim_at_point(const double *r0, double *P1)
 {
   const PhysicalDomain &domain = *HydroModule::Mara->domain;
 
+
   const int rank = domain.SubgridRank();
   const int size = domain.SubgridSize();
-  const double Lx = domain.GetGlobalX1()[0] - domain.GetGlobalX0()[0];
-  const double Ly = domain.GetGlobalX1()[1] - domain.GetGlobalX0()[1];
-  const double Lz = domain.GetGlobalX1()[2] - domain.GetGlobalX0()[2];
-
   const int Nd = domain.get_Nd();
   const int Nq = domain.get_Nq();
+
+  const double *gx0 = domain.GetGlobalX0();
+  const double *gx1 = domain.GetGlobalX1();
+
+  const double Lx = (Nd>=1) ? gx1[0] - gx0[0] : 0.0;
+  const double Ly = (Nd>=2) ? gx1[1] - gx0[1] : 0.0;
+  const double Lz = (Nd>=3) ? gx1[2] - gx0[2] : 0.0;
 
   double r1[3];
   memcpy(r1, r0, Nd*sizeof(double));
 
   // Ensure that the target point is in the domain.
   // -------------------------------------------------------------------------
-  if (Nd>=1) if (r1[0] > domain.GetGlobalX1()[0]) r1[0] -= Lx;
-  if (Nd>=2) if (r1[1] > domain.GetGlobalX1()[1]) r1[1] -= Ly;
-  if (Nd>=3) if (r1[2] > domain.GetGlobalX1()[2]) r1[2] -= Lz;
+  if (Nd>=1) if (r1[0] > gx1[0]) r1[0] -= Lx;
+  if (Nd>=2) if (r1[1] > gx1[1]) r1[1] -= Ly;
+  if (Nd>=3) if (r1[2] > gx1[2]) r1[2] -= Lz;
 
-  if (Nd>=1) if (r1[0] < domain.GetGlobalX0()[0]) r1[0] += Lx;
-  if (Nd>=2) if (r1[1] < domain.GetGlobalX0()[1]) r1[1] += Ly;
-  if (Nd>=3) if (r1[2] < domain.GetGlobalX0()[2]) r1[2] += Lz;
+  if (Nd>=1) if (r1[0] < gx0[0]) r1[0] += Lx;
+  if (Nd>=2) if (r1[1] < gx0[1]) r1[1] += Ly;
+  if (Nd>=3) if (r1[2] < gx0[2]) r1[2] += Lz;
 
 
   // Determine on which process that point resides, set up some MPI variables.
