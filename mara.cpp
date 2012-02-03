@@ -183,6 +183,7 @@ int main(int argc, char **argv)
   lua_mpi_load(L);
   lua_measure_load(L);
   lua_fft_load(L);
+  lua_vis_load(L);
 
   lua_getglobal(L, "package");
   lua_pushfstring(L, "./?.lua;%s/conf/?.lua;%s/lib/lua/5.2/?.lua",
@@ -842,7 +843,7 @@ int luaC_get_prim(lua_State *L)
       break;
     }
     lua_pushstring(L, pnames[n].c_str());
-    luaU_pusharray(L, &var[0], var.size());
+    luaU_pusharray_wshape(L, &var[0], Mara->domain->GetLocalShape(), Nd);
     lua_settable(L, 1);
   }
 
@@ -1016,7 +1017,7 @@ int luaC_write_ppm(lua_State *L)
   const int Nx = Mara->domain->get_N(1);
   const int Ny = Mara->domain->get_N(2);
 
-  Mara_write_ppm(fname, data, cmap, Nx, Ny, range);
+  Mara_image_write_ppm(fname, data, cmap, Nx, Ny, range);
 
   return 0;
 }

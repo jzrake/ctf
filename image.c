@@ -36,10 +36,10 @@ static float step32[];
 static float heat[];
 
 static float *ColorTables[] =
-  { rainbow, jh_colors, idl1, idl2, step8, step32, heat };
+  { rainbow, jh_colors, idl1, idl2, step8, step32, heat, NULL };
 
-void Mara_write_ppm(const char *fname, const double *data, int cmap,
-		    int Nx, int Ny, const double *range)
+void Mara_image_write_ppm(const char *fname, const double *data, int cmap,
+			  int Nx, int Ny, const double *range)
 {
   int m,imsize = 3*Nx*Ny;
   char *pixels = (char*) malloc(imsize*sizeof(char));
@@ -79,7 +79,10 @@ void Mara_write_ppm(const char *fname, const double *data, int cmap,
   fclose(outf);
   free(pixels);
 }
-
+const float *Mara_image_get_colormap(int cmap)
+{
+  return ColorTables[cmap];
+}
 
 /* Color table due to John Hawley, added manually -- TAG -- 2/17/2005 */
 static float jh_colors[256*3] = {

@@ -13,9 +13,11 @@ void lua_h5_load(lua_State *L);
 void lua_mpi_load(lua_State *L);
 void lua_measure_load(lua_State *L);
 void lua_fft_load(lua_State *L);
+void lua_vis_load(lua_State *L);
 
 void    luaU_stack_dump(lua_State *L);
 void    luaU_pusharray(lua_State *L, double *A, int N);
+void    luaU_pusharray_wshape(lua_State *L, double *A, const int *shape, int Nd);
 void    luaU_pusharray_i(lua_State *L, int *A, int N);
 void    luaU_pusharray_astable(lua_State *L, double *A, int N);
 void    luaU_pusharray_astable_i(lua_State *L, int *A, int N);

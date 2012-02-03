@@ -26,6 +26,9 @@ test :
 fft_3d.o : fft_3d.c
 	$(CC) $(CFLAGS) -c $< $(FFTW_I) -DFFT_FFTW
 
+lua_vis.o : lua_vis.c
+	$(CC) $(CFLAGS) -c $< $(MARA_I) -std=c99
+
 luaU.o : luaU.c
 	$(CC) $(CFLAGS) -c $< $(MARA_I) -std=c99
 
