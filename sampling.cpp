@@ -21,23 +21,24 @@ void Mara_prim_at_point(const double *r0, double *P1)
   const double Ly = domain.GetGlobalX1()[1] - domain.GetGlobalX0()[1];
   const double Lz = domain.GetGlobalX1()[2] - domain.GetGlobalX0()[2];
 
+  const int Nd = domain.get_Nd();
   const int Nq = domain.get_Nq();
   const int Ng = domain.get_Ng();
   const int Ny = domain.GetLocalShape()[1];
   const int Nz = domain.GetLocalShape()[2];
 
   double r1[3];
-  memcpy(r1, r0, 3*sizeof(double));
+  memcpy(r1, r0, Nd*sizeof(double));
 
   // Ensure that the target point is in the domain.
   // -------------------------------------------------------------------------
-  if (r1[0] > domain.GetGlobalX1()[0]) r1[0] -= Lx;
-  if (r1[1] > domain.GetGlobalX1()[1]) r1[1] -= Ly;
-  if (r1[2] > domain.GetGlobalX1()[2]) r1[2] -= Lz;
+  if (Nd>=1) if (r1[0] > domain.GetGlobalX1()[0]) r1[0] -= Lx;
+  if (Nd>=2) if (r1[1] > domain.GetGlobalX1()[1]) r1[1] -= Ly;
+  if (Nd>=3) if (r1[2] > domain.GetGlobalX1()[2]) r1[2] -= Lz;
 
-  if (r1[0] < domain.GetGlobalX0()[0]) r1[0] += Lx;
-  if (r1[1] < domain.GetGlobalX0()[1]) r1[1] += Ly;
-  if (r1[2] < domain.GetGlobalX0()[2]) r1[2] += Lz;
+  if (Nd>=1) if (r1[0] < domain.GetGlobalX0()[0]) r1[0] += Lx;
+  if (Nd>=2) if (r1[1] < domain.GetGlobalX0()[1]) r1[1] += Ly;
+  if (Nd>=3) if (r1[2] < domain.GetGlobalX0()[2]) r1[2] += Lz;
 
 
   // Determine on which process that point resides, set up some MPI variables.
