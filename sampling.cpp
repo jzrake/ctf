@@ -4,35 +4,15 @@
 
 #include <vector>
 #include <mpi.h>
+
 #include "valman.hpp"
 #include "hydro.hpp"
 #include "mara_mpi.h"
-#include "luaU.h"
 
 
-static int sample(lua_State *L);
 
-
-void lua_sampling_load(lua_State *L)
+void Mara_prim_at_point(const double *r0, double *P1)
 {
-  luaL_Reg sampling_api[] = {
-
-    { "sample"   , sample },
-    {  NULL      , NULL       } };
-
-  lua_newtable(L);
-  luaL_setfuncs(L, sampling_api, 0);
-  lua_setglobal(L, "sampling");
-}
-
-
-
-
-
-
-int sample(lua_State *L)
-{
-
   const PhysicalDomain &domain = *HydroModule::Mara->domain;
 
   const int rank = domain.SubgridRank();
@@ -46,7 +26,6 @@ int sample(lua_State *L)
   const int Ny = domain.GetLocalShape()[1];
   const int Nz = domain.GetLocalShape()[2];
 
-  const double *r0 = luaU_checkarray(L, 1);
   double r1[3];
   memcpy(r1, r0, 3*sizeof(double));
 
@@ -71,7 +50,7 @@ int sample(lua_State *L)
   // Figure out how many of other people's points lie in my domain.
   // -------------------------------------------------------------------------
   int *number_of_queries = new int[size];
-  for (int i=0; i<size; ++i) {
+  for (int i=0; i<size; ++i) { // ensures that all entries are initialized
     number_of_queries[i] = (i == dest_rank);
   }
   MPI_Allreduce(MPI_IN_PLACE, number_of_queries, size, MPI_INT, MPI_SUM, comm);
@@ -100,24 +79,18 @@ int sample(lua_State *L)
     MPI_Isend(P_answer, Nq, MPI_DOUBLE, status.MPI_SOURCE, tag+1, comm, &Prequest[n]);
   }
 
-  double *P1 = new double[Nq];
   MPI_Recv(P1, Nq, MPI_DOUBLE, dest_rank, tag+1, comm, &status);
   MPI_Waitall(queries_to_answer, Prequest, Pstatus);
   MPI_Waitall(1, &request, &status);
   MPI_Barrier(comm);
 
-  luaU_pusharray(L, P1, Nq);
-
   delete [] Prequest;
   delete [] Pstatus;
-  delete [] P1;
-
-  return 1;
 }
 
 
 
 
 #else
-void lua_sampling_load(lua_State *L) { }
+void Mara_prim_at_point(const double *r0, double *P1) { }
 #endif // __MARA_USE_MPI

@@ -32,9 +32,6 @@ lua_vis.o : lua_vis.c
 luaU.o : luaU.c
 	$(CC) $(CFLAGS) -c $< $(MARA_I) -std=c99
 
-sampling.o : sampling.cpp
-	$(CC) $(CFLAGS) -c $< $(MARA_I)
-
 lua_fft.o : lua_fft.cpp
 	$(CC) $(CFLAGS) -c $< $(MARA_I) $(FFTW_I) -DFFT_FFTW
 
