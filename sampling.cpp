@@ -23,9 +23,6 @@ void Mara_prim_at_point(const double *r0, double *P1)
 
   const int Nd = domain.get_Nd();
   const int Nq = domain.get_Nq();
-  const int Ng = domain.get_Ng();
-  const int Ny = domain.GetLocalShape()[1];
-  const int Nz = domain.GetLocalShape()[2];
 
   double r1[3];
   memcpy(r1, r0, Nd*sizeof(double));
@@ -63,21 +60,26 @@ void Mara_prim_at_point(const double *r0, double *P1)
   // -------------------------------------------------------------------------
   MPI_Request request, *Prequest = new MPI_Request[queries_to_answer];
   MPI_Status status, *Pstatus = new MPI_Status[queries_to_answer];
-  MPI_Isend(r1, 3, MPI_DOUBLE, dest_rank, tag, comm, &request);
+  MPI_Isend(r1, Nd, MPI_DOUBLE, dest_rank, tag, comm, &request);
+
+  ValarrayManager M(domain.aug_shape(), Nq);
+  std::valarray<double> Panswer(Nq);
 
   for (int n=0; n<queries_to_answer; ++n) {
 
     double r_query[3];
-    MPI_Recv(r_query, 3, MPI_DOUBLE, MPI_ANY_SOURCE, tag, comm, &status);
+    MPI_Recv(r_query, Nd, MPI_DOUBLE, MPI_ANY_SOURCE, tag, comm, &status);
 
-    const int i = domain.IndexAtPosition(r_query, 0);
-    const int j = domain.IndexAtPosition(r_query, 1);
-    const int k = domain.IndexAtPosition(r_query, 2);
+    const int i = (Nd>=1) ? domain.IndexAtPosition(r_query, 0) : 0;
+    const int j = (Nd>=2) ? domain.IndexAtPosition(r_query, 1) : 0;
+    const int k = (Nd>=3) ? domain.IndexAtPosition(r_query, 2) : 0;
 
-    const int mm = (i*(Ny+2*Ng)*(Nz+2*Ng) + j*(Nz+2*Ng) + k)*Nq;
-    double *P_answer = &HydroModule::Mara->PrimitiveArray[mm];
+    if (Nd == 1) Panswer = HydroModule::Mara->PrimitiveArray[M(i)];
+    if (Nd == 2) Panswer = HydroModule::Mara->PrimitiveArray[M(i,j)];
+    if (Nd == 3) Panswer = HydroModule::Mara->PrimitiveArray[M(i,j,k)];
 
-    MPI_Isend(P_answer, Nq, MPI_DOUBLE, status.MPI_SOURCE, tag+1, comm, &Prequest[n]);
+    MPI_Isend(&Panswer[0], Nq, MPI_DOUBLE, status.MPI_SOURCE, tag+1, comm,
+	      &Prequest[n]);
   }
 
   MPI_Recv(P1, Nq, MPI_DOUBLE, dest_rank, tag+1, comm, &status);
