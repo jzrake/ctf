@@ -18,7 +18,7 @@ static int draw_texture(lua_State *L);
 
 
 
-int lua_vis_load(lua_State *L)
+void lua_vis_load(lua_State *L)
 {
   luaL_Reg vis_api[] = { { "open_window", open_window },
 			 { "draw_texture", draw_texture },
@@ -27,8 +27,6 @@ int lua_vis_load(lua_State *L)
   lua_newtable(L);
   luaL_setfuncs(L, vis_api, 0);
   lua_setglobal(L, "visual");
-
-  return 0;
 }
 
 
