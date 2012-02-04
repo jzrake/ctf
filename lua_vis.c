@@ -1,11 +1,14 @@
 
+#include "lualib.h"
+#include "config.h"
+#if (__MARA_USE_GLFW)
+
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 
 #include "image.h"
-#include "lualib.h"
 #include "lauxlib.h"
 #include "lunum.h"
 
@@ -227,3 +230,7 @@ void CharacterInput(int key, int state)
     break;
   }
 }
+
+#else
+void lua_vis_load(lua_State *L) { }
+#endif // __MARA_USE_GLFW
