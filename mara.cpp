@@ -82,6 +82,8 @@ extern "C"
   static int luaC_fluid_ConsToPrim(lua_State *L);
   static int luaC_fluid_Eigensystem(lua_State *L);
 
+  static int luaC_boundary_ApplyBoundaries(lua_State *L);
+
   static int luaC_driving_Advance(lua_State *L);
   static int luaC_driving_Resample(lua_State *L);
   static int luaC_driving_Serialize(lua_State *L);
@@ -295,6 +297,17 @@ int main(int argc, char **argv)
   lua_settable(L, 1);
 
   lua_setglobal(L, "fluid");
+
+
+  // Expose the boundary conditions interface
+  // ---------------------------------------------------------------------------
+  lua_newtable(L);
+
+  lua_pushstring(L, "ApplyBoundaries");
+  lua_pushcfunction(L, luaC_boundary_ApplyBoundaries);
+  lua_settable(L, 1);
+
+  lua_setglobal(L, "boundary");
 
 
   // Expose the eos interface
@@ -1431,6 +1444,17 @@ int luaC_fluid_Eigensystem(lua_State *L)
   free(lm);
 
   return 3;
+}
+
+int luaC_boundary_ApplyBoundaries(lua_State *L)
+{
+  if (Mara->boundary == NULL) {
+    printf("[mara] error: need a boundary conditions to run this, use set_boundary.\n");
+  }
+  else {
+    Mara->boundary->ApplyBoundaries(Mara->PrimitiveArray);
+  }
+  return 0;
 }
 
 int luaC_eos_TemperatureMeV(lua_State *L)
