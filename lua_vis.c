@@ -1,11 +1,14 @@
 
+#include "lualib.h"
+#include "config.h"
+#if (__MARA_USE_GLFW)
+
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 
 #include "image.h"
-#include "lualib.h"
 #include "lauxlib.h"
 #include "lunum.h"
 
@@ -18,7 +21,7 @@ static int draw_texture(lua_State *L);
 
 
 
-int lua_vis_load(lua_State *L)
+void lua_vis_load(lua_State *L)
 {
   luaL_Reg vis_api[] = { { "open_window", open_window },
 			 { "draw_texture", draw_texture },
@@ -27,8 +30,6 @@ int lua_vis_load(lua_State *L)
   lua_newtable(L);
   luaL_setfuncs(L, vis_api, 0);
   lua_setglobal(L, "visual");
-
-  return 0;
 }
 
 
@@ -229,3 +230,7 @@ void CharacterInput(int key, int state)
     break;
   }
 }
+
+#else
+void lua_vis_load(lua_State *L) { }
+#endif // __MARA_USE_GLFW
