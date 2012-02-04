@@ -3,6 +3,7 @@
 #if (__MARA_USE_MPI)
 
 #include <vector>
+#include <cstring>
 #include <mpi.h>
 
 #include "valman.hpp"
