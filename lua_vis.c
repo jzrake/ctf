@@ -49,11 +49,11 @@ static GLuint TextureMap;
 static int ColormapIndex = 0;
 
 
-static void LoadTexture(lua_State *L);
+static void LoadTexture();
 static void KeyboardInput(int key, int state);
 static void CharacterInput(int key, int state);
 
-
+static lua_State *PresentLua = NULL;
 
 
 int open_window(lua_State *L)
@@ -87,7 +87,8 @@ int draw_texture(lua_State *L)
     luaL_error(L, "there is no open window to draw in");
   }
 
-  LoadTexture(L);
+  PresentLua = L;
+  LoadTexture();
 
   const double Lx0 = -0.5;
   const double Lx1 = +0.5;
@@ -135,8 +136,10 @@ int draw_texture(lua_State *L)
 }
 
 
-void LoadTexture(lua_State *L)
+void LoadTexture()
 {
+  lua_State *L = PresentLua;
+
   if (lunum_upcast(L, 1, ARRAY_TYPE_DOUBLE, 0)) {
     lua_replace(L, -2);
   }
@@ -223,6 +226,7 @@ void CharacterInput(int key, int state)
     if (Mara_image_get_colormap(++ColormapIndex) == NULL) {
       ColormapIndex = 0;
     }
+    LoadTexture();
     break;
 
   default:
