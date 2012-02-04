@@ -9,6 +9,7 @@
 #include "hydro.hpp"
 #include "mara_mpi.h"
 
+static std::valarray<double> unilinear_interp(const double *r);
 static std::valarray<double>  bilinear_interp(const double *r);
 static std::valarray<double> trilinear_interp(const double *r);
 
@@ -84,7 +85,11 @@ void Mara_prim_at_point(const double *r0, double *P1)
     std::valarray<double> &Panswer = Pvector[n];
     Panswer.resize(Nq);
 
-    if (Nd == 2) {
+
+    if (Nd == 1) {
+      Panswer = unilinear_interp(r_query);
+    }
+    else if (Nd == 2) {
       Panswer = bilinear_interp(r_query);
     }
     else if (Nd == 1) {
@@ -106,6 +111,31 @@ void Mara_prim_at_point(const double *r0, double *P1)
 }
 
 
+static std::valarray<double> unilinear_interp(const double *r)
+{
+  const PhysicalDomain &domain = *HydroModule::Mara->domain;
+  const int Nq = domain.get_Nq();
+  ValarrayManager M(domain.aug_shape(), Nq);
+  std::valarray<double> Panswer(Nq);
+
+  const int i = domain.IndexAtPosition(r, 0);
+  const std::valarray<double> &Prim = HydroModule::Mara->PrimitiveArray;
+
+  std::valarray<double> P0 = Prim[M(i-1)];
+  std::valarray<double> P1 = Prim[M(i+1)];
+
+  double delx[1];
+  delx[0] = 0.5 * (r[0] - domain.x_at(i-1)) / domain.get_dx(1);
+
+  for (int q=0; q<Nq; ++q) {
+    double b1 = P0[q];
+    double b2 = P1[q] - P0[q];
+
+    Panswer[q] = b1 + b2*delx[0];
+  }
+  return Panswer;
+}
+
 std::valarray<double> bilinear_interp(const double *r)
 {
   const PhysicalDomain &domain = *HydroModule::Mara->domain;
@@ -115,14 +145,14 @@ std::valarray<double> bilinear_interp(const double *r)
 
   const int i = domain.IndexAtPosition(r, 0);
   const int j = domain.IndexAtPosition(r, 1);
+  const std::valarray<double> &Prim = HydroModule::Mara->PrimitiveArray;
 
-  std::valarray<double> P00 = HydroModule::Mara->PrimitiveArray[M(i-1,j-1)];
-  std::valarray<double> P01 = HydroModule::Mara->PrimitiveArray[M(i-1,j+1)];
-  std::valarray<double> P10 = HydroModule::Mara->PrimitiveArray[M(i+1,j-1)];
-  std::valarray<double> P11 = HydroModule::Mara->PrimitiveArray[M(i+1,j+1)];
+  std::valarray<double> P00 = Prim[M(i-1,j-1)];
+  std::valarray<double> P01 = Prim[M(i-1,j+1)];
+  std::valarray<double> P10 = Prim[M(i+1,j-1)];
+  std::valarray<double> P11 = Prim[M(i+1,j+1)];
 
   double delx[2];
-
   delx[0] = 0.5 * (r[0] - domain.x_at(i-1)) / domain.get_dx(1);
   delx[1] = 0.5 * (r[1] - domain.y_at(j-1)) / domain.get_dx(2);
 
@@ -144,6 +174,38 @@ std::valarray<double> trilinear_interp(const double *r)
   ValarrayManager M(domain.aug_shape(), Nq);
   std::valarray<double> Panswer(Nq);
 
+  const int i = domain.IndexAtPosition(r, 0);
+  const int j = domain.IndexAtPosition(r, 1);
+  const int k = domain.IndexAtPosition(r, 1);
+  const std::valarray<double> &Prim = HydroModule::Mara->PrimitiveArray;
+
+  std::valarray<double> P000 = Prim[M(i-1,j-1,k-1)];
+  std::valarray<double> P001 = Prim[M(i-1,j-1,k+1)];
+  std::valarray<double> P010 = Prim[M(i-1,j+1,k-1)];
+  std::valarray<double> P011 = Prim[M(i-1,j+1,k+1)];
+  std::valarray<double> P100 = Prim[M(i+1,j-1,k-1)];
+  std::valarray<double> P101 = Prim[M(i+1,j-1,k+1)];
+  std::valarray<double> P110 = Prim[M(i+1,j+1,k-1)];
+  std::valarray<double> P111 = Prim[M(i+1,j+1,k+1)];
+
+  double delx[3];
+  delx[0] = 0.5 * (r[0] - domain.x_at(i-1)) / domain.get_dx(1);
+  delx[1] = 0.5 * (r[1] - domain.y_at(j-1)) / domain.get_dx(2);
+  delx[2] = 0.5 * (r[2] - domain.z_at(k-1)) / domain.get_dx(3);
+
+  for (int q=0; q<Nq; ++q) {
+    // http://en.wikipedia.org/wiki/Trilinear_interpolation
+
+    double i1 = P000[q] * (1.0 - delx[2]) + P001[q] * delx[2];
+    double i2 = P010[q] * (1.0 - delx[2]) + P011[q] * delx[2];
+    double j1 = P100[q] * (1.0 - delx[2]) + P101[q] * delx[2];
+    double j2 = P110[q] * (1.0 - delx[2]) + P111[q] * delx[2];
+
+    double w1 = i1 * (1.0 - delx[1]) + i2 * delx[1];
+    double w2 = j1 * (1.0 - delx[1]) + j2 * delx[1];
+
+    Panswer[q] = w1 * (1.0 - delx[0]) + w2 * delx[0];
+  }
   return Panswer;
 }
 
