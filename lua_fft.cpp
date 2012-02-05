@@ -30,6 +30,7 @@
 #include "config.h"
 #include "luaU.h"
 #if (__MARA_USE_FFTW)
+#if (__MARA_USE_MPI)
 
 #include <cstdlib>
 #include <mpi.h>
@@ -569,7 +570,9 @@ double cnorm(FFT_DATA z)
 
 #else
 void lua_fft_load(lua_State *L) { }
+#endif // __MARA_USE_MPI
 #endif // __MARA_USE_FFTW
+
 
 
 
