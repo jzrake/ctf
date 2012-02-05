@@ -93,7 +93,7 @@ void Mara_prim_at_point(const double *r0, double *P1)
     else if (Nd == 2) {
       Panswer = bilinear_interp(r_query);
     }
-    else if (Nd == 1) {
+    else if (Nd == 3) {
       Panswer = trilinear_interp(r_query);
     }
 
