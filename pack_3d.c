@@ -12,8 +12,9 @@
    See the README file in the top-level directory of the distribution.
 */
 
+
 #include "config.h"
-#if (__MARA_USE_FFTW)
+#if (__MARA_USE_FFTW && __MARA_USE_MPI)
 
 #include "pack_3d.h"
 
@@ -739,5 +740,6 @@ void unpack_3d_permute2_n(double *buf, double *data, struct pack_plan_3d *plan)
 
 
 #else
-void __fft_3d_stub() { }
-#endif // __MARA_USE_FFTW
+void __pack_3d_stub() { }
+#endif // (__MARA_USE_FFTW && __MARA_USE_MPI)
+

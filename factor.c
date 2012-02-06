@@ -12,6 +12,9 @@
    See the README file in the top-level directory of the distribution.
 */
 
+#include "config.h"
+#if (__MARA_USE_FFTW && __MARA_USE_MPI)
+
 #include <math.h>
 
 /* ------------------------------------------------------------------- */
@@ -80,3 +83,7 @@ void bifactor(int n, int *factor1, int *factor2)
     }
   }
 }
+
+#else
+void __factor_3d_stub() { }
+#endif // (__MARA_USE_FFTW && __MARA_USE_MPI)

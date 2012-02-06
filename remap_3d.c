@@ -12,6 +12,9 @@
    See the README file in the top-level directory of the distribution.
 */
 
+#include "config.h"
+#if (__MARA_USE_FFTW && __MARA_USE_MPI)
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <mpi.h>
@@ -514,3 +517,8 @@ int remap_3d_collide(struct extent_3d *block1, struct extent_3d *block2,
 
   return 1;
 }
+
+
+#else
+void __remap_3d_stub() { }
+#endif // (__MARA_USE_FFTW && __MARA_USE_MPI)

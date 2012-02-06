@@ -14,7 +14,7 @@
 
 
 #include "config.h"
-#if (__MARA_USE_FFTW)
+#if (__MARA_USE_FFTW && __MARA_USE_MPI)
 
 #include "stdio.h"
 #include "mpi.h"
@@ -732,4 +732,4 @@ void fft_3d_destroy_plan(struct fft_plan_3d *plan)
 
 #else
 void __fft_3d_stub() { }
-#endif // __MARA_USE_FFTW
+#endif // (__MARA_USE_FFTW && __MARA_USE_MPI)
