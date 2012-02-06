@@ -15,9 +15,9 @@
 #include "GL/glfw.h"
 
 
-
 static int open_window(lua_State *L);
 static int draw_texture(lua_State *L);
+static int draw_lines3d(lua_State *L);
 
 
 
@@ -25,6 +25,7 @@ void lua_vis_load(lua_State *L)
 {
   luaL_Reg vis_api[] = { { "open_window", open_window },
 			 { "draw_texture", draw_texture },
+			 { "draw_lines3d", draw_lines3d },
 			 { NULL, NULL} };
 
   lua_newtable(L);
@@ -36,35 +37,33 @@ void lua_vis_load(lua_State *L)
 
 static int Autoplay     = 0;
 static int WindowOpen   = 0;
-static int WindowWidth  = 768;
+static int WindowWidth  = 1024;
 static int WindowHeight = 768;
 
 static float xTranslate = 0.0;
 static float yTranslate = 0.0;
 static float zTranslate = 1.4;
 
-static float RotationAngleX = 220;
-static float RotationAngleY =   0;
+static float RotationAngleX = 10;
+static float RotationAngleY =  0;
 static float ZoomFactor = 1.0;
 static GLuint TextureMap;
 static int ColormapIndex = 0;
 
 
-static void LoadTexture(lua_State *L);
 static void KeyboardInput(int key, int state);
 static void CharacterInput(int key, int state);
+static void LoadTexture();
+static void DrawBoundingBox(const double *bounds);
 
 
+static lua_State *PresentLua = NULL;
 
 
 int open_window(lua_State *L)
 {
   glfwInit();
   glfwOpenWindow(WindowWidth, WindowHeight, 0,0,0,0,0,0, GLFW_WINDOW);
-  //  glfwEnable(GLFW_STICKY_KEYS);
-  //  glfwEnable(GLFW_KEY_REPEAT);
-  glfwSetKeyCallback(KeyboardInput);
-  glfwSetCharCallback(CharacterInput);
 
   glClearColor(0.2, 0.1, 0.1, 0.0);
   glClearDepth(1.0);
@@ -88,7 +87,15 @@ int draw_texture(lua_State *L)
     luaL_error(L, "there is no open window to draw in");
   }
 
-  LoadTexture(L);
+  glfwSetKeyCallback(NULL);
+  glfwSetCharCallback(NULL);
+
+  glfwDisable(GLFW_STICKY_KEYS);
+  glfwDisable(GLFW_KEY_REPEAT);
+  zTranslate = 1.4;
+
+  PresentLua = L;
+  LoadTexture();
 
   const double Lx0 = -0.5;
   const double Lx1 = +0.5;
@@ -135,9 +142,82 @@ int draw_texture(lua_State *L)
   return 0;
 }
 
-
-void LoadTexture(lua_State *L)
+int draw_lines3d(lua_State *L)
 {
+  if (!WindowOpen) {
+    luaL_error(L, "there is no open window to draw in");
+  }
+
+  struct Array *A = lunum_checkarray1(L, 1);
+
+  if (A->dtype != ARRAY_TYPE_DOUBLE || A->ndims != 2) {
+    luaL_error(L, "need a (N x 3) array of doubles");
+    return 0;
+  }
+  if (A->shape[1] != 3) {
+    luaL_error(L, "need a (N x 3) array of doubles");
+    return 0;
+  }
+
+
+  glfwSetKeyCallback(KeyboardInput);
+  glfwSetCharCallback(CharacterInput);
+
+  glfwEnable(GLFW_STICKY_KEYS);
+  glfwEnable(GLFW_KEY_REPEAT);
+
+  zTranslate = 1.8;
+  PresentLua = L;
+
+  xTranslate = 0.0;
+  yTranslate = 0.0;
+  const double bounds[] = { -0.5, +0.5,
+			    -0.5, +0.5,
+			    -0.5, +0.5 };
+
+  while (1) {
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glLoadIdentity();
+
+    glTranslatef(-xTranslate, -yTranslate, -zTranslate);
+    glScalef(ZoomFactor, ZoomFactor, ZoomFactor);
+
+    glRotatef(RotationAngleX, 1, 0, 0);
+    glRotatef(RotationAngleY, 0, 1, 0);
+
+    DrawBoundingBox(bounds);
+
+    glBegin(GL_LINE_STRIP);
+
+    for (int m=0; m<A->shape[0]; ++m) {
+      const double *x = ((double*) A->data) + 3*m;
+      glVertex3d(x[0], x[1], x[2]);
+    }
+
+    glEnd();
+    glFlush();
+    glfwSwapBuffers();
+
+    if (glfwGetKey(GLFW_KEY_ESC) || !glfwGetWindowParam(GLFW_OPENED)) {
+      glfwCloseWindow();
+      WindowOpen = 0;
+      break;
+    }
+
+    if (Autoplay || glfwGetKey(GLFW_KEY_SPACE)) {
+      break;
+    }
+  }
+
+  return 0;
+}
+
+
+void LoadTexture()
+{
+  lua_State *L = PresentLua;
+
   if (lunum_upcast(L, 1, ARRAY_TYPE_DOUBLE, 0)) {
     lua_replace(L, -2);
   }
@@ -224,12 +304,80 @@ void CharacterInput(int key, int state)
     if (Mara_image_get_colormap(++ColormapIndex) == NULL) {
       ColormapIndex = 0;
     }
+    LoadTexture();
     break;
 
   default:
     break;
   }
 }
+
+
+
+
+void DrawBoundingBox(const double *bounds)
+{
+  const double Lx0 = bounds[0];
+  const double Lx1 = bounds[1];
+
+  const double Ly0 = bounds[2];
+  const double Ly1 = bounds[3];
+
+  const double Lz0 = bounds[4];
+  const double Lz1 = bounds[5];
+
+  // Drawing a bonding box
+  // ---------------------------------------------------------------------------
+  glColor3d(0.6, 0.3, 0.3);
+  glLineWidth(3.0);
+
+  glBegin(GL_LINES);
+
+  // x-edges
+  // ---------------------------------------------------------------------------
+  glVertex3f(Lx0, Ly0, Lz0);
+  glVertex3f(Lx1, Ly0, Lz0);
+
+  glVertex3f(Lx0, Ly0, Lz1);
+  glVertex3f(Lx1, Ly0, Lz1);
+
+  glVertex3f(Lx0, Ly1, Lz0);
+  glVertex3f(Lx1, Ly1, Lz0);
+
+  glVertex3f(Lx0, Ly1, Lz1);
+  glVertex3f(Lx1, Ly1, Lz1);
+
+  // y-edges
+  // ---------------------------------------------------------------------------
+  glVertex3f(Lx0, Ly0, Lz0);
+  glVertex3f(Lx0, Ly1, Lz0);
+
+  glVertex3f(Lx1, Ly0, Lz0);
+  glVertex3f(Lx1, Ly1, Lz0);
+
+  glVertex3f(Lx0, Ly0, Lz1);
+  glVertex3f(Lx0, Ly1, Lz1);
+
+  glVertex3f(Lx1, Ly0, Lz1);
+  glVertex3f(Lx1, Ly1, Lz1);
+
+  // z-edges
+  // ---------------------------------------------------------------------------
+  glVertex3f(Lx0, Ly0, Lz0);
+  glVertex3f(Lx0, Ly0, Lz1);
+
+  glVertex3f(Lx0, Ly1, Lz0);
+  glVertex3f(Lx0, Ly1, Lz1);
+
+  glVertex3f(Lx1, Ly0, Lz0);
+  glVertex3f(Lx1, Ly0, Lz1);
+
+  glVertex3f(Lx1, Ly1, Lz0);
+  glVertex3f(Lx1, Ly1, Lz1);
+
+  glEnd();
+}
+
 
 #else
 void lua_vis_load(lua_State *L) { }
