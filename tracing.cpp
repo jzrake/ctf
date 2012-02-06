@@ -17,7 +17,7 @@ std::vector<double> Mara_streamline_velocity(const double *r0, double s1, double
 
   double *P1 = new double[Nq];
   double *r1 = new double[3];
-  double *v1 = new double[3];
+  double *r2 = new double[3];
 
   double s = 0.0;
   std::vector<double> points;
@@ -25,19 +25,26 @@ std::vector<double> Mara_streamline_velocity(const double *r0, double s1, double
 
 
   while (s < s1) {
+
     Mara_prim_at_point(r1, P1);
+    {
+      double v1[3] = { P1[vx], P1[vy], P1[vz] };
+      const double v = sqrt(v1[0]*v1[0] + v1[1]*v1[1] + v1[2]*v1[2]) + 1e-16;
 
-    v1[0] = P1[vx];
-    v1[1] = P1[vy];
-    v1[2] = P1[vz];
+      r2[0] = r1[0] + ds/2 * v1[0]/v;
+      r2[1] = r1[1] + ds/2 * v1[1]/v;
+      r2[2] = r1[2] + ds/2 * v1[2]/v;
+    }
 
-    const double v = sqrt(v1[0]*v1[0] + v1[1]*v1[1] + v1[2]*v1[2]);
+    Mara_prim_at_point(r2, P1);
+    {
+      double v1[3] = { P1[vx], P1[vy], P1[vz] };
+      const double v = sqrt(v1[0]*v1[0] + v1[1]*v1[1] + v1[2]*v1[2]) + 1e-16;
 
-    double vhat[3] = { v1[0]/v, v1[1]/v, v1[2]/v };
-
-    r1[0] += ds * vhat[0];
-    r1[1] += ds * vhat[1];
-    r1[2] += ds * vhat[2];
+      r1[0] = r1[0] + ds   * v1[0]/v;
+      r1[1] = r1[1] + ds   * v1[1]/v;
+      r1[2] = r1[2] + ds   * v1[2]/v;
+    }
 
     points.push_back(r1[0]);
     points.push_back(r1[1]);
@@ -48,7 +55,7 @@ std::vector<double> Mara_streamline_velocity(const double *r0, double s1, double
 
   delete [] P1;
   delete [] r1;
-  delete [] v1;
+  delete [] r2;
 
   return points;
 }
