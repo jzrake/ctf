@@ -59,7 +59,6 @@ extern "C"
   static int luaC_read_prim(lua_State *L);
   static int luaC_write_prim(lua_State *L);
   static int luaC_get_prim(lua_State *L);
-  //  static int luaC_prim_at_point(lua_State *L);
   static int luaC_get_timestep(lua_State *L);
 
   static int luaC_set_domain(lua_State *L);
@@ -109,7 +108,6 @@ extern "C"
 }
 
 
-//void Mara_prim_at_point(const double *r0, double *P1);
 static void mara_prim_io(lua_State *L, char mode);
 static MaraApplication *Mara;
 
@@ -257,7 +255,6 @@ int main(int argc, char **argv)
   lua_register(L, "read_prim"    , luaC_read_prim);
   lua_register(L, "write_prim"   , luaC_write_prim);
   lua_register(L, "write_ppm"    , luaC_write_ppm);
-  //  lua_register(L, "prim_at_point", luaC_prim_at_point);
   lua_register(L, "get_prim"     , luaC_get_prim);
   lua_register(L, "get_timestep" , luaC_get_timestep);
 
@@ -800,17 +797,6 @@ int luaC_init_prim(lua_State *L)
 
   if (data != NULL) free(data);
   return 0;
-}
-
-int luaC_prim_at_point(lua_State *L)
-{
-  const double *r1 = luaU_checkarray(L, 1);
-  const int Nq = Mara->domain->get_Nq();
-  double *P1 = new double[Nq];
-  //  Mara_prim_at_point(r1, P1);
-  luaU_pusharray(L, P1, Nq);
-  delete [] P1;
-  return 1;
 }
 
 int luaC_get_prim(lua_State *L)
