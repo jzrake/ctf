@@ -8,8 +8,9 @@
 
 #include "valman.hpp"
 #include "hydro.hpp"
+#include "sampling.hpp"
 #include "mara_mpi.h"
-#include "sampling.h"
+
 
 static std::valarray<double> unilinear_interp(const double *r);
 static std::valarray<double>  bilinear_interp(const double *r);
@@ -111,7 +112,6 @@ void Mara_prim_at_point(const double *r0, double *P1)
   delete [] Pstatus;
   delete [] Pvector;
 }
-
 
 
 

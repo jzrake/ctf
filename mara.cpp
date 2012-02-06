@@ -61,6 +61,7 @@ extern "C"
   static int luaC_get_prim(lua_State *L);
   static int luaC_prim_at_point(lua_State *L);
   static int luaC_get_timestep(lua_State *L);
+  static int luaC_streamline(lua_State *L);
 
   static int luaC_set_domain(lua_State *L);
   static int luaC_set_boundary(lua_State *L);
@@ -262,6 +263,7 @@ int main(int argc, char **argv)
   lua_register(L, "prim_at_point", luaC_prim_at_point);
   lua_register(L, "get_prim"     , luaC_get_prim);
   lua_register(L, "get_timestep" , luaC_get_timestep);
+  lua_register(L, "streamline"   , luaC_streamline);
 
   lua_register(L, "set_domain"   , luaC_set_domain);
   lua_register(L, "set_boundary" , luaC_set_boundary);
@@ -530,6 +532,19 @@ int luaC_get_timestep(lua_State *L)
   return 1;
 }
 
+int luaC_streamline(lua_State *L)
+{
+  const double *r0 = luaU_checkarray(L, 1);
+  const double  s = luaL_checknumber(L, 2);
+  const double ds = luaL_checknumber(L, 3);
+
+  std::vector<double> strm = Mara_streamline_velocity(r0, s, ds);
+
+  int shape[2] = { strm.size()/3, 3 };
+
+  luaU_pusharray_wshape(L, &strm[0], shape, 2);
+  return 1;
+}
 
 int luaC_mara_version(lua_State *L)
 {
