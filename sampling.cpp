@@ -9,6 +9,7 @@
 #include "valman.hpp"
 #include "hydro.hpp"
 #include "mara_mpi.h"
+#include "sampling.h"
 
 static std::valarray<double> unilinear_interp(const double *r);
 static std::valarray<double>  bilinear_interp(const double *r);
@@ -245,7 +246,7 @@ void Mara_prim_at_point_many(const double *Rin, double *Rlist, double *Plist, in
 
 
 
-static std::valarray<double> unilinear_interp(const double *r)
+std::valarray<double> unilinear_interp(const double *r)
 {
   const PhysicalDomain &domain = *HydroModule::Mara->domain;
   const int Nq = domain.get_Nq();

@@ -43,6 +43,7 @@
 #include "mara_mpi.h"
 #include "mara_io.h"
 #include "rmhd-c2p.h"
+#include "sampling.h"
 
 
 #endif // __MaraApplication_HEADER__
