@@ -77,6 +77,7 @@ extern "C"
   static int luaC_load_shen(lua_State *L);
   static int luaC_test_shen(lua_State *L);
   static int luaC_test_rmhd_c2p(lua_State *L);
+  static int luaC_test_sampling(lua_State *L);
 
   static int luaC_fluid_PrimToCons(lua_State *L);
   static int luaC_fluid_ConsToPrim(lua_State *L);
@@ -278,6 +279,7 @@ int main(int argc, char **argv)
   lua_register(L, "load_shen"    , luaC_load_shen);
   lua_register(L, "test_shen"    , luaC_test_shen);
   lua_register(L, "test_rmhd_c2p", luaC_test_rmhd_c2p);
+  lua_register(L, "test_sampling", luaC_test_sampling);
 
 
   // Expose the fluid interface
@@ -825,6 +827,41 @@ int luaC_prim_at_point(lua_State *L)
   delete [] P1;
   return 1;
 }
+
+int luaC_test_sampling(lua_State *L)
+{
+  if (Mara->domain == NULL) {
+    luaL_error(L, "[mara] error: need a domain to run this, use set_domain\n");
+  }
+  if (Mara->domain->get_Nd() != 3) {
+    luaL_error(L, "[mara] error: need a 3d domain to run this\n");
+  }
+
+  const int numsamp = luaL_checkinteger(L, 1);
+  const int Nq = Mara->domain->get_Nq();
+
+  const double *gx0 = Mara->domain->GetGlobalX0();
+  const double *gx1 = Mara->domain->GetGlobalX1();
+
+  double *P1 = new double[Nq];
+  RandomNumberStream rand;
+
+  const clock_t start = clock();
+
+  for (int i=0; i<numsamp; ++i) {
+    double r1[3] = { rand.RandomDouble(gx0[0], gx1[0]),
+		     rand.RandomDouble(gx0[1], gx1[1]),
+		     rand.RandomDouble(gx0[2], gx1[2]) };
+    Mara_prim_at_point(r1, P1);
+  }
+
+  const double trun = (double) (clock() - start) / CLOCKS_PER_SEC;
+  lua_pushnumber(L, trun);
+
+  delete [] P1;
+  return 1;
+}
+
 
 int luaC_get_prim(lua_State *L)
 {
