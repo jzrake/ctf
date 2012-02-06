@@ -78,6 +78,7 @@ extern "C"
   static int luaC_test_shen(lua_State *L);
   static int luaC_test_rmhd_c2p(lua_State *L);
   static int luaC_test_sampling(lua_State *L);
+  static int luaC_test_sampling_many(lua_State *L);
 
   static int luaC_fluid_PrimToCons(lua_State *L);
   static int luaC_fluid_ConsToPrim(lua_State *L);
@@ -111,8 +112,10 @@ extern "C"
   int luaopen_lunum(lua_State *L);
 }
 
-
 void Mara_prim_at_point(const double *r0, double *P1);
+void Mara_prim_at_point_many(const double *Rin, double *Rlist, double *Plist,
+			     int Nsamp);
+
 static void mara_prim_io(lua_State *L, char mode);
 static MaraApplication *Mara;
 
@@ -280,6 +283,7 @@ int main(int argc, char **argv)
   lua_register(L, "test_shen"    , luaC_test_shen);
   lua_register(L, "test_rmhd_c2p", luaC_test_rmhd_c2p);
   lua_register(L, "test_sampling", luaC_test_sampling);
+  lua_register(L, "test_sampling_many", luaC_test_sampling_many);
 
 
   // Expose the fluid interface
@@ -853,12 +857,59 @@ int luaC_test_sampling(lua_State *L)
 		     rand.RandomDouble(gx0[1], gx1[1]),
 		     rand.RandomDouble(gx0[2], gx1[2]) };
     Mara_prim_at_point(r1, P1);
+    printf("(%f %f %f) ", r1[0], r1[1], r1[2]);
+    std::cout << Mara->fluid->PrintPrim(P1) << std::endl;
   }
 
   const double trun = (double) (clock() - start) / CLOCKS_PER_SEC;
   lua_pushnumber(L, trun);
 
   delete [] P1;
+  return 1;
+}
+
+int luaC_test_sampling_many(lua_State *L)
+{
+  if (Mara->domain == NULL) {
+    luaL_error(L, "[mara] error: need a domain to run this, use set_domain\n");
+  }
+  if (Mara->domain->get_Nd() != 3) {
+    luaL_error(L, "[mara] error: need a 3d domain to run this\n");
+  }
+
+  const int numsamp = luaL_checkinteger(L, 1);
+  const int Nq = Mara->domain->get_Nq();
+
+  const double *gx0 = Mara->domain->GetGlobalX0();
+  const double *gx1 = Mara->domain->GetGlobalX1();
+
+  RandomNumberStream rand;
+  double *Rinpt = new double[ 3*numsamp];
+  double *Rlist = new double[ 3*numsamp];
+  double *Plist = new double[Nq*numsamp];
+
+  for (int i=0; i<numsamp; ++i) {
+    Rinpt[3*i + 0] = rand.RandomDouble(gx0[0], gx1[0]);
+    Rinpt[3*i + 1] = rand.RandomDouble(gx0[1], gx1[1]);
+    Rinpt[3*i + 2] = rand.RandomDouble(gx0[2], gx1[2]);
+  }
+
+  const clock_t start = clock();
+
+  Mara_prim_at_point_many(Rinpt, Rlist, Plist, numsamp);
+
+  for (int i=0; i<numsamp; ++i) {
+    printf("(%f %f %f) ", Rlist[3*i+0], Rlist[3*i+1], Rlist[3*i+2]);
+    std::cout << Mara->fluid->PrintPrim(&Plist[Nq*i]) << std::endl;
+  }
+
+  const double trun = (double) (clock() - start) / CLOCKS_PER_SEC;
+  lua_pushnumber(L, trun);
+
+  delete [] Rinpt;
+  delete [] Rlist;
+  delete [] Plist;
+
   return 1;
 }
 

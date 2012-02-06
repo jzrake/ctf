@@ -98,7 +98,7 @@ void Mara_prim_at_point(const double *r0, double *P1)
     }
 
     MPI_Isend(&Panswer[0], Nq, MPI_DOUBLE, status.MPI_SOURCE, tag+1, comm,
-	      &Prequest[n]);
+              &Prequest[n]);
   }
 
   MPI_Recv(P1, Nq, MPI_DOUBLE, dest_rank, tag+1, comm, &status);
@@ -110,6 +110,139 @@ void Mara_prim_at_point(const double *r0, double *P1)
   delete [] Pstatus;
   delete [] Pvector;
 }
+
+
+
+
+
+void Mara_prim_at_point_many(const double *Rin, double *Rlist, double *Plist, int Nsamp)
+{
+  const PhysicalDomain &domain = *HydroModule::Mara->domain;
+
+  const int rank = domain.SubgridRank();
+  const int size = domain.SubgridSize();
+  const int Nd = domain.get_Nd();
+  const int Nq = domain.get_Nq();
+
+  const double *gx0 = domain.GetGlobalX0();
+  const double *gx1 = domain.GetGlobalX1();
+
+  const double Lx = (Nd>=1) ? gx1[0] - gx0[0] : 0.0;
+  const double Ly = (Nd>=2) ? gx1[1] - gx0[1] : 0.0;
+  const double Lz = (Nd>=3) ? gx1[2] - gx0[2] : 0.0;
+
+  std::vector<double> *remote_r1 = new std::vector<double>[size];
+  std::vector<double> *remote_P1 = new std::vector<double>[size];
+
+  for (int m=0; m<Nsamp; ++m) {
+
+    double r1[3];
+    r1[0] = Rin[3*m + 0];
+    r1[1] = Rin[3*m + 1];
+    r1[2] = Rin[3*m + 2];
+
+    // Ensure that the target point is in the domain.
+    // -------------------------------------------------------------------------
+    if (Nd>=1) if (r1[0] > gx1[0]) r1[0] -= Lx;
+    if (Nd>=2) if (r1[1] > gx1[1]) r1[1] -= Ly;
+    if (Nd>=3) if (r1[2] > gx1[2]) r1[2] -= Lz;
+
+    if (Nd>=1) if (r1[0] < gx0[0]) r1[0] += Lx;
+    if (Nd>=2) if (r1[1] < gx0[1]) r1[1] += Ly;
+    if (Nd>=3) if (r1[2] < gx0[2]) r1[2] += Lz;
+
+    const int remote = domain.SubgridAtPosition(r1);
+
+    for (int d=0; d<3; ++d) {
+      remote_r1[remote].push_back(r1[d]);
+    }
+
+    for (int q=0; q<Nq; ++q) {
+      remote_P1[remote].push_back(0.0); // not known yet; will be looked up on remote
+    }
+  }
+
+
+  // We will be sampling pairs between ourselves and the remote process, rank +
+  // dn. That process is referred to as 'lawyer' because they will work for us,
+  // obtaining the records we have determined live on their domain. Similarly,
+  // we will be the lawyer for process rank-dn, so that process is called
+  // 'client'.
+  // ---------------------------------------------------------------------------
+  MPI_Status status;
+  MPI_Comm comm = MPI_COMM_WORLD;
+  int queries_satisfied = 0;
+
+  for (int dn=0; dn<size; ++dn) {
+    // This loop contains three pairs of matching Send/Recv's. For the first
+    // two, the send is place to the lawyer process, and the receive comes from
+    // the client. We call our lawyer and let him know to expect a message of
+    // length 'num_lawyer' double[3]'s. Those are the positions of the remote
+    // points we have chosen, and then determined live on his domain. At the
+    // same time, we receive a message from our client, which contains the
+    // length 'num_client' of double[3]'s he will be asking us to fetch. The
+    // next pair of Send/Recv's is the list of coordinates themselves. The last
+    // one is the list of primitive quantities at those locations.
+    // -------------------------------------------------------------------------
+
+    const int lawyer = (rank + size + dn) % size;
+    const int client = (rank + size - dn) % size;
+
+    int num_lawyer = remote_r1[lawyer].size() / 3;
+    int num_client;
+
+    MPI_Sendrecv(&num_lawyer, 1, MPI_INT, lawyer, 123,
+                 &num_client, 1, MPI_INT, client, 123, comm, &status);
+
+    double *you_get_for_me_r = &remote_r1[lawyer][0];
+    double *you_get_for_me_P = &remote_P1[lawyer][0];
+    double *I_find_for_you_r = new double[num_client*3];
+    double *I_find_for_you_P = new double[num_client*Nq];
+
+    MPI_Sendrecv(you_get_for_me_r, num_lawyer*3, MPI_DOUBLE, lawyer, 123,
+                 I_find_for_you_r, num_client*3, MPI_DOUBLE, client, 123,
+                 comm, &status);
+
+    for (int s=0; s<num_client; ++s) {
+
+      const double *r_query = &I_find_for_you_r[3*s];
+      std::valarray<double> Panswer(Nq);
+
+      if (Nd == 1) {
+	Panswer = unilinear_interp(r_query);
+      }
+      else if (Nd == 2) {
+	Panswer = bilinear_interp(r_query);
+      }
+      else if (Nd == 3) {
+	Panswer = trilinear_interp(r_query);
+      }
+      std::memcpy(&I_find_for_you_P[s*Nq], &Panswer[0], Nq*sizeof(double));
+    }
+
+    MPI_Sendrecv(I_find_for_you_P, num_client*Nq, MPI_DOUBLE, client, 123,
+                 you_get_for_me_P, num_lawyer*Nq, MPI_DOUBLE, lawyer, 123,
+                 comm, &status);
+
+    std::memcpy(&Rlist[queries_satisfied* 3], &remote_r1[lawyer][0],
+		remote_r1[lawyer].size()*sizeof(double));
+    std::memcpy(&Plist[queries_satisfied*Nq], &remote_P1[lawyer][0],
+		remote_P1[lawyer].size()*sizeof(double));
+
+    queries_satisfied += num_lawyer;
+
+    delete [] I_find_for_you_r;
+    delete [] I_find_for_you_P;
+  }
+
+  delete [] remote_r1;
+  delete [] remote_P1;
+}
+
+
+
+
+
 
 
 static std::valarray<double> unilinear_interp(const double *r)
@@ -177,7 +310,7 @@ std::valarray<double> trilinear_interp(const double *r)
 
   const int i = domain.IndexAtPosition(r, 0);
   const int j = domain.IndexAtPosition(r, 1);
-  const int k = domain.IndexAtPosition(r, 1);
+  const int k = domain.IndexAtPosition(r, 2);
   const std::valarray<double> &Prim = HydroModule::Mara->PrimitiveArray;
 
   std::valarray<double> P000 = Prim[M(i-1,j-1,k-1)];
@@ -209,6 +342,7 @@ std::valarray<double> trilinear_interp(const double *r)
   }
   return Panswer;
 }
+
 
 #else
 void Mara_prim_at_point(const double *r0, double *P1) { }
