@@ -857,8 +857,8 @@ int luaC_test_sampling(lua_State *L)
 		     rand.RandomDouble(gx0[1], gx1[1]),
 		     rand.RandomDouble(gx0[2], gx1[2]) };
     Mara_prim_at_point(r1, P1);
-    printf("(%f %f %f) ", r1[0], r1[1], r1[2]);
-    std::cout << Mara->fluid->PrintPrim(P1) << std::endl;
+    //    printf("(%f %f %f) ", r1[0], r1[1], r1[2]);
+    //    std::cout << Mara->fluid->PrintPrim(P1) << std::endl;
   }
 
   const double trun = (double) (clock() - start) / CLOCKS_PER_SEC;
@@ -899,8 +899,8 @@ int luaC_test_sampling_many(lua_State *L)
   Mara_prim_at_point_many(Rinpt, Rlist, Plist, numsamp);
 
   for (int i=0; i<numsamp; ++i) {
-    printf("(%f %f %f) ", Rlist[3*i+0], Rlist[3*i+1], Rlist[3*i+2]);
-    std::cout << Mara->fluid->PrintPrim(&Plist[Nq*i]) << std::endl;
+    //    printf("(%f %f %f) ", Rlist[3*i+0], Rlist[3*i+1], Rlist[3*i+2]);
+    //    std::cout << Mara->fluid->PrintPrim(&Plist[Nq*i]) << std::endl;
   }
 
   const double trun = (double) (clock() - start) / CLOCKS_PER_SEC;
