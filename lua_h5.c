@@ -16,6 +16,7 @@ static int luaC_h5_read_string(lua_State *L);
 static int luaC_h5_write_string(lua_State *L);
 static int luaC_h5_read_numeric_table(lua_State *L);
 static int luaC_h5_write_numeric_table(lua_State *L);
+static int luaC_h5_read_array(lua_State *L);
 static int luaC_h5_write_array(lua_State *L);
 static int luaC_h5_open_file(lua_State *L);
 static int luaC_h5_open_file(lua_State *L);
@@ -62,6 +63,7 @@ void lua_h5_load(lua_State *L)
   lua_register(L, "h5_write_string"       , luaC_h5_write_string);
   lua_register(L, "h5_read_numeric_table" , luaC_h5_read_numeric_table);
   lua_register(L, "h5_write_numeric_table", luaC_h5_write_numeric_table);
+  lua_register(L, "h5_read_array"         , luaC_h5_read_array);
   lua_register(L, "h5_write_array"        , luaC_h5_write_array);
   lua_register(L, "h5_open_file"          , luaC_h5_open_file);
   lua_register(L, "h5_close_file"         , luaC_h5_close_file);
@@ -88,7 +90,7 @@ int luaC_h5_read_string(lua_State *L)
   char *string = (char*) malloc(msize*sizeof(char));
 
   H5Dread(dset, strn, fspc, fspc, H5P_DEFAULT, string);
-  string[msize] = '\0'; // Make sure to tull-terminate the string
+  string[msize] = '\0'; // Make sure to null-terminate the string
   lua_pushstring(L, string);
 
   H5Tclose(strn);
@@ -240,6 +242,40 @@ int luaC_h5_write_numeric_table(lua_State *L)
   H5Sclose(fspc);
   H5Gclose(grp);
   return 0;
+}
+
+int luaC_h5_read_array(lua_State *L)
+{
+  const char *dsetnm = luaL_checkstring(L, 1);
+
+  if (!PresentFile) {
+    printf("[hdf5] error: no open file.\n");
+    return 0;
+  }
+
+  hid_t dset = H5Dopen(PresentFile, dsetnm, H5P_DEFAULT);
+  hid_t fspc = H5Dget_space(dset);
+  size_t Nd  = H5Sget_simple_extent_ndims(fspc);
+  hsize_t *dims = (hsize_t*) malloc(Nd*sizeof(hsize_t));
+  int *dims_int =     (int*) malloc(Nd*sizeof(int));
+
+  H5Sget_simple_extent_dims(fspc, dims, NULL);
+
+  int i, ntot=1;
+  for (i=0; i<Nd; ++i) {
+    dims_int[i] = dims[i];
+    ntot *= dims[i];
+  }
+
+  double *data = (double*) malloc(ntot * sizeof(double));
+  H5Dread(dset, H5T_NATIVE_DOUBLE, fspc, fspc, H5P_DEFAULT, data);
+  luaU_pusharray_wshape(L, data, dims_int, Nd);
+
+  H5Sclose(fspc);
+  H5Dclose(dset);
+  free(data);
+
+  return 1;
 }
 
 int luaC_h5_write_array(lua_State *L)
