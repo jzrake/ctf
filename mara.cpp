@@ -534,19 +534,19 @@ int luaC_get_timestep(lua_State *L)
 
 int luaC_streamline(lua_State *L)
 {
-  const double *r0 = luaU_checkarray(L, 1);
+  const double *r0 = luaU_checkarray (L, 1);
   const double  s  = luaL_checknumber(L, 2);
   const double ds  = luaL_checknumber(L, 3);
   const char *type = luaL_checkstring(L, 4);
 
   if (strcmp(type, "velocity") == 0) {
-    std::vector<double> strm = Mara_streamline_velocity(r0, s, ds);
-    int shape[2] = { strm.size()/3, 3 };
+    std::vector<double> strm = Mara_streamline_velocity(r0, s, ds, NULL);
+    int shape[2] = { strm.size()/4, 4 };
     luaU_pusharray_wshape(L, &strm[0], shape, 2);
   }
   else if (strcmp(type, "magnetic") == 0) {
-    std::vector<double> strm = Mara_streamline_magnetic(r0, s, ds);
-    int shape[2] = { strm.size()/3, 3 };
+    std::vector<double> strm = Mara_streamline_magnetic(r0, s, ds, NULL);
+    int shape[2] = { strm.size()/4, 4 };
     luaU_pusharray_wshape(L, &strm[0], shape, 2);
   }
   else {

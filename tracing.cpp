@@ -12,18 +12,22 @@ enum { rho, pre, vx, vy, vz };             // Primitive
 static void _streamline(const double *r0, double s1, double ds,
 			int fx, int fy, int fz,
 			std::vector<double> &points);
+static double (*scalars)(double *P) = NULL;
 
-
-std::vector<double> Mara_streamline_velocity(const double *r0, double s1, double ds)
+std::vector<double> Mara_streamline_velocity(const double *r0, double s1, double ds,
+					     double(*f)(double *P))
 {
   std::vector<double> points;
+  scalars = f;
   _streamline(r0, s1, ds, vx, vy, vz, points);
   return points;
 }
 
-std::vector<double> Mara_streamline_magnetic(const double *r0, double s1, double ds)
+std::vector<double> Mara_streamline_magnetic(const double *r0, double s1, double ds,
+					     double(*f)(double *P))
 {
   std::vector<double> points;
+  scalars = f;
   _streamline(r0, s1, ds, Bx, By, Bz, points);
   return points;
 }
@@ -50,6 +54,12 @@ void _streamline(const double *r0, double s1, double ds,
   while (s < s1) {
 
     Mara_prim_at_point(r, P1);
+
+    points.push_back(r[0]);
+    points.push_back(r[1]);
+    points.push_back(r[2]);
+    points.push_back(scalars ? scalars(P1) : 0.0);
+
     {
       double v1[3] = { P1[fx], P1[fy], P1[fz] };
       double v = sqrt(v1[0]*v1[0] + v1[1]*v1[1] + v1[2]*v1[2]);
@@ -109,10 +119,6 @@ void _streamline(const double *r0, double s1, double ds,
     r[0] += (1./6.)*(k1[0] + 2*k2[0] + 2*k3[0] + k4[0]);
     r[1] += (1./6.)*(k1[1] + 2*k2[1] + 2*k3[1] + k4[1]);
     r[2] += (1./6.)*(k1[2] + 2*k2[2] + 2*k3[2] + k4[2]);
-
-    points.push_back(r[0]);
-    points.push_back(r[1]);
-    points.push_back(r[2]);
 
     s += ds;
   }
