@@ -24,9 +24,9 @@ static int draw_lines3d(lua_State *L);
 void lua_vis_load(lua_State *L)
 {
   luaL_Reg vis_api[] = { { "open_window", open_window },
-			 { "draw_texture", draw_texture },
-			 { "draw_lines3d", draw_lines3d },
-			 { NULL, NULL} };
+                         { "draw_texture", draw_texture },
+                         { "draw_lines3d", draw_lines3d },
+                         { NULL, NULL} };
 
   lua_newtable(L);
   luaL_setfuncs(L, vis_api, 0);
@@ -52,8 +52,9 @@ static int ColormapIndex = 0;
 
 
 static void KeyboardInput(int key, int state);
-static void CharacterInput(int key, int state);
-static void LoadTexture();
+static void CharacterInput_draw_texture(int key, int state);
+static void CharacterInput_draw_lines3d(int key, int state);
+static void LoadTexture2d();
 static void DrawBoundingBox(const double *bounds);
 
 
@@ -62,10 +63,31 @@ static lua_State *PresentLua = NULL;
 
 int open_window(lua_State *L)
 {
+  double ClearColor[3] = { 0.1, 0.2, 0.2 };
+
+  if (lua_gettop(L) > 0) {
+
+    lua_getfield(L, 1, "window_size");
+    if (!lua_isnil(L, -1)) {
+      lua_rawgeti(L, -1, 1); WindowWidth  = lua_tonumber(L, -1); lua_pop(L, 1);
+      lua_rawgeti(L, -1, 2); WindowHeight = lua_tonumber(L, -1); lua_pop(L, 1);
+    }
+    lua_pop(L, 1);
+
+    lua_getfield(L, 1, "clear_color");
+    if (!lua_isnil(L, -1)) {
+      lua_rawgeti(L, -1, 1); ClearColor[0] = lua_tonumber(L, -1); lua_pop(L, 1);
+      lua_rawgeti(L, -1, 2); ClearColor[1] = lua_tonumber(L, -1); lua_pop(L, 1);
+      lua_rawgeti(L, -1, 3); ClearColor[2] = lua_tonumber(L, -1); lua_pop(L, 1);
+    }
+    lua_pop(L, 1);
+  }
+  printf("opening window (%d %d)\n", WindowWidth, WindowHeight);
+
   glfwInit();
   glfwOpenWindow(WindowWidth, WindowHeight, 0,0,0,0,0,0, GLFW_WINDOW);
 
-  glClearColor(0.2, 0.1, 0.1, 0.0);
+  glClearColor(ClearColor[0], ClearColor[1], ClearColor[2], 0.0);
   glClearDepth(1.0);
   glDepthFunc(GL_LESS);
   glEnable(GL_DEPTH_TEST);
@@ -81,6 +103,7 @@ int open_window(lua_State *L)
   return 0;
 }
 
+
 int draw_texture(lua_State *L)
 {
   if (!WindowOpen) {
@@ -88,14 +111,14 @@ int draw_texture(lua_State *L)
   }
 
   glfwSetKeyCallback(NULL);
-  glfwSetCharCallback(NULL);
+  glfwSetCharCallback(CharacterInput_draw_texture);
 
   glfwDisable(GLFW_STICKY_KEYS);
   glfwDisable(GLFW_KEY_REPEAT);
   zTranslate = 1.4;
 
   PresentLua = L;
-  LoadTexture();
+  LoadTexture2d();
 
   const double Lx0 = -0.5;
   const double Lx1 = +0.5;
@@ -138,9 +161,36 @@ int draw_texture(lua_State *L)
       break;
     }
   }
-
   return 0;
 }
+void CharacterInput_draw_texture(int key, int state)
+{
+  switch (key) {
+
+  case 'z':
+    ZoomFactor /= 1.1;
+    break;
+
+  case 'Z':
+    ZoomFactor *= 1.1;
+    break;
+
+  case 'p':
+    Autoplay ^= 1;
+    break;
+
+  case 'c':
+    if (Mara_image_get_colormap(++ColormapIndex) == NULL) {
+      ColormapIndex = 0;
+    }
+    LoadTexture2d();
+    break;
+
+  default:
+    break;
+  }
+}
+
 
 int draw_lines3d(lua_State *L)
 {
@@ -151,17 +201,16 @@ int draw_lines3d(lua_State *L)
   struct Array *A = lunum_checkarray1(L, 1);
 
   if (A->dtype != ARRAY_TYPE_DOUBLE || A->ndims != 2) {
-    luaL_error(L, "need a (N x 3) array of doubles");
+    luaL_error(L, "need a (N x 4) array of doubles");
     return 0;
   }
-  if (A->shape[1] != 3) {
-    luaL_error(L, "need a (N x 3) array of doubles");
+  if (A->shape[1] != 4) {
+    luaL_error(L, "need a (N x 4) array of doubles");
     return 0;
   }
-
 
   glfwSetKeyCallback(KeyboardInput);
-  glfwSetCharCallback(CharacterInput);
+  glfwSetCharCallback(CharacterInput_draw_lines3d);
 
   glfwEnable(GLFW_STICKY_KEYS);
   glfwEnable(GLFW_KEY_REPEAT);
@@ -172,8 +221,15 @@ int draw_lines3d(lua_State *L)
   xTranslate = 0.0;
   yTranslate = 0.0;
   const double bounds[] = { -0.5, +0.5,
-			    -0.5, +0.5,
-			    -0.5, +0.5 };
+                            -0.5, +0.5,
+                            -0.5, +0.5 };
+
+  double smax=-1e16, smin=1e16;
+  for (int m=0; m<A->shape[0]; ++m) {
+    const double s = ((double*) A->data)[4*m + 3];
+    if (s < smin) smin = s;
+    if (s > smax) smax = s;
+  }
 
   while (1) {
 
@@ -187,11 +243,18 @@ int draw_lines3d(lua_State *L)
     glRotatef(RotationAngleY, 0, 1, 0);
 
     DrawBoundingBox(bounds);
+    const float *cmap_data = Mara_image_get_colormap(ColormapIndex);
 
     glBegin(GL_LINE_STRIP);
-
     for (int m=0; m<A->shape[0]; ++m) {
-      const double *x = ((double*) A->data) + 3*m;
+      const double *x = ((double*) A->data) + 4*m;
+
+      int cm = 255.0 * (x[3] - smin) / (smax - smin);
+      double r = cmap_data[3*cm + 0];
+      double g = cmap_data[3*cm + 1];
+      double b = cmap_data[3*cm + 2];
+
+      glColor3d(r, g, b);
       glVertex3d(x[0], x[1], x[2]);
     }
 
@@ -212,9 +275,34 @@ int draw_lines3d(lua_State *L)
 
   return 0;
 }
+void CharacterInput_draw_lines3d(int key, int state)
+{
+  switch (key) {
 
+  case 'z':
+    ZoomFactor /= 1.1;
+    break;
 
-void LoadTexture()
+  case 'Z':
+    ZoomFactor *= 1.1;
+    break;
+
+  case 'p':
+    Autoplay ^= 1;
+    break;
+
+  case 'c':
+    if (Mara_image_get_colormap(++ColormapIndex) == NULL) {
+      ColormapIndex = 0;
+    }
+    break;
+
+  default:
+    break;
+  }
+}
+
+void LoadTexture2d()
 {
   lua_State *L = PresentLua;
 
@@ -283,35 +371,6 @@ void KeyboardInput(int key, int state)
   case GLFW_KEY_UP    : RotationAngleX -= 3; break;
   }
 }
-
-void CharacterInput(int key, int state)
-{
-  switch (key) {
-
-  case 'z':
-    ZoomFactor /= 1.1;
-    break;
-
-  case 'Z':
-    ZoomFactor *= 1.1;
-    break;
-
-  case 'p':
-    Autoplay ^= 1;
-    break;
-
-  case 'c':
-    if (Mara_image_get_colormap(++ColormapIndex) == NULL) {
-      ColormapIndex = 0;
-    }
-    LoadTexture();
-    break;
-
-  default:
-    break;
-  }
-}
-
 
 
 
