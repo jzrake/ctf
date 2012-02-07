@@ -24,9 +24,9 @@ static int draw_lines3d(lua_State *L);
 void lua_vis_load(lua_State *L)
 {
   luaL_Reg vis_api[] = { { "open_window", open_window },
-			 { "draw_texture", draw_texture },
-			 { "draw_lines3d", draw_lines3d },
-			 { NULL, NULL} };
+                         { "draw_texture", draw_texture },
+                         { "draw_lines3d", draw_lines3d },
+                         { NULL, NULL} };
 
   lua_newtable(L);
   luaL_setfuncs(L, vis_api, 0);
@@ -62,10 +62,33 @@ static lua_State *PresentLua = NULL;
 
 int open_window(lua_State *L)
 {
+  double ClearColor[3] = { 0.1, 0.2, 0.2 };
+
+  if (lua_gettop(L) > 0) {
+
+    lua_getfield(L, 1, "window_size");
+    if (!lua_isnil(L, -1)) {
+      lua_rawgeti(L, -1, 1); WindowWidth  = lua_tonumber(L, -1); lua_pop(L, 1);
+      lua_rawgeti(L, -1, 2); WindowHeight = lua_tonumber(L, -1); lua_pop(L, 1);
+    }
+    lua_pop(L, 1);
+
+    lua_getfield(L, 1, "clear_color");
+    if (!lua_isnil(L, -1)) {
+      lua_rawgeti(L, -1, 1); ClearColor[0] = lua_tonumber(L, -1); lua_pop(L, 1);
+      lua_rawgeti(L, -1, 2); ClearColor[1] = lua_tonumber(L, -1); lua_pop(L, 1);
+      lua_rawgeti(L, -1, 3); ClearColor[2] = lua_tonumber(L, -1); lua_pop(L, 1);
+    }
+    lua_pop(L, 1);
+  }
+  printf("opening window (%d %d)\n", WindowWidth, WindowHeight);
+
   glfwInit();
   glfwOpenWindow(WindowWidth, WindowHeight, 0,0,0,0,0,0, GLFW_WINDOW);
+  glfwSetKeyCallback(KeyboardInput);
+  glfwSetCharCallback(CharacterInput);
 
-  glClearColor(0.2, 0.1, 0.1, 0.0);
+  glClearColor(ClearColor[0], ClearColor[1], ClearColor[2], 0.0);
   glClearDepth(1.0);
   glDepthFunc(GL_LESS);
   glEnable(GL_DEPTH_TEST);
@@ -80,6 +103,7 @@ int open_window(lua_State *L)
 
   return 0;
 }
+
 
 int draw_texture(lua_State *L)
 {
@@ -172,8 +196,8 @@ int draw_lines3d(lua_State *L)
   xTranslate = 0.0;
   yTranslate = 0.0;
   const double bounds[] = { -0.5, +0.5,
-			    -0.5, +0.5,
-			    -0.5, +0.5 };
+                            -0.5, +0.5,
+                            -0.5, +0.5 };
 
   while (1) {
 
