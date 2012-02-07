@@ -9,8 +9,31 @@ enum { ddd, tau, Sx, Sy, Sz, Bx, By, Bz }; // Conserved
 enum { rho, pre, vx, vy, vz };             // Primitive
 
 
+static void _streamline(const double *r0, double s1, double ds,
+			int fx, int fy, int fz,
+			std::vector<double> &points);
+
 
 std::vector<double> Mara_streamline_velocity(const double *r0, double s1, double ds)
+{
+  std::vector<double> points;
+  _streamline(r0, s1, ds, vx, vy, vz, points);
+  return points;
+}
+
+std::vector<double> Mara_streamline_magnetic(const double *r0, double s1, double ds)
+{
+  std::vector<double> points;
+  _streamline(r0, s1, ds, Bx, By, Bz, points);
+  return points;
+}
+
+
+
+
+void _streamline(const double *r0, double s1, double ds,
+		 int fx, int fy, int fz,
+		 std::vector<double> &points)
 {
   const PhysicalDomain &domain = *HydroModule::Mara->domain;
   const int Nq = domain.get_Nq();
@@ -22,14 +45,13 @@ std::vector<double> Mara_streamline_velocity(const double *r0, double s1, double
   double k1[3], k2[3], k3[3], k4[3];
 
   double s = 0.0;
-  std::vector<double> points;
   std::memcpy(r, r0, 3*sizeof(double));
 
   while (s < s1) {
 
     Mara_prim_at_point(r, P1);
     {
-      double v1[3] = { P1[vx], P1[vy], P1[vz] };
+      double v1[3] = { P1[fx], P1[fy], P1[fz] };
       double v = sqrt(v1[0]*v1[0] + v1[1]*v1[1] + v1[2]*v1[2]);
       if (fabs(v) < 1e-14) v = 1e-14;
 
@@ -43,7 +65,7 @@ std::vector<double> Mara_streamline_velocity(const double *r0, double s1, double
     }
     Mara_prim_at_point(r1, P1);
     {
-      double v1[3] = { P1[vx], P1[vy], P1[vz] };
+      double v1[3] = { P1[fx], P1[fy], P1[fz] };
       double v = sqrt(v1[0]*v1[0] + v1[1]*v1[1] + v1[2]*v1[2]);
       if (fabs(v) < 1e-14) v = 1e-14;
 
@@ -57,7 +79,7 @@ std::vector<double> Mara_streamline_velocity(const double *r0, double s1, double
     }
     Mara_prim_at_point(r2, P1);
     {
-      double v1[3] = { P1[vx], P1[vy], P1[vz] };
+      double v1[3] = { P1[fx], P1[fy], P1[fz] };
       double v = sqrt(v1[0]*v1[0] + v1[1]*v1[1] + v1[2]*v1[2]);
       if (fabs(v) < 1e-14) v = 1e-14;
 
@@ -71,7 +93,7 @@ std::vector<double> Mara_streamline_velocity(const double *r0, double s1, double
     }
     Mara_prim_at_point(r3, P1);
     {
-      double v1[3] = { P1[vx], P1[vy], P1[vz] };
+      double v1[3] = { P1[fx], P1[fy], P1[fz] };
       double v = sqrt(v1[0]*v1[0] + v1[1]*v1[1] + v1[2]*v1[2]);
       if (fabs(v) < 1e-14) v = 1e-14;
 
@@ -96,8 +118,6 @@ std::vector<double> Mara_streamline_velocity(const double *r0, double s1, double
   }
 
   delete [] P1;
-
-  return points;
 }
 
 
