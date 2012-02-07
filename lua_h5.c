@@ -10,11 +10,13 @@
 #include <string.h>
 #include <hdf5.h>
 
+#include "lunum.h"
 
 static int luaC_h5_read_string(lua_State *L);
 static int luaC_h5_write_string(lua_State *L);
 static int luaC_h5_read_numeric_table(lua_State *L);
 static int luaC_h5_write_numeric_table(lua_State *L);
+static int luaC_h5_write_array(lua_State *L);
 static int luaC_h5_open_file(lua_State *L);
 static int luaC_h5_open_file(lua_State *L);
 static int luaC_h5_close_file(lua_State *L);
@@ -60,6 +62,7 @@ void lua_h5_load(lua_State *L)
   lua_register(L, "h5_write_string"       , luaC_h5_write_string);
   lua_register(L, "h5_read_numeric_table" , luaC_h5_read_numeric_table);
   lua_register(L, "h5_write_numeric_table", luaC_h5_write_numeric_table);
+  lua_register(L, "h5_write_array"        , luaC_h5_write_array);
   lua_register(L, "h5_open_file"          , luaC_h5_open_file);
   lua_register(L, "h5_close_file"         , luaC_h5_close_file);
   lua_register(L, "h5_open_group"         , luaC_h5_open_group);
@@ -236,6 +239,38 @@ int luaC_h5_write_numeric_table(lua_State *L)
 
   H5Sclose(fspc);
   H5Gclose(grp);
+  return 0;
+}
+
+int luaC_h5_write_array(lua_State *L)
+{
+  const char *dsetnm = luaL_checkstring(L, 1);
+  struct Array *A = lunum_checkarray1(L, 2);
+  int i;
+
+  if (!PresentFile) {
+    printf("[hdf5] error: no open file.\n");
+    return 0;
+  }
+  if (A->dtype != ARRAY_TYPE_DOUBLE) {
+    luaL_error(L, "[hdf5] only double arrays can be written");
+  }
+
+  int ndims = A->ndims;
+  hsize_t *sizes = (hsize_t*) malloc(ndims*sizeof(hsize_t));
+
+  for (i=0; i<ndims; ++i) {
+    sizes[i] = A->shape[i];
+  }
+  hid_t fspc = H5Screate_simple(ndims, sizes, H5P_DEFAULT);
+  hid_t dset = H5Dcreate(PresentFile, dsetnm, H5T_NATIVE_DOUBLE, fspc,
+                         H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+  H5Dwrite(dset, H5T_NATIVE_DOUBLE, fspc, fspc, H5P_DEFAULT, A->data);
+  H5Dclose(dset);
+  H5Sclose(fspc);
+  free(sizes);
+
   return 0;
 }
 
