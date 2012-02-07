@@ -32,6 +32,15 @@ std::vector<double> Mara_streamline_magnetic(const double *r0, double s1, double
   return points;
 }
 
+double Mara_streamline_scalars_velocity(double *P)
+{
+  return sqrt(P[vx]*P[vx] + P[vy]*P[vy] + P[vz]*P[vz]);
+}
+double Mara_streamline_scalars_magnetic(double *P)
+{
+  return sqrt(P[Bx]*P[Bx] + P[By]*P[By] + P[Bz]*P[Bz]);
+}
+
 
 
 

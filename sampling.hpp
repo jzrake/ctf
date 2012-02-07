@@ -13,4 +13,7 @@ std::vector<double> Mara_streamline_velocity(const double *r0, double s1, double
 std::vector<double> Mara_streamline_magnetic(const double *r0, double s1, double ds,
 					     double(*f)(double *P));
 
+double Mara_streamline_scalars_velocity(double *P);
+double Mara_streamline_scalars_magnetic(double *P);
+
 #endif // __SamplingModule_HEADER__
