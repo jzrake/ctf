@@ -465,13 +465,9 @@ int luaC_advance(lua_State *L)
   try {
     Mara->advance->AdvanceState(U, dt);
     errors = Mara->godunov->ConsToPrim(U, P);
-    if (errors) {
-      //      printf("[advance] caught %d errors after complete integration\n", errors);
-    }
   }
   catch (const GodunovOperator::IntermediateFailure &e) {
     errors = Mara_mpi_int_sum(Mara->FailureMask.sum());
-    //    printf("[advance] caught %d errors on intermediate failure\n", errors);
   }
 
   if (errors == 0) {
@@ -665,11 +661,10 @@ int luaC_init_prim(lua_State *L)
   double **data = NULL;
 
   if (domain == NULL) {
-    printf("[mara] error: need a domain to run this, use set_domain.\n");
-    return 0;
+    luaL_error(L, "need a domain to run this, use set_domain");
   }
   if (lua_type(L, 1) == LUA_TFUNCTION) {
-
+    // Handled by if (data == NULL) cases below
   }
   else if (lua_type(L, 1) == LUA_TTABLE) {
     std::vector<std::string> pnames = Mara->fluid->GetPrimNames();
@@ -684,8 +679,7 @@ int luaC_init_prim(lua_State *L)
     }
   }
   else {
-    printf("[mara] error: argument to init_prim must be function or table.\n");
-    return 0;
+    luaL_error(L, "argument must be function or table");
   }
 
   Mara->PrimitiveArray.resize(domain->GetNumberOfZones() * domain->get_Nq());
@@ -858,8 +852,7 @@ int luaC_read_prim(lua_State *L)
   const PhysicalDomain *domain = Mara->domain;
 
   if (domain == NULL) {
-    printf("[mara] error: need a domain to run this, use set_domain.\n");
-    return 0;
+    luaL_error(L, "need a domain to run this, use set_domain");
   }
 
   Mara->PrimitiveArray.resize(domain->GetNumberOfZones() * domain->get_Nq());
@@ -1005,13 +998,11 @@ int luaC_write_ppm(lua_State *L)
   int cmap = narg == 3 ? luaL_checkinteger(L, 3) : 0;
   double *range = narg == 4 ? luaU_checkarray(L, 4) : NULL;
 
-  if (!Mara->domain) {
-    printf("[mara] error: need a domain to run this, use set_domain.\n");
-    return 0;
+  if (Mara->domain == NULL) {
+    luaL_error(L, "need a domain to run this, use set_domain");
   }
   if (Mara->domain->get_Nd() != 2) {
-    printf("[mara] error: need a 2d domain to write ppm images.\n");
-    return 0;
+    luaL_error(L, "need a 2d domain to write ppm images");
   }
 
   const int Nx = Mara->domain->get_N(1);
@@ -1037,10 +1028,8 @@ int luaC_set_fluid(lua_State *L)
     new_f = new AdiabaticIdealRmhd;
   }
   else {
-    printf("no such fluid: %s\n", key);
-    printf("choices are: [ %s, %s, %s ]\n", "euler", "srhd", "rmhd");
+    luaL_error(L, "no such fluid: %s", key);
   }
-
 
   if (new_f) {
     if (Mara->fluid) delete Mara->fluid;
@@ -1066,13 +1055,8 @@ int luaC_set_eos(lua_State *L)
     new_f = BuildShenTabulatedNuclearEos(L);
   }
   else {
-    printf("no such eos: %s\n", key);
-    printf("choices are: [ %s, %s, %s ]\n",
-           "gamma-law",
-           "gamma-law + polytrope",
-           "shen");
+    luaL_error(L, "no such eos: %s", key);
   }
-
 
   if (new_f) {
     if (Mara->eos) delete Mara->eos;
@@ -1163,7 +1147,7 @@ int luaC_set_godunov(lua_State *L)
     new_f = new WenoSplit;
   }
   else {
-
+    luaL_error(L, "no such integration scheme: %s", key);
   }
 
   if (new_f) {
@@ -1203,9 +1187,8 @@ int luaC_set_driving(lua_State *L)
   DrivingModule *new_f = NULL;
   const char *buf = luaL_checklstring(L, 1, &len);
 
-  if (!Mara->domain) {
-    printf("[mara] error: need a domain to run this, use set_domain.\n");
-    return 0;
+  if (Mara->domain == NULL) {
+    luaL_error(L, "need a domain to run this, use set_domain");
   }
 
   std::stringstream stream;
@@ -1294,13 +1277,11 @@ int luaC_load_shen(lua_State *L)
 
 int luaC_test_shen(lua_State *L)
 {
-  if (!Mara->eos) {
-    printf("[mara] error: set shen as the eos before testing it.\n");
-    return 0;
+  if (Mara->eos == NULL) {
+    luaL_error(L, "set shen as the eos before testing it");
   }
   if (typeid(*Mara->eos) != typeid(ShenTabulatedNuclearEos)) {
-    printf("[mara] error: set shen as the eos before testing it.\n");
-    return 0;
+    luaL_error(L, "set shen as the eos before testing it");
   }
 
   Mara->GetEos<ShenTabulatedNuclearEos>().self_test_derivatives();
@@ -1346,8 +1327,7 @@ int luaC_fluid_PrimToCons(lua_State *L)
   double *P = luaU_checkarray(L, 1);
 
   if (Mara->fluid == NULL) {
-    printf("[mara] error: need a fluid to run this, use set_fluid.\n");
-    luaU_pusharray(L, NULL, 0);
+    luaL_error(L, "need a fluid to run this, use set_fluid");
   }
   else {
     int Nq = Mara->fluid->GetNq();
@@ -1364,8 +1344,7 @@ int luaC_fluid_ConsToPrim(lua_State *L)
   double *U = luaU_checkarray(L, 1);
 
   if (Mara->fluid == NULL) {
-    printf("[mara] error: need a fluid to run this, use set_fluid.\n");
-    return 0;
+    luaL_error(L, "need a fluid to run this, use set_fluid");
   }
 
   int Nq = Mara->fluid->GetNq();
@@ -1383,8 +1362,7 @@ int luaC_fluid_Eigensystem(lua_State *L)
   int dim = luaL_checkinteger(L, 2);
 
   if (Mara->fluid == NULL) {
-    printf("[mara] error: need a fluid to run this, use set_fluid.\n");
-    return 0;
+    luaL_error(L, "need a fluid to run this, use set_fluid");
   }
 
   int Nq = Mara->fluid->GetNq();
@@ -1425,14 +1403,14 @@ int luaC_eos_TemperatureMeV(lua_State *L)
   const double p = luaL_checknumber(L, 2);
 
   if (Mara->eos == NULL) {
-    printf("[mara] error: need an eos to run this, use set_eos.\n");
-    lua_pushnumber(L, 0.0);
+    luaL_error(L, "need an eos to run this, use set_eos");
+    return 0;
   }
   else {
     const double T = Mara->eos->TemperatureMeV(D, p);
     lua_pushnumber(L, T);
+    return 1;
   }
-  return 1;
 }
 int luaC_eos_Temperature_p(lua_State *L)
 {
@@ -1440,14 +1418,14 @@ int luaC_eos_Temperature_p(lua_State *L)
   const double p = luaL_checknumber(L, 2);
 
   if (Mara->eos == NULL) {
-    printf("[mara] error: need an eos to run this, use set_eos.\n");
-    lua_pushnumber(L, 0.0);
+    luaL_error(L, "need an eos to run this, use set_eos");
+    return 0;
   }
   else {
     const double T = Mara->eos->Temperature_p(D, p);
     lua_pushnumber(L, T);
+    return 1;
   }
-  return 1;
 }
 int luaC_eos_Internal(lua_State *L)
 {
@@ -1455,14 +1433,14 @@ int luaC_eos_Internal(lua_State *L)
   const double T = luaL_checknumber(L, 2);
 
   if (Mara->eos == NULL) {
-    printf("[mara] error: need an eos to run this, use set_eos.\n");
-    lua_pushnumber(L, 0.0);
+    luaL_error(L, "need an eos to run this, use set_eos");
+    return 0;
   }
   else {
     const double u = Mara->eos->Internal(D, T);
     lua_pushnumber(L, u);
+    return 1;
   }
-  return 1;
 }
 int luaC_eos_Pressure(lua_State *L)
 {
@@ -1470,7 +1448,7 @@ int luaC_eos_Pressure(lua_State *L)
   const double T = luaL_checknumber(L, 2);
 
   if (Mara->eos == NULL) {
-    printf("[mara] error: need an eos to run this, use set_eos.\n");
+    luaL_error(L, "need an eos to run this, use set_eos");
     return 0;
   }
   else {
@@ -1482,7 +1460,7 @@ int luaC_eos_Pressure(lua_State *L)
 int luaC_eos_DensUpper(lua_State *L)
 {
   if (Mara->eos == NULL) {
-    printf("[mara] error: need an eos to run this, use set_eos.\n");
+    luaL_error(L, "need an eos to run this, use set_eos");
     return 0;
   }
   else {
@@ -1493,7 +1471,7 @@ int luaC_eos_DensUpper(lua_State *L)
 int luaC_eos_DensLower(lua_State *L)
 {
   if (Mara->eos == NULL) {
-    printf("[mara] error: need an eos to run this, use set_eos.\n");
+    luaL_error(L, "need an eos to run this, use set_eos");
     return 0;
   }
   else {
@@ -1504,7 +1482,7 @@ int luaC_eos_DensLower(lua_State *L)
 int luaC_eos_TempUpper(lua_State *L)
 {
   if (Mara->eos == NULL) {
-    printf("[mara] error: need an eos to run this, use set_eos.\n");
+    luaL_error(L, "need an eos to run this, use set_eos");
     return 0;
   }
   else {
@@ -1515,7 +1493,7 @@ int luaC_eos_TempUpper(lua_State *L)
 int luaC_eos_TempLower(lua_State *L)
 {
   if (Mara->eos == NULL) {
-    printf("[mara] error: need an eos to run this, use set_eos.\n");
+    luaL_error(L, "need an eos to run this, use set_eos");
     return 0;
   }
   else {
@@ -1527,18 +1505,19 @@ int luaC_eos_TempLower(lua_State *L)
 int luaC_units_Print(lua_State *L)
 {
   if (Mara->units == NULL) {
-    printf("[mara] error: need a units system to run this, use set_units.\n");
+    luaL_error(L, "need a units system to run this, use set_units");
+    return 0;
   }
   else {
     Mara->units->PrintUnits();
+    return 0;
   }
-  return 0;
 }
 
 int luaC_units_Gauss(lua_State *L)
 {
   if (Mara->units == NULL) {
-    printf("[mara] error: need a units system to run this, use set_units.\n");
+    luaL_error(L, "need a units system to run this, use set_units");
     return 0;
   }
   else {
@@ -1550,7 +1529,7 @@ int luaC_units_Gauss(lua_State *L)
 int luaC_units_Velocity(lua_State *L)
 {
   if (Mara->units == NULL) {
-    printf("[mara] error: need a units system to run this, use set_units.\n");
+    luaL_error(L, "need a units system to run this, use set_units");
     return 0;
   }
   else {
@@ -1562,7 +1541,7 @@ int luaC_units_Velocity(lua_State *L)
 int luaC_units_MeVPerCubicFemtometer(lua_State *L)
 {
   if (Mara->units == NULL) {
-    printf("[mara] error: need a units system to run this, use set_units.\n");
+    luaL_error(L, "need a units system to run this, use set_units");
     return 0;
   }
   else {
@@ -1574,7 +1553,7 @@ int luaC_units_MeVPerCubicFemtometer(lua_State *L)
 int luaC_units_ErgPerCubicCentimeter(lua_State *L)
 {
   if (Mara->units == NULL) {
-    printf("[mara] error: need a units system to run this, use set_units.\n");
+    luaL_error(L, "need a units system to run this, use set_units");
     return 0;
   }
   else {
@@ -1586,7 +1565,7 @@ int luaC_units_ErgPerCubicCentimeter(lua_State *L)
 int luaC_units_GramsPerCubicCentimeter(lua_State *L)
 {
   if (Mara->units == NULL) {
-    printf("[mara] error: need a units system to run this, use set_units.\n");
+    luaL_error(L, "need a units system to run this, use set_units");
     return 0;
   }
   else {
