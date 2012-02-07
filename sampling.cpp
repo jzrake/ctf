@@ -38,13 +38,13 @@ void Mara_prim_at_point(const double *r0, double *P1)
 
   // Ensure that the target point is in the domain.
   // -------------------------------------------------------------------------
-  if (Nd>=1) if (r1[0] > gx1[0]) r1[0] -= Lx;
-  if (Nd>=2) if (r1[1] > gx1[1]) r1[1] -= Ly;
-  if (Nd>=3) if (r1[2] > gx1[2]) r1[2] -= Lz;
+  if (Nd>=1) while (r1[0] > gx1[0]) r1[0] -= Lx;
+  if (Nd>=2) while (r1[1] > gx1[1]) r1[1] -= Ly;
+  if (Nd>=3) while (r1[2] > gx1[2]) r1[2] -= Lz;
 
-  if (Nd>=1) if (r1[0] < gx0[0]) r1[0] += Lx;
-  if (Nd>=2) if (r1[1] < gx0[1]) r1[1] += Ly;
-  if (Nd>=3) if (r1[2] < gx0[2]) r1[2] += Lz;
+  if (Nd>=1) while (r1[0] < gx0[0]) r1[0] += Lx;
+  if (Nd>=2) while (r1[1] < gx0[1]) r1[1] += Ly;
+  if (Nd>=3) while (r1[2] < gx0[2]) r1[2] += Lz;
 
 
   // Determine on which process that point resides, set up some MPI variables.
@@ -144,13 +144,13 @@ void Mara_prim_at_point_many(const double *Rin, double *Rlist, double *Plist, in
 
     // Ensure that the target point is in the domain.
     // -------------------------------------------------------------------------
-    if (Nd>=1) if (r1[0] > gx1[0]) r1[0] -= Lx;
-    if (Nd>=2) if (r1[1] > gx1[1]) r1[1] -= Ly;
-    if (Nd>=3) if (r1[2] > gx1[2]) r1[2] -= Lz;
+    if (Nd>=1) while (r1[0] > gx1[0]) r1[0] -= Lx;
+    if (Nd>=2) while (r1[1] > gx1[1]) r1[1] -= Ly;
+    if (Nd>=3) while (r1[2] > gx1[2]) r1[2] -= Lz;
 
-    if (Nd>=1) if (r1[0] < gx0[0]) r1[0] += Lx;
-    if (Nd>=2) if (r1[1] < gx0[1]) r1[1] += Ly;
-    if (Nd>=3) if (r1[2] < gx0[2]) r1[2] += Lz;
+    if (Nd>=1) while (r1[0] < gx0[0]) r1[0] += Lx;
+    if (Nd>=2) while (r1[1] < gx0[1]) r1[1] += Ly;
+    if (Nd>=3) while (r1[2] < gx0[2]) r1[2] += Lz;
 
     const int remote = domain.SubgridAtPosition(r1);
 
