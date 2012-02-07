@@ -28,7 +28,9 @@
 
 
 #include "config.h"
-#include "luaU.h"
+extern "C" {
+#include "lualib.h"
+}
 #if (__MARA_USE_FFTW && __MARA_USE_MPI)
 
 #include <cstdlib>
