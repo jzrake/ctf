@@ -15,17 +15,18 @@
 #include "GL/glfw.h"
 
 
-
 static int open_window(lua_State *L);
 static int draw_texture(lua_State *L);
+static int draw_lines3d(lua_State *L);
 
 
 
 void lua_vis_load(lua_State *L)
 {
   luaL_Reg vis_api[] = { { "open_window", open_window },
-			 { "draw_texture", draw_texture },
-			 { NULL, NULL} };
+                         { "draw_texture", draw_texture },
+                         { "draw_lines3d", draw_lines3d },
+                         { NULL, NULL} };
 
   lua_newtable(L);
   luaL_setfuncs(L, vis_api, 0);
@@ -36,37 +37,57 @@ void lua_vis_load(lua_State *L)
 
 static int Autoplay     = 0;
 static int WindowOpen   = 0;
-static int WindowWidth  = 768;
+static int WindowWidth  = 1024;
 static int WindowHeight = 768;
 
 static float xTranslate = 0.0;
 static float yTranslate = 0.0;
 static float zTranslate = 1.4;
 
-static float RotationAngleX = 220;
-static float RotationAngleY =   0;
+static float RotationAngleX = 10;
+static float RotationAngleY =  0;
 static float ZoomFactor = 1.0;
 static GLuint TextureMap;
 static int ColormapIndex = 0;
 
 
-static void LoadTexture(lua_State *L);
 static void KeyboardInput(int key, int state);
-static void CharacterInput(int key, int state);
+static void CharacterInput_draw_texture(int key, int state);
+static void CharacterInput_draw_lines3d(int key, int state);
+static void LoadTexture2d();
+static void DrawBoundingBox(const double *bounds);
 
 
+static lua_State *PresentLua = NULL;
 
 
 int open_window(lua_State *L)
 {
+  double ClearColor[3] = { 0.1, 0.2, 0.2 };
+
+  if (lua_gettop(L) > 0) {
+
+    lua_getfield(L, 1, "window_size");
+    if (!lua_isnil(L, -1)) {
+      lua_rawgeti(L, -1, 1); WindowWidth  = lua_tonumber(L, -1); lua_pop(L, 1);
+      lua_rawgeti(L, -1, 2); WindowHeight = lua_tonumber(L, -1); lua_pop(L, 1);
+    }
+    lua_pop(L, 1);
+
+    lua_getfield(L, 1, "clear_color");
+    if (!lua_isnil(L, -1)) {
+      lua_rawgeti(L, -1, 1); ClearColor[0] = lua_tonumber(L, -1); lua_pop(L, 1);
+      lua_rawgeti(L, -1, 2); ClearColor[1] = lua_tonumber(L, -1); lua_pop(L, 1);
+      lua_rawgeti(L, -1, 3); ClearColor[2] = lua_tonumber(L, -1); lua_pop(L, 1);
+    }
+    lua_pop(L, 1);
+  }
+  printf("opening window (%d %d)\n", WindowWidth, WindowHeight);
+
   glfwInit();
   glfwOpenWindow(WindowWidth, WindowHeight, 0,0,0,0,0,0, GLFW_WINDOW);
-  //  glfwEnable(GLFW_STICKY_KEYS);
-  //  glfwEnable(GLFW_KEY_REPEAT);
-  glfwSetKeyCallback(KeyboardInput);
-  glfwSetCharCallback(CharacterInput);
 
-  glClearColor(0.2, 0.1, 0.1, 0.0);
+  glClearColor(ClearColor[0], ClearColor[1], ClearColor[2], 0.0);
   glClearDepth(1.0);
   glDepthFunc(GL_LESS);
   glEnable(GL_DEPTH_TEST);
@@ -82,13 +103,22 @@ int open_window(lua_State *L)
   return 0;
 }
 
+
 int draw_texture(lua_State *L)
 {
   if (!WindowOpen) {
     luaL_error(L, "there is no open window to draw in");
   }
 
-  LoadTexture(L);
+  glfwSetKeyCallback(NULL);
+  glfwSetCharCallback(CharacterInput_draw_texture);
+
+  glfwDisable(GLFW_STICKY_KEYS);
+  glfwDisable(GLFW_KEY_REPEAT);
+  zTranslate = 1.4;
+
+  PresentLua = L;
+  LoadTexture2d();
 
   const double Lx0 = -0.5;
   const double Lx1 = +0.5;
@@ -131,13 +161,151 @@ int draw_texture(lua_State *L)
       break;
     }
   }
-
   return 0;
+}
+void CharacterInput_draw_texture(int key, int state)
+{
+  switch (key) {
+
+  case 'z':
+    ZoomFactor /= 1.1;
+    break;
+
+  case 'Z':
+    ZoomFactor *= 1.1;
+    break;
+
+  case 'p':
+    Autoplay ^= 1;
+    break;
+
+  case 'c':
+    if (Mara_image_get_colormap(++ColormapIndex) == NULL) {
+      ColormapIndex = 0;
+    }
+    LoadTexture2d();
+    break;
+
+  default:
+    break;
+  }
 }
 
 
-void LoadTexture(lua_State *L)
+int draw_lines3d(lua_State *L)
 {
+  if (!WindowOpen) {
+    luaL_error(L, "there is no open window to draw in");
+  }
+
+  struct Array *A = lunum_checkarray1(L, 1);
+
+  if (A->dtype != ARRAY_TYPE_DOUBLE || A->ndims != 2) {
+    luaL_error(L, "need a (N x 4) array of doubles");
+    return 0;
+  }
+  if (A->shape[1] != 4) {
+    luaL_error(L, "need a (N x 4) array of doubles");
+    return 0;
+  }
+
+  glfwSetKeyCallback(KeyboardInput);
+  glfwSetCharCallback(CharacterInput_draw_lines3d);
+
+  glfwEnable(GLFW_STICKY_KEYS);
+  glfwEnable(GLFW_KEY_REPEAT);
+
+  zTranslate = 1.8;
+  PresentLua = L;
+
+  xTranslate = 0.0;
+  yTranslate = 0.0;
+  const double bounds[] = { -0.5, +0.5,
+                            -0.5, +0.5,
+                            -0.5, +0.5 };
+
+  double smax=-1e16, smin=1e16;
+  for (int m=0; m<A->shape[0]; ++m) {
+    const double s = ((double*) A->data)[4*m + 3];
+    if (s < smin) smin = s;
+    if (s > smax) smax = s;
+  }
+
+  while (1) {
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glLoadIdentity();
+
+    glTranslatef(-xTranslate, -yTranslate, -zTranslate);
+    glScalef(ZoomFactor, ZoomFactor, ZoomFactor);
+
+    glRotatef(RotationAngleX, 1, 0, 0);
+    glRotatef(RotationAngleY, 0, 1, 0);
+
+    DrawBoundingBox(bounds);
+    const float *cmap_data = Mara_image_get_colormap(ColormapIndex);
+
+    glBegin(GL_LINE_STRIP);
+    for (int m=0; m<A->shape[0]; ++m) {
+      const double *x = ((double*) A->data) + 4*m;
+
+      int cm = 255.0 * (x[3] - smin) / (smax - smin);
+      double r = cmap_data[3*cm + 0];
+      double g = cmap_data[3*cm + 1];
+      double b = cmap_data[3*cm + 2];
+
+      glColor3d(r, g, b);
+      glVertex3d(x[0], x[1], x[2]);
+    }
+
+    glEnd();
+    glFlush();
+    glfwSwapBuffers();
+
+    if (glfwGetKey(GLFW_KEY_ESC) || !glfwGetWindowParam(GLFW_OPENED)) {
+      glfwCloseWindow();
+      WindowOpen = 0;
+      break;
+    }
+
+    if (Autoplay || glfwGetKey(GLFW_KEY_SPACE)) {
+      break;
+    }
+  }
+
+  return 0;
+}
+void CharacterInput_draw_lines3d(int key, int state)
+{
+  switch (key) {
+
+  case 'z':
+    ZoomFactor /= 1.1;
+    break;
+
+  case 'Z':
+    ZoomFactor *= 1.1;
+    break;
+
+  case 'p':
+    Autoplay ^= 1;
+    break;
+
+  case 'c':
+    if (Mara_image_get_colormap(++ColormapIndex) == NULL) {
+      ColormapIndex = 0;
+    }
+    break;
+
+  default:
+    break;
+  }
+}
+
+void LoadTexture2d()
+{
+  lua_State *L = PresentLua;
+
   if (lunum_upcast(L, 1, ARRAY_TYPE_DOUBLE, 0)) {
     lua_replace(L, -2);
   }
@@ -204,32 +372,71 @@ void KeyboardInput(int key, int state)
   }
 }
 
-void CharacterInput(int key, int state)
+
+
+void DrawBoundingBox(const double *bounds)
 {
-  switch (key) {
+  const double Lx0 = bounds[0];
+  const double Lx1 = bounds[1];
 
-  case 'z':
-    ZoomFactor /= 1.1;
-    break;
+  const double Ly0 = bounds[2];
+  const double Ly1 = bounds[3];
 
-  case 'Z':
-    ZoomFactor *= 1.1;
-    break;
+  const double Lz0 = bounds[4];
+  const double Lz1 = bounds[5];
 
-  case 'p':
-    Autoplay ^= 1;
-    break;
+  // Drawing a bonding box
+  // ---------------------------------------------------------------------------
+  glColor3d(0.6, 0.3, 0.3);
+  glLineWidth(3.0);
 
-  case 'c':
-    if (Mara_image_get_colormap(++ColormapIndex) == NULL) {
-      ColormapIndex = 0;
-    }
-    break;
+  glBegin(GL_LINES);
 
-  default:
-    break;
-  }
+  // x-edges
+  // ---------------------------------------------------------------------------
+  glVertex3f(Lx0, Ly0, Lz0);
+  glVertex3f(Lx1, Ly0, Lz0);
+
+  glVertex3f(Lx0, Ly0, Lz1);
+  glVertex3f(Lx1, Ly0, Lz1);
+
+  glVertex3f(Lx0, Ly1, Lz0);
+  glVertex3f(Lx1, Ly1, Lz0);
+
+  glVertex3f(Lx0, Ly1, Lz1);
+  glVertex3f(Lx1, Ly1, Lz1);
+
+  // y-edges
+  // ---------------------------------------------------------------------------
+  glVertex3f(Lx0, Ly0, Lz0);
+  glVertex3f(Lx0, Ly1, Lz0);
+
+  glVertex3f(Lx1, Ly0, Lz0);
+  glVertex3f(Lx1, Ly1, Lz0);
+
+  glVertex3f(Lx0, Ly0, Lz1);
+  glVertex3f(Lx0, Ly1, Lz1);
+
+  glVertex3f(Lx1, Ly0, Lz1);
+  glVertex3f(Lx1, Ly1, Lz1);
+
+  // z-edges
+  // ---------------------------------------------------------------------------
+  glVertex3f(Lx0, Ly0, Lz0);
+  glVertex3f(Lx0, Ly0, Lz1);
+
+  glVertex3f(Lx0, Ly1, Lz0);
+  glVertex3f(Lx0, Ly1, Lz1);
+
+  glVertex3f(Lx1, Ly0, Lz0);
+  glVertex3f(Lx1, Ly0, Lz1);
+
+  glVertex3f(Lx1, Ly1, Lz0);
+  glVertex3f(Lx1, Ly1, Lz1);
+
+  glEnd();
 }
+
 
 #else
 void lua_vis_load(lua_State *L) { }
