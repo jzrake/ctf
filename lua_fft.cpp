@@ -28,15 +28,12 @@
 
 
 #include "config.h"
-extern "C" {
-#include "lualib.h"
-}
+#include "luaU.h"
 #if (__MARA_USE_FFTW && __MARA_USE_MPI)
 
 #include <cstdlib>
 #include <mpi.h>
 #include <complex>
-#include "luaU.h"
 #include "hydro.hpp"
 #include "histogram.hpp"
 
@@ -572,8 +569,3 @@ double cnorm(FFT_DATA z)
 #else
 void lua_fft_load(lua_State *L) { }
 #endif // (__MARA_USE_FFTW && __MARA_USE_MPI)
-
-
-
-
-
