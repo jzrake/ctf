@@ -25,6 +25,7 @@ static int luaC_h5_open_file(lua_State *L);
 static int luaC_h5_close_file(lua_State *L);
 static int luaC_h5_open_group(lua_State *L);
 static int luaC_h5_close_group(lua_State *L);
+static int luaC_h5_get_setnames(lua_State *L);
 static int luaC_h5_get_nsets(lua_State *L);
 static int luaC_h5_get_ndims(lua_State *L);
 
@@ -51,6 +52,14 @@ static herr_t group_to_lua_table(hid_t loc_id, const char *name, void *opdata)
   return 0;
 }
 
+static herr_t group_setnames(hid_t loc_id, const char *name, void *opdata)
+{
+  const int n = lua_rawlen(Lua, -1);
+  lua_pushstring(Lua, name);
+  lua_rawseti(Lua, -2, n+1);
+  return 0;
+}
+
 static herr_t group_nelem(hid_t loc_id, const char *name, void *opdata)
 {
   const int n = lua_tonumber(Lua, -1);
@@ -71,6 +80,7 @@ void lua_h5_load(lua_State *L)
   lua_register(L, "h5_close_file"         , luaC_h5_close_file);
   lua_register(L, "h5_open_group"         , luaC_h5_open_group);
   lua_register(L, "h5_close_group"        , luaC_h5_close_group);
+  lua_register(L, "h5_get_setnames"       , luaC_h5_get_setnames);
   lua_register(L, "h5_get_nsets"          , luaC_h5_get_nsets);
   lua_register(L, "h5_get_ndims"          , luaC_h5_get_ndims);
 }
@@ -326,6 +336,26 @@ int luaC_h5_read_numeric_table(lua_State *L)
 
   PresentGroup = H5Gopen(PresentFile, gname, H5P_DEFAULT);
   H5Giterate(PresentGroup, ".", NULL, group_to_lua_table, NULL);
+  H5Gclose(PresentGroup);
+
+  Lua = NULL;
+  return 1;
+}
+
+int luaC_h5_get_setnames(lua_State *L)
+{
+  const char *gname = luaL_checkstring(L, 1);
+
+  if (!PresentFile) {
+    printf("[hdf5] error: no open file.\n");
+    return 0;
+  }
+
+  Lua = L;
+  lua_newtable(L);
+
+  PresentGroup = H5Gopen(PresentFile, gname, H5P_DEFAULT);
+  H5Giterate(PresentGroup, ".", NULL, group_setnames, NULL);
   H5Gclose(PresentGroup);
 
   Lua = NULL;
