@@ -59,7 +59,9 @@ extern "C"
   static int luaC_read_prim(lua_State *L);
   static int luaC_write_prim(lua_State *L);
   static int luaC_get_prim(lua_State *L);
+  static int luaC_prim_at_point(lua_State *L);
   static int luaC_get_timestep(lua_State *L);
+  static int luaC_streamline(lua_State *L);
 
   static int luaC_set_domain(lua_State *L);
   static int luaC_set_boundary(lua_State *L);
@@ -76,10 +78,14 @@ extern "C"
   static int luaC_load_shen(lua_State *L);
   static int luaC_test_shen(lua_State *L);
   static int luaC_test_rmhd_c2p(lua_State *L);
+  static int luaC_test_sampling(lua_State *L);
+  static int luaC_test_sampling_many(lua_State *L);
 
   static int luaC_fluid_PrimToCons(lua_State *L);
   static int luaC_fluid_ConsToPrim(lua_State *L);
   static int luaC_fluid_Eigensystem(lua_State *L);
+
+  static int luaC_boundary_ApplyBoundaries(lua_State *L);
 
   static int luaC_driving_Advance(lua_State *L);
   static int luaC_driving_Resample(lua_State *L);
@@ -106,7 +112,6 @@ extern "C"
 
   int luaopen_lunum(lua_State *L);
 }
-
 
 static void mara_prim_io(lua_State *L, char mode);
 static MaraApplication *Mara;
@@ -255,8 +260,10 @@ int main(int argc, char **argv)
   lua_register(L, "read_prim"    , luaC_read_prim);
   lua_register(L, "write_prim"   , luaC_write_prim);
   lua_register(L, "write_ppm"    , luaC_write_ppm);
+  lua_register(L, "prim_at_point", luaC_prim_at_point);
   lua_register(L, "get_prim"     , luaC_get_prim);
   lua_register(L, "get_timestep" , luaC_get_timestep);
+  lua_register(L, "streamline"   , luaC_streamline);
 
   lua_register(L, "set_domain"   , luaC_set_domain);
   lua_register(L, "set_boundary" , luaC_set_boundary);
@@ -273,6 +280,8 @@ int main(int argc, char **argv)
   lua_register(L, "load_shen"    , luaC_load_shen);
   lua_register(L, "test_shen"    , luaC_test_shen);
   lua_register(L, "test_rmhd_c2p", luaC_test_rmhd_c2p);
+  lua_register(L, "test_sampling", luaC_test_sampling);
+  lua_register(L, "test_sampling_many", luaC_test_sampling_many);
 
 
   // Expose the fluid interface
@@ -292,6 +301,17 @@ int main(int argc, char **argv)
   lua_settable(L, 1);
 
   lua_setglobal(L, "fluid");
+
+
+  // Expose the boundary conditions interface
+  // ---------------------------------------------------------------------------
+  lua_newtable(L);
+
+  lua_pushstring(L, "ApplyBoundaries");
+  lua_pushcfunction(L, luaC_boundary_ApplyBoundaries);
+  lua_settable(L, 1);
+
+  lua_setglobal(L, "boundary");
 
 
   // Expose the eos interface
@@ -508,6 +528,34 @@ int luaC_get_timestep(lua_State *L)
   return 1;
 }
 
+int luaC_streamline(lua_State *L)
+{
+  const double *r0 = luaU_checkarray (L, 1);
+  const double  s  = luaL_checknumber(L, 2);
+  const double ds  = luaL_checknumber(L, 3);
+  const char *type = luaL_checkstring(L, 4);
+
+
+  if (strcmp(type, "velocity") == 0) {
+    std::vector<double> strm =
+      Mara_streamline_velocity(r0, s, ds, Mara_streamline_scalars_velocity);
+
+    int shape[2] = { strm.size()/4, 4 };
+    luaU_pusharray_wshape(L, &strm[0], shape, 2);
+  }
+  else if (strcmp(type, "magnetic") == 0) {
+    std::vector<double> strm =
+      Mara_streamline_magnetic(r0, s, ds, Mara_streamline_scalars_magnetic);
+
+    int shape[2] = { strm.size()/4, 4 };
+    luaU_pusharray_wshape(L, &strm[0], shape, 2);
+  }
+  else {
+    luaL_error(L, "[mara] please choose either 'velocity' or 'magnetic'");
+  }
+
+  return 1;
+}
 
 int luaC_mara_version(lua_State *L)
 {
@@ -792,6 +840,99 @@ int luaC_init_prim(lua_State *L)
   if (data != NULL) free(data);
   return 0;
 }
+
+int luaC_prim_at_point(lua_State *L)
+{
+  const double *r1 = luaU_checkarray(L, 1);
+  const int Nq = Mara->domain->get_Nq();
+  double *P1 = new double[Nq];
+  Mara_prim_at_point(r1, P1);
+  luaU_pusharray(L, P1, Nq);
+  delete [] P1;
+  return 1;
+}
+
+int luaC_test_sampling(lua_State *L)
+{
+  if (Mara->domain == NULL) {
+    luaL_error(L, "[mara] error: need a domain to run this, use set_domain\n");
+  }
+  if (Mara->domain->get_Nd() != 3) {
+    luaL_error(L, "[mara] error: need a 3d domain to run this\n");
+  }
+
+  const int numsamp = luaL_checkinteger(L, 1);
+  const int Nq = Mara->domain->get_Nq();
+
+  const double *gx0 = Mara->domain->GetGlobalX0();
+  const double *gx1 = Mara->domain->GetGlobalX1();
+
+  double *P1 = new double[Nq];
+  RandomNumberStream rand;
+
+  const clock_t start = clock();
+
+  for (int i=0; i<numsamp; ++i) {
+    double r1[3] = { rand.RandomDouble(gx0[0], gx1[0]),
+		     rand.RandomDouble(gx0[1], gx1[1]),
+		     rand.RandomDouble(gx0[2], gx1[2]) };
+    Mara_prim_at_point(r1, P1);
+    //    printf("(%f %f %f) ", r1[0], r1[1], r1[2]);
+    //    std::cout << Mara->fluid->PrintPrim(P1) << std::endl;
+  }
+
+  const double trun = (double) (clock() - start) / CLOCKS_PER_SEC;
+  lua_pushnumber(L, trun);
+
+  delete [] P1;
+  return 1;
+}
+
+int luaC_test_sampling_many(lua_State *L)
+{
+  if (Mara->domain == NULL) {
+    luaL_error(L, "[mara] error: need a domain to run this, use set_domain\n");
+  }
+  if (Mara->domain->get_Nd() != 3) {
+    luaL_error(L, "[mara] error: need a 3d domain to run this\n");
+  }
+
+  const int numsamp = luaL_checkinteger(L, 1);
+  const int Nq = Mara->domain->get_Nq();
+
+  const double *gx0 = Mara->domain->GetGlobalX0();
+  const double *gx1 = Mara->domain->GetGlobalX1();
+
+  RandomNumberStream rand;
+  double *Rinpt = new double[ 3*numsamp];
+  double *Rlist = new double[ 3*numsamp];
+  double *Plist = new double[Nq*numsamp];
+
+  for (int i=0; i<numsamp; ++i) {
+    Rinpt[3*i + 0] = rand.RandomDouble(gx0[0], gx1[0]);
+    Rinpt[3*i + 1] = rand.RandomDouble(gx0[1], gx1[1]);
+    Rinpt[3*i + 2] = rand.RandomDouble(gx0[2], gx1[2]);
+  }
+
+  const clock_t start = clock();
+
+  Mara_prim_at_point_many(Rinpt, Rlist, Plist, numsamp);
+
+  for (int i=0; i<numsamp; ++i) {
+    //    printf("(%f %f %f) ", Rlist[3*i+0], Rlist[3*i+1], Rlist[3*i+2]);
+    //    std::cout << Mara->fluid->PrintPrim(&Plist[Nq*i]) << std::endl;
+  }
+
+  const double trun = (double) (clock() - start) / CLOCKS_PER_SEC;
+  lua_pushnumber(L, trun);
+
+  delete [] Rinpt;
+  delete [] Rlist;
+  delete [] Plist;
+
+  return 1;
+}
+
 
 int luaC_get_prim(lua_State *L)
 {
@@ -1395,6 +1536,17 @@ int luaC_fluid_Eigensystem(lua_State *L)
   free(lm);
 
   return 3;
+}
+
+int luaC_boundary_ApplyBoundaries(lua_State *L)
+{
+  if (Mara->boundary == NULL) {
+    printf("[mara] error: need a boundary conditions to run this, use set_boundary.\n");
+  }
+  else {
+    Mara->boundary->ApplyBoundaries(Mara->PrimitiveArray);
+  }
+  return 0;
 }
 
 int luaC_eos_TemperatureMeV(lua_State *L)

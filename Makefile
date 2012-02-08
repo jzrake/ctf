@@ -33,10 +33,10 @@ luaU.o : luaU.c
 	$(CC) $(CFLAGS) -c $< $(MARA_I) -std=c99
 
 lua_fft.o : lua_fft.cpp
-	$(CC) $(CFLAGS) -c $< $(FFTW_I) $(MARA_I) -DFFT_FFTW
+	$(CC) $(CFLAGS) -c $< $(MARA_I) $(FFTW_I) -DFFT_FFTW
 
 lua_h5.o : lua_h5.c
-	$(CC) $(CFLAGS) -c $< $(HDF5_I) $(MARA_I)
+	$(CC) $(CFLAGS) -c $< $(MARA_I) $(HDF5_I)
 
 h5ser.o : h5ser.c
 	$(CC) $(CFLAGS) -c $< $(HDF5_I)

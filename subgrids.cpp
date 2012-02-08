@@ -291,7 +291,7 @@ int Domain::SubgridAtPosition(const double *r) const
 {
   int index[3];
 
-  for (int i=0; i<3; ++i) {
+  for (int i=0; i<num_dims; ++i) {
     index[i] = mpi_sizes[i] * (r[i] - glb_x0[i]) / (glb_x1[i] -  glb_x0[i]);
   }
   int their_rank;

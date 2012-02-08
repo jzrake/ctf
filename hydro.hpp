@@ -186,9 +186,15 @@ public:
   virtual int GetSubgridIndex(int i) const = 0;
   virtual int GetSubgridSizes(int i) const = 0;
 
+  virtual const double *GetGlobalX0() const = 0;
+  virtual const double *GetGlobalX1() const = 0;
+
   virtual const int *GetGlobalShape() const = 0;
   virtual const int *GetGlobalStart() const = 0;
   virtual const int *GetLocalShape() const = 0; // not including guard
+
+  virtual int SubgridAtPosition(const double *r) const = 0;
+  virtual int IndexAtPosition(const double *r, int d) const = 0; // d: 0,1,2 for x,y,z
 } ;
 class RiemannSolver : public HydroModule
 // -----------------------------------------------------------------------------

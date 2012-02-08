@@ -30,6 +30,7 @@
 #include "riemann_hlld-rmhd.hpp"
 #include "rmhd.hpp"
 #include "runge-kutta.hpp"
+#include "sampling.hpp"
 #include "secant.hpp"
 #include "simple-cart.hpp"
 #include "srhd.hpp"
@@ -43,6 +44,7 @@
 #include "mara_mpi.h"
 #include "mara_io.h"
 #include "rmhd-c2p.h"
+
 
 
 #endif // __MaraApplication_HEADER__

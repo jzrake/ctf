@@ -172,6 +172,19 @@ void Domain::Synchronize(std::valarray<double> &A) const
     // -------------------------------------------------------------------------
   }
 }
+int Domain::SubgridAtPosition(const double *r) const { return 0; }
+int Domain::IndexAtPosition(const double *r, int d) const
+{
+  // d: 0,1,2 for x,y,z
+
+  // r is a global position, i.e. not relative to this subgrid
+  // The return value is the integer index, which is relative to this subgrid
+
+  // Within the zone i+Ng, the value (x-x0)/dx ranges from i to i+1.
+  // Then we correct for ghosts by adding Ng.
+
+  return Ng + int((r[d] - loc_x0[d]) / dx[d]);
+}
 
 int Domain::SubgridRank() const { return 0; }
 int Domain::SubgridSize() const { return 1; }
