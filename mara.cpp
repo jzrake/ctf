@@ -126,7 +126,6 @@ static char LuaProgramName[128]  = "";
 // -----------------------------------------------------------------------------
 
 
-
 int main(int argc, char **argv)
 {
   // ---------------------------------------------------------------------------
@@ -183,6 +182,7 @@ int main(int argc, char **argv)
   lua_State *L = luaL_newstate();
   luaL_openlibs(L);
   luaopen_lunum(L);
+  lua_pop(L, 1); // don't leave lunum on the stack
 
   lua_h5_load(L);
   lua_mpi_load(L);
@@ -193,8 +193,8 @@ int main(int argc, char **argv)
   lua_getglobal(L, "package");
   lua_pushfstring(L, "./?.lua;%s/conf/?.lua;%s/lib/lua/5.2/?.lua",
                   __MARA_INSTALL_DIR,  __MARA_INSTALL_DIR);
-  lua_setfield(L, 1, "path");
-  lua_remove(L, 1);
+  lua_setfield(L, -2, "path");
+  lua_pop(L, 1);
 
 
 

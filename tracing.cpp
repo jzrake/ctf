@@ -1,6 +1,7 @@
 
 
 #include <vector>
+#include <cstring>
 #include "hydro.hpp"
 #include "sampling.hpp"
 
