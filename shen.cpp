@@ -519,7 +519,7 @@ double ShenTabulatedNuclearEos::SoundSpeed2Sr(double D, double logT) const
 {
   D /= units.GramsPerCubicCentimeter();
   const double cs2 = sample_EOS(EOS_cs2, log10(D), logT); // in units of light speed
-  return cs2 * pow(units.LightSpeed(), 2.0); // in (cm/s)^2
+  return cs2 * pow(units.LightSpeed(), 2.0); // in code units
 }
 
 double ShenTabulatedNuclearEos::Temperature_u(double D, double u) const
