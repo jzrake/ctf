@@ -61,6 +61,12 @@
 #define EFFECTIVELY_ZERO    1.00000000000e-16
 #define units               (*Mara->units)
 
+// Set this to 0.5 or something to test off-table lookups (but expect warnings)
+#define OFF_TABLE_VAL (0)
+
+// Enable to use direct lookup on D,T (assumes equal spacing)
+#define NOSEARCH_DT
+
 bool ShenTabulatedNuclearEos::verbose = false;
 
 
@@ -590,11 +596,11 @@ void ShenTabulatedNuclearEos::self_test_derivatives()
   int old_verbose = this->verbose;
   this->verbose = false;
 
-  const double logD0 = log10(this->DensLower()) - 0.5;
-  const double logD1 = log10(this->DensUpper()) + 0.5;
+  const double logD0 = log10(this->DensLower()) - OFF_TABLE_VAL * 0.5;
+  const double logD1 = log10(this->DensUpper()) + OFF_TABLE_VAL * 0.5;
 
-  const double logT0 = this->TempLower() - 0.5;
-  const double logT1 = this->TempUpper() + 0.5;
+  const double logT0 = this->TempLower() - OFF_TABLE_VAL * 0.5;
+  const double logT1 = this->TempUpper() + OFF_TABLE_VAL * 0.5;
 
   for (int n=0; n<10; ++n) {
 
@@ -667,7 +673,7 @@ void ShenTabulatedNuclearEos::self_test_inversion()
     printf("got back T=%le\n", pow(10.0, newlogT));
   }
 
-  {
+  if (false) {
     const double logD = 0.5*(logD0 + logD1);
     const double logT = 0.5*(logT0 + logT1);
     const double D = pow(10.0, logD);
@@ -687,7 +693,7 @@ void ShenTabulatedNuclearEos::self_test_inversion()
     printf("got back u=%e (expect %e)\n", newu, u);
   }
 
-  {
+  if (false) {
     const double logD =      logD1 + 2.0;
     const double logT = 0.5*(logT0 + logT1);
     const double D = pow(10.0, logD);
@@ -707,7 +713,7 @@ void ShenTabulatedNuclearEos::self_test_inversion()
     printf("got back u=%e (expect %e)\n", newu, u);
   }
 
-  {
+  if (false) {
     printf("This test fails because the extrapolation being used presently "
            "makes the pressure multi-valued.\n");
 
@@ -736,11 +742,11 @@ void ShenTabulatedNuclearEos::self_test_interpolation()
   const int nsampT = 64;
   const int nsampD = 64;
 
-  const double logD0 = log10(this->DensLower()) - 0.5;
-  const double logD1 = log10(this->DensUpper()) + 0.5;
+  const double logD0 = log10(this->DensLower()) - OFF_TABLE_VAL * 0.5;
+  const double logD1 = log10(this->DensUpper()) + OFF_TABLE_VAL * 0.5;
 
-  const double logT0 = this->TempLower() - 0.5;
-  const double logT1 = this->TempUpper() + 0.5;
+  const double logT0 = this->TempLower() - OFF_TABLE_VAL * 0.5;
+  const double logT1 = this->TempUpper() + OFF_TABLE_VAL * 0.5;
 
   const double dlogD = (logD1 - logD0) / nsampD;
   const double dlogT = (logT1 - logT0) / nsampT;

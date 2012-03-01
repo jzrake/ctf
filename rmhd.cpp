@@ -68,6 +68,9 @@ int Rmhd::ConsToPrim(const double *U, double *P) const
     rmhd_c2p_eos_set_eos(EOS);
     rmhd_c2p_eos_new_state(U);
 
+    //    std::cout << PrintPrim(P) << std::endl;
+    //    std::cout << PrintCons(U) << std::endl;
+
     if (error) {
       rmhd_c2p_eos_set_starting_prim(P);
       error = rmhd_c2p_eos_solve_noble2dzt(P);
