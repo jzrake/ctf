@@ -281,7 +281,7 @@ void ShenTabulatedNuclearEos::tabulate_derivatives()
       const double D = pow(10.0, logD_values[i]);    // gm/cm^3
 
       const double Dh = D + u/c2 + p/c2;
-      const double GammaEff = -(Jp[0]*Js[1] - Jp[1]*Js[0])/Js[1];
+      const double GammaEff = (Jp[0]*Js[1] - Jp[1]*Js[0])/Js[1];
       const double cs2 = GammaEff * p / Dh;
 
       EOS_cs2[i + j*ND] = cs2/c2; // (cm/s)^2
@@ -511,6 +511,9 @@ double ShenTabulatedNuclearEos::Internal(double D, double logT) const
   return u * units.MeVPerCubicFemtometer();
 }
 double ShenTabulatedNuclearEos::Entropy(double D, double logT) const
+// -----------------------------------------------------------------------------
+// Returns the entropy per baryon
+// -----------------------------------------------------------------------------
 {
   D /= units.GramsPerCubicCentimeter();
   const double s = pow(10.0, sample_EOS(EOS_s, log10(D), logT));
@@ -875,7 +878,7 @@ TabulatedEos ShenTabulatedNuclearEos::LoadTable(const char *fname, double YpExtr
       const double Yp    = d[iYp];          // proton fraction
       const double logD  = d[ilogD];        // log_10 of density
       const double D     = pow(10.0, logD); // density
-      const double S     = d[iS];           // entropy per baryon (s = S * nB)
+      const double S     = d[iS];           // entropy per baryon
       const double E     = d[iEint];        // total energy per baryon (u = E * nB)
       const double p     = d[ip];           // gas pressure
 
@@ -890,8 +893,8 @@ TabulatedEos ShenTabulatedNuclearEos::LoadTable(const char *fname, double YpExtr
           tab.logD_values.push_back(logD);
         }
 
-        tab.EOS_p.push_back(log10(p     ));
-        tab.EOS_s.push_back(log10(S * nB));
+        tab.EOS_p.push_back(log10(p));
+        tab.EOS_s.push_back(log10(S)); // entropy per baryon
         tab.EOS_u.push_back(log10(E * nB));
 
         ++n;
