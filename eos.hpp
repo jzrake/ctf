@@ -6,6 +6,18 @@
 
 
 
+// -----------------------------------------------------------------------------
+// Physics constants (gram, centimeter, second, kelvin)
+// -----------------------------------------------------------------------------
+#define LIGHT_SPEED         2.99792458000e+10
+#define PROTON_MASS         1.67262177774e-24
+#define BOLTZMANN_CONSTANT  1.38064881300e-16
+#define MEV_TO_ERG          1.60217648740e-06
+#define FM3_TO_CM3          1.00000000000e-39
+#define EFFECTIVELY_ZERO    1.00000000000e-16
+
+
+
 
 class PhysicalUnitsFactory_cgs
 {
@@ -99,7 +111,7 @@ class ShenTabulatedNuclearEos : public EquationOfState
 public:
   static bool verbose;
   static TabulatedEos LoadTable(const char *fname, double YpExtract,
-				const double *TempRange, const double *DensRange);
+                                const double *TempRange, const double *DensRange);
 
   ShenTabulatedNuclearEos(const TabulatedEos &tab);
   ~ShenTabulatedNuclearEos() { }
@@ -177,9 +189,9 @@ private:
   double approx_EOS(const std::vector<double> &EOS,
                     double logD, double logT, double *J=NULL) const;
   double tabled_EOS(const std::vector<double> &EOS,
-		    double logD, double logT, double *J=NULL) const;
+                    double logD, double logT, double *J=NULL) const;
   double inverse_lookup_T(const std::vector<double> &EOS,
-			  double logD, double logF) const;
+                          double logD, double logF) const;
 
 
   // Private member data
@@ -191,10 +203,78 @@ private:
   // All values are in log10
   // ---------------------------------------------------------------------------
   std::vector<double> EOS_p; // gas pressure    (MeV/fm^3)
-  std::vector<double> EOS_s; // entropy density ( kB/fm^3)
+  std::vector<double> EOS_s; // entropy per particle (kB)
   std::vector<double> EOS_u; // energy density  (MeV/fm^3) not including rest mass
 
   std::vector<double> EOS_cs2; // sound speed squared
+} ;
+
+
+
+
+class GenericTabulatedEos : public EquationOfState
+{
+
+public:
+  static bool verbose;
+
+  GenericTabulatedEos(std::vector<double> &p,
+                      std::vector<double> &u,
+                      std::vector<double> &c,
+		      std::vector<double> &D_values,
+		      std::vector<double> &T_values);
+  ~GenericTabulatedEos() { }
+
+  // Public interface
+  // ---------------------------------------------------------------------------
+  double Pressure      (double D, double T) const;
+  double Internal      (double D, double T) const;
+  double Entropy       (double D, double T) const;
+  double SoundSpeed2Nr (double D, double T) const;
+  double SoundSpeed2Sr (double D, double T) const;
+  double Temperature_u (double D, double u) const;
+  double Temperature_p (double D, double p) const;
+  double TemperatureMeV(double D, double p) const;
+  double TemperatureArb(double D, double T_MeV) const;
+
+  double Derivatives_u(double D, double T, double *J) const;
+  double Derivatives_p(double D, double T, double *J) const;
+
+  class SampledOutOfRangeDensity : public std::exception {
+  public: virtual const char *what() const throw() {
+    return "Sampled the density out of the table's domain."; } } ;
+
+  class SampledOutOfRangeTemperature : public std::exception {
+  public: virtual const char *what() const throw() {
+    return "Sampled the temperature out of the table's domain."; } } ;
+
+private:
+
+  // Private interface
+  // ---------------------------------------------------------------------------
+  int find_upper_index_D(double D) const;
+  int find_upper_index_T(double T) const;
+  double sample_EOS(const std::vector<double> &EOS,
+                    double D, double T, double *J=NULL) const;
+  double approx_EOS(const std::vector<double> &EOS,
+                    double D, double T, double *J=NULL) const;
+  double tabled_EOS(const std::vector<double> &EOS,
+                    double D, double T, double *J=NULL) const;
+  double inverse_lookup_T(const std::vector<double> &EOS,
+                          double D, double F) const;
+
+  // EOS variables
+  // ---------------------------------------------------------------------------
+  const std::vector<double> EOS_p; // gas pressure    (MeV/fm^3)
+  const std::vector<double> EOS_u; // energy density  (MeV/fm^3) no rest mass
+  const std::vector<double> EOS_c; // sound speed     (units of light-speed)
+
+
+  // Private member data
+  // ---------------------------------------------------------------------------
+  const std::vector<double> D_values; // in code units
+  const std::vector<double> T_values;
+
 } ;
 
 #endif // __EquationOfStates_HEADER__
