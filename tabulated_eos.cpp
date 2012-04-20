@@ -6,6 +6,16 @@
  *
  * DESCRIPTION:
  *
+ * Builds a class which reads from a tabulated equation of state in the
+ * independent variables density (D) and temperature (T). The user-upplied data
+ * are arrays representing the pressure (p), internal energy density (u), and
+ * sound speed (c). Each of these arrays must be data buffers of dimension
+ * (NDxNT) in standard C (row-major) ordering. The arrays D_values and T_values
+ * are equally-spaced arrays of density and temperature, and are of length ND
+ * and NT respectively. All units, with the exception of temperature, are
+ * assumed to already be converted into code units. Temperature is in units of
+ * MeV, although this may easily be changed.
+ *
  *------------------------------------------------------------------------------
  */
 
@@ -18,29 +28,40 @@
 #include "eos.hpp"
 
 
-// Alias to the global Mara application units instance
-#define units (*Mara->units)
-
-// Set this to 0.5 or something to test off-table lookups (but expect warnings)
-#define OFF_TABLE_VAL (0)
-
 
 bool GenericTabulatedEos::verbose = false;
 
 
 
-GenericTabulatedEos::GenericTabulatedEos(std::vector<double> &p,
+GenericTabulatedEos::GenericTabulatedEos(std::vector<double> &D_values,
+					 std::vector<double> &T_values,
+					 std::vector<double> &p,
 					 std::vector<double> &u,
-					 std::vector<double> &c,
-					 std::vector<double> &D_values,
-					 std::vector<double> &T_values)
-  : EOS_p(p),
+					 std::vector<double> &c)
+  : D_values(D_values),
+    T_values(T_values),
+    EOS_p(p),
     EOS_u(u),
-    EOS_c(c),
-    D_values(D_values),
-    T_values(T_values)
+    EOS_c(c)
 {
+  printf("[eos] building new GenericTabulatedEos\n");
+  printf("[eos] density points: %ld\n", D_values.size());
+  printf("[eos] temperature points: %ld\n", T_values.size());
 
+  size_t npts = D_values.size() * T_values.size();
+
+  if (npts != EOS_p.size()) {
+    printf("[eos] warning: pressure array has %ld points, expected %ld\n",
+	   EOS_p.size(), npts);
+  }
+  if (npts != EOS_u.size()) {
+    printf("[eos] warning: internal energy array has %ld points, expected %ld\n",
+	   EOS_u.size(), npts);
+  }
+  if (npts != EOS_c.size()) {
+    printf("[eos] warning: sound speed array has %ld points, expected %ld\n",
+	   EOS_c.size(), npts);
+  }
 }
 
 int GenericTabulatedEos::find_upper_index_D(double D) const
@@ -243,9 +264,9 @@ double GenericTabulatedEos::Temperature_p(double D, double p) const
 }
 double GenericTabulatedEos::TemperatureMeV(double D, double p) const
 {
-  return this->inverse_lookup_T(EOS_p, D, p) * units.MeV();
+  return this->inverse_lookup_T(EOS_p, D, p);
 }
 double GenericTabulatedEos::TemperatureArb(double D, double T_MeV) const
 {
-  return T_MeV / units.MeV();
+  return T_MeV;
 }

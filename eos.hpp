@@ -218,11 +218,11 @@ class GenericTabulatedEos : public EquationOfState
 public:
   static bool verbose;
 
-  GenericTabulatedEos(std::vector<double> &p,
+  GenericTabulatedEos(std::vector<double> &D_values,
+		      std::vector<double> &T_values,
+		      std::vector<double> &p,
                       std::vector<double> &u,
-                      std::vector<double> &c,
-		      std::vector<double> &D_values,
-		      std::vector<double> &T_values);
+                      std::vector<double> &c);
   ~GenericTabulatedEos() { }
 
   // Public interface
@@ -263,18 +263,17 @@ private:
   double inverse_lookup_T(const std::vector<double> &EOS,
                           double D, double F) const;
 
-  // EOS variables
-  // ---------------------------------------------------------------------------
-  const std::vector<double> EOS_p; // gas pressure    (MeV/fm^3)
-  const std::vector<double> EOS_u; // energy density  (MeV/fm^3) no rest mass
-  const std::vector<double> EOS_c; // sound speed     (units of light-speed)
-
 
   // Private member data
   // ---------------------------------------------------------------------------
   const std::vector<double> D_values; // in code units
   const std::vector<double> T_values;
 
+  // EOS variables
+  // ---------------------------------------------------------------------------
+  const std::vector<double> EOS_p; // gas pressure    (MeV/fm^3)
+  const std::vector<double> EOS_u; // energy density  (MeV/fm^3) no rest mass
+  const std::vector<double> EOS_c; // sound speed     (units of light-speed)
 } ;
 
 #endif // __EquationOfStates_HEADER__

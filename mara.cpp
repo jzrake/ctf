@@ -96,6 +96,8 @@ extern "C"
   static int luaC_eos_Temperature_p(lua_State *L);
   static int luaC_eos_Internal(lua_State *L);
   static int luaC_eos_Pressure(lua_State *L);
+  static int luaC_eos_SoundSpeed2Nr(lua_State *L);
+  static int luaC_eos_SoundSpeed2Sr(lua_State *L);
   static int luaC_eos_DensUpper(lua_State *L);
   static int luaC_eos_DensLower(lua_State *L);
   static int luaC_eos_TempUpper(lua_State *L);
@@ -104,6 +106,7 @@ extern "C"
   static int luaC_units_Print(lua_State *L);
   static int luaC_units_Gauss(lua_State *L);
   static int luaC_units_Velocity(lua_State *L);
+  static int luaC_units_MeV(lua_State *L);
   static int luaC_units_MeVPerCubicFemtometer(lua_State *L);
   static int luaC_units_ErgPerCubicCentimeter(lua_State *L);
   static int luaC_units_GramsPerCubicCentimeter(lua_State *L);
@@ -205,7 +208,7 @@ int main(int argc, char **argv)
   //
   // ends in the extension '.lua', then regeister it as the LuaProgramName. All
   // subsequent command line entries are dropped into the 'cmdline.opts' table
-  // if they contains an equals sign, and the 'cmdline.args' table otherwise.
+  // if they contain an equals sign, and the 'cmdline.args' table otherwise.
   // ---------------------------------------------------------------------------
   lua_newtable(L); // 'cmdline' stack index := 1
 
@@ -334,6 +337,14 @@ int main(int argc, char **argv)
   lua_pushcfunction(L, luaC_eos_Pressure);
   lua_settable(L, 1);
 
+  lua_pushstring(L, "SoundSpeed2Nr");
+  lua_pushcfunction(L, luaC_eos_SoundSpeed2Nr);
+  lua_settable(L, 1);
+
+  lua_pushstring(L, "SoundSpeed2Sr");
+  lua_pushcfunction(L, luaC_eos_SoundSpeed2Sr);
+  lua_settable(L, 1);
+
   lua_pushstring(L, "DensUpper");
   lua_pushcfunction(L, luaC_eos_DensUpper);
   lua_settable(L, 1);
@@ -367,6 +378,10 @@ int main(int argc, char **argv)
 
   lua_pushstring(L, "Velocity");
   lua_pushcfunction(L, luaC_units_Velocity);
+  lua_settable(L, 1);
+
+  lua_pushstring(L, "MeV");
+  lua_pushcfunction(L, luaC_units_MeV);
   lua_settable(L, 1);
 
   lua_pushstring(L, "MeVPerCubicFemtometer");
@@ -675,6 +690,40 @@ EquationOfState *BuildShenTabulatedNuclearEos(lua_State *L)
 
   return new ShenTabulatedNuclearEos(tab);
 }
+
+EquationOfState *BuildGenericTabulatedEos(lua_State *L)
+{
+  int N;
+  double *tmp;
+
+  lua_getfield(L, -1, "D");
+  tmp = luaU_checklarray(L, -1, &N);
+  std::vector<double> D_values(tmp, tmp + N);
+  lua_pop(L, 1);
+
+  lua_getfield(L, -1, "T");
+  tmp = luaU_checklarray(L, -1, &N);
+  std::vector<double> T_values(tmp, tmp + N);
+  lua_pop(L, 1);
+
+  lua_getfield(L, -1, "p");
+  tmp = luaU_checklarray(L, -1, &N);
+  std::vector<double> EOS_p(tmp, tmp + N);
+  lua_pop(L, 1);
+
+  lua_getfield(L, -1, "u");
+  tmp = luaU_checklarray(L, -1, &N);
+  std::vector<double> EOS_u(tmp, tmp + N);
+  lua_pop(L, 1);
+
+  lua_getfield(L, -1, "c");
+  tmp = luaU_checklarray(L, -1, &N);
+  std::vector<double> EOS_c(tmp, tmp + N);
+  lua_pop(L, 1);
+
+  return new GenericTabulatedEos(D_values, T_values, EOS_p, EOS_u, EOS_c);
+}
+
 
 GodunovOperator *BuildPlmCtuHancockOperator(lua_State *L)
 {
@@ -1195,6 +1244,9 @@ int luaC_set_eos(lua_State *L)
   else if (strcmp("shen", key) == 0) {
     new_f = BuildShenTabulatedNuclearEos(L);
   }
+  else if (strcmp("tabulated", key) == 0) {
+    new_f = BuildGenericTabulatedEos(L);
+  }
   else {
     luaL_error(L, "no such eos: %s", key);
   }
@@ -1609,6 +1661,36 @@ int luaC_eos_Pressure(lua_State *L)
     return 1;
   }
 }
+int luaC_eos_SoundSpeed2Nr(lua_State *L)
+{
+  const double D = luaL_checknumber(L, 1);
+  const double T = luaL_checknumber(L, 2);
+
+  if (Mara->eos == NULL) {
+    luaL_error(L, "need an eos to run this, use set_eos");
+    return 0;
+  }
+  else {
+    const double p = Mara->eos->SoundSpeed2Nr(D, T);
+    lua_pushnumber(L, p);
+    return 1;
+  }
+}
+int luaC_eos_SoundSpeed2Sr(lua_State *L)
+{
+  const double D = luaL_checknumber(L, 1);
+  const double T = luaL_checknumber(L, 2);
+
+  if (Mara->eos == NULL) {
+    luaL_error(L, "need an eos to run this, use set_eos");
+    return 0;
+  }
+  else {
+    const double p = Mara->eos->SoundSpeed2Sr(D, T);
+    lua_pushnumber(L, p);
+    return 1;
+  }
+}
 int luaC_eos_DensUpper(lua_State *L)
 {
   if (Mara->eos == NULL) {
@@ -1686,6 +1768,18 @@ int luaC_units_Velocity(lua_State *L)
   }
   else {
     lua_pushnumber(L, Mara->units->Velocity());
+    return 1;
+  }
+}
+
+int luaC_units_MeV(lua_State *L)
+{
+  if (Mara->units == NULL) {
+    luaL_error(L, "need a units system to run this, use set_units");
+    return 0;
+  }
+  else {
+    lua_pushnumber(L, Mara->units->MeV());
     return 1;
   }
 }
