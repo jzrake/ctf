@@ -1616,6 +1616,7 @@ int luaC_eos_TemperatureMeV(lua_State *L)
     return 1;
   }
 }
+
 int luaC_eos_Temperature_p(lua_State *L)
 {
   const double D = luaL_checknumber(L, 1);

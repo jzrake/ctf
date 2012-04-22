@@ -116,16 +116,16 @@ double GenericTabulatedEos::tabled_EOS(const std::vector<double> &EOS,
   // ---------------------------------------------------------------------------
   const int Di = find_upper_index_D(D);
   const int Tj = find_upper_index_T(T);
-  const int ND = D_values.size();
+  const int NT = T_values.size();
   const double dD = D_values[Di] - D_values[Di-1];
   const double dT = T_values[Tj] - T_values[Tj-1];
 
   // http://en.wikipedia.org/wiki/Bilinear_interpolation
   // ---------------------------------------------------------------------------
-  const double f00 = EOS[(Di-1) + (Tj-1)*ND];
-  const double f01 = EOS[(Di-1) + (Tj-0)*ND];
-  const double f10 = EOS[(Di-0) + (Tj-1)*ND];
-  const double f11 = EOS[(Di-0) + (Tj-0)*ND];
+  const double f00 = EOS[(Di-1)*NT + (Tj-1)];
+  const double f01 = EOS[(Di-1)*NT + (Tj-0)];
+  const double f10 = EOS[(Di-0)*NT + (Tj-1)];
+  const double f11 = EOS[(Di-0)*NT + (Tj-0)];
 
   const double x = (D - D_values[Di-1]) / dD;
   const double y = (T - T_values[Tj-1]) / dT;
@@ -157,15 +157,15 @@ double GenericTabulatedEos::approx_EOS(const std::vector<double> &EOS,
   const double dD = D_values[ND-1] - D_values[0];
   const double dT = T_values[NT-1] - T_values[0];
 
-  const double dfdD = (EOS[ND-1 + (NT/2)*ND] - EOS[0 + (NT/2)*ND]) / dD;
-  const double dfdT = (EOS[ND/2 + (NT-1)*ND] - EOS[ND/2 +   0*ND]) / dT;
+  const double dfdD = (EOS[(ND-1)*NT + NT/2] - EOS[(0   )*NT + NT/2]) / dD;
+  const double dfdT = (EOS[(ND/2)*NT + NT-1] - EOS[(ND/2)*NT +    0]) / dT;
 
   if (J != NULL) {
     J[0] = dfdD;
     J[1] = dfdT;
   }
 
-  const double fc = EOS[ND/2 + (NT/2)*ND];
+  const double fc = EOS[(ND/2)*NT + NT/2];
   const double xc = D_values[ND/2];
   const double yc = T_values[NT/2];
 
