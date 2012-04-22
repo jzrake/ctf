@@ -10,9 +10,14 @@ OBJ_CPP = $(SRC_CPP:.cpp=.o)
 MARA_I  = -I../include
 MARA_A  = ../lib/libmara.a
 
+LUA_DIR = ../lib/lua/5.2
+LUA_TARGET = \
+	$(LUA_DIR)/json.lua \
+	$(LUA_DIR)/matrix.lua \
+	$(LUA_DIR)/util.lua \
+	$(LUA_DIR)/tabeos.lua
 
-
-default : $(MARA_A)
+default : $(MARA_A) $(LUA_TARGET)
 
 test :
 	$(CXX) shen.cpp -o shen -D__MAIN__
@@ -22,6 +27,9 @@ test :
 
 %.o : %.cpp
 	$(CC) $(CFLAGS) -c $<
+
+../lib/lua/5.2/%.lua : %.lua
+	cp $< $@
 
 fft_3d.o : fft_3d.c
 	$(CC) $(CFLAGS) -c $< $(FFTW_I) -DFFT_FFTW
