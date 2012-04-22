@@ -518,7 +518,7 @@ int WsolveWKT(double *W, double *gamma, double *T,
   *gamma = sqrt(y+1.0);
 
   if (verbose) {
-    printf("Final K=%e\n", y);
+    printf("success! Final K=%e\n", y);
   }
 
   return 0;

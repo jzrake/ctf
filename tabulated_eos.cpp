@@ -176,7 +176,7 @@ double GenericTabulatedEos::inverse_lookup_T(const std::vector<double> &EOS,
                                              double D, double F) const
 {
   // First do a bisection to identify the nearest tabulated temperature for the
-  // density and variable (F := { p,s,u }) requested.
+  // density and variable (F := { p,u }) requested.
   // ---------------------------------------------------------------------------
   int n0=0, n1=T_values.size()-1;
 
@@ -205,7 +205,7 @@ double GenericTabulatedEos::inverse_lookup_T(const std::vector<double> &EOS,
   double T = 0.5*(T_values[n0] + T_values[n1]);
 
   // Now refine the guess using a single Newton-Rapheson iteration. The use of
-  // bilinear interpolation guarentees that a single iteration gets the root.
+  // bilinear interpolation guarantees that a single iteration gets the root.
   // ---------------------------------------------------------------------------
   double J[2];
   double f = (off_table ?
@@ -216,7 +216,8 @@ double GenericTabulatedEos::inverse_lookup_T(const std::vector<double> &EOS,
   T -= f/g;
 
   if (off_table) {
-    printf("[eos] warning: inverse lookup used approximate. T=%e\n", T);
+    printf("[eos] warning: inverse lookup on (D,F) = (%f,%f) used approximate. "
+	   "T=%e\n", D, F, T);
   }
 
   return T;

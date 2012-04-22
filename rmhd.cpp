@@ -73,17 +73,15 @@ int Rmhd::ConsToPrim(const double *U, double *P) const
 
     if (error) {
       rmhd_c2p_eos_set_starting_prim(P);
+      error = rmhd_c2p_eos_solve_duffell3d(P);
+    }
+    if (error) {
+      rmhd_c2p_eos_set_starting_prim(P);
       error = rmhd_c2p_eos_solve_noble2dzt(P);
     }
     if (error) {
-      //      printf("c2p failed once. using reset.\n");
       rmhd_c2p_eos_estimate_from_cons();
       error = rmhd_c2p_eos_solve_noble2dzt(P);
-    }
-    if (error) {
-      //      printf("c2p failed twice. using duffell3d.\n");
-      rmhd_c2p_eos_set_starting_prim(P);
-      error = rmhd_c2p_eos_solve_duffell3d(P);
     }
 
     return error;
