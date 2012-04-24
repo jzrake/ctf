@@ -93,6 +93,7 @@ extern "C"
   static int luaC_driving_Power(lua_State *L);
 
   static int luaC_eos_TemperatureMeV(lua_State *L);
+  static int luaC_eos_TemperatureArb(lua_State *L);
   static int luaC_eos_Temperature_p(lua_State *L);
   static int luaC_eos_Internal(lua_State *L);
   static int luaC_eos_Pressure(lua_State *L);
@@ -323,6 +324,10 @@ int main(int argc, char **argv)
 
   lua_pushstring(L, "TemperatureMeV");
   lua_pushcfunction(L, luaC_eos_TemperatureMeV);
+  lua_settable(L, 1);
+
+  lua_pushstring(L, "TemperatureArb");
+  lua_pushcfunction(L, luaC_eos_TemperatureArb);
   lua_settable(L, 1);
 
   lua_pushstring(L, "Temperature_p");
@@ -1612,6 +1617,22 @@ int luaC_eos_TemperatureMeV(lua_State *L)
   }
   else {
     const double T = Mara->eos->TemperatureMeV(D, p);
+    lua_pushnumber(L, T);
+    return 1;
+  }
+}
+
+int luaC_eos_TemperatureArb(lua_State *L)
+{
+  const double D = luaL_checknumber(L, 1);
+  const double T_MeV = luaL_checknumber(L, 2);
+
+  if (Mara->eos == NULL) {
+    luaL_error(L, "need an eos to run this, use set_eos");
+    return 0;
+  }
+  else {
+    const double T = Mara->eos->TemperatureArb(D, T_MeV);
     lua_pushnumber(L, T);
     return 1;
   }

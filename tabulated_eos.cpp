@@ -99,11 +99,11 @@ double GenericTabulatedEos::sample_EOS(const std::vector<double> &EOS,
     return this->tabled_EOS(EOS, D, T, J);
   }
   catch (const SampledOutOfRangeDensity &e) {
-    printf("[eos] warning: density out, using approximate. D=%e\n", D);
+    if (verbose) printf("[eos] warning: density out, using approximate. D=%e\n", D);
     return this->approx_EOS(EOS, D, T, J);
   }
   catch (const SampledOutOfRangeTemperature &e) {
-    printf("[eos] warning: temperature out, using approximate T=%e\n", T);
+    if (verbose) printf("[eos] warning: temperature out, using approximate T=%e\n", T);
     return this->approx_EOS(EOS, D, T, J);
   }
 }
@@ -215,9 +215,9 @@ double GenericTabulatedEos::inverse_lookup_T(const std::vector<double> &EOS,
 
   T -= f/g;
 
-  if (off_table) {
+  if (off_table && verbose) {
     printf("[eos] warning: inverse lookup on (D,F) = (%f,%f) used approximate. "
-	   "T=%e\n", D, F, T);
+    	   "T=%e\n", D, F, T);
   }
 
   return T;
