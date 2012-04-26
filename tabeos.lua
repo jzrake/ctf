@@ -13,7 +13,7 @@ end
 
 local function LoadMicroPh(fname)
    print("Loading tabulated EOS from " .. fname)
-   print("be sure you have already set the physics units before calling")
+   print("[note] be sure you have already set the physics units before calling")
 
    h5_open_file(fname, "r")
    local eos_terms = { }
@@ -33,9 +33,6 @@ local function LoadMicroPh(fname)
 
    set_eos("tabulated", {D=D, T=T, p=p, u=u, c=c})
 end
-
---do_units()
---LoadMicroPh("adeos.h5")
 
 local _tabeos_ = { LoadMicroPh=LoadMicroPh,
 		   MakeNeutronStarUnits=do_units }
