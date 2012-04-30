@@ -109,11 +109,12 @@ double GenericTabulatedEos::sample_EOS(const std::vector<double> &EOS,
 }
 double GenericTabulatedEos::tabled_EOS(const std::vector<double> &EOS,
                                        double D, double T, double *J) const
+// -----------------------------------------------------------------------------
+// Receives one of the lookup tables for pressure, temperature, or internal
+// energy, and performs a bilinear interpolation on the nearest 4 samples in
+// order to construct the needed EOS variable.
+// -----------------------------------------------------------------------------
 {
-  // Receives one of the lookup tables for pressure, temperature, or internal
-  // energy, and performs a bilinear interpolation on the nearest 4 samples in
-  // order to construct the needed EOS variable.
-  // ---------------------------------------------------------------------------
   const int Di = find_upper_index_D(D);
   const int Tj = find_upper_index_T(T);
   const int NT = T_values.size();

@@ -76,6 +76,11 @@ int Rmhd::ConsToPrim(const double *U, double *P) const
       error = rmhd_c2p_eos_solve_duffell3d(P);
     }
     if (error) {
+
+      // NOTE: disregarding further c2p trials for debugging purposes
+      return error;
+      // ------------------------------------------------------------
+
       rmhd_c2p_eos_set_starting_prim(P);
       error = rmhd_c2p_eos_solve_noble2dzt(P);
     }
