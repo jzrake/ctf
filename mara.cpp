@@ -754,9 +754,6 @@ GodunovOperator *BuildPlmMethodOfLinesSplit(lua_State *L)
   return new_f;
 }
 
-
-
-
 int luaC_init_prim(lua_State *L)
 {
   const PhysicalDomain *domain = Mara->domain;
@@ -1343,6 +1340,9 @@ int luaC_set_godunov(lua_State *L)
   }
   else if (strcmp(key, "weno-split") == 0) {
     new_f = new WenoSplit;
+  }
+  else if (strcmp(key, "weno-riemann") == 0) {
+    new_f = new Weno5RiemannMethodOfLinesSplit;
   }
   else {
     luaL_error(L, "no such integration scheme: %s", key);
