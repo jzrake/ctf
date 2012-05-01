@@ -103,6 +103,9 @@ void Deriv::intercell_flux_sweep(const double *P, double *F, int dim)
       double vm[5] = { P[m-2*S], P[m-S], P[m+0], P[m+1*S], P[m+2*S] };
       double vp[5] = { P[m-1*S], P[m-0], P[m+S], P[m+2*S], P[m+3*S] };
 
+      //      Pl[q] = P[m];
+      //      Pr[q] = P[m+S];
+
       Pl[q] = weno5(vm+2, CeesC2R, DeesC2R);
       Pr[q] = weno5(vp+2, CeesC2L, DeesC2L);
     }
