@@ -1370,6 +1370,9 @@ int luaC_set_advance(lua_State *L)
   else if (strcmp(key, "rk3") == 0) {
     new_f = new RungeKuttaShuOsherRk3;
   }
+  else if (strcmp(key, "rk4") == 0) {
+    new_f = new RungeKuttaClassicRk4;
+  }
 
   if (new_f) {
     if (Mara->advance) delete Mara->advance;

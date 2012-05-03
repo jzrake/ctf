@@ -107,12 +107,13 @@ void Deriv::intercell_flux_sweep(const double *U_avg, double *F, int dim)
   std::valarray<double> P = Mara->PrimitiveArray;
 
 
-  for (i=0; i<stride[0]; i+=NQ) {
+  for (i=2*S; i<stride[0]-2*S; i+=NQ) {
     for (int q=0; q<NQ; ++q) {
       const int m = i + q;
       const double *U0 = &U_avg[m];
       double v[5] = { U0[-2*S], U0[-S], U0[0], U0[S], U0[2*S] };
-      U[m] = U_avg[m];//weno5(v+2, CeesA2C, DeesA2C);
+      //      U[m] = U_avg[m];
+      U[m] = weno5(v+2, CeesA2C, DeesA2C);
     }
 
     int error = Mara->fluid->ConsToPrim(&U[i], &P[i]);
@@ -125,10 +126,7 @@ void Deriv::intercell_flux_sweep(const double *U_avg, double *F, int dim)
     }
   }
 
-
-  //  memcpy(&U[0], &U_avg[0], sizeof(double)*G.size());
-
-  for (i=2*S; i<stride[0]-3*S; i+=NQ) {
+  for (i=4*S; i<stride[0]-5*S; i+=NQ) {
     for (int q=0; q<NQ; ++q) {
       const int m = i + q;
       double vm[5] = { P[m-2*S], P[m-S], P[m+0], P[m+1*S], P[m+2*S] };
@@ -143,19 +141,16 @@ void Deriv::intercell_flux_sweep(const double *U_avg, double *F, int dim)
 
     int error = Mara->riemann->IntercellFlux(Pl, Pr, 0, &G[i], 0.0, dim);
     if (error) printf("got riemann solver error!\n");
-    // remember to catch errors here
   }
-  memcpy(F, &G[0], sizeof(double)*G.size());
 
-  /*
-  for (i=2*S; i<stride[0]-3*S; i+=NQ) {
+  for (i=6*S; i<stride[0]-7*S; i+=NQ) {
     for (int q=0; q<NQ; ++q) {
       const int m = i + q;
       double v[5] = { G[m-2*S], G[m-S], G[m+0], G[m+1*S], G[m+2*S] };
+      //      F[m] = G[m];
       F[m] = weno5(v+2, CeesC2A, DeesC2A);
     }
   }
-  */
 }
 
 void Deriv::drive_sweeps_1d(const double *U, double *L)
