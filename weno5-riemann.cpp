@@ -78,26 +78,57 @@ std::valarray<double> Deriv::dUdt(const std::valarray<double> &Uin)
   std::valarray<double> &P = Mara->PrimitiveArray;
 
   ConsToPrim(U, P);
-  DriveSweeps(P, L);
+  DriveSweeps(U, L);
 
   return L;
 }
-void Deriv::DriveSweeps(const std::valarray<double> &P,
+void Deriv::DriveSweeps(const std::valarray<double> &U,
                         std::valarray<double> &L)
 {
   switch (ND) {
-  case 1: drive_sweeps_1d(&P[0], &L[0]); break;
-  case 2: drive_sweeps_2d(&P[0], &L[0]); break;
-  case 3: drive_sweeps_3d(&P[0], &L[0]); break;
+  case 1: drive_sweeps_1d(&U[0], &L[0]); break;
+  case 2: drive_sweeps_2d(&U[0], &L[0]); break;
+  case 3: drive_sweeps_3d(&U[0], &L[0]); break;
   }
 }
-void Deriv::intercell_flux_sweep(const double *P, double *F, int dim)
+#include <iostream>
+void Deriv::intercell_flux_sweep(const double *U_avg, double *F, int dim)
+// -----------------------------------------------------------------------------
+// U_avg is the volume-averaged conserved array. It has to be WENO-interpolated
+// to the point-centered value, once for each direction. ConsToPrim is then run
+// on the point-centered value of U.
+// -----------------------------------------------------------------------------
 {
   int i,S=stride[dim];
   double Pl[MAXNQ], Pr[MAXNQ];
 
-  for (i=2*S; i<stride[0]-3*S; i+=NQ) {
+  std::valarray<double> G(stride[0]); // is the point-valued HLL flux at i+1/2
+  std::valarray<double> U(stride[0]); // point-valued conserved state for this axis
+  std::valarray<double> P = Mara->PrimitiveArray;
 
+
+  for (i=0; i<stride[0]; i+=NQ) {
+    for (int q=0; q<NQ; ++q) {
+      const int m = i + q;
+      const double *U0 = &U_avg[m];
+      double v[5] = { U0[-2*S], U0[-S], U0[0], U0[S], U0[2*S] };
+      U[m] = U_avg[m];//weno5(v+2, CeesA2C, DeesA2C);
+    }
+
+    int error = Mara->fluid->ConsToPrim(&U[i], &P[i]);
+    if (error) {
+      printf("got c2p error on zone %d!\n", i/NQ);
+      std::cout << Mara->fluid->PrintCons(&U_avg[i]) << std::endl;
+      std::cout << Mara->fluid->PrintCons(&U[i]) << std::endl;
+      std::cout << Mara->fluid->PrintPrim(&P[i]) << std::endl;
+      exit(2);
+    }
+  }
+
+
+  //  memcpy(&U[0], &U_avg[0], sizeof(double)*G.size());
+
+  for (i=2*S; i<stride[0]-3*S; i+=NQ) {
     for (int q=0; q<NQ; ++q) {
       const int m = i + q;
       double vm[5] = { P[m-2*S], P[m-S], P[m+0], P[m+1*S], P[m+2*S] };
@@ -110,31 +141,43 @@ void Deriv::intercell_flux_sweep(const double *P, double *F, int dim)
       Pr[q] = weno5(vp+2, CeesC2L, DeesC2L);
     }
 
-    Mara->riemann->IntercellFlux(Pl, Pr, 0, &F[i], 0.0, dim);
+    int error = Mara->riemann->IntercellFlux(Pl, Pr, 0, &G[i], 0.0, dim);
+    if (error) printf("got riemann solver error!\n");
     // remember to catch errors here
   }
+  memcpy(F, &G[0], sizeof(double)*G.size());
+
+  /*
+  for (i=2*S; i<stride[0]-3*S; i+=NQ) {
+    for (int q=0; q<NQ; ++q) {
+      const int m = i + q;
+      double v[5] = { G[m-2*S], G[m-S], G[m+0], G[m+1*S], G[m+2*S] };
+      F[m] = weno5(v+2, CeesC2A, DeesC2A);
+    }
+  }
+  */
 }
 
-void Deriv::drive_sweeps_1d(const double *P, double *L)
+void Deriv::drive_sweeps_1d(const double *U, double *L)
 {
   double *F = (double*) malloc(stride[0]*sizeof(double));
 
   int i,sx=stride[1];
-  intercell_flux_sweep(P,F,1);
+  intercell_flux_sweep(U,F,1);
 
   for (i=sx; i<stride[0]; ++i) {
     L[i] = -(F[i]-F[i-sx])/dx;
   }
   free(F);
 }
-void Deriv::drive_sweeps_2d(const double *P, double *L)
+void Deriv::drive_sweeps_2d(const double *U, double *L)
 {
   double *F = (double*) malloc(stride[0]*sizeof(double));
   double *G = (double*) malloc(stride[0]*sizeof(double));
 
   int i,sx=stride[1],sy=stride[2];
-  intercell_flux_sweep(P,F,1);
-  intercell_flux_sweep(P,G,2);
+  intercell_flux_sweep(U,F,1);
+  intercell_flux_sweep(U,G,2);
 
   Mara->fluid->ConstrainedTransport2d(F,G,stride);
 
@@ -143,16 +186,16 @@ void Deriv::drive_sweeps_2d(const double *P, double *L)
   }
   free(F); free(G);
 }
-void Deriv::drive_sweeps_3d(const double *P, double *L)
+void Deriv::drive_sweeps_3d(const double *U, double *L)
 {
   double *F = (double*) malloc(stride[0]*sizeof(double));
   double *G = (double*) malloc(stride[0]*sizeof(double));
   double *H = (double*) malloc(stride[0]*sizeof(double));
 
   int i,sx=stride[1],sy=stride[2],sz=stride[3];
-  intercell_flux_sweep(P,F,1);
-  intercell_flux_sweep(P,G,2);
-  intercell_flux_sweep(P,H,3);
+  intercell_flux_sweep(U,F,1);
+  intercell_flux_sweep(U,G,2);
+  intercell_flux_sweep(U,H,3);
 
   Mara->fluid->ConstrainedTransport3d(F,G,H,stride);
 
