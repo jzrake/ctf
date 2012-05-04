@@ -1344,6 +1344,9 @@ int luaC_set_godunov(lua_State *L)
   else if (strcmp(key, "weno-riemann") == 0) {
     new_f = new Weno5RiemannMethodOfLinesSplit;
   }
+  else if (strcmp(key, "weno-ram") == 0) {
+    new_f = new Weno5RamScheme;
+  }
   else {
     luaL_error(L, "no such integration scheme: %s", key);
   }
