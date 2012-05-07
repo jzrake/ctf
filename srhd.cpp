@@ -250,11 +250,11 @@ void Srhd::Eigensystem(const double *U, const double *P,
   // Equations (17) through (20)
   // ---------------------------------------------------------------------------
   const double RR[5][5] =
-    {{K/hW, u, v, w, 1-K/hW},
-     {W*v, 2*h*W2*u*v, h*(1+2*W2*v*v), 2*h*W2*v*w, 2*h*W2*v - W*v},
-     {W*w, 2*h*W2*u*w, 2*h*W2*v*w, h*(1+2*W2*w*w), 2*h*W2*w - W*w},
-     {1, hW*Ap*lp, hW*v, hW*w, hW*Ap - 1},
-     {1, hW*Am*lm, hW*v, hW*w, hW*Am - 1}};
+    {{K/hW, 1-K/hW, u, v, w},
+     {W*v, 2*h*W2*v - W*v, 2*h*W2*u*v, h*(1+2*W2*v*v), 2*h*W2*v*w},
+     {W*w, 2*h*W2*w - W*w, 2*h*W2*u*w, 2*h*W2*v*w, h*(1+2*W2*w*w)},
+     {1, hW*Ap - 1, hW*Ap*lp, hW*v, hW*w},
+     {1, hW*Am - 1, hW*Am*lm, hW*v, hW*w}};
 
   // NOTES
   // ---------------------------------------------------------------------------
@@ -274,20 +274,25 @@ void Srhd::Eigensystem(const double *U, const double *P,
   const double e = +h*h / Delta;
 
   const double LL[5][5] =
-    {{a*(h-W), a*W*u, a*W*v, a*W*w, -a*W},
-     {-b*v, b*u*v, b*(1-u*u), 0, -b*v},
-     {-c*w, c*u*w, 0, c*(1-u*u), -c*w},
+    {{a*(h-W), -a*W, a*W*u, a*W*v, a*W*w},
+     {-b*v, -b*v, b*u*v, b*(1-u*u), 0},
+     {-c*w, -c*w, c*u*w, 0, c*(1-u*u)},
      {d*(hW*Am*(u-lm) - u - W2*(V2 - u*u)*(2*K - 1)*(u - Am*lm) + K*Am*lm),
+      d*(-u - W2*(V2 - u*u)*(2*K - 1)*(u - Am*lm) + K*Am*lm),
       d*(1 + W2*(V2 - u*u)*(2*K - 1)*(1 - Am) - K*Am),
       d*(W2*v*(2*K - 1)*Am*(u - lm)),
-      d*(W2*w*(2*K - 1)*Am*(u - lm)),
-      d*(-u - W2*(V2 - u*u)*(2*K - 1)*(u - Am*lm) + K*Am*lm)},
+      d*(W2*w*(2*K - 1)*Am*(u - lm))},
      {e*(hW*Ap*(u-lp) - u - W2*(V2 - u*u)*(2*K - 1)*(u - Ap*lp) + K*Ap*lp),
+      e*(-u - W2*(V2 - u*u)*(2*K - 1)*(u - Ap*lp) + K*Ap*lp),
       e*(1 + W2*(V2 - u*u)*(2*K - 1)*(1 - Ap) - K*Ap),
       e*(W2*v*(2*K - 1)*Ap*(u - lp)),
-      e*(W2*w*(2*K - 1)*Ap*(u - lp)),
-      e*(-u - W2*(V2 - u*u)*(2*K - 1)*(u - Ap*lp) + K*Ap*lp)}};
+      e*(W2*w*(2*K - 1)*Ap*(u - lp))}};
 
+
+  for (int n=0; n<5; ++n) {
+    for (int m=0; m<5; ++m) {
+      R[n*5 + m] = RR[m][n];
+    }
+  }
   memcpy(L, LL, 25*sizeof(double));
-  memcpy(R, RR, 25*sizeof(double));
 }
