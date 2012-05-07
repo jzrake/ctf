@@ -44,7 +44,7 @@ int Srhd::ConsToPrim(const double *U, double *P) const
 {
   if (U[ddd] < 0.0 || U[tau] < 0.0) {
     DebugLog.Warning(__FUNCTION__) << "Got negative D or Tau." << std::endl
-				   << PrintCons(U) << std::endl;
+                                   << PrintCons(U) << std::endl;
     return 1;
   }
 
@@ -81,8 +81,8 @@ int Srhd::ConsToPrim(const double *U, double *P) const
     }
     if (n_iter++ == NEWTON_MAX_ITER) {
       DebugLog.Warning(__FUNCTION__) << "ConsToPrim ran out of iterations." << std::endl
-				     << PrintPrim(P) << std::endl
-				     << PrintCons(U) << std::endl;
+                                     << PrintPrim(P) << std::endl
+                                     << PrintCons(U) << std::endl;
       return 1;
     }
   }
@@ -198,4 +198,96 @@ void Srhd::FluxAndEigenvalues(const double *U,
   }
 
   return;
+}
+
+
+void Srhd::Eigensystem(const double *U, const double *P,
+                       double *L, double *R, double *lam, int dim) const
+// -----------------------------------------------------------------------------
+//
+// Authors: Jonathan Zrake, Bez Laderman: NYU CCPP
+//
+// Date: May 7th, 2012
+//
+// This piece of code implements the left and right eigenvectors of the ideal
+// special relativistic hydrodynamics equations. The formulas are an exact
+// translation of those given in the literature:
+//
+// R. Donat, J.A. Font, J.M. Ibanez, & A. Marquina
+// JCP, 1998, 146, 58
+//
+// http://www.sciencedirect.com/science/article/pii/S0021999198959551
+//
+//
+// Having these eigenvectors in a hydrodynamics code is good. They can be used
+// for any scheme which requires flux splitting with characteristic
+// decomposition, such as high order ENO or WENO schemes.
+//
+// -----------------------------------------------------------------------------
+{
+  const double D = P[ddd]; // rest mass density
+  const double p = P[pre]; // pressure
+  const double u = P[vx];  // vx (three velocity)
+  const double v = P[vy];  // vy
+  const double w = P[vz];  // vz
+
+  const double sie = (p/D) / (AdiabaticGamma - 1); // specific internal energy
+  const double h = 1 + sie + p/D;                  // specific enthalpy
+  const double cs2 = AdiabaticGamma * p / (D*h);   // sound speed squared
+  const double V2 = u*u + v*v + w*w;
+  const double W = 1.0 / sqrt(1 - V2);             // Lorentz factor
+  const double W2 = W*W;
+  const double K = h;                              // for gamma-law only, K = h
+  const double hW = h*W;
+
+  // equations (14) and (15)
+  const double lp = (u*(1-cs2) + sqrt(cs2*(1-V2)*(1-V2*cs2-u*u*(1-cs2))))/(1-V2*cs2);
+  const double lm = (u*(1-cs2) - sqrt(cs2*(1-V2)*(1-V2*cs2-u*u*(1-cs2))))/(1-V2*cs2);
+
+  const double Ap = (1 - u*u) / (1 - u*lp);
+  const double Am = (1 - u*u) / (1 - u*lm);
+
+  // Equations (17) through (20)
+  // ---------------------------------------------------------------------------
+  const double RR[5][5] =
+    {{K/hW, u, v, w, 1-K/hW},
+     {W*v, 2*h*W2*u*v, h*(1+2*W2*v*v), 2*h*W2*v*w, 2*h*W2*v - W*v},
+     {W*w, 2*h*W2*u*w, 2*h*W2*v*w, h*(1+2*W2*w*w), 2*h*W2*w - W*w},
+     {1, hW*Ap*lp, hW*v, hW*w, hW*Ap - 1},
+     {1, hW*Am*lm, hW*v, hW*w, hW*Am - 1}};
+
+  // NOTES
+  // ---------------------------------------------------------------------------
+  // (1) Font describes the columns if the left eigen vector matrix
+  // horizontally, which is how they are written below. So we take the
+  // transpose at the end of the day.
+  //
+  // (2) Font's notation uses L_{-/+} for the last left eigenvectors, but that
+  // naming is weird, since each L_+ contains lm and Am and vice-versa.
+  // ---------------------------------------------------------------------------
+
+  const double Delta = h*h*h*W*(K-1)*(1-u*u)*(Ap*lp - Am*lm); // equation (21)
+  const double a = W / (K-1);
+  const double b = 1 / (h*(1 - u*u));
+  const double c = 1 / (h*(1 - u*u));
+  const double d = -h*h / Delta;
+  const double e = +h*h / Delta;
+
+  const double LL[5][5] =
+    {{a*(h-W), a*W*u, a*W*v, a*W*w, -a*W},
+     {-b*v, b*u*v, b*(1-u*u), 0, -b*v},
+     {-c*w, c*u*w, 0, c*(1-u*u), -c*w},
+     {d*(hW*Am*(u-lm) - u - W2*(V2 - u*u)*(2*K - 1)*(u - Am*lm) + K*Am*lm),
+      d*(1 + W2*(V2 - u*u)*(2*K - 1)*(1 - Am) - K*Am),
+      d*(W2*v*(2*K - 1)*Am*(u - lm)),
+      d*(W2*w*(2*K - 1)*Am*(u - lm)),
+      d*(-u - W2*(V2 - u*u)*(2*K - 1)*(u - Am*lm) + K*Am*lm)},
+     {e*(hW*Ap*(u-lp) - u - W2*(V2 - u*u)*(2*K - 1)*(u - Ap*lp) + K*Ap*lp),
+      e*(1 + W2*(V2 - u*u)*(2*K - 1)*(1 - Ap) - K*Ap),
+      e*(W2*v*(2*K - 1)*Ap*(u - lp)),
+      e*(W2*w*(2*K - 1)*Ap*(u - lp)),
+      e*(-u - W2*(V2 - u*u)*(2*K - 1)*(u - Ap*lp) + K*Ap*lp)}};
+
+  memcpy(L, LL, 25*sizeof(double));
+  memcpy(R, RR, 25*sizeof(double));
 }

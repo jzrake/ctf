@@ -29,6 +29,8 @@ public:
   void FluxAndEigenvalues(const double *U,
 			  const double *P, double *F,
 			  double *ap, double *am, int dimension) const;
+  void Eigensystem(const double *U, const double *P,
+		   double *L, double *R, double *lam, int dim) const;
 
   int GetNq() const { return 5; }
   std::vector<std::string> GetPrimNames() const;
