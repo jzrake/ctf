@@ -219,32 +219,27 @@ void Eulers::Eigensystem(const double *U, const double *P,
   lam[2] = vn+a;
   lam[3] = vn;
   lam[4] = vn;
+  /*
+  lam[0] = u-a;
+  lam[1] = u;
+  lam[2] = u;
+  lam[3] = u;
+  lam[4] = u+a;*/
 }
 #endif
 
 #ifdef EIGEN2
 void Eulers::Eigensystem(const double *U, const double *P,
                          double *L, double *R, double *lam, int dim) const
+// -----------------------------------------------------------------------------
+// For 1d only
+// -----------------------------------------------------------------------------
 {
-  int v1=0, v2=0, v3=0;
-
-  switch (dim) {
-  case 1:
-    v1=vx; v2=vy; v3=vz;
-    break;
-  case 2:
-    v1=vy; v2=vz; v3=vx;
-    break;
-  case 3:
-    v1=vz; v2=vx; v3=vy;
-    break;
-  }
-
   const double gm = Mara->GetEos<AdiabaticEos>().Gamma;
   const double gm1 = gm - 1.0;
-  const double u = P[v1];
-  const double v = P[v2];
-  const double w = P[v3];
+  const double u = P[vx];
+  const double v = P[vy];
+  const double w = P[vz];
   const double V2 = u*u + v*v + w*w;
   const double a = sqrt(gm * P[pre] / P[rho]);
   const double H = (U[nrg] + P[pre]) / P[rho];
@@ -272,47 +267,8 @@ void Eulers::Eigensystem(const double *U, const double *P,
   //                    rho, nrg,         px,        py,        pz
   // --------------------------------------------------------------------------
 
-
-  // Permute the eigenvectors according to the direction:
-  // ---------------------------------------------------------------------------
-  // L' = L P
-  // R' = P^{-1} R
-  // ---------------------------------------------------------------------------
-  const double P1[5][5] =
-    { { 1, 0, 0, 0, 0 },
-      { 0, 1, 0, 0, 0 },
-      { 0, 0, 1, 0, 0 },
-      { 0, 0, 0, 1, 0 },
-      { 0, 0, 0, 0, 1 } };
-
-  const double P2[5][5] =
-    { { 1, 0, 0, 0, 0 },
-      { 0, 0, 1, 0, 0 },
-      { 0, 0, 0, 1, 0 },
-      { 0, 1, 0, 0, 0 },
-      { 0, 0, 0, 0, 1 } };
-
-  const double P3[5][5] =
-    { { 1, 0, 0, 0, 0 },
-      { 0, 0, 0, 1, 0 },
-      { 0, 1, 0, 0, 0 },
-      { 0, 0, 1, 0, 0 },
-      { 0, 0, 0, 0, 1 } };
-
-  switch (dim) {
-  case 1:
-    matrix_matrix_product(LL[0], P1[0], L, 5, 5, 5);
-    matrix_matrix_product(P1[0], RR[0], R, 5, 5, 5);
-    break;
-  case 2:
-    matrix_matrix_product(LL[0], P2[0], L, 5, 5, 5);
-    matrix_matrix_product(P3[0], RR[0], R, 5, 5, 5);
-    break;
-  case 3:
-    matrix_matrix_product(LL[0], P3[0], L, 5, 5, 5);
-    matrix_matrix_product(P2[0], RR[0], R, 5, 5, 5);
-    break;
-  }
+  memcpy(L, LL, 25*sizeof(double));
+  memcpy(R, RR, 25*sizeof(double));
 
   // Replace the term in eqn 3.83 : (gam - 1) / (2*a^2)
   // ---------------------------------------------------------------------------

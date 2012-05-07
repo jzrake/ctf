@@ -203,24 +203,40 @@ void Deriv::drive_sweeps_2d()
 }
 void Deriv::drive_sweeps_3d()
 {
-  /*
-    const int Nx = Mara->domain->get_N(1);
-    const int Ny = Mara->domain->get_N(2);
-    const int Nz = Mara->domain->get_N(3);
-    const int Ng = Mara->domain->get_Ng();
-    const int Sx = stride[1];
-    const int Sy = stride[2];
-    const int Sz = stride[3];
+  const int Nx = Mara->domain->get_N(1);
+  const int Ny = Mara->domain->get_N(2);
+  const int Nz = Mara->domain->get_N(3);
+  const int Ng = Mara->domain->get_Ng();
+  const int Sx = stride[1];
+  const int Sy = stride[2];
+  const int Sz = stride[3];
 
-    // Not written yet
-    // ---------------
-
-    Mara->fluid->ConstrainedTransport3d(&Fiph[0], &Giph[0], &Hiph[0], stride);
-
-    for (int i=Sx; i<stride[0]; ++i) {
-    Lglb[i] = -(Fiph[i]-Fiph[i-Sx])/dx - (Giph[i]-Giph[i-Sy])/dy - (Hiph[i]-Hiph[i-Sz])/dz;
+  for (int j=0; j<Ny+2*Ng; ++j) {
+    for (int k=0; k<Nz+2*Ng; ++k) {
+      const int m = j*Sy + k*Sz;
+      drive_single_sweep(&Uglb[m], &Pglb[m], &Fiph[m], 1);
     }
-  */
+  }
+  for (int k=0; k<Nz+2*Ng; ++k) {
+    for (int i=0; i<Nx+2*Ng; ++i) {
+      const int m = k*Sz + i*Sx;
+      drive_single_sweep(&Uglb[m], &Pglb[m], &Giph[m], 2);
+    }
+  }
+  for (int i=0; i<Nx+2*Ng; ++i) {
+    for (int j=0; j<Ny+2*Ng; ++j) {
+      const int m = i*Sx + j*Sy;
+      drive_single_sweep(&Uglb[m], &Pglb[m], &Hiph[m], 3);
+    }
+  }
+  Mara->fluid->ConstrainedTransport3d(&Fiph[0], &Giph[0], &Hiph[0], stride);
+
+  for (int i=Sx; i<stride[0]; ++i) {
+    Lglb[i] =
+      -(Fiph[i]-Fiph[i-Sx])/dx +
+      -(Giph[i]-Giph[i-Sy])/dy +
+      -(Hiph[i]-Hiph[i-Sz])/dz;
+  }
 }
 
 
