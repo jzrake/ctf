@@ -249,24 +249,28 @@ void Eulers::Eigensystem(const double *U, const double *P,
   const double a = sqrt(gm * P[pre] / P[rho]);
   const double H = (U[nrg] + P[pre]) / P[rho];
 
-  // Toro Equation 3.82
-  // ---------------------------------------------------------------------------
-  const double R_[5][5] =
-    { {       1,      1,      0,      0,     1   },
-      {     u-a,      u,      0,      0,     u+a },
-      {       v,      v,      1,      0,     v   },
-      {       w,      w,      0,      1,     w   },
-      { H - u*a, 0.5*V2,      v,      w, H + u*a } };
-
-
+  // --------------------------------------------------------------------------
+  // Toro Equation 3.82 (rows are permuted to deal with Mara's convention on
+  // the conserved quantities)
+  // --------------------------------------------------------------------------
+  const double RR[5][5] =
+    {{       1,      1,      0,      0,     1   },  // rho
+     { H - u*a, 0.5*V2,      v,      w, H + u*a },  // nrg
+     {     u-a,      u,      0,      0,     u+a },  // px
+     {       v,      v,      1,      0,     v   },  // py
+     {       w,      w,      0,      1,     w   }}; // pz
+  // --------------------------------------------------------------------------
   // Toro Equation 3.83 up to (gam - 1) / (2*a^2)
-  // ---------------------------------------------------------------------------
-  const double L_[5][5] =
-    { {    H + (a/gm1)*(u-a),  -(u+a/gm1),        -v,        -w,  1 },
-      { -2*H + (4/gm1)*(a*a),         2*u,       2*v,       2*w, -2 },
-      {         -2*v*a*a/gm1,           0, 2*a*a/gm1,         0,  0 },
-      {         -2*w*a*a/gm1,           0,         0, 2*a*a/gm1,  0 },
-      {    H - (a/gm1)*(u+a),  -(u-a/gm1),        -v,        -w,  1 } };
+  // --------------------------------------------------------------------------
+  const double LL[5][5] =
+    {{    H + (a/gm1)*(u-a),   1, -(u+a/gm1),        -v,        -w },
+     { -2*H + (4/gm1)*(a*a),  -2,        2*u,       2*v,       2*w },
+     {         -2*v*a*a/gm1,   0,          0, 2*a*a/gm1,         0 },
+     {         -2*w*a*a/gm1,   0,          0,         0, 2*a*a/gm1 },
+     {    H - (a/gm1)*(u+a),   1, -(u-a/gm1),        -v,        -w }};
+  // --------------------------------------------------------------------------
+  //                    rho, nrg,         px,        py,        pz
+  // --------------------------------------------------------------------------
 
 
   // Permute the eigenvectors according to the direction:
@@ -297,16 +301,16 @@ void Eulers::Eigensystem(const double *U, const double *P,
 
   switch (dim) {
   case 1:
-    matrix_matrix_product(L_[0], P1[0], L, 5, 5, 5);
-    matrix_matrix_product(P1[0], R_[0], R, 5, 5, 5);
+    matrix_matrix_product(LL[0], P1[0], L, 5, 5, 5);
+    matrix_matrix_product(P1[0], RR[0], R, 5, 5, 5);
     break;
   case 2:
-    matrix_matrix_product(L_[0], P2[0], L, 5, 5, 5);
-    matrix_matrix_product(P3[0], R_[0], R, 5, 5, 5);
+    matrix_matrix_product(LL[0], P2[0], L, 5, 5, 5);
+    matrix_matrix_product(P3[0], RR[0], R, 5, 5, 5);
     break;
   case 3:
-    matrix_matrix_product(L_[0], P3[0], L, 5, 5, 5);
-    matrix_matrix_product(P2[0], R_[0], R, 5, 5, 5);
+    matrix_matrix_product(LL[0], P3[0], L, 5, 5, 5);
+    matrix_matrix_product(P2[0], RR[0], R, 5, 5, 5);
     break;
   }
 

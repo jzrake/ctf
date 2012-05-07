@@ -33,7 +33,7 @@ private:
 public:
   std::valarray<double> dUdt(const std::valarray<double> &Uin);
 } ;
-
+/*
 class Weno5RamScheme : public GodunovOperator
 {
 private:
@@ -47,5 +47,6 @@ private:
 public:
   std::valarray<double> dUdt(const std::valarray<double> &Uin);
 } ;
+*/
 
 #endif // __PlmMethodOfLinesSplit_HEADER__

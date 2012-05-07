@@ -67,12 +67,11 @@ void Deriv::intercell_flux_sweep(const double *U, const double *P,
   double *fpT = new double[NQ*6];     // Transposed split flux to [wave, zone]
   double *fmT = new double[NQ*6];     // " " Left going
   // ---------------------------------------------------------------------------
-  const double Ptest[5] = { 1,1,0,0,0 };
 
   for (int i=Ng-1; i<Nx+Ng; ++i) {
 
     for (int q=0; q<NQ; ++q) {
-      Piph[q] = 0  *  Ptest[q]    +    1  *  0.5*(P[i*NQ + q] + P[(i+1)*NQ + q]);
+      Piph[q] = 0.5*(P[i*NQ + q] + P[(i+1)*NQ + q]);
     }
 
     Mara->fluid->PrimToCons(Piph, Uiph);
