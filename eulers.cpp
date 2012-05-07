@@ -133,7 +133,7 @@ void Eulers::FluxAndEigenvalues(const double *U,
   }
 }
 
-#define EIGEN2
+#define EIGEN1
 
 #ifdef EIGEN1
 void Eulers::Eigensystem(const double *U, const double *P,
@@ -159,17 +159,17 @@ void Eulers::Eigensystem(const double *U, const double *P,
   if (fabs(nx) >= fabs(ny) && fabs(nx) >= fabs(nz)) {
     const double R_[5][5] =
       { {         1,  1,         1,           0,   0         },
+        { h0 - a*vn, ek, h0 + a*vn, u*ny - v*nx, w*nx - u*nz },
         {  u - a*nx,  u,  u + a*nx,          ny, -nz         },
         {  v - a*ny,  v,  v + a*ny,         -nx,   0         },
-        {  w - a*nz,  w,  w + a*nz,           0,  nx         },
-        { h0 - a*vn, ek, h0 + a*vn, u*ny - v*nx, w*nx - u*nz } };
+        {  w - a*nz,  w,  w + a*nz,           0,  nx         } };
 
     const double L_[5][5] =
-      { { (g1*ek + a*vn)/(2*a2), -(g1*u + a*nx)/(2*a2), -(g1*v + a*ny)/(2*a2), -(g1*w + a*nz)/(2*a2), g1/(2*a2) },
-        { (a2 - g1*ek) / a2, g1*u/a2, g1*v/a2, g1*w/a2, -g1/a2 },
-        { (g1*ek - a*vn)/(2*a2), -(g1*u - a*nx)/(2*a2), -(g1*v - a*ny)/(2*a2), -(g1*w - a*nz)/(2*a2), g1/(2*a2) },
-        { (v - vn*ny) / nx, ny, (ny*ny - 1.0) / nx, ny*nz/nx, 0.0 },
-        {-(w - vn*nz) / nx,-nz,-ny*nz/nx,-(nz*nz - 1.0) / nx, 0.0 } };
+      { { (g1*ek + a*vn)/(2*a2), g1/(2*a2), -(g1*u + a*nx)/(2*a2), -(g1*v + a*ny)/(2*a2), -(g1*w + a*nz)/(2*a2) },
+        { (a2 - g1*ek) / a2, -g1/a2, g1*u/a2, g1*v/a2, g1*w/a2 },
+        { (g1*ek - a*vn)/(2*a2), g1/(2*a2), -(g1*u - a*nx)/(2*a2), -(g1*v - a*ny)/(2*a2), -(g1*w - a*nz)/(2*a2) },
+        { (v - vn*ny) / nx, 0.0, ny, (ny*ny - 1.0) / nx, ny*nz/nx },
+        {-(w - vn*nz) / nx, 0.0,-nz,-ny*nz/nx,-(nz*nz - 1.0) / nx } };
 
     std::memcpy(R, R_, 5*5*sizeof(double));
     std::memcpy(L, L_, 5*5*sizeof(double));
@@ -178,17 +178,17 @@ void Eulers::Eigensystem(const double *U, const double *P,
   else if (fabs(ny) >= fabs(nz) && fabs(ny) >= fabs(nx)) {
     const double R_[5][5] =
       { {         1,  1,         1,           0,   0         },
+        { h0 - a*vn, ek, h0 + a*vn, u*ny - v*nx, v*nz - w*ny },
         {  u - a*nx,  u,  u + a*nx,          ny,   0         },
         {  v - a*ny,  v,  v + a*ny,         -nx,  nz         },
-        {  w - a*nz,  w,  w + a*nz,           0, -ny         },
-        { h0 - a*vn, ek, h0 + a*vn, u*ny - v*nx, v*nz - w*ny } };
+        {  w - a*nz,  w,  w + a*nz,           0, -ny         } };
 
     const double L_[5][5] =
-      { { (g1*ek + a*vn)/(2*a2), -(g1*u + a*nx)/(2*a2), -(g1*v + a*ny)/(2*a2), -(g1*w + a*nz)/(2*a2), g1/(2*a2) },
-        { (a2 - g1*ek) / a2, g1*u/a2, g1*v/a2, g1*w/a2, -g1/a2 },
-        { (g1*ek - a*vn)/(2*a2), -(g1*u - a*nx)/(2*a2), -(g1*v - a*ny)/(2*a2), -(g1*w - a*nz)/(2*a2), g1/(2*a2) },
-        {-(u - vn*nx) / ny,-(nx*nx - 1.0) / ny,-nx,-nx*nz/ny, 0.0 },
-        { (w - vn*nz) / ny, nx*nz/ny, nz, (nz*nz - 1.0) / ny, 0.0 } };
+      { { (g1*ek + a*vn)/(2*a2), g1/(2*a2), -(g1*u + a*nx)/(2*a2), -(g1*v + a*ny)/(2*a2), -(g1*w + a*nz)/(2*a2) },
+        { (a2 - g1*ek) / a2, -g1/a2, g1*u/a2, g1*v/a2, g1*w/a2 },
+        { (g1*ek - a*vn)/(2*a2), g1/(2*a2), -(g1*u - a*nx)/(2*a2), -(g1*v - a*ny)/(2*a2), -(g1*w - a*nz)/(2*a2) },
+        {-(u - vn*nx) / ny, 0.0,-(nx*nx - 1.0) / ny,-nx,-nx*nz/ny },
+        { (w - vn*nz) / ny, 0.0, nx*nz/ny, nz, (nz*nz - 1.0) / ny } };
 
     std::memcpy(R, R_, 5*5*sizeof(double));
     std::memcpy(L, L_, 5*5*sizeof(double));
@@ -197,17 +197,17 @@ void Eulers::Eigensystem(const double *U, const double *P,
   else if (fabs(nz) >= fabs(nx) && fabs(nz) >= fabs(ny)) {
     const double R_[5][5] =
       { {         1,  1,         1,           0,   0         },
+        { h0 - a*vn, ek, h0 + a*vn, w*nx - u*nz, v*nz - w*ny },
         {  u - a*nx,  u,  u + a*nx,         -nz,   0         },
         {  v - a*ny,  v,  v + a*ny,           0,  nz         },
-        {  w - a*nz,  w,  w + a*nz,          nx, -ny         },
-        { h0 - a*vn, ek, h0 + a*vn, w*nx - u*nz, v*nz - w*ny } };
+        {  w - a*nz,  w,  w + a*nz,          nx, -ny         } };
 
     const double L_[5][5] =
-      { { (g1*ek + a*vn)/(2*a2), -(g1*u + a*nx)/(2*a2), -(g1*v + a*ny)/(2*a2), -(g1*w + a*nz)/(2*a2), g1/(2*a2) },
-        { (a2 - g1*ek) / a2, g1*u/a2, g1*v/a2, g1*w/a2, -g1/a2 },
-        { (g1*ek - a*vn)/(2*a2), -(g1*u - a*nx)/(2*a2), -(g1*v - a*ny)/(2*a2), -(g1*w - a*nz)/(2*a2), g1/(2*a2) },
-        { (u - vn*nx) / nz, (nx*nx - 1.0) / nz, nx*ny/nz, nx, 0.0 },
-        {-(v - vn*ny) / nz,-nx*ny/nz,-(ny*ny - 1.0) / nz,-ny, 0.0 } };
+      { { (g1*ek + a*vn)/(2*a2), g1/(2*a2), -(g1*u + a*nx)/(2*a2), -(g1*v + a*ny)/(2*a2), -(g1*w + a*nz)/(2*a2) },
+        { (a2 - g1*ek) / a2, -g1/a2, g1*u/a2, g1*v/a2, g1*w/a2 },
+        { (g1*ek - a*vn)/(2*a2), g1/(2*a2), -(g1*u - a*nx)/(2*a2), -(g1*v - a*ny)/(2*a2), -(g1*w - a*nz)/(2*a2) },
+        { (u - vn*nx) / nz, 0.0, (nx*nx - 1.0) / nz, nx*ny/nz, nx },
+        {-(v - vn*ny) / nz, 0.0,-nx*ny/nz,-(ny*ny - 1.0) / nz,-ny } };
 
     std::memcpy(R, R_, 5*5*sizeof(double));
     std::memcpy(L, L_, 5*5*sizeof(double));
