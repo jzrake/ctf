@@ -241,18 +241,29 @@ void Deriv::drive_sweeps_3d()
 
 
 
-
+static double min3(const double *x)
+{
+  double x01 = x[0] < x[1] ? x[0] : x[1];
+  return x01 < x[2] ? x01 : x[2];
+}
+static double max3(const double *x)
+{
+  double x01 = x[0] > x[1] ? x[0] : x[1];
+  return x01 > x[2] ? x01 : x[2];
+}
 
 double weno5_fiph_apos(const double *f)
 {
-  const double eps = 1e-16;
+  const double eps = 1e-20;
+  const double eps_prime = 1e-10;
+
   const double d[3] = { 0.3, 0.6, 0.1 };
   const double fiph[3] = {
     (  1.0/3.0)*f[ 0] + (  5.0/6.0)*f[ 1] + ( -1.0/6.0)*f[2],
     ( -1.0/6.0)*f[-1] + (  5.0/6.0)*f[ 0] + (  1.0/3.0)*f[1],
     (  1.0/3.0)*f[-2] + ( -7.0/6.0)*f[-1] + ( 11.0/6.0)*f[0]
   };
-  const double B[3] = {
+  double B[3] = {
     (13.0/12.0)*pow(  f[ 0] - 2*f[ 1] +   f[ 2], 2.0) +
     ( 1.0/ 4.0)*pow(3*f[ 0] - 4*f[ 1] +   f[ 2], 2.0),
 
@@ -262,6 +273,18 @@ double weno5_fiph_apos(const double *f)
     (13.0/12.0)*pow(  f[-2] - 2*f[-1] +   f[ 0], 2.0) +
     ( 1.0/ 4.0)*pow(  f[-2] - 4*f[-1] + 3*f[ 0], 2.0)
   };
+
+  const double A = 10.0;
+  const double tau5 = fabs(B[0] - B[2]);
+  B[0] = (B[0] + eps) / (B[0] + tau5 + eps);
+  B[1] = (B[1] + eps) / (B[1] + tau5 + eps);
+  B[2] = (B[2] + eps) / (B[2] + tau5 + eps);
+
+  const double R0 = min3(B) / (max3(B) + eps_prime);
+  B[0] = R0*A*min3(B) + B[0];
+  B[1] = R0*A*min3(B) + B[1];
+  B[2] = R0*A*min3(B) + B[2];
+
   const double wgt[3] = {
     d[0] / pow(eps + B[0], 2.0),
     d[1] / pow(eps + B[1], 2.0),
@@ -273,14 +296,16 @@ double weno5_fiph_apos(const double *f)
 
 double weno5_fiph_aneg(const double *f)
 {
-  const double eps = 1e-16;
+  const double eps = 1e-20;
+  const double eps_prime = 1e-10;
+
   const double d[3] = { 0.1, 0.6, 0.3 };
   const double fiph[3] = {
     ( 11.0/6.0)*f[ 1] + ( -7.0/6.0)*f[ 2] + (  1.0/3.0)*f[3],
     (  1.0/3.0)*f[ 0] + (  5.0/6.0)*f[ 1] + ( -1.0/6.0)*f[2],
     ( -1.0/6.0)*f[-1] + (  5.0/6.0)*f[ 0] + (  1.0/3.0)*f[1],
   };
-  const double B[3] = {
+  double B[3] = {
     (13.0/12.0)*pow(  f[ 1] - 2*f[ 2] +   f[ 3], 2.0) +
     ( 1.0/ 4.0)*pow(3*f[ 1] - 4*f[ 2] +   f[ 3], 2.0),
 
@@ -290,11 +315,24 @@ double weno5_fiph_aneg(const double *f)
     (13.0/12.0)*pow(  f[-1] - 2*f[ 0] +   f[ 1], 2.0) +
     ( 1.0/ 4.0)*pow(  f[-1] - 4*f[ 0] + 3*f[ 1], 2.0)
   };
+
+  const double A = 10.0;
+  const double tau5 = fabs(B[0] - B[2]);
+  B[0] = (B[0] + eps) / (B[0] + tau5 + eps);
+  B[1] = (B[1] + eps) / (B[1] + tau5 + eps);
+  B[2] = (B[2] + eps) / (B[2] + tau5 + eps);
+
+  const double R0 = min3(B) / (max3(B) + eps_prime);
+  B[0] = R0*A*min3(B) + B[0];
+  B[1] = R0*A*min3(B) + B[1];
+  B[2] = R0*A*min3(B) + B[2];
+
   const double wgt[3] = {
     d[0] / pow(eps + B[0], 2.0),
     d[1] / pow(eps + B[1], 2.0),
     d[2] / pow(eps + B[2], 2.0)
   };
+
   const double wgt_ttl = wgt[0] + wgt[1] + wgt[2];
   return (wgt[0]*fiph[0] + wgt[1]*fiph[1] + wgt[2]*fiph[2]) / wgt_ttl;
 }

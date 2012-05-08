@@ -213,18 +213,11 @@ void Eulers::Eigensystem(const double *U, const double *P,
     std::memcpy(L, L_, 5*5*sizeof(double));
   }
 
-
   lam[0] = vn-a;
   lam[1] = vn;
   lam[2] = vn+a;
   lam[3] = vn;
   lam[4] = vn;
-  /*
-  lam[0] = u-a;
-  lam[1] = u;
-  lam[2] = u;
-  lam[3] = u;
-  lam[4] = u+a;*/
 }
 #endif
 
