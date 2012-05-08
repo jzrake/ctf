@@ -310,9 +310,6 @@ void Eulers::Eigensystem(const double *U, const double *P_,
   //                    rho, nrg,         px,        py,        pz
   // --------------------------------------------------------------------------
 
-  //  memcpy(L, LL, 25*sizeof(double));
-  //  memcpy(R, RR, 25*sizeof(double));
-
   matrix_matrix_product(S[dim-1][0], RR[0], R, 5, 5, 5);
   matrix_matrix_product(LL[0], T[dim-1][0], L, 5, 5, 5);
 
@@ -322,13 +319,6 @@ void Eulers::Eigensystem(const double *U, const double *P_,
   for (int i=0; i<25; ++i) {
     L[i] *= norm;
   }
-
-  double I[25];
-  matrix_matrix_product(L, R, I, 5, 5, 5);
-  for (int i=0; i<25; ++i) {
-    //    printf("%d: %f\n", i, I[i]);
-  }
-  //  exit(1);
 
   lam[0] = u-a;
   lam[1] = u+a;
