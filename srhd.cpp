@@ -11,9 +11,11 @@
 
 #include <cstdio>
 #include <cmath>
+#include <cstring>
 #include "srhd.hpp"
 #include "matrix.h"
 #include "logging.hpp"
+
 
 typedef AdiabaticIdealSrhd Srhd;
 static const double bigW = 1e12;

@@ -1,5 +1,6 @@
 
 
+#include <cstdio>
 #include "eos.hpp"
 
 
