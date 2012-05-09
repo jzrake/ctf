@@ -1,4 +1,69 @@
 
+local host = require 'host'
+
+-- *****************************************************************************
+-- Main driver, operates between checkpoints and then returns
+-- .............................................................................
+local function run_simulation(pinit, setup, runargs)
+
+   local function InitSimulation(pinit, setup)
+      setup()
+      init_prim(pinit)
+      boundary.ApplyBoundaries()
+
+      local Status = { }
+
+      Status.CurrentTime = 0.0
+      Status.Iteration   = 0
+      Status.Checkpoint  = 0
+      Status.Timestep    = 0.0
+
+      local datadir = string.format("data/%s", runargs.id)
+      os.execute(string.format("mkdir -p %s", datadir))
+      os.execute(host.Filesystem(datadir))
+
+      if not runargs.quiet then print_mara() end
+      return Status
+   end
+   local function HandleErrors(Status, attempt)
+      return 0
+   end
+
+   local Status = InitSimulation(pinit, setup)
+
+   local t0 = Status.CurrentTime
+   local attempt = 0
+
+   while Status.CurrentTime - t0 < runargs.tmax do
+
+      if HandleErrors(Status, attempt) ~= 0 then
+         return 1
+      end
+      attempt = attempt + 1
+
+      local dt = Status.Timestep
+      local kzps, errors = advance(dt)
+
+      if errors == 0 then
+         driving.Advance(dt)
+         driving.Resample()
+
+         if not runargs.quiet then
+            print(string.format("%05d(%d): t=%5.4f dt=%5.4e %3.2fkz/s %3.2fus/(z*Nq)",
+                                Status.Iteration, attempt-1, Status.CurrentTime, dt,
+                                kzps, 1e6/8/(1e3*kzps)))
+            io.flush()
+         end
+
+         attempt = 0
+         Status.CurrentTime = Status.CurrentTime + Status.Timestep
+         Status.Timestep = get_timestep(runargs.CFL)
+         Status.Iteration = Status.Iteration + 1
+      end
+   end
+   return Status
+end
+
 
 -- *****************************************************************************
 -- Function to deep-copy a table
@@ -32,11 +97,11 @@ local function plot(series, tpause)
    for k,v in pairs(series) do
       table.insert(lines, string.format(" '-' u 1:2 title '%s'", k))
    end
-   
+
    gp:write("plot" .. table.concat(lines, ",") .. "\n")
    for k,v in pairs(series) do
       for i=0,v:size()-1 do
-	 gp:write(string.format("%f %f\n", i, v[i]))
+         gp:write(string.format("%f %f\n", i, v[i]))
       end
       gp:write("e\n")
    end
@@ -46,4 +111,21 @@ local function plot(series, tpause)
 end
 
 
-return { deepcopy=deepcopy, plot=plot }
+local function parse_args(runargs)
+   for k,v in pairs(cmdline.opts) do
+      if type(runargs[k]) == 'number' then
+         runargs[k] = tonumber(v)
+      else
+         runargs[k] = v
+      end
+   end
+   print("command line arguments:")
+   for k,v in pairs(runargs) do
+      print(k,v)
+   end
+end
+
+return { deepcopy=deepcopy,
+         plot=plot,
+         parse_args=parse_args,
+         run_simulation=run_simulation }
