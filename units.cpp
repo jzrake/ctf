@@ -1,6 +1,7 @@
 
 
 #include "eos.hpp"
+#include <cstdio>
 
 
 PhysicalUnits::PhysicalUnits(double c, double g, double s)

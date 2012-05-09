@@ -13,6 +13,7 @@
 #include <cmath>
 #include "srhd.hpp"
 #include "logging.hpp"
+#include <cstring>
 
 typedef AdiabaticIdealSrhd Srhd;
 static const double bigW = 1e12;
