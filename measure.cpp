@@ -357,6 +357,13 @@ int luaC_max_lorentz_factor(lua_State *L)
 
 int luaC_mean_max_divB(lua_State *L)
 {
+  const FluidEquations &fluid = *HydroModule::Mara->fluid;
+  if (typeid(fluid) != typeid(AdiabaticIdealRmhd)) {
+    lua_pushnumber(L, 0.0);
+    lua_pushnumber(L, 0.0);
+    return 2;
+  }
+
   const std::valarray<double> &P = HydroModule::Mara->PrimitiveArray;
   const int Ng = HydroModule::Mara->domain->get_Ng();
   const int Nq = HydroModule::Mara->domain->get_Nq();
@@ -369,7 +376,6 @@ int luaC_mean_max_divB(lua_State *L)
   const std::valarray<double> fz = P[std::slice(Bz, Nz, Nq)];
 
   ValarrayIndexer M(N);
-
   std::valarray<double> div(Nz);
 
   if (Nd == 2) {
@@ -420,7 +426,11 @@ int absolute_index_is_ghost(const int &m)
   const int Ng = HydroModule::Mara->domain->get_Ng();
   const std::vector<int> &N = HydroModule::Mara->domain->aug_shape();
 
-  if (Nd == 2) {
+  if (Nd == 1) {
+    const int i = m;
+    if (i < Ng || i >= N[0]-Ng) return 1;
+  }
+  else if (Nd == 2) {
     const int i = (m         ) / (N[1]);
     const int j = (m - i*N[1]) / (1);
     if (i < Ng || i >= N[0]-Ng ||

@@ -4,8 +4,12 @@
 #include "logging.hpp"
 
 #define MAXNQ 8 // Used for static array initialization
-typedef PlmMethodOfLinesSplit Deriv;
+typedef MethodOfLinesSplit Deriv;
 
+void Deriv::SetPlmTheta(double theta)
+{
+  reconstruct_set_plm_theta(theta);
+}
 std::valarray<double> Deriv::dUdt(const std::valarray<double> &Uin)
 {
   this->prepare_integration();
@@ -33,19 +37,27 @@ void Deriv::intercell_flux_sweep(const double *P, double *F, int dim)
   int i,S=stride[dim];
   double Pl[MAXNQ], Pr[MAXNQ];
 
-  for (i=S; i<stride[0]-2*S; i+=NQ) {
+  for (i=2*S; i<stride[0]-3*S; i+=NQ) {
     for (int q=0; q<NQ; ++q) {
       const int m = i + q;
-      double vm[5] = { P[m-2*S], P[m-S], P[m+0], P[m+1*S], P[m+2*S] };
-      double vp[5] = { P[m-1*S], P[m-0], P[m+S], P[m+2*S], P[m+3*S] };
+      double v[6] = { P[m-2*S], P[m-S], P[m+0], P[m+1*S], P[m+2*S], P[m+3*S] };
 
-      Pr[q] = reconstruct(&vm[2], PLM_C2R);
-      Pl[q] = reconstruct(&vp[2], PLM_C2L);
+      switch (GodunovOperator::reconstruct_method) {
+      case RECONSTRUCT_PCM:
+	Pl[q] = v[2];
+	Pr[q] = v[3];
+	break;
+      case RECONSTRUCT_PLM:
+	Pl[q] = reconstruct(&v[2], PLM_C2R);
+	Pr[q] = reconstruct(&v[3], PLM_C2L);
+	break;
+      case RECONSTRUCT_WENO5:
+	Pl[q] = reconstruct(&v[2], WENO5_FV_C2R);
+	Pr[q] = reconstruct(&v[3], WENO5_FV_C2L);
+	break;
+      }
     }
-
-    //    reconstruct_plm(&P[i], Pl, Pr, S);
     int error = Mara->riemann->IntercellFlux(Pl, Pr, 0, &F[i], 0.0, dim);
-
     if (error) {
       error = Mara->riemann->IntercellFlux(&P[i], &P[i+S], 0, &F[i], 0.0, dim);      
 

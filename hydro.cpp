@@ -64,6 +64,9 @@ double RiemannSolver::MaxLambda;
 // -----------------------------------------------------------------------------
 // GodunovOperator
 // -----------------------------------------------------------------------------
+GodunovOperator::ReconstructMethod GodunovOperator::reconstruct_method =
+  GodunovOperator::RECONSTRUCT_PLM;
+
 void GodunovOperator::prepare_integration()
 {
   std::vector<int> N = Mara->domain->aug_shape();

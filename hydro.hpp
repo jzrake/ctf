@@ -216,6 +216,11 @@ protected:
   int stride[4],NQ,ND;
 
 public:
+  enum ReconstructMethod { RECONSTRUCT_PCM,
+			   RECONSTRUCT_PLM,
+			   RECONSTRUCT_WENO5 } ;
+  static ReconstructMethod reconstruct_method;
+
   class ConsToPrimFailure : public std::exception
   {
   public:

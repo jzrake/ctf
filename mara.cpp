@@ -73,6 +73,9 @@ extern "C"
   static int luaC_set_advance(lua_State *L);
   static int luaC_set_driving(lua_State *L);
   static int luaC_set_cooling(lua_State *L);
+  static int luaC_set_plm_theta(lua_State *L);
+  static int luaC_set_reconstruct(lua_State *L);
+  static int luaC_set_safety_level(lua_State *L);
 
   static int luaC_new_ou_field(lua_State *L);
   static int luaC_load_shen(lua_State *L);
@@ -279,6 +282,9 @@ int main(int argc, char **argv)
   lua_register(L, "set_advance"  , luaC_set_advance);
   lua_register(L, "set_driving"  , luaC_set_driving);
   lua_register(L, "set_cooling"  , luaC_set_cooling);
+  lua_register(L, "set_plm_theta", luaC_set_plm_theta);
+  lua_register(L, "set_reconstruct", luaC_set_reconstruct);
+  lua_register(L, "set_safety_level", luaC_set_safety_level);
 
   lua_register(L, "new_ou_field" , luaC_new_ou_field);
   lua_register(L, "load_shen"    , luaC_load_shen);
@@ -730,30 +736,6 @@ EquationOfState *BuildGenericTabulatedEos(lua_State *L)
 }
 
 
-GodunovOperator *BuildPlmCtuHancockOperator(lua_State *L)
-{
-  const double plm_theta = luaL_checknumber(L, 2);
-  const int safety = luaL_checkinteger(L, 3);
-
-  PlmCtuHancockOperator *new_f = new PlmCtuHancockOperator;
-  new_f->SetPlmTheta(plm_theta);
-  new_f->SetSafetyLevel(safety);
-
-  return new_f;
-}
-
-GodunovOperator *BuildPlmMethodOfLinesSplit(lua_State *L)
-{
-  const double plm_theta = luaL_checknumber(L, 2);
-  const int safety = luaL_checkinteger(L, 3);
-
-  PlmMethodOfLinesSplit *new_f = new PlmMethodOfLinesSplit;
-  new_f->SetPlmTheta(plm_theta);
-  new_f->SetSafetyLevel(safety);
-
-  return new_f;
-}
-
 int luaC_init_prim(lua_State *L)
 {
   const PhysicalDomain *domain = Mara->domain;
@@ -1130,7 +1112,6 @@ void mara_prim_io(lua_State *L, char mode)
     pnames[i] = PNames[i].c_str();
   }
 
-
   // Open, run, and close the io library.
   // ---------------------------------------------------------------------------
   Mara_io_init(0, d.n_dims, d.n_prim, d.A_nint, d.L_ntot, d.L_strt, d.G_ntot, d.G_strt);
@@ -1333,20 +1314,14 @@ int luaC_set_godunov(lua_State *L)
   GodunovOperator *new_f = NULL;
 
   if (strcmp(key, "plm-split") == 0) {
-    new_f = BuildPlmMethodOfLinesSplit(L);
+    new_f = new MethodOfLinesSplit;
   }
   else if (strcmp(key, "plm-muscl") == 0) {
-    new_f = BuildPlmCtuHancockOperator(L);
+    new_f = new PlmCtuHancockOperator;
   }
   else if (strcmp(key, "weno-split") == 0) {
     new_f = new WenoSplit;
   }
-  else if (strcmp(key, "weno-riemann") == 0) {
-    new_f = new Weno5RiemannMethodOfLinesSplit;
-  }
-  //  else if (strcmp(key, "weno-ram") == 0) {
-    //    new_f = new Weno5RamScheme;
-  //  }
   else {
     luaL_error(L, "no such integration scheme: %s", key);
   }
@@ -1356,6 +1331,47 @@ int luaC_set_godunov(lua_State *L)
     Mara->godunov = new_f;
   }
 
+  return 0;
+}
+
+int luaC_set_plm_theta(lua_State *L)
+{
+  double theta = luaL_checknumber(L, 1);
+  if (Mara->godunov == NULL) {
+    luaL_error(L, "need a godunov operator for this");
+  }
+  Mara->godunov->SetPlmTheta(theta);
+  return 0;
+}
+int luaC_set_reconstruct(lua_State *L)
+// -----------------------------------------------------------------------------
+// Sets a global static variable which in theory affects all godunov
+// operators. At this time only plm-split uses this flag.
+// -----------------------------------------------------------------------------
+{
+  const char *key = luaL_checkstring(L, 1);
+  if (strcmp(key, "pcm") == 0) {
+    GodunovOperator::reconstruct_method = GodunovOperator::RECONSTRUCT_PCM;
+  }
+  else if (strcmp(key, "plm") == 0) {
+    GodunovOperator::reconstruct_method = GodunovOperator::RECONSTRUCT_PLM;
+  }
+  else if (strcmp(key, "weno5") == 0) {
+    GodunovOperator::reconstruct_method = GodunovOperator::RECONSTRUCT_WENO5;
+  }
+  else {
+    luaL_error(L, "no such reconstruction method: %s", key);
+  }
+
+  return 0;
+}
+int luaC_set_safety_level(lua_State *L)
+{
+  double safety = luaL_checkinteger(L, 1);
+  if (Mara->godunov == NULL) {
+    luaL_error(L, "need a godunov operator for this");
+  }
+  Mara->godunov->SetSafetyLevel(safety);
   return 0;
 }
 

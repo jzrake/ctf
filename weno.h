@@ -11,6 +11,7 @@ enum WenoOperation { PLM_C2L, PLM_C2R,
 		     WENO5_FV_C2R, WENO5_FV_C2L,
 		     WENO5_FV_C2A, WENO5_FV_A2C };
 double reconstruct(const double *v, enum WenoOperation type);
+void reconstruct_set_plm_theta(double theta);
 
 #endif // __MaraWenoLibrary_HEADER__
 

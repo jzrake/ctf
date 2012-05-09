@@ -4,9 +4,10 @@
 #include "weno.h"
 
 #define SQU(x) ((x)*(x))
+#define SGN(x) (((x)>0)-((x)<0))
 #define SMOOTHNESS_ZHA 1
-static double plm_theta = 2.0;
 
+static double plm_theta = 2.0;
 static const double CeesA2C_FV[3][3] = { {23./24.,  1./12.,  -1./24.},
                                          {-1./24., 13./12.,  -1./24.},
                                          {-1./24.,  1./12.,  23./24.} };
@@ -38,6 +39,11 @@ static const double DeesC2R_FD[3] = { 0.3, 0.6, 0.1 };
 static double __weno5(const double *v, const double c[3][3], const double d[3]);
 static double __plm(const double *v, double sgn);
 
+void reconstruct_set_plm_theta(double theta)
+{
+  plm_theta = theta;
+}
+
 double reconstruct(const double *v, enum WenoOperation type)
 {
   switch (type) {
@@ -65,17 +71,13 @@ static inline double max3(const double *x)
   return x01 > x[2] ? x01 : x[2];
 }
 
-static inline double sign(double x)
-{
-  return (x>0)-(x<0);
-}
 static inline double __plm_minmod(double ul, double u0, double ur)
 {
   const double a = plm_theta * (u0 - ul);
   const double b =     0.5   * (ur - ul);
   const double c = plm_theta * (ur - u0);
   const double fabc[3] = { fabs(a), fabs(b), fabs(c) };
-  return 0.25*fabs(sign(a)+sign(b))*(sign(a)+sign(c))*min3(fabc);
+  return 0.25*fabs(SGN(a)+SGN(b))*(SGN(a)+SGN(c))*min3(fabc);
 }
 double __plm(const double *v, double sgn)
 {
