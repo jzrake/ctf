@@ -6,11 +6,11 @@ extern "C" {
 #ifndef __MaraWenoLibrary_HEADER__
 #define __MaraWenoLibrary_HEADER__
 
-
-enum WenoOperation { WENO5_FD_C2R, WENO5_FD_C2L,
+enum WenoOperation { PLM_C2L, PLM_C2R,
+		     WENO5_FD_C2R, WENO5_FD_C2L,
 		     WENO5_FV_C2R, WENO5_FV_C2L,
 		     WENO5_FV_C2A, WENO5_FV_A2C };
-double weno5(const double *v, enum WenoOperation type);
+double reconstruct(const double *v, enum WenoOperation type);
 
 #endif // __MaraWenoLibrary_HEADER__
 

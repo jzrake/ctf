@@ -93,7 +93,9 @@ void Deriv::intercell_flux_sweep(const double *U, const double *P,
     }
 
     for (int q=0; q<NQ; ++q) {
-      f[q] = weno5(fpT+q*6+2, WENO5_FD_C2R) + weno5(fmT+q*6+3, WENO5_FD_C2L);
+      f[q] =
+	reconstruct(fpT+q*6+2, WENO5_FD_C2R) +
+	reconstruct(fmT+q*6+3, WENO5_FD_C2L);
     }
 
     matrix_vector_product(Riph, f, Fiph+i*NQ, NQ, NQ);

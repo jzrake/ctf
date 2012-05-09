@@ -498,7 +498,7 @@ int luaC_advance(lua_State *L)
   std::valarray<double> U(P.size());
   int errors;
 
-  Mara->riemann->ResetMaxLambda();
+  RiemannSolver::ResetMaxLambda();
   Mara->FailureMask.resize(Mara->domain->GetNumberOfZones());
   Mara->godunov->PrimToCons(P, U);
 

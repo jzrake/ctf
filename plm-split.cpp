@@ -1,34 +1,10 @@
 
 #include "plm-split.hpp"
+#include "weno.h"
 #include "logging.hpp"
 
 #define MAXNQ 8 // Used for static array initialization
-
 typedef PlmMethodOfLinesSplit Deriv;
-static double plm_theta = 2.0;
-
-/*------------------------------------------------------------------------------
- *
- * Private inline functions
- *
- */
-static inline double sign(double x)
-{
-  return (x>0)-(x<0);
-}
-static inline double min3(double a, double b, double c)
-{
-  const double ab=(a<b)?a:b;
-  return (ab<c)?ab:c;
-}
-static inline double plm_minmod(double ul, double u0, double ur)
-{
-  const double a = plm_theta * (u0 - ul);
-  const double b =     0.5   * (ur - ul);
-  const double c = plm_theta * (ur - u0);
-  return 0.25*fabs(sign(a)+sign(b))*(sign(a)+sign(c))*min3(fabs(a),fabs(b),fabs(c));
-}
-
 
 std::valarray<double> Deriv::dUdt(const std::valarray<double> &Uin)
 {
@@ -52,21 +28,22 @@ void Deriv::DriveSweeps(const std::valarray<double> &P,
    case 3: drive_sweeps_3d(&P[0], &L[0]); break;
    }
 }
-void Deriv::reconstruct_plm(const double *P0, double *Pl, double *Pr, int S)
-{
-  int i,T=2*S;
-  for (i=0; i<NQ; ++i) {
-    Pr[i] = P0[S+i] - 0.5 * plm_minmod(P0[ 0+i], P0[S+i], P0[T+i]);
-    Pl[i] = P0[0+i] + 0.5 * plm_minmod(P0[-S+i], P0[0+i], P0[S+i]);
-  }
-}
 void Deriv::intercell_flux_sweep(const double *P, double *F, int dim)
 {
   int i,S=stride[dim];
   double Pl[MAXNQ], Pr[MAXNQ];
 
   for (i=S; i<stride[0]-2*S; i+=NQ) {
-    reconstruct_plm(&P[i], Pl, Pr, S);
+    for (int q=0; q<NQ; ++q) {
+      const int m = i + q;
+      double vm[5] = { P[m-2*S], P[m-S], P[m+0], P[m+1*S], P[m+2*S] };
+      double vp[5] = { P[m-1*S], P[m-0], P[m+S], P[m+2*S], P[m+3*S] };
+
+      Pr[q] = reconstruct(&vm[2], PLM_C2R);
+      Pl[q] = reconstruct(&vp[2], PLM_C2L);
+    }
+
+    //    reconstruct_plm(&P[i], Pl, Pr, S);
     int error = Mara->riemann->IntercellFlux(Pl, Pr, 0, &F[i], 0.0, dim);
 
     if (error) {

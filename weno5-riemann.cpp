@@ -9,6 +9,7 @@
 
 
 #include "plm-split.hpp"
+#include "weno.h"
 
 #define MAXNQ 8 // Used for static array initialization
 #define SQU(x) ((x)*(x))
