@@ -15,7 +15,8 @@ LUA_TARGET = \
 	$(LUA_DIR)/json.lua \
 	$(LUA_DIR)/matrix.lua \
 	$(LUA_DIR)/util.lua \
-	$(LUA_DIR)/tabeos.lua
+	$(LUA_DIR)/tabeos.lua \
+	$(LUA_DIR)/tests.lua
 
 default : $(MARA_A) $(LUA_TARGET)
 
