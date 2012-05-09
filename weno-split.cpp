@@ -7,18 +7,9 @@
 #include "weno-split.hpp"
 #include "riemann_hll.hpp"
 #include "matrix.h"
-
+#include "weno.h"
 
 typedef WenoSplit Deriv;
-
-/*------------------------------------------------------------------------------
- *
- * Private inline functions
- *
- */
-static inline double weno5_fiph_apos(const double *f);
-static inline double weno5_fiph_aneg(const double *f);
-
 
 std::valarray<double> Deriv::dUdt(const std::valarray<double> &Uin)
 {
@@ -97,13 +88,12 @@ void Deriv::intercell_flux_sweep(const double *U, const double *P,
     for (int q=0; q<NQ; ++q) {
       for (int j=0; j<6; ++j) {
         fpT[q*6 + j] = fp[j*NQ + q];
-	fmT[q*6 + j] = fm[j*NQ + q];
+        fmT[q*6 + j] = fm[j*NQ + q];
       }
     }
 
     for (int q=0; q<NQ; ++q) {
-      const int m = q*6 + 2;
-      f[q] = weno5_fiph_apos(fpT+m) + weno5_fiph_aneg(fmT+m);
+      f[q] = weno5(fpT+q*6+2, WENO5_FD_C2R) + weno5(fmT+q*6+3, WENO5_FD_C2L);
     }
 
     matrix_vector_product(Riph, f, Fiph+i*NQ, NQ, NQ);
@@ -239,62 +229,3 @@ void Deriv::drive_sweeps_3d()
   }
 }
 
-
-
-
-
-double weno5_fiph_apos(const double *f)
-{
-  const double eps = 1e-16;
-  const double d[3] = { 0.3, 0.6, 0.1 };
-  const double fiph[3] = {
-    (  1.0/3.0)*f[ 0] + (  5.0/6.0)*f[ 1] + ( -1.0/6.0)*f[2],
-    ( -1.0/6.0)*f[-1] + (  5.0/6.0)*f[ 0] + (  1.0/3.0)*f[1],
-    (  1.0/3.0)*f[-2] + ( -7.0/6.0)*f[-1] + ( 11.0/6.0)*f[0]
-  };
-  const double B[3] = {
-    (13.0/12.0)*pow(  f[ 0] - 2*f[ 1] +   f[ 2], 2.0) +
-    ( 1.0/ 4.0)*pow(3*f[ 0] - 4*f[ 1] +   f[ 2], 2.0),
-
-    (13.0/12.0)*pow(  f[-1] - 2*f[ 0] +   f[ 1], 2.0) +
-    ( 1.0/ 4.0)*pow(  f[-1] - 0*f[ 0] -   f[ 1], 2.0),
-
-    (13.0/12.0)*pow(  f[-2] - 2*f[-1] +   f[ 0], 2.0) +
-    ( 1.0/ 4.0)*pow(  f[-2] - 4*f[-1] + 3*f[ 0], 2.0)
-  };
-  const double wgt[3] = {
-    d[0] / pow(eps + B[0], 2.0),
-    d[1] / pow(eps + B[1], 2.0),
-    d[2] / pow(eps + B[2], 2.0)
-  };
-  const double wgt_ttl = wgt[0] + wgt[1] + wgt[2];
-  return (wgt[0]*fiph[0] + wgt[1]*fiph[1] + wgt[2]*fiph[2]) / wgt_ttl;
-}
-
-double weno5_fiph_aneg(const double *f)
-{
-  const double eps = 1e-16;
-  const double d[3] = { 0.1, 0.6, 0.3 };
-  const double fiph[3] = {
-    ( 11.0/6.0)*f[ 1] + ( -7.0/6.0)*f[ 2] + (  1.0/3.0)*f[3],
-    (  1.0/3.0)*f[ 0] + (  5.0/6.0)*f[ 1] + ( -1.0/6.0)*f[2],
-    ( -1.0/6.0)*f[-1] + (  5.0/6.0)*f[ 0] + (  1.0/3.0)*f[1],
-  };
-  const double B[3] = {
-    (13.0/12.0)*pow(  f[ 1] - 2*f[ 2] +   f[ 3], 2.0) +
-    ( 1.0/ 4.0)*pow(3*f[ 1] - 4*f[ 2] +   f[ 3], 2.0),
-
-    (13.0/12.0)*pow(  f[ 0] - 2*f[ 1] +   f[ 2], 2.0) +
-    ( 1.0/ 4.0)*pow(  f[ 0] - 0*f[ 1] -   f[ 2], 2.0),
-
-    (13.0/12.0)*pow(  f[-1] - 2*f[ 0] +   f[ 1], 2.0) +
-    ( 1.0/ 4.0)*pow(  f[-1] - 4*f[ 0] + 3*f[ 1], 2.0)
-  };
-  const double wgt[3] = {
-    d[0] / pow(eps + B[0], 2.0),
-    d[1] / pow(eps + B[1], 2.0),
-    d[2] / pow(eps + B[2], 2.0)
-  };
-  const double wgt_ttl = wgt[0] + wgt[1] + wgt[2];
-  return (wgt[0]*fiph[0] + wgt[1]*fiph[1] + wgt[2]*fiph[2]) / wgt_ttl;
-}

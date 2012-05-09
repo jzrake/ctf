@@ -42,8 +42,8 @@ static const double DeesC2R[3] = {   5./ 16.,   5./  8.,   1./ 16. };
 static const double DeesA2C[3] = {  -9./ 80.,  49./ 40.,  -9./ 80. };
 static const double DeesC2A[3] = { -17./240., 137./120., -17./240. };
 
-static const double DeesC2L_A[3] = { 0.1, 0.6, 3.0 };
-static const double DeesC2R_A[3] = { 0.3, 0.6, 1.0 };
+static const double DeesC2L_A[3] = { 0.1, 0.6, 0.3 };
+static const double DeesC2R_A[3] = { 0.3, 0.6, 0.1 };
 
 
 static inline double weno5(const double *v, const double c[3][3], const double d[3])

@@ -133,7 +133,7 @@ void Eulers::FluxAndEigenvalues(const double *U,
   }
 }
 
-#define EIGEN1
+#define EIGEN2
 
 #ifdef EIGEN1
 void Eulers::Eigensystem(const double *U, const double *P,
@@ -213,28 +213,64 @@ void Eulers::Eigensystem(const double *U, const double *P,
     std::memcpy(L, L_, 5*5*sizeof(double));
   }
 
-
   lam[0] = vn-a;
   lam[1] = vn;
   lam[2] = vn+a;
   lam[3] = vn;
   lam[4] = vn;
-  /*
-  lam[0] = u-a;
-  lam[1] = u;
-  lam[2] = u;
-  lam[3] = u;
-  lam[4] = u+a;*/
 }
 #endif
 
 #ifdef EIGEN2
-void Eulers::Eigensystem(const double *U, const double *P,
+void Eulers::Eigensystem(const double *U, const double *P_,
                          double *L, double *R, double *lam, int dim) const
 // -----------------------------------------------------------------------------
 // For 1d only
 // -----------------------------------------------------------------------------
 {
+  const double T[3][5][5] =
+  // Tx
+    {{{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 1, 0, 0},
+      {0, 0, 0, 1, 0},
+      {0, 0, 0, 0, 1}},
+  // Ty
+     {{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 0,-1, 0},
+      {0, 0, 1, 0, 0},
+      {0, 0, 0, 0, 1}},
+  // Tz
+     {{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 0, 0, 1},
+      {0, 0, 0, 1, 0},
+      {0, 0,-1, 0, 0}}};
+
+  const double S[3][5][5] = // T^{-1}
+  // Sx
+    {{{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 1, 0, 0},
+      {0, 0, 0, 1, 0},
+      {0, 0, 0, 0, 1}},
+  // Sy
+     {{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 0, 1, 0},
+      {0, 0,-1, 0, 0},
+      {0, 0, 0, 0, 1}},
+  // Sz
+     {{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 0, 0,-1},
+      {0, 0, 0, 1, 0},
+      {0, 0, 1, 0, 0}}};
+
+  double P[5];
+  matrix_vector_product(T[dim-1][0], P_, P, 5, 5);
+
   const double gm = Mara->GetEos<AdiabaticEos>().Gamma;
   const double gm1 = gm - 1.0;
   const double u = P[vx];
@@ -249,26 +285,26 @@ void Eulers::Eigensystem(const double *U, const double *P,
   // the conserved quantities)
   // --------------------------------------------------------------------------
   const double RR[5][5] =
-    {{       1,      1,      0,      0,     1   },  // rho
-     { H - u*a, 0.5*V2,      v,      w, H + u*a },  // nrg
-     {     u-a,      u,      0,      0,     u+a },  // px
-     {       v,      v,      1,      0,     v   },  // py
-     {       w,      w,      0,      1,     w   }}; // pz
+    {{       1,       1,      1,      0,      0 },  // rho
+     { H - u*a, H + u*a, 0.5*V2,      v,      w },  // nrg
+     {     u-a,     u+a,      u,      0,      0 },  // px
+     {       v,       v,      v,      1,      0 },  // py
+     {       w,       w,      w,      0,      1 }}; // pz
   // --------------------------------------------------------------------------
   // Toro Equation 3.83 up to (gam - 1) / (2*a^2)
   // --------------------------------------------------------------------------
   const double LL[5][5] =
     {{    H + (a/gm1)*(u-a),   1, -(u+a/gm1),        -v,        -w },
+     {    H - (a/gm1)*(u+a),   1, -(u-a/gm1),        -v,        -w },
      { -2*H + (4/gm1)*(a*a),  -2,        2*u,       2*v,       2*w },
      {         -2*v*a*a/gm1,   0,          0, 2*a*a/gm1,         0 },
-     {         -2*w*a*a/gm1,   0,          0,         0, 2*a*a/gm1 },
-     {    H - (a/gm1)*(u+a),   1, -(u-a/gm1),        -v,        -w }};
+     {         -2*w*a*a/gm1,   0,          0,         0, 2*a*a/gm1 }};
   // --------------------------------------------------------------------------
   //                    rho, nrg,         px,        py,        pz
   // --------------------------------------------------------------------------
 
-  memcpy(L, LL, 25*sizeof(double));
-  memcpy(R, RR, 25*sizeof(double));
+  matrix_matrix_product(S[dim-1][0], RR[0], R, 5, 5, 5);
+  matrix_matrix_product(LL[0], T[dim-1][0], L, 5, 5, 5);
 
   // Replace the term in eqn 3.83 : (gam - 1) / (2*a^2)
   // ---------------------------------------------------------------------------
@@ -278,9 +314,9 @@ void Eulers::Eigensystem(const double *U, const double *P,
   }
 
   lam[0] = u-a;
-  lam[1] = u;
+  lam[1] = u+a;
   lam[2] = u;
   lam[3] = u;
-  lam[4] = u+a;
+  lam[4] = u;
 }
 #endif

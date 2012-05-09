@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <cmath>
 #include "srhd.hpp"
+#include "matrix.h"
 #include "logging.hpp"
 #include <cstring>
 
@@ -202,7 +203,7 @@ void Srhd::FluxAndEigenvalues(const double *U,
 }
 
 
-void Srhd::Eigensystem(const double *U, const double *P,
+void Srhd::Eigensystem(const double *U, const double *P_,
                        double *L, double *R, double *lam, int dim) const
 // -----------------------------------------------------------------------------
 //
@@ -226,6 +227,49 @@ void Srhd::Eigensystem(const double *U, const double *P,
 //
 // -----------------------------------------------------------------------------
 {
+  const double T[3][5][5] =
+  // Tx
+    {{{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 1, 0, 0},
+      {0, 0, 0, 1, 0},
+      {0, 0, 0, 0, 1}},
+  // Ty
+     {{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 0,-1, 0},
+      {0, 0, 1, 0, 0},
+      {0, 0, 0, 0, 1}},
+  // Tz
+     {{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 0, 0, 1},
+      {0, 0, 0, 1, 0},
+      {0, 0,-1, 0, 0}}};
+
+  const double S[3][5][5] = // T^{-1}
+  // Sx
+    {{{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 1, 0, 0},
+      {0, 0, 0, 1, 0},
+      {0, 0, 0, 0, 1}},
+  // Sy
+     {{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 0, 1, 0},
+      {0, 0,-1, 0, 0},
+      {0, 0, 0, 0, 1}},
+  // Sz
+     {{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 0, 0,-1},
+      {0, 0, 0, 1, 0},
+      {0, 0, 1, 0, 0}}};
+
+  double P[5];
+  matrix_vector_product(T[dim-1][0], P_, P, 5, 5);
+
   const double D = P[ddd]; // rest mass density
   const double p = P[pre]; // pressure
   const double u = P[vx];  // vx (three velocity)
@@ -250,12 +294,19 @@ void Srhd::Eigensystem(const double *U, const double *P,
 
   // Equations (17) through (20)
   // ---------------------------------------------------------------------------
-  const double RR[5][5] =
-    {{K/hW, 1-K/hW, u, v, w},
+  const double RT[5][5] =
+    {{1, hW*Ap - 1, hW*Ap*lp, hW*v, hW*w},
+     {1, hW*Am - 1, hW*Am*lm, hW*v, hW*w},
+     {K/hW, 1-K/hW, u, v, w},
      {W*v, 2*h*W2*v - W*v, 2*h*W2*u*v, h*(1+2*W2*v*v), 2*h*W2*v*w},
-     {W*w, 2*h*W2*w - W*w, 2*h*W2*u*w, 2*h*W2*v*w, h*(1+2*W2*w*w)},
-     {1, hW*Ap - 1, hW*Ap*lp, hW*v, hW*w},
-     {1, hW*Am - 1, hW*Am*lm, hW*v, hW*w}};
+     {W*w, 2*h*W2*w - W*w, 2*h*W2*u*w, 2*h*W2*v*w, h*(1+2*W2*w*w)}};
+
+  double RR[5][5];
+  for (int n=0; n<5; ++n) {
+    for (int m=0; m<5; ++m) {
+      RR[n][m] = RT[m][n];
+    }
+  }
 
   // NOTES
   // ---------------------------------------------------------------------------
@@ -275,10 +326,7 @@ void Srhd::Eigensystem(const double *U, const double *P,
   const double e = +h*h / Delta;
 
   const double LL[5][5] =
-    {{a*(h-W), -a*W, a*W*u, a*W*v, a*W*w},
-     {-b*v, -b*v, b*u*v, b*(1-u*u), 0},
-     {-c*w, -c*w, c*u*w, 0, c*(1-u*u)},
-     {d*(hW*Am*(u-lm) - u - W2*(V2 - u*u)*(2*K - 1)*(u - Am*lm) + K*Am*lm),
+    {{d*(hW*Am*(u-lm) - u - W2*(V2 - u*u)*(2*K - 1)*(u - Am*lm) + K*Am*lm),
       d*(-u - W2*(V2 - u*u)*(2*K - 1)*(u - Am*lm) + K*Am*lm),
       d*(1 + W2*(V2 - u*u)*(2*K - 1)*(1 - Am) - K*Am),
       d*(W2*v*(2*K - 1)*Am*(u - lm)),
@@ -287,13 +335,17 @@ void Srhd::Eigensystem(const double *U, const double *P,
       e*(-u - W2*(V2 - u*u)*(2*K - 1)*(u - Ap*lp) + K*Ap*lp),
       e*(1 + W2*(V2 - u*u)*(2*K - 1)*(1 - Ap) - K*Ap),
       e*(W2*v*(2*K - 1)*Ap*(u - lp)),
-      e*(W2*w*(2*K - 1)*Ap*(u - lp))}};
+      e*(W2*w*(2*K - 1)*Ap*(u - lp))},
+     {a*(h-W), -a*W, a*W*u, a*W*v, a*W*w},
+     {-b*v, -b*v, b*u*v, b*(1-u*u), 0},
+     {-c*w, -c*w, c*u*w, 0, c*(1-u*u)}};
 
+  matrix_matrix_product(S[dim-1][0], RR[0], R, 5, 5, 5);
+  matrix_matrix_product(LL[0], T[dim-1][0], L, 5, 5, 5);
 
-  for (int n=0; n<5; ++n) {
-    for (int m=0; m<5; ++m) {
-      R[n*5 + m] = RR[m][n];
-    }
-  }
-  memcpy(L, LL, 25*sizeof(double));
+  lam[0] = lm;
+  lam[1] = lp;
+  lam[2] = u;
+  lam[3] = u;
+  lam[4] = u;
 }
