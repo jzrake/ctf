@@ -104,10 +104,11 @@ double __weno5(const double *v, const double c[3][3], const double d[3])
     B[1] = (B[1] + eps) / (B[1] + tau5 + eps);
     B[2] = (B[2] + eps) / (B[2] + tau5 + eps);
 
-    const double R0 = min3(B) / (max3(B) + eps_prime);
-    B[0] = R0*A*min3(B) + B[0];
-    B[1] = R0*A*min3(B) + B[1];
-    B[2] = R0*A*min3(B) + B[2];
+    const double minB = min3(B), maxB = max3(B);
+    const double R0 = minB / (maxB + eps_prime);
+    B[0] = R0*A*minB + B[0];
+    B[1] = R0*A*minB + B[1];
+    B[2] = R0*A*minB + B[2];
   }
 
   const double vs[3] = {
