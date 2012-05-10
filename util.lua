@@ -39,8 +39,13 @@ local function run_simulation(pinit, setup, runargs)
    while Status.CurrentTime - t0 < runargs.tmax do
       if runargs.interactive then
          local prim = get_prim()
-         local draw_array = prim.rho[':,:']
-         visual.draw_texture(draw_array)
+         if runargs.dim == 2 then
+            local draw_array = prim.rho[':,:']
+            visual.draw_texture(draw_array)
+         else
+            local draw_array = prim.rho[':,:,'..runargs.N/2]
+            visual.draw_texture(draw_array)
+         end
       end
 
       if HandleErrors(Status, attempt) ~= 0 then

@@ -34,9 +34,6 @@ tests.IsentropicPulse = {
    rho_ref = 1.0
 }
 
-
-
-
 tests.Explosion = {
    get_pinit =
       function(self, time)
@@ -118,7 +115,14 @@ tests.DensityWave = {
    rho_ref = 1.0
 }
 
-
+--[[******************************************************
+ SSS  H  H  OOO   CCC K  K TTTTTT U   U BBBB  EEEE  SSS  
+S     H  H O   O C    K K    TT   U   U B   B E    S     
+ SSS  HHHH O   O C    KK     TT   U   U BBBB  EEE   SSS  
+    S H  H O   O C    K K    TT   U   U B   B E        S 
+SSSS  H  H  OOO   CCC K  K   TT    UUU  BBBB  EEEE SSSS  
+******************************************************--]]
+--A bunch of shocktubes followed by a generic maker--
 
 tests.SrhdCase1_DFIM98 = {
    Pl = { 10.0, 13.30, 0.0, 0.0, 0.0 },
@@ -128,6 +132,67 @@ tests.SrhdCase1_DFIM98 = {
 tests.SrhdCase2_DFIM98 = {
    Pl = { 1, 1e+3, 0.0, 0.0, 0.0 },
    Pr = { 1, 1e-2, 0.0, 0.0, 0.0 }
+}
+
+
+tests.Shocktube1 = {
+   Pl = { 1.000, 1.000, 0.000, 0.0, 0.0 },
+   Pr = { 0.125, 0.100, 0.000, 0.0, 0.0 } 
+}
+
+tests.Shocktube2 = {
+   Pl = { 1.000, 0.400,-2.000, 0.0, 0.0 },
+   Pr = { 1.000, 0.400, 2.000, 0.0, 0.0 } 
+}
+
+tests.Shocktube3 = {
+   Pl = { 1.0, 1e+3, 0.0, 0.0, 0.0 },
+   Pr = { 1.0, 1e-2, 0.0, 0.0, 0.0 } 
+}
+
+tests.Shocktube4 = {
+   Pl = { 1.0, 1e-2, 0.0, 0.0, 0.0 },
+   Pr = { 1.0, 1e+2, 0.0, 0.0, 0.0 } 
+}
+
+tests.Shocktube5 = {
+   Pl = { 5.99924, 460.894, 19.59750, 0.0, 0.0 },
+   Pr = { 5.99924,  46.095, -6.19633, 0.0, 0.0 } 
+}
+
+tests.ContactWave = {
+   Pl = { 1.0, 1.0, 0.0, 0.7, 0.2 },
+   Pr = { 0.1, 1.0, 0.0, 0.7, 0.2 }
+}
+
+tests.RMHDShocktube1 = {
+   Pl = { 1.000, 1.000, 0.000, 0.0, 0.0, 0.5, 1.0, 0.0 },
+   Pr = { 0.125, 0.100, 0.000, 0.0, 0.0, 0.5,-1.0, 0.0 } 
+}
+
+tests.RMHDShocktube2 = {
+   Pl = { 1.080, 0.950, 0.400, 0.3, 0.2, 2.0, 0.3, 0.3 },
+   Pr = { 1.000, 1.000,-0.450,-0.2, 0.2, 2.5,-0.7, 0.5 } 
+}
+
+tests.RMHDShocktube3 = {
+   Pl = { 1.000, 0.100, 0.999, 0.0, 0.0, 10.0, 0.7, 0.7 },
+   Pr = { 1.000, 0.100,-0.999, 0.0, 0.0, 10.0,-0.7,-0.7 } 
+}
+
+tests.RMHDShocktube4 = {
+   Pl = { 1.000, 5.000, 0.000, 0.3, 0.4, 1.0, 6.0, 2.0 },
+   Pr = { 0.900, 5.300, 0.000, 0.0, 0.0, 1.0, 5.0, 2.0 } 
+}
+
+tests.RMHDContactWave = {
+   Pl = { 10.0, 1.0, 0.0, 0.7, 0.2, 5.0, 1.0, 0.5 },
+   Pr = {  1.0, 1.0, 0.0, 0.7, 0.2, 5.0, 1.0, 0.5 }
+}
+
+tests.RMHDRotationalWave = {
+   Pl = { 1, 1, 0.400000, -0.300000, 0.500000, 2.4, 1.00,-1.600000 },
+   Pr = { 1, 1, 0.377347, -0.482389, 0.424190, 2.4,-0.10,-2.178213 }
 }
 
 tests.MakeShocktubeProblem =
@@ -155,6 +220,5 @@ tests.MakeShocktubeProblem =
 	    end
       }
    end
-
 
 return tests
