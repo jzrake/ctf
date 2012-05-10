@@ -251,32 +251,37 @@ void Srhd::Eigensystem(const double *U, const double *P_,
   const double Ap = (1 - u*u) / (1 - u*lp);
   const double Am = (1 - u*u) / (1 - u*lm);
 
-  // Equations (17) through (20)
+  // NOTES
+  // ---------------------------------------------------------------------------
+  // (1) Donat describes the columns if the right eigenvector matrix
+  // horizontally, which is how they are written below. So we take the transpose
+  // at the end of the day.
+  //
+  // (2) Donat's notation is provided next to the formulas to make clear the
+  // permutation into to Mara's convention (vector components last).
+  // ---------------------------------------------------------------------------
+
+
+  // ---------------------------------------------------------------------------
+  // Right eigenvectors (transpose of), equations (17) through (20)
   // ---------------------------------------------------------------------------
   const double RT[5][5] =
-    {{1, hW*Am - 1, hW*Am*lm, hW*v, hW*w},
-     {1, hW*Ap - 1, hW*Ap*lp, hW*v, hW*w},
-     {K/hW, 1-K/hW, u, v, w},
-     {W*v, 2*h*W2*v - W*v, 2*h*W2*u*v, h*(1+2*W2*v*v), 2*h*W2*v*w},
-     {W*w, 2*h*W2*w - W*w, 2*h*W2*u*w, 2*h*W2*v*w, h*(1+2*W2*w*w)}};
+    {{1, hW*Am - 1, hW*Am*lm, hW*v, hW*w},                              // R_{-}
+     {1, hW*Ap - 1, hW*Ap*lp, hW*v, hW*w},                              // R_{+}
+     {K/hW, 1-K/hW, u, v, w},                                           // R_{1}
+     {W*v, 2*h*W2*v - W*v, 2*h*W2*u*v, h*(1+2*W2*v*v), 2*h*W2*v*w},     // R_{2}
+     {W*w, 2*h*W2*w - W*w, 2*h*W2*u*w, 2*h*W2*v*w, h*(1+2*W2*w*w)}};    // R_{3}
 
-  double RR[5][5];
+  double RR[5][5]; // un-transpose them
   for (int n=0; n<5; ++n) {
     for (int m=0; m<5; ++m) {
       RR[n][m] = RT[m][n];
     }
   }
 
-  // NOTES
   // ---------------------------------------------------------------------------
-  // (1) Font describes the columns if the left eigen vector matrix
-  // horizontally, which is how they are written below. So we take the
-  // transpose at the end of the day.
-  //
-  // (2) Font's notation uses L_{-/+} for the last left eigenvectors, but that
-  // naming is weird, since each L_+ contains lm and Am and vice-versa.
+  // Left eigenvectors
   // ---------------------------------------------------------------------------
-
   const double Delta = h*h*h*W*(K-1)*(1-u*u)*(Ap*lp - Am*lm); // equation (21)
   const double a = W / (K-1);
   const double b = 1 / (h*(1 - u*u));
@@ -289,15 +294,15 @@ void Srhd::Eigensystem(const double *U, const double *P_,
       e*(-u - W2*(V2 - u*u)*(2*K - 1)*(u - Ap*lp) + K*Ap*lp),
       e*(1 + W2*(V2 - u*u)*(2*K - 1)*(1 - Ap) - K*Ap),
       e*(W2*v*(2*K - 1)*Ap*(u - lp)),
-      e*(W2*w*(2*K - 1)*Ap*(u - lp))},
+      e*(W2*w*(2*K - 1)*Ap*(u - lp))},            // L_{-} (negative eigenvalue)
      {d*(hW*Am*(u-lm) - u - W2*(V2 - u*u)*(2*K - 1)*(u - Am*lm) + K*Am*lm),
       d*(-u - W2*(V2 - u*u)*(2*K - 1)*(u - Am*lm) + K*Am*lm),
       d*(1 + W2*(V2 - u*u)*(2*K - 1)*(1 - Am) - K*Am),
       d*(W2*v*(2*K - 1)*Am*(u - lm)),
-      d*(W2*w*(2*K - 1)*Am*(u - lm))},
-     {a*(h-W), -a*W, a*W*u, a*W*v, a*W*w},
-     {-b*v, -b*v, b*u*v, b*(1-u*u), 0},
-     {-c*w, -c*w, c*u*w, 0, c*(1-u*u)}};
+      d*(W2*w*(2*K - 1)*Am*(u - lm))},            // L_{+} (positive eigenvalue)
+     {a*(h-W), -a*W, a*W*u, a*W*v, a*W*w},        // L_{1}
+     {-b*v, -b*v, b*u*v, b*(1-u*u), 0},           // L_{2}
+     {-c*w, -c*w, c*u*w, 0, c*(1-u*u)}};          // L_{3}
 
   matrix_matrix_product(S[dim-1][0], RR[0], R, 5, 5, 5);
   matrix_matrix_product(LL[0], T[dim-1][0], L, 5, 5, 5);
