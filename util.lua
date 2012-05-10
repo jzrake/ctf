@@ -1,13 +1,14 @@
 
+
 local host = require 'host'
 
 -- *****************************************************************************
 -- Main driver, operates between checkpoints and then returns
 -- .............................................................................
-local function run_simulation(pinit, setup, runargs)
+local function run_simulation(pinit, configure_mara, runargs)
 
-   local function InitSimulation(pinit, setup)
-      setup()
+   local function InitSimulation(pinit, configure_mara)
+      configure_mara()
       init_prim(pinit)
       boundary.ApplyBoundaries()
 
@@ -25,16 +26,32 @@ local function run_simulation(pinit, setup, runargs)
       if not runargs.quiet then print_mara() end
       return Status
    end
+
    local function HandleErrors(Status, attempt)
       return 0
    end
 
-   local Status = InitSimulation(pinit, setup)
+   local Status = InitSimulation(pinit, configure_mara)
 
    local t0 = Status.CurrentTime
    local attempt = 0
 
+   if runargs.dim == 2 and not runargs.noplot then
+      visual.open_window()
+   end
+
    while Status.CurrentTime - t0 < runargs.tmax do
+
+      if runargs.dim == 2 and not runargs.noplot then
+         local prim = get_prim()
+         if runargs.dim == 2 then
+            local draw_array = prim.rho
+            visual.draw_texture(draw_array)
+         else
+            local draw_array = prim.rho[':,:,'..runargs.N/2]
+            visual.draw_texture(draw_array)
+         end
+      end
 
       if HandleErrors(Status, attempt) ~= 0 then
          return 1
@@ -86,6 +103,33 @@ local function deepcopy(object)
    return _copy(object)
 end
 
+-- -----------------------------------------------------------------------------
+-- http://lua-users.org/wiki/SplitJoin
+-- -----------------------------------------------------------------------------
+function string_split(self, sSeparator, nMax, bRegexp)
+   assert(sSeparator ~= '')
+   assert(nMax == nil or nMax >= 1)
+
+   local aRecord = {}
+
+   if self:len() > 0 then
+      local bPlain = not bRegexp
+      nMax = nMax or -1
+
+      local nField=1 nStart=1
+      local nFirst,nLast = self:find(sSeparator, nStart, bPlain)
+      while nFirst and nMax ~= 0 do
+         aRecord[nField] = self:sub(nStart, nFirst-1)
+         nField = nField+1
+         nStart = nLast+1
+         nFirst,nLast = self:find(sSeparator, nStart, bPlain)
+         nMax = nMax-1
+      end
+      aRecord[nField] = self:sub(nStart)
+   end
+
+   return aRecord
+end
 
 -- *****************************************************************************
 -- Function to call Gnuplot from Lua using popen
@@ -128,4 +172,5 @@ end
 return { deepcopy=deepcopy,
          plot=plot,
          parse_args=parse_args,
-         run_simulation=run_simulation }
+         run_simulation=run_simulation,
+	 string_split=string_split }
