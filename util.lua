@@ -1,4 +1,3 @@
-
 local host = require 'host'
 
 -- *****************************************************************************
@@ -25,6 +24,7 @@ local function run_simulation(pinit, setup, runargs)
       if not runargs.quiet then print_mara() end
       return Status
    end
+
    local function HandleErrors(Status, attempt)
       return 0
    end
@@ -34,7 +34,14 @@ local function run_simulation(pinit, setup, runargs)
    local t0 = Status.CurrentTime
    local attempt = 0
 
+   if runargs.interactive then visual.open_window() end
+
    while Status.CurrentTime - t0 < runargs.tmax do
+      if runargs.interactive then
+         local prim = get_prim()
+         local draw_array = prim.rho[':,:']
+         visual.draw_texture(draw_array)
+      end
 
       if HandleErrors(Status, attempt) ~= 0 then
          return 1

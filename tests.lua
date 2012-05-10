@@ -1,5 +1,3 @@
-
-
 local tests = { }
 
 tests.IsentropicPulse = {
@@ -37,6 +35,47 @@ tests.IsentropicPulse = {
 }
 
 
+
+
+tests.Explosion = {
+   get_pinit =
+      function(self, time)
+         local g = 
+            function(x,y,z)
+               local r2 = x*x + y*y + z*z
+               if r2 < 0.005 then
+                  return { 1.000, 1.0, 0, 0, 0 }
+               else
+                  return { 0.125, 0.1, 0, 0, 0 }
+               end
+            end
+         return g
+      end
+}
+
+tests.KelvinHelmoltz = {
+   get_pinit =
+      function(self, time)
+         local g = 
+            function(x,y,z)
+            local rho,vx,vy   
+               
+               if math.abs(y) > 0.25 then
+                    rho = 1.0
+                    vx = -0.5
+                 else
+                    rho = 2.0
+                    vx =  0.5
+                 end
+            vx = 0.02*(math.random() - 0.5) + vx
+            vy = 0.02*(math.random() - 0.5)
+            return { rho, 2.5, vx, vy, 0.0 }   
+            end
+         return g
+      end
+}
+
+
 tests.DensityWave = {
    get_pinit =
       function(self, time)
@@ -62,6 +101,7 @@ tests.DensityWave = {
    eps = 3.2e-1,
    rho_ref = 1.0
 }
+
 
 
 tests.SrhdCase1_DFIM98 = {
