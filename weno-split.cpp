@@ -91,8 +91,8 @@ void Deriv::intercell_flux_sweep(const double *U, const double *P,
 	  Pr[q] = reconstruct(&v[3], PLM_C2L);
 	  break;
 	case RECONSTRUCT_WENO5:
-	  Pl[q] = reconstruct(&v[2], WENO5_FD_C2R);
-	  Pr[q] = reconstruct(&v[3], WENO5_FD_C2L);
+	  Pl[q] = reconstruct(&v[2], WENO5_FV_C2R);
+	  Pr[q] = reconstruct(&v[3], WENO5_FV_C2L);
 	  break;
 	}
       }
