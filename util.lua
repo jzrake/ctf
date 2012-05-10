@@ -52,7 +52,7 @@ function util.run_simulation(pinit, configure_mara, runargs)
          end
       end
 
-      if (runargs.cpi > 0.0 and
+      if (runargs.cpi and
 	  Status.CurrentTime - Status.LastCheckpointTime > runargs.cpi) then
 	 util.write_checkpoint(Status, runargs)
       end
@@ -68,7 +68,6 @@ function util.run_simulation(pinit, configure_mara, runargs)
       if errors == 0 then
          driving.Advance(dt)
          driving.Resample()
---	 print(Status.CurrentTime,  Status.LastCheckpointTime)
          if not runargs.quiet then
             print(string.format("%05d(%d): t=%5.4f dt=%5.4e %3.2fkz/s %3.2fus/(z*Nq)",
                                 Status.Iteration, attempt-1, Status.CurrentTime, dt,
@@ -78,8 +77,8 @@ function util.run_simulation(pinit, configure_mara, runargs)
 
          attempt = 0
          Status.CurrentTime = Status.CurrentTime + Status.Timestep
-         Status.Timestep = get_timestep(runargs.CFL)
          Status.Iteration = Status.Iteration + 1
+	 Status.Timestep = runargs.fixdt or get_timestep(runargs.CFL)
       end
    end
    return Status
