@@ -51,7 +51,7 @@ tests.Explosion = {
 }
 
 
-tests.ExplosionRmhd = {
+tests.RmhdExplosion = {
    get_pinit =
       function(self, time)
          local g = 
