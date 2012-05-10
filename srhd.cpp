@@ -12,9 +12,10 @@
 #include <cstdio>
 #include <cmath>
 #include <cstring>
+#include "rmhd-c2p.h"
+#include "eos.hpp"
 #include "srhd.hpp"
 #include "matrix.h"
-#include "logging.hpp"
 
 
 typedef AdiabaticIdealSrhd Srhd;
@@ -43,8 +44,44 @@ std::string Srhd::PrintCons(const double *U) const
           U[0], U[1], U[2], U[3], U[4]);
   return std::string(str);
 }
-int Srhd::ConsToPrim(const double *U, double *P) const
+int Srhd::ConsToPrim(const double *U_, double *P_) const
 {
+  double U[8] = { 0,0,0,0,0,0,0,0 };
+  double P[8] = { 0,0,0,0,0,0,0,0 };
+
+  memcpy(U, U_, 5*sizeof(double));
+  memcpy(P, P_, 5*sizeof(double));
+
+  int error = 1;
+  rmhd_c2p_new_state(U);
+
+  // This piece of code drives cons to prim inversions for a gamma-law equation
+  // of state.
+  // ---------------------------------------------------------------------------
+  rmhd_c2p_set_gamma(Mara->GetEos<AdiabaticEos>().Gamma);
+  rmhd_c2p_new_state(U);
+
+  if (error) {
+    rmhd_c2p_set_starting_prim(P);
+    error = rmhd_c2p_solve_anton2dzw(P);
+  }
+  if (error) {
+    rmhd_c2p_estimate_from_cons();
+    error = rmhd_c2p_solve_anton2dzw(P);
+  }
+  if (error) {
+    rmhd_c2p_set_starting_prim(P);
+    error = rmhd_c2p_solve_noble1dw(P);
+  }
+  if (error) {
+    rmhd_c2p_estimate_from_cons();
+    error = rmhd_c2p_solve_noble1dw(P);
+  }
+
+  memcpy(P_, P, 5*sizeof(double));
+  return error;
+
+  /*
   if (U[ddd] < 0.0 || U[tau] < 0.0) {
     DebugLog.Warning(__FUNCTION__) << "Got negative D or Tau." << std::endl
                                    << PrintCons(U) << std::endl;
@@ -116,17 +153,11 @@ int Srhd::ConsToPrim(const double *U, double *P) const
   }
 
   return 0;
+  */
 }
 int Srhd::PrimToCons(const double *P, double *U) const
 {
   const double V2   =   P[vx]*P[vx] + P[vy]*P[vy] + P[vz]*P[vz];
-  if (V2 >= 1.0) {
-    DebugLog.Warning(__FUNCTION__) << "Got superluminal velocity, V2 = " << V2 << std::endl
-                                   << PrintPrim(P) << std::endl
-                                   << PrintCons(U) << std::endl;
-    return 1;
-  }
-
   const double W2   =   1.0 / (1.0 - V2);
   const double W    =   sqrt(W2);
   const double e    =   P[pre] / (P[rho] * (AdiabaticGamma - 1.0));
@@ -137,6 +168,10 @@ int Srhd::PrimToCons(const double *P, double *U) const
   U[Sx]  = P[rho]*h*W2*P[vx];
   U[Sy]  = P[rho]*h*W2*P[vy];
   U[Sz]  = P[rho]*h*W2*P[vz];
+
+  if (V2 >= 1.0) {
+    return 1;
+  }
 
   return 0;
 }
@@ -193,9 +228,6 @@ void Srhd::FluxAndEigenvalues(const double *U,
   }
 
   if (fabs(*ap)>1.0 || fabs(*am)>1.0) {
-    DebugLog.Info(__FUNCTION__)
-      << "superluminal eigenvalues: " << *ap << " " << *am
-      << " ... resetting to +/- 1.0 " << std::endl;
     *ap =  1.0;
     *am = -1.0;
   }

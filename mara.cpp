@@ -87,6 +87,7 @@ extern "C"
   static int luaC_fluid_PrimToCons(lua_State *L);
   static int luaC_fluid_ConsToPrim(lua_State *L);
   static int luaC_fluid_Eigensystem(lua_State *L);
+  static int luaC_fluid_FluxFunction(lua_State *L);
 
   static int luaC_boundary_ApplyBoundaries(lua_State *L);
 
@@ -308,6 +309,10 @@ int main(int argc, char **argv)
 
   lua_pushstring(L, "Eigensystem");
   lua_pushcfunction(L, luaC_fluid_Eigensystem);
+  lua_settable(L, 1);
+
+  lua_pushstring(L, "FluxFunction");
+  lua_pushcfunction(L, luaC_fluid_FluxFunction);
   lua_settable(L, 1);
 
   lua_setglobal(L, "fluid");
@@ -1556,7 +1561,6 @@ int luaC_fluid_PrimToCons(lua_State *L)
     luaU_pusharray(L, U, Nq);
     free(U);
   }
-
   return 1;
 }
 int luaC_fluid_ConsToPrim(lua_State *L)
@@ -1566,13 +1570,16 @@ int luaC_fluid_ConsToPrim(lua_State *L)
   if (Mara->fluid == NULL) {
     luaL_error(L, "need a fluid to run this, use set_fluid");
   }
-
-  int Nq = Mara->fluid->GetNq();
-  double *P = (double*) malloc(Nq*sizeof(double));
-  Mara->fluid->ConsToPrim(U, P);
-  luaU_pusharray(L, P, Nq);
-  free(P);
-
+  else {
+    int Nq = Mara->fluid->GetNq();
+    double *P = (double*) malloc(Nq*sizeof(double));
+    int err = Mara->fluid->ConsToPrim(U, P);
+    luaU_pusharray(L, P, Nq);
+    free(P);
+    if (err) {
+      luaL_error(L, "ConsToPrim failed");
+    }
+  }
   return 1;
 }
 
@@ -1616,7 +1623,26 @@ int luaC_fluid_Eigensystem(lua_State *L)
 
   return 3;
 }
+int luaC_fluid_FluxFunction(lua_State *L)
+{
+  double *P = luaU_checkarray(L, 1);
+  int dim = luaL_checkinteger(L, 2);
 
+  int Nq = Mara->fluid->GetNq();
+  double *U  = (double*) malloc(Nq*sizeof(double));
+  double *F  = (double*) malloc(Nq*sizeof(double));
+
+  if (Mara->fluid == NULL) {
+    luaL_error(L, "need a fluid to run this, use set_fluid");
+  }
+
+  Mara->fluid->PrimToCons(P, U);
+  Mara->fluid->FluxAndEigenvalues(U, P, F, NULL, NULL, dim);
+  luaU_pusharray(L, F, Nq);
+  free(U);
+  //  free(F);
+  return 1;
+}
 int luaC_boundary_ApplyBoundaries(lua_State *L)
 {
   if (Mara->boundary == NULL) {
