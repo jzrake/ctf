@@ -80,80 +80,6 @@ int Srhd::ConsToPrim(const double *U_, double *P_) const
 
   memcpy(P_, P, 5*sizeof(double));
   return error;
-
-  /*
-  if (U[ddd] < 0.0 || U[tau] < 0.0) {
-    DebugLog.Warning(__FUNCTION__) << "Got negative D or Tau." << std::endl
-                                   << PrintCons(U) << std::endl;
-    return 1;
-  }
-
-  static const double ERROR_TOLR = 1e-6;
-  static const int NEWTON_MAX_ITER = 50;
-
-  const double D     = U[ddd];
-  const double Tau   = U[tau];
-  const double S2    = U[Sx]*U[Sx] + U[Sy]*U[Sy] + U[Sz]*U[Sz];
-
-  int soln_found     = 0;
-  int n_iter         = 0;
-
-  double f,g,W_soln=1.0,p=P[pre];
-
-  while (!soln_found) {
-
-    const double v2  = S2 / pow(Tau + D + p, 2);
-    const double W2  = 1.0 / (1.0 - v2);
-    const double W   = sqrt(W2);
-    const double e   = (Tau + D*(1.0 - W) + p*(1.0 - W2)) / (D*W);
-    const double Rho = D / W;
-    const double h   = 1.0 + e + p/Rho;
-    const double cs2 = AdiabaticGamma * p / (Rho * h);
-
-    f = Rho * e * (AdiabaticGamma - 1.0) - p;
-    g = v2*cs2 - 1.0;
-
-    p -= f/g;
-
-    if (fabs(f) < ERROR_TOLR) {
-      W_soln = W;
-      soln_found = 1;
-    }
-    if (n_iter++ == NEWTON_MAX_ITER) {
-      DebugLog.Warning(__FUNCTION__) << "ConsToPrim ran out of iterations." << std::endl
-                                     << PrintPrim(P) << std::endl
-                                     << PrintCons(U) << std::endl;
-      return 1;
-    }
-  }
-
-  P[rho] = D/W_soln;
-  P[pre] = p;
-  P[vx]  = U[Sx] / (Tau + D + p);
-  P[vy]  = U[Sy] / (Tau + D + p);
-  P[vz]  = U[Sz] / (Tau + D + p);
-
-  if (P[pre] < 0.0) {
-    DebugLog.Warning(__FUNCTION__) << "Got negative pressure." << std::endl
-                                   << PrintPrim(P) << std::endl
-                                   << PrintCons(U) << std::endl;
-    return 1;
-  }
-  if (P[rho] < 0.0) {
-    DebugLog.Warning(__FUNCTION__) << "Got negative density." << std::endl
-                                   << PrintPrim(P) << std::endl
-                                   << PrintCons(U) << std::endl;
-    return 1;
-  }
-  if (std::isnan(W_soln) || W_soln > bigW) {
-    DebugLog.Warning(__FUNCTION__) << "Got superluminal velocity." << std::endl
-                                   << PrintPrim(P) << std::endl
-                                   << PrintCons(U) << std::endl;
-    return 1;
-  }
-
-  return 0;
-  */
 }
 int Srhd::PrimToCons(const double *P, double *U) const
 {
@@ -328,8 +254,8 @@ void Srhd::Eigensystem(const double *U, const double *P_,
   // Equations (17) through (20)
   // ---------------------------------------------------------------------------
   const double RT[5][5] =
-    {{1, hW*Ap - 1, hW*Ap*lp, hW*v, hW*w},
-     {1, hW*Am - 1, hW*Am*lm, hW*v, hW*w},
+    {{1, hW*Am - 1, hW*Am*lm, hW*v, hW*w},
+     {1, hW*Ap - 1, hW*Ap*lp, hW*v, hW*w},
      {K/hW, 1-K/hW, u, v, w},
      {W*v, 2*h*W2*v - W*v, 2*h*W2*u*v, h*(1+2*W2*v*v), 2*h*W2*v*w},
      {W*w, 2*h*W2*w - W*w, 2*h*W2*u*w, 2*h*W2*v*w, h*(1+2*W2*w*w)}};
@@ -359,16 +285,16 @@ void Srhd::Eigensystem(const double *U, const double *P_,
   const double e = +h*h / Delta;
 
   const double LL[5][5] =
-    {{d*(hW*Am*(u-lm) - u - W2*(V2 - u*u)*(2*K - 1)*(u - Am*lm) + K*Am*lm),
-      d*(-u - W2*(V2 - u*u)*(2*K - 1)*(u - Am*lm) + K*Am*lm),
-      d*(1 + W2*(V2 - u*u)*(2*K - 1)*(1 - Am) - K*Am),
-      d*(W2*v*(2*K - 1)*Am*(u - lm)),
-      d*(W2*w*(2*K - 1)*Am*(u - lm))},
-     {e*(hW*Ap*(u-lp) - u - W2*(V2 - u*u)*(2*K - 1)*(u - Ap*lp) + K*Ap*lp),
+    {{e*(hW*Ap*(u-lp) - u - W2*(V2 - u*u)*(2*K - 1)*(u - Ap*lp) + K*Ap*lp),
       e*(-u - W2*(V2 - u*u)*(2*K - 1)*(u - Ap*lp) + K*Ap*lp),
       e*(1 + W2*(V2 - u*u)*(2*K - 1)*(1 - Ap) - K*Ap),
       e*(W2*v*(2*K - 1)*Ap*(u - lp)),
       e*(W2*w*(2*K - 1)*Ap*(u - lp))},
+     {d*(hW*Am*(u-lm) - u - W2*(V2 - u*u)*(2*K - 1)*(u - Am*lm) + K*Am*lm),
+      d*(-u - W2*(V2 - u*u)*(2*K - 1)*(u - Am*lm) + K*Am*lm),
+      d*(1 + W2*(V2 - u*u)*(2*K - 1)*(1 - Am) - K*Am),
+      d*(W2*v*(2*K - 1)*Am*(u - lm)),
+      d*(W2*w*(2*K - 1)*Am*(u - lm))},
      {a*(h-W), -a*W, a*W*u, a*W*v, a*W*w},
      {-b*v, -b*v, b*u*v, b*(1-u*u), 0},
      {-c*w, -c*w, c*u*w, 0, c*(1-u*u)}};
