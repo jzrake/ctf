@@ -73,10 +73,7 @@ extern "C"
   static int luaC_set_advance(lua_State *L);
   static int luaC_set_driving(lua_State *L);
   static int luaC_set_cooling(lua_State *L);
-  static int luaC_set_plm_theta(lua_State *L);
-  static int luaC_set_reconstruct(lua_State *L);
-  static int luaC_set_safety_level(lua_State *L);
-
+  static int luaC_config_solver(lua_State *L);
 
   static int luaC_new_ou_field(lua_State *L);
   static int luaC_load_shen(lua_State *L);
@@ -284,9 +281,7 @@ int main(int argc, char **argv)
   lua_register(L, "set_advance"  , luaC_set_advance);
   lua_register(L, "set_driving"  , luaC_set_driving);
   lua_register(L, "set_cooling"  , luaC_set_cooling);
-  lua_register(L, "set_plm_theta", luaC_set_plm_theta);
-  lua_register(L, "set_reconstruct", luaC_set_reconstruct);
-  lua_register(L, "set_safety_level", luaC_set_safety_level);
+  lua_register(L, "config_solver", luaC_config_solver);
 
   lua_register(L, "new_ou_field" , luaC_new_ou_field);
   lua_register(L, "load_shen"    , luaC_load_shen);
@@ -1331,20 +1326,27 @@ int luaC_set_plm_theta(lua_State *L)
   Mara->godunov->SetPlmTheta(theta);
   return 0;
 }
-int luaC_set_reconstruct(lua_State *L)
+int luaC_config_solver(lua_State *L)
 // -----------------------------------------------------------------------------
 // Configures the GodunovOperator::reconstruct_method flag as well as internal
 // parameters specific to the reconstruction library. The input is a table which
 // may contain any of the following keys:
 //
-// mode (string) : one of [pcm, plm, weno5] ... reconstruction type
-// IS   (string) : one of [js96, b08, sz10] ... smoothness indicator
-// A    (number) : should be in [0,100]     ... used by sz10 only, see weno.c
+// fsplit (string) : one of [llf, marq]       ... flux splitting mode
+// extrap (string) : one of [pcm, plm, weno5] ... reconstruction type
+// theta  (number) : must be [0,2]            ... theta value for PLM/minmod
+// IS     (string) : one of [js96, b08, sz10] ... smoothness indicator
+// sz10A  (number) : should be in [0,100]     ... used by sz10 (see weno.c)
 // -----------------------------------------------------------------------------
 {
+  typedef std::map<std::string, GodunovOperator::FluxSplittingMethod> FSmap;
   typedef std::map<std::string, GodunovOperator::ReconstructMethod> RMmap;
   typedef std::map<std::string, SmoothnessIndicator> ISmap;
   luaL_checktype(L, 1, LUA_TTABLE);
+
+  FSmap FSmodes;
+  FSmodes["llf"] = GodunovOperator::FLUXSPLIT_LOCAL_LAX_FRIEDRICHS;
+  FSmodes["marq"] = GodunovOperator::FLUXSPLIT_MARQUINA;
 
   RMmap RMmodes;
   RMmodes["pcm"] = GodunovOperator::RECONSTRUCT_PCM;
@@ -1356,16 +1358,41 @@ int luaC_set_reconstruct(lua_State *L)
   ISmodes["b08"] = ImprovedBorges08;
   ISmodes["sz10"] = ImprovedShenZha10;
 
-  lua_getfield(L, 1, "mode");
+  lua_getfield(L, 1, "fsplit");
+  if (lua_isstring(L, -1)) {
+    const char *key = lua_tostring(L, -1);
+    FSmap::iterator it = FSmodes.find(key);
+    if (it != FSmodes.end()) {
+      printf("[config] setting fsplit=%s\n", it->first.c_str());
+      GodunovOperator::fluxsplit_method = it->second;
+    }
+    else {
+      luaL_error(L, "no such fsplit: %s", key);
+    }
+  }
+  lua_pop(L, 1);
+
+  lua_getfield(L, 1, "extrap");
   if (lua_isstring(L, -1)) {
     const char *key = lua_tostring(L, -1);
     RMmap::iterator it = RMmodes.find(key);
     if (it != RMmodes.end()) {
-      printf("[reconstruct_config] setting mode=%s\n", it->first.c_str());
+      printf("[config] setting extrap=%s\n", it->first.c_str());
       GodunovOperator::reconstruct_method = it->second;
     }
     else {
-      luaL_error(L, "no such mode: %s", key);
+      luaL_error(L, "no such extrap: %s", key);
+    }
+  }
+  lua_pop(L, 1);
+
+  lua_getfield(L, 1, "theta");
+  if (lua_isnumber(L, -1)) {
+    const double theta = lua_tonumber(L, -1);
+    printf("[config] setting theta=%f\n", theta);
+    reconstruct_set_plm_theta(theta);
+    if (Mara->godunov) {
+      Mara->godunov->SetPlmTheta(theta);
     }
   }
   lua_pop(L, 1);
@@ -1375,7 +1402,7 @@ int luaC_set_reconstruct(lua_State *L)
     const char *key = lua_tostring(L, -1);
     ISmap::iterator it = ISmodes.find(key);
     if (it != ISmodes.end()) {
-      printf("[reconstruct_config] setting IS=%s\n", it->first.c_str());
+      printf("[config] setting IS=%s\n", it->first.c_str());
       reconstruct_set_smoothness_indicator(it->second);
     }
     else {
@@ -1384,23 +1411,14 @@ int luaC_set_reconstruct(lua_State *L)
   }
   lua_pop(L, 1);
 
-  lua_getfield(L, 1, "A");
+  lua_getfield(L, 1, "sz10A");
   if (lua_isnumber(L, -1)) {
     const double A = lua_tonumber(L, -1);
-    printf("[reconstruct_config] setting A=%f\n", A);
+    printf("[config] setting sz10A=%f\n", A);
     reconstruct_set_shenzha10_A(A);
   }
   lua_pop(L, 1);
 
-  return 0;
-}
-int luaC_set_safety_level(lua_State *L)
-{
-  double safety = luaL_checkinteger(L, 1);
-  if (Mara->godunov == NULL) {
-    luaL_error(L, "need a godunov operator for this");
-  }
-  Mara->godunov->SetSafetyLevel(safety);
   return 0;
 }
 

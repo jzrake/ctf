@@ -6,10 +6,6 @@
 #define MAXNQ 8 // Used for static array initialization
 typedef MethodOfLinesSplit Deriv;
 
-void Deriv::SetPlmTheta(double theta)
-{
-  reconstruct_set_plm_theta(theta);
-}
 std::valarray<double> Deriv::dUdt(const std::valarray<double> &Uin)
 {
   this->prepare_integration();

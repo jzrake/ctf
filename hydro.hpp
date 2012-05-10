@@ -219,7 +219,11 @@ public:
   enum ReconstructMethod { RECONSTRUCT_PCM,
 			   RECONSTRUCT_PLM,
 			   RECONSTRUCT_WENO5 } ;
+  enum FluxSplittingMethod { FLUXSPLIT_LOCAL_LAX_FRIEDRICHS,
+			     FLUXSPLIT_MARQUINA };
+
   static ReconstructMethod reconstruct_method;
+  static FluxSplittingMethod fluxsplit_method;
 
   class ConsToPrimFailure : public std::exception
   {

@@ -66,6 +66,8 @@ double RiemannSolver::MaxLambda;
 // -----------------------------------------------------------------------------
 GodunovOperator::ReconstructMethod GodunovOperator::reconstruct_method =
   GodunovOperator::RECONSTRUCT_PLM;
+GodunovOperator::FluxSplittingMethod GodunovOperator::fluxsplit_method =
+  GodunovOperator::FLUXSPLIT_LOCAL_LAX_FRIEDRICHS;
 
 void GodunovOperator::prepare_integration()
 {

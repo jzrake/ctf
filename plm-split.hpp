@@ -14,7 +14,6 @@ private:
   void drive_sweeps_2d(const double *P, double *L);
   void drive_sweeps_3d(const double *P, double *L);
   void DriveSweeps(const std::valarray<double> &P, std::valarray<double> &L);
-  virtual void SetPlmTheta(double theta);
 public:
   std::valarray<double> dUdt(const std::valarray<double> &Uin);
 } ;

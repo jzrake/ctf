@@ -36,7 +36,6 @@ std::valarray<double> Deriv::dUdt(const std::valarray<double> &Uin)
   return Lglb;
 }
 
-#define MARQUINA_SPLITTING 0
 
 void Deriv::intercell_flux_sweep(const double *U, const double *P,
                                  const double *F, const double *A,
@@ -64,7 +63,7 @@ void Deriv::intercell_flux_sweep(const double *U, const double *P,
 
   for (int i=Ng-1; i<Nx+Ng; ++i) {
 
-    if (MARQUINA_SPLITTING) {
+    if (fluxsplit_method == FLUXSPLIT_MARQUINA) {
 
       // Hard-codes NQ=5 for now
       // -----------------------
@@ -155,7 +154,8 @@ void Deriv::intercell_flux_sweep(const double *U, const double *P,
       }
     }
 
-    else {
+    else if (fluxsplit_method == FLUXSPLIT_LOCAL_LAX_FRIEDRICHS) {
+
       for (int q=0; q<NQ; ++q) {
         Piph[q] = 0.5*(P[i*NQ + q] + P[(i+1)*NQ + q]);
       }
