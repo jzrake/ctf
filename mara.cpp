@@ -77,6 +77,7 @@ extern "C"
   static int luaC_set_reconstruct(lua_State *L);
   static int luaC_set_safety_level(lua_State *L);
 
+
   static int luaC_new_ou_field(lua_State *L);
   static int luaC_load_shen(lua_State *L);
   static int luaC_test_shen(lua_State *L);
@@ -208,8 +209,8 @@ int main(int argc, char **argv)
 
   // ---------------------------------------------------------------------------
   // Collect command line arguments. If the first argument after
-  // 
-  // $> mara [options] 
+  //
+  // $> mara [options]
   //
   // ends in the extension '.lua', then regeister it as the LuaProgramName. All
   // subsequent command line entries are dropped into the 'cmdline.opts' table
@@ -242,7 +243,7 @@ int main(int argc, char **argv)
     }
   }
   for (size_t i=0; i<args.size(); ++i) {
-      
+
     const char *a = args[i].c_str();
     const size_t p = strcspn(a, "=");
 
@@ -603,48 +604,30 @@ int luaC_print_mara(lua_State *L)
   std::cout << "units: "
             << (Mara->units ? Demangle(typeid(*Mara->units).name()) : "NULL")
             << std::endl;
-
-
   std::cout << "domain: "
             << (Mara->domain ? Demangle(typeid(*Mara->domain).name()) : "NULL")
             << std::endl;
-
-
   std::cout << "boundary: "
             << (Mara->boundary ? Demangle(typeid(*Mara->boundary).name()) : "NULL")
             << std::endl;
-
-
   std::cout << "fluid: "
             << (Mara->fluid ? Demangle(typeid(*Mara->fluid).name()) : "NULL")
             << std::endl;
-
-
   std::cout << "eos: "
             << (Mara->eos ? Demangle(typeid(*Mara->eos).name()) : "NULL")
             << std::endl;
-
-
   std::cout << "godunov: "
             << (Mara->godunov ? Demangle(typeid(*Mara->godunov).name()) : "NULL")
             << std::endl;
-
-
   std::cout << "riemann: "
             << (Mara->riemann ? Demangle(typeid(*Mara->riemann).name()) : "NULL")
             << std::endl;
-
-
   std::cout << "advance: "
             << (Mara->advance ? Demangle(typeid(*Mara->advance).name()) : "NULL")
             << std::endl;
-
-
   std::cout << "driving: "
             << (Mara->driving ? Demangle(typeid(*Mara->driving).name()) : "NULL")
             << std::endl;
-
-
   std::cout << "cooling: "
             << (Mara->cooling ? Demangle(typeid(*Mara->cooling).name()) : "NULL")
             << std::endl;
@@ -912,8 +895,8 @@ int luaC_test_sampling(lua_State *L)
 
   for (int i=0; i<numsamp; ++i) {
     double r1[3] = { rand.RandomDouble(gx0[0], gx1[0]),
-		     rand.RandomDouble(gx0[1], gx1[1]),
-		     rand.RandomDouble(gx0[2], gx1[2]) };
+                     rand.RandomDouble(gx0[1], gx1[1]),
+                     rand.RandomDouble(gx0[2], gx1[2]) };
     Mara_prim_at_point(r1, P1);
     //    printf("(%f %f %f) ", r1[0], r1[1], r1[2]);
     //    std::cout << Mara->fluid->PrintPrim(P1) << std::endl;
@@ -1350,23 +1333,64 @@ int luaC_set_plm_theta(lua_State *L)
 }
 int luaC_set_reconstruct(lua_State *L)
 // -----------------------------------------------------------------------------
-// Sets a global static variable which in theory affects all godunov
-// operators. At this time only plm-split uses this flag.
+// Configures the GodunovOperator::reconstruct_method flag as well as internal
+// parameters specific to the reconstruction library. The input is a table which
+// may contain any of the following keys:
+//
+// mode (string) : one of [pcm, plm, weno5] ... reconstruction type
+// IS   (string) : one of [js96, b08, sz10] ... smoothness indicator
+// A    (number) : should be in [0,100]     ... used by sz10 only, see weno.c
 // -----------------------------------------------------------------------------
 {
-  const char *key = luaL_checkstring(L, 1);
-  if (strcmp(key, "pcm") == 0) {
-    GodunovOperator::reconstruct_method = GodunovOperator::RECONSTRUCT_PCM;
+  typedef std::map<std::string, GodunovOperator::ReconstructMethod> RMmap;
+  typedef std::map<std::string, SmoothnessIndicator> ISmap;
+  luaL_checktype(L, 1, LUA_TTABLE);
+
+  RMmap RMmodes;
+  RMmodes["pcm"] = GodunovOperator::RECONSTRUCT_PCM;
+  RMmodes["plm"] = GodunovOperator::RECONSTRUCT_PLM;
+  RMmodes["weno5"] = GodunovOperator::RECONSTRUCT_WENO5;
+
+  ISmap ISmodes;
+  ISmodes["js96"] = OriginalJiangShu96;
+  ISmodes["b08"] = ImprovedBorges08;
+  ISmodes["sz10"] = ImprovedShenZha10;
+
+  lua_getfield(L, 1, "mode");
+  if (lua_isstring(L, -1)) {
+    const char *key = lua_tostring(L, -1);
+    RMmap::iterator it = RMmodes.find(key);
+    if (it != RMmodes.end()) {
+      printf("[reconstruct_config] setting mode=%s\n", it->first.c_str());
+      GodunovOperator::reconstruct_method = it->second;
+    }
+    else {
+      luaL_error(L, "no such mode: %s", key);
+    }
   }
-  else if (strcmp(key, "plm") == 0) {
-    GodunovOperator::reconstruct_method = GodunovOperator::RECONSTRUCT_PLM;
+  lua_pop(L, 1);
+
+  lua_getfield(L, 1, "IS");
+  if (lua_isstring(L, -1)) {
+    const char *key = lua_tostring(L, -1);
+    ISmap::iterator it = ISmodes.find(key);
+    if (it != ISmodes.end()) {
+      printf("[reconstruct_config] setting IS=%s\n", it->first.c_str());
+      reconstruct_set_smoothness_indicator(it->second);
+    }
+    else {
+      luaL_error(L, "no such IS: %s", key);
+    }
   }
-  else if (strcmp(key, "weno5") == 0) {
-    GodunovOperator::reconstruct_method = GodunovOperator::RECONSTRUCT_WENO5;
+  lua_pop(L, 1);
+
+  lua_getfield(L, 1, "A");
+  if (lua_isnumber(L, -1)) {
+    const double A = lua_tonumber(L, -1);
+    printf("[reconstruct_config] setting A=%f\n", A);
+    reconstruct_set_shenzha10_A(A);
   }
-  else {
-    luaL_error(L, "no such reconstruction method: %s", key);
-  }
+  lua_pop(L, 1);
 
   return 0;
 }

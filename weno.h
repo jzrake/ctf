@@ -16,6 +16,7 @@ extern "C" {
 			     ImprovedShenZha10 };
 
   double reconstruct(const double *v, enum ReconstructOperation type);
+  void reconstruct_set_smoothness_indicator(enum SmoothnessIndicator IS);
   void reconstruct_set_plm_theta(double theta);
   void reconstruct_set_shenzha10_A(double A);
 
