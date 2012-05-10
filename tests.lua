@@ -53,13 +53,29 @@ tests.Explosion = {
       end
 }
 
+
+tests.ExplosionRmhd = {
+   get_pinit =
+      function(self, time)
+         local g = 
+            function(x,y,z)
+               local r2 = x*x + y*y
+               if r2 < 0.025 then
+                  return { 1.000, 1.0, 0, 0, 0, 4, 0, 0 }
+               else
+                  return { 0.125, 0.1, 0, 0, 0, 4, 0, 0 }
+               end
+            end
+         return g
+      end
+}
+
 tests.KelvinHelmoltz = {
    get_pinit =
       function(self, time)
          local g = 
             function(x,y,z)
             local rho,vx,vy   
-               
                if math.abs(y) > 0.25 then
                     rho = 1.0
                     vx = -0.5
