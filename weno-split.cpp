@@ -35,6 +35,9 @@ std::valarray<double> Deriv::dUdt(const std::valarray<double> &Uin)
 
   return Lglb;
 }
+
+#define MARQUINA_SPLITTING 0
+
 void Deriv::intercell_flux_sweep(const double *U, const double *P,
                                  const double *F, const double *A,
                                  double *Fiph, int dim)
@@ -61,44 +64,137 @@ void Deriv::intercell_flux_sweep(const double *U, const double *P,
 
   for (int i=Ng-1; i<Nx+Ng; ++i) {
 
-    for (int q=0; q<NQ; ++q) {
-      Piph[q] = 0.5*(P[i*NQ + q] + P[(i+1)*NQ + q]);
-    }
+    if (MARQUINA_SPLITTING) {
 
-    Mara->fluid->PrimToCons(Piph, Uiph);
-    Mara->fluid->Eigensystem(Uiph, Piph, Liph, Riph, lam, dim);
+      // Hard-codes NQ=5 for now
+      // -----------------------
+      double laml[5], lamr[5];
+      double Ll[5][5], Rl[5][5];
+      double Lr[5][5], Rr[5][5];
+      double ul[6][5], ur[6][5];
+      double fl[6][5], fr[6][5];
+      double fweno_p[5], fweno_m[5];
+      double Fweno_p[5], Fweno_m[5];
+      double Pl[5], Pr[5];
+      double Ul[5], Ur[5];
 
-    // Select the maximum wavespeed on the local stencil
-    // -------------------------------------------------------------------------
-    const double ml = *std::max_element(A+i-2, A+i+4);
-
-    for (int j=0; j<6; ++j) {
       for (int q=0; q<NQ; ++q) {
-
-        // Local Lax-Friedrichs flux splitting
-        // ---------------------------------------------------------------------
-        const int m = (i+j-2)*NQ + q;
-        Fp[q] = 0.5*(F[m] + ml*U[m]);
-        Fm[q] = 0.5*(F[m] - ml*U[m]);
+	const int m = i*NQ + q;
+	double v[6] = { P[m-2*NQ], P[m-NQ], P[m], P[m+NQ], P[m+2*NQ], P[m+3*NQ] };
+	
+	switch (GodunovOperator::reconstruct_method) {
+	case RECONSTRUCT_PCM:
+	  Pl[q] = v[2];
+	  Pr[q] = v[3];
+	  break;
+	case RECONSTRUCT_PLM:
+	  Pl[q] = reconstruct(&v[2], PLM_C2R);
+	  Pr[q] = reconstruct(&v[3], PLM_C2L);
+	  break;
+	case RECONSTRUCT_WENO5:
+	  Pl[q] = reconstruct(&v[2], WENO5_FD_C2R);
+	  Pr[q] = reconstruct(&v[3], WENO5_FD_C2L);
+	  break;
+	}
       }
-      matrix_vector_product(Liph, Fp, fp+j*NQ, NQ, NQ);
-      matrix_vector_product(Liph, Fm, fm+j*NQ, NQ, NQ);
-    }
+      Mara->fluid->PrimToCons(Pl, Ul);
+      Mara->fluid->PrimToCons(Pr, Ur);
+      Mara->fluid->Eigensystem(Ul, Pl, Ll[0], Rl[0], laml, dim);
+      Mara->fluid->Eigensystem(Ur, Pr, Lr[0], Rr[0], lamr, dim);
 
-    for (int q=0; q<NQ; ++q) {
+
       for (int j=0; j<6; ++j) {
-        fpT[q*6 + j] = fp[j*NQ + q];
-        fmT[q*6 + j] = fm[j*NQ + q];
+        matrix_vector_product(Ll[0], &U[(i+j-2)*NQ], ul[j], NQ, NQ);
+        matrix_vector_product(Lr[0], &U[(i+j-2)*NQ], ur[j], NQ, NQ);
+        matrix_vector_product(Ll[0], &F[(i+j-2)*NQ], fl[j], NQ, NQ);
+        matrix_vector_product(Lr[0], &F[(i+j-2)*NQ], fr[j], NQ, NQ);
+      }
+
+      for (int q=0; q<NQ; ++q) {
+        if (laml[q] > 0.0 && lamr[q] > 0.0) {
+          // No sign change, right-going waves only: set fm to zero and fp to f
+          for (int j=0; j<6; ++j) {
+            fp[j*NQ + q] = fl[j][q];
+            fm[j*NQ + q] = 0.0;
+          }
+        }
+        else if (laml[q] < 0.0 && lamr[q] < 0.0) {
+          // No sign change, left-going waves only: set fp to zero and fm to f
+          for (int j=0; j<6; ++j) {
+            fp[j*NQ + q] = 0.0;
+            fm[j*NQ + q] = fr[j][q];
+          }
+        }
+        else {
+          // There is a sign change in the speed of this characteristic field
+          const double a = fabs(laml[q]) > fabs(lamr[q]) ? laml[q] : lamr[q];
+          for (int j=0; j<6; ++j) {
+            fp[j*NQ + q] = 0.5*(fl[j][q] + fabs(a)*ul[j][q]);
+            fm[j*NQ + q] = 0.5*(fr[j][q] - fabs(a)*ur[j][q]);
+          }
+        }
+      }
+
+      for (int q=0; q<NQ; ++q) {
+        for (int j=0; j<6; ++j) {
+          fpT[q*6 + j] = fp[j*NQ + q];
+          fmT[q*6 + j] = fm[j*NQ + q];
+        }
+      }
+
+      for (int q=0; q<NQ; ++q) {
+        fweno_p[q] = reconstruct(fpT+q*6+2, WENO5_FD_C2R);
+        fweno_m[q] = reconstruct(fmT+q*6+3, WENO5_FD_C2L);
+      }
+
+      matrix_vector_product(Rl[0], fweno_p, Fweno_p, NQ, NQ);
+      matrix_vector_product(Rr[0], fweno_m, Fweno_m, NQ, NQ);
+
+      for (int q=0; q<NQ; ++q) {
+	Fiph[i*NQ + q] = Fweno_p[q] + Fweno_m[q];
       }
     }
 
-    for (int q=0; q<NQ; ++q) {
-      f[q] =
-	reconstruct(fpT+q*6+2, WENO5_FD_C2R) +
-	reconstruct(fmT+q*6+3, WENO5_FD_C2L);
-    }
+    else {
+      for (int q=0; q<NQ; ++q) {
+        Piph[q] = 0.5*(P[i*NQ + q] + P[(i+1)*NQ + q]);
+      }
 
-    matrix_vector_product(Riph, f, Fiph+i*NQ, NQ, NQ);
+      Mara->fluid->PrimToCons(Piph, Uiph);
+      Mara->fluid->Eigensystem(Uiph, Piph, Liph, Riph, lam, dim);
+
+      // Select the maximum wavespeed on the local stencil
+      // -------------------------------------------------------------------------
+      const double ml = *std::max_element(A+i-2, A+i+4);
+
+      for (int j=0; j<6; ++j) {
+        for (int q=0; q<NQ; ++q) {
+
+          // Local Lax-Friedrichs flux splitting
+          // ---------------------------------------------------------------------
+          const int m = (i+j-2)*NQ + q;
+          Fp[q] = 0.5*(F[m] + ml*U[m]);
+          Fm[q] = 0.5*(F[m] - ml*U[m]);
+        }
+        matrix_vector_product(Liph, Fp, fp+j*NQ, NQ, NQ);
+        matrix_vector_product(Liph, Fm, fm+j*NQ, NQ, NQ);
+      }
+
+      for (int q=0; q<NQ; ++q) {
+        for (int j=0; j<6; ++j) {
+          fpT[q*6 + j] = fp[j*NQ + q];
+          fmT[q*6 + j] = fm[j*NQ + q];
+        }
+      }
+
+      for (int q=0; q<NQ; ++q) {
+        f[q] =
+          reconstruct(fpT+q*6+2, WENO5_FD_C2R) +
+          reconstruct(fmT+q*6+3, WENO5_FD_C2L);
+      }
+
+      matrix_vector_product(Riph, f, Fiph+i*NQ, NQ, NQ);
+    }
   }
 
   // Clean up local memory requirements for WENO flux calculation
