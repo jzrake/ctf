@@ -124,14 +124,11 @@ double __weno5(const double *v, const double c[3][3], const double d[3])
   if (IS_mode == ImprovedBorges08) {
     eps = eps_prime = 1e-40;
     const double tau5 = fabs(B[0] - B[2]);
-    //Get my new Smoothness Idicators according to Borges 08
-    B[0] = (B[0] + eps) / (B[0] + tau5 + eps); 
-    B[1] = (B[1] + eps) / (B[1] + tau5 + eps);
-    B[2] = (B[2] + eps) / (B[2] + tau5 + eps);
-    //Calculate my weights with new smoothness indicators accoding to Borges
-    w[0] = d[0] / B[0];
-    w[1] = d[1] / B[1];
-    w[2] = d[2] / B[2];
+
+    // Calculate my weights with new smoothness indicators accoding to Borges
+    w[0] = d[0] * (1.0 + tau5 / (B[0] + eps));
+    w[1] = d[1] * (1.0 + tau5 / (B[1] + eps));
+    w[2] = d[2] * (1.0 + tau5 / (B[2] + eps));
   }
   else if (IS_mode == ImprovedShenZha10) {
     eps = 1e-6;
@@ -146,7 +143,7 @@ double __weno5(const double *v, const double c[3][3], const double d[3])
     w[1] = d[1] / SQU(eps_prime + B[1]);
     w[2] = d[2] / SQU(eps_prime + B[2]);
   }
-  else { //Go to Original JiangShu96
+  else { // Use OriginalJiangShu96
     eps = eps_prime = 1e-6; // recommended value by Jiang and Shu
     w[0] = d[0] / SQU(eps_prime + B[0]);
     w[1] = d[1] / SQU(eps_prime + B[1]);
