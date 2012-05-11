@@ -126,9 +126,9 @@ double __weno5(const double *v, const double c[3][3], const double d[3])
     const double tau5 = fabs(B[0] - B[2]);
 
     // Calculate my weights with new smoothness indicators accoding to Borges
-    w[0] = d[0] * (1.0 + tau5 / (B[0] + eps));
-    w[1] = d[1] * (1.0 + tau5 / (B[1] + eps));
-    w[2] = d[2] * (1.0 + tau5 / (B[2] + eps));
+    w[0] = d[0] * (1.0 + (tau5 / (B[0] + eps)));
+    w[1] = d[1] * (1.0 + (tau5 / (B[1] + eps)));
+    w[2] = d[2] * (1.0 + (tau5 / (B[2] + eps)));
   }
   else if (IS_mode == ImprovedShenZha10) {
     eps = 1e-6;

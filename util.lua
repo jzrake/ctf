@@ -148,6 +148,12 @@ end
 function util.plot(series, tpause)
    local gp = io.popen("gnuplot", 'w')
 
+   if util.RunArgs.pdf then
+      gp:write("set terminal postscript enhanced color\n")
+      gp:write(string.format("set output '| ps2pdf - %s.pdf'\n", util.RunArgs.id))
+      gp:write(string.format("set title '%s'\n", util.RunArgs.id))
+   end
+
    local lines = { }
    for k,v in pairs(series) do
       table.insert(lines, string.format(" '-' u 1:2 title '%s'", k))
@@ -160,8 +166,9 @@ function util.plot(series, tpause)
       end
       gp:write("e\n")
    end
-
-   gp:write(string.format("pause %f\n", tpause or 100.0))
+   if not util.RunArgs.pdf then
+      gp:write(string.format("pause %f\n", tpause or 100.0))
+   end
    gp:close()
 end
 
