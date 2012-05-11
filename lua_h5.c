@@ -228,7 +228,8 @@ int luaC_h5_write_numeric_table(lua_State *L)
       return 0;
     }
     if (lua_type(L, -1) != LUA_TNUMBER) {
-      printf("[hdf5] error: all values must be numbers.\n");
+      printf("[hdf5] error: value with key %s is not a number.\n",
+	     lua_tostring(L, -2));
       return 0;
     }
 

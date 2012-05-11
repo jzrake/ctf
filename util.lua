@@ -78,7 +78,11 @@ function util.run_simulation(pinit, configure_mara, runargs)
          attempt = 0
          Status.CurrentTime = Status.CurrentTime + Status.Timestep
          Status.Iteration = Status.Iteration + 1
-	 Status.Timestep = runargs.fixdt or get_timestep(runargs.CFL)
+	 if runargs.fixdt < 0.0 then
+	    Status.Timestep = get_timestep(runargs.CFL)
+	 else
+	    Status.Timestep = runargs.fixdt
+	 end
       end
    end
    return Status
