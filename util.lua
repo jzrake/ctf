@@ -52,7 +52,7 @@ function util.run_simulation(pinit, configure_mara, runargs)
          end
       end
 
-      if (runargs.cpi > 1.0 and
+      if (runargs.cpi > 0.0 and
 	  Status.CurrentTime - Status.LastCheckpointTime > runargs.cpi) then
 	 util.write_checkpoint(Status, runargs)
       end
