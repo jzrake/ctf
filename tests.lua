@@ -42,18 +42,20 @@ tests.Explosion = {
       function(self, time)
          local g = 
             function(x,y,z)
-	       local x = x - 0.5
-	       local y = y - 0.5
-	       local z = z - 0.5
-               local r2 = x*x + y*y + z*z
-               if r2 < 0.005 then
-                  return { 1.000, 1.0, 0, 0, 0, 4, 0, 0 }
+	       local dim = tests.RunArgs.dim
+	       if dim >= 1 then x = x - 0.5 end
+	       if dim >= 2 then y = y - 0.5 end
+	       if dim >= 3 then z = z - 0.5 end
+	       local r2 = x*x + y*y + z*z
+               if r2 < 0.01 then
+                  return { 1.000, 1.0, 0, 0, 0, self.Bx, 0, 0 }
                else
-                  return { 0.125, 0.1, 0, 0, 0, 4, 0, 0 }
+                  return { 0.125, 0.1, 0, 0, 0, self.Bx, 0, 0 }
                end
             end
          return g
-      end
+      end,
+   Bx = 4.0
 }
 
 tests.KelvinHelmholtz = {
