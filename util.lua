@@ -180,6 +180,8 @@ function util.parse_args(runargs)
    for k,v in pairs(cmdline.opts) do
       if type(runargs[k]) == 'number' then
          runargs[k] = tonumber(v)
+      elseif type(runargs[k]) == 'boolean' then
+	 runargs[k] = tonumber(v) == 1 or v == "true"
       else
          runargs[k] = v
       end

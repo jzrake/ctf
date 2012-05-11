@@ -1337,12 +1337,19 @@ int luaC_config_solver(lua_State *L)
 // theta  (number) : must be [0,2]            ... theta value for PLM/minmod
 // IS     (string) : one of [js96, b08, sz10] ... smoothness indicator
 // sz10A  (number) : should be in [0,100]     ... used by sz10 (see weno.c)
+//
+// A second positional argument, quiet (bool) may be provided.
 // -----------------------------------------------------------------------------
 {
   typedef std::map<std::string, GodunovOperator::FluxSplittingMethod> FSmap;
   typedef std::map<std::string, GodunovOperator::ReconstructMethod> RMmap;
   typedef std::map<std::string, SmoothnessIndicator> ISmap;
   luaL_checktype(L, 1, LUA_TTABLE);
+
+  int quiet = 0;
+  if (lua_gettop(L) == 2) {
+    quiet = lua_toboolean(L, 2);
+  }
 
   FSmap FSmodes;
   FSmodes["llf"] = GodunovOperator::FLUXSPLIT_LOCAL_LAX_FRIEDRICHS;
@@ -1363,7 +1370,7 @@ int luaC_config_solver(lua_State *L)
     const char *key = lua_tostring(L, -1);
     FSmap::iterator it = FSmodes.find(key);
     if (it != FSmodes.end()) {
-      printf("[config] setting fsplit=%s\n", it->first.c_str());
+      if (!quiet) printf("[config] setting fsplit=%s\n", it->first.c_str());
       GodunovOperator::fluxsplit_method = it->second;
     }
     else {
@@ -1377,7 +1384,7 @@ int luaC_config_solver(lua_State *L)
     const char *key = lua_tostring(L, -1);
     RMmap::iterator it = RMmodes.find(key);
     if (it != RMmodes.end()) {
-      printf("[config] setting extrap=%s\n", it->first.c_str());
+      if (!quiet) printf("[config] setting extrap=%s\n", it->first.c_str());
       GodunovOperator::reconstruct_method = it->second;
     }
     else {
@@ -1389,7 +1396,7 @@ int luaC_config_solver(lua_State *L)
   lua_getfield(L, 1, "theta");
   if (lua_isnumber(L, -1)) {
     const double theta = lua_tonumber(L, -1);
-    printf("[config] setting theta=%f\n", theta);
+    if (!quiet) printf("[config] setting theta=%f\n", theta);
     reconstruct_set_plm_theta(theta);
     if (Mara->godunov) {
       Mara->godunov->SetPlmTheta(theta);
@@ -1402,7 +1409,7 @@ int luaC_config_solver(lua_State *L)
     const char *key = lua_tostring(L, -1);
     ISmap::iterator it = ISmodes.find(key);
     if (it != ISmodes.end()) {
-      printf("[config] setting IS=%s\n", it->first.c_str());
+      if (!quiet) printf("[config] setting IS=%s\n", it->first.c_str());
       reconstruct_set_smoothness_indicator(it->second);
     }
     else {
@@ -1414,7 +1421,7 @@ int luaC_config_solver(lua_State *L)
   lua_getfield(L, 1, "sz10A");
   if (lua_isnumber(L, -1)) {
     const double A = lua_tonumber(L, -1);
-    printf("[config] setting sz10A=%f\n", A);
+    if (!quiet) printf("[config] setting sz10A=%f\n", A);
     reconstruct_set_shenzha10_A(A);
   }
   lua_pop(L, 1);

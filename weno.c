@@ -122,7 +122,7 @@ double __weno5(const double *v, const double c[3][3], const double d[3])
    double w[3] = {0,0,0};
 
   if (IS_mode == ImprovedBorges08) {
-    eps = eps_prime = 1e-40;
+    eps = eps_prime = 1e-14; // Borges uses 1e-40, but has Matlab
     const double tau5 = fabs(B[0] - B[2]);
 
     // Calculate my weights with new smoothness indicators accoding to Borges

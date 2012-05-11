@@ -56,7 +56,9 @@ Domain::DecomposedCartesianDomain(const double *x0, const double *x1, const int 
   MPI_Comm_rank(mpi_cart, &crt_rank);
   MPI_Cart_coords(mpi_cart, crt_rank, num_dims, mpi_index);
 
-  printf("[subgrids] layout is (%d %d %d)\n", dims[0], dims[1], dims[2]);
+  if (mpi_size > 1) {
+    printf("[subgrids] layout is (%d %d %d)\n", dims[0], dims[1], dims[2]);
+  }
 
   // ---------------------------------------------------------------------------
 
