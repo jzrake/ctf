@@ -549,8 +549,6 @@ int luaC_diffuse(lua_State *L)
 
 int luaC_get_timestep(lua_State *L)
 {
-  printf("%f\n", RiemannSolver::GetMaxLambda()); // !!!
-
   const double CFL = luaL_checknumber(L, 1);
   const double dt = Mara_mpi_dbl_min(CFL*Mara->domain->get_min_dx() /
                                      RiemannSolver::GetMaxLambda());
