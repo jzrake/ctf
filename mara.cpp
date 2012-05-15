@@ -512,8 +512,10 @@ int luaC_advance(lua_State *L)
   try {
     Mara->advance->AdvanceState(U, dt);
     errors = Mara->godunov->ConsToPrim(U, P);
+    if (errors) printf("end time-step error\n");
   }
   catch (const GodunovOperator::IntermediateFailure &e) {
+    printf("intermediate error\n");
     errors = Mara_mpi_int_sum(Mara->FailureMask.sum());
   }
 
@@ -547,6 +549,8 @@ int luaC_diffuse(lua_State *L)
 
 int luaC_get_timestep(lua_State *L)
 {
+  printf("%f\n", RiemannSolver::GetMaxLambda()); // !!!
+
   const double CFL = luaL_checknumber(L, 1);
   const double dt = Mara_mpi_dbl_min(CFL*Mara->domain->get_min_dx() /
                                      RiemannSolver::GetMaxLambda());
@@ -1178,7 +1182,7 @@ int luaC_set_fluid(lua_State *L)
     new_f = new AdiabaticIdealEulers;
   }
   else if (strcmp("srhd", key) == 0) {
-    new_f = new AdiabaticIdealSrhd(1.4);
+    new_f = new AdiabaticIdealSrhd;
   }
   else if (strcmp("rmhd", key) == 0) {
     new_f = new AdiabaticIdealRmhd;
@@ -1622,6 +1626,9 @@ int luaC_fluid_ConsToPrim(lua_State *L)
   else {
     int Nq = Mara->fluid->GetNq();
     double *P = (double*) malloc(Nq*sizeof(double));
+    for (int q=0; q<Nq; ++q) {
+      P[q] = 0.0; // send a bad, but deteriministic guess state
+    }
     int err = Mara->fluid->ConsToPrim(U, P);
     luaU_pusharray(L, P, Nq);
     free(P);
@@ -1684,13 +1691,16 @@ int luaC_fluid_FluxFunction(lua_State *L)
   if (Mara->fluid == NULL) {
     luaL_error(L, "need a fluid to run this, use set_fluid");
   }
-
+  double ap, am;
   Mara->fluid->PrimToCons(P, U);
-  Mara->fluid->FluxAndEigenvalues(U, P, F, NULL, NULL, dim);
+  Mara->fluid->FluxAndEigenvalues(U, P, F, &ap, &am, dim);
   luaU_pusharray(L, F, Nq);
+  lua_pushnumber(L, ap);
+  lua_pushnumber(L, am);
   free(U);
-  //  free(F);
-  return 1;
+  free(F);
+  
+  return 3;
 }
 int luaC_boundary_ApplyBoundaries(lua_State *L)
 {

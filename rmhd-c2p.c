@@ -137,7 +137,7 @@ int rmhd_c2p_reconstruct_prim(double Z, double W, double *Pout)
   return RMHD_C2P_SUCCESS;
 }
 
-// Routines to verify the health of cnserved or primitive states
+// Routines to verify the health of conserved or primitive states
 // -----------------------------------------------------------------------------
 int rmhd_c2p_check_cons(const double *U)
 {

@@ -14,6 +14,7 @@ typedef WenoSplit Deriv;
 std::valarray<double> Deriv::dUdt(const std::valarray<double> &Uin)
 {
   this->prepare_integration();
+  Mara->FailureMask = 0;
 
   Uglb.resize(stride[0]);
   Pglb.resize(stride[0]);
@@ -25,7 +26,12 @@ std::valarray<double> Deriv::dUdt(const std::valarray<double> &Uin)
 
   Uglb = Uin;
   Pglb = Mara->PrimitiveArray;
-  ConsToPrim(Uglb, Pglb);
+  int err = ConsToPrim(Uglb, Pglb);
+
+  if (err != 0) {
+    printf("c2p failed on %d zones\n", err);
+    throw IntermediateFailure();
+  }
 
   switch (ND) {
   case 1: drive_sweeps_1d(); break;

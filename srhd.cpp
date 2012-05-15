@@ -9,6 +9,7 @@
  *------------------------------------------------------------------------------
  */
 
+#include <iostream>
 #include <cstdio>
 #include <cmath>
 #include <cstring>
@@ -19,10 +20,9 @@
 
 
 typedef AdiabaticIdealSrhd Srhd;
-static const double bigW = 1e12;
 
-Srhd::AdiabaticIdealSrhd(double AdiabaticGamma)
-  : AdiabaticGamma(AdiabaticGamma) { }
+
+Srhd::AdiabaticIdealSrhd() { }
 
 std::vector<std::string> Srhd::GetPrimNames() const
 {
@@ -44,6 +44,20 @@ std::string Srhd::PrintCons(const double *U) const
           U[0], U[1], U[2], U[3], U[4]);
   return std::string(str);
 }
+
+int Srhd::PrimCheck(const double *P_) const
+{
+  double P[8] = { 0,0,0,0,0,0,0,0 };
+  memcpy(P, P_, 5*sizeof(double));
+  return rmhd_c2p_check_prim(P);
+}
+int Srhd::ConsCheck(const double *U_) const
+{
+  double U[8] = { 0,0,0,0,0,0,0,0 };
+  memcpy(U, U_, 5*sizeof(double));
+  return rmhd_c2p_check_cons(U);
+}
+
 int Srhd::ConsToPrim(const double *U_, double *P_) const
 {
   double U[8] = { 0,0,0,0,0,0,0,0 };
@@ -52,14 +66,13 @@ int Srhd::ConsToPrim(const double *U_, double *P_) const
   memcpy(U, U_, 5*sizeof(double));
   memcpy(P, P_, 5*sizeof(double));
 
-  int error = 1;
-  rmhd_c2p_new_state(U);
-
   // This piece of code drives cons to prim inversions for a gamma-law equation
   // of state.
   // ---------------------------------------------------------------------------
   rmhd_c2p_set_gamma(Mara->GetEos<AdiabaticEos>().Gamma);
   rmhd_c2p_new_state(U);
+
+  int error = 1;
 
   if (error) {
     rmhd_c2p_set_starting_prim(P);
@@ -83,10 +96,11 @@ int Srhd::ConsToPrim(const double *U_, double *P_) const
 }
 int Srhd::PrimToCons(const double *P, double *U) const
 {
+  const double gm   =   Mara->GetEos<AdiabaticEos>().Gamma;
   const double V2   =   P[vx]*P[vx] + P[vy]*P[vy] + P[vz]*P[vz];
   const double W2   =   1.0 / (1.0 - V2);
   const double W    =   sqrt(W2);
-  const double e    =   P[pre] / (P[rho] * (AdiabaticGamma - 1.0));
+  const double e    =   P[pre] / (P[rho] * (gm - 1.0));
   const double h    =   1.0 + e + P[pre]/P[rho];
 
   U[ddd] = P[rho]*W;
@@ -105,37 +119,39 @@ void Srhd::FluxAndEigenvalues(const double *U,
                               const double *P, double *F,
                               double *ap, double *am, int dimension) const
 {
+  const double gm = Mara->GetEos<AdiabaticEos>().Gamma;
+
   switch (dimension) {
   case 1:
-    F[ddd] = U[ddd] * P[vx ];
-    F[tau] = U[Sx ] - U[ddd] * P[vx ];
-    F[Sx ] = U[Sx ] * P[vx ] + P[pre];
-    F[Sy ] = U[Sy ] * P[vx ];
-    F[Sz ] = U[Sz ] * P[vx ];
+    F[ddd] = U[ddd] * P[vx];
+    F[tau] = U[tau] * P[vx] + P[pre]*P[vx];
+    F[Sx ] = U[Sx] * P[vx] + P[pre];
+    F[Sy ] = U[Sy] * P[vx];
+    F[Sz ] = U[Sz] * P[vx];
     break;
   case 2:
-    F[ddd] = U[ddd] * P[vy ];
-    F[tau] = U[Sy ] - U[ddd] * P[vy ];
-    F[Sx ] = U[Sx ] * P[vy ];
-    F[Sy ] = U[Sy ] * P[vy ] + P[pre];
-    F[Sz ] = U[Sz ] * P[vy ];
+    F[ddd] = U[ddd] * P[vy];
+    F[tau] = U[tau] * P[vy] + P[pre]*P[vy];
+    F[Sx ] = U[Sx] * P[vy];
+    F[Sy ] = U[Sy] * P[vy] + P[pre];
+    F[Sz ] = U[Sz] * P[vy];
     break;
   case 3:
-    F[ddd] = U[ddd] * P[vz ];
-    F[tau] = U[Sz ] - U[ddd] * P[vz ];
-    F[Sx ] = U[Sx ] * P[vz ];
-    F[Sy ] = U[Sy ] * P[vz ];
-    F[Sz ] = U[Sz ] * P[vz ] + P[pre];
+    F[ddd] = U[ddd] * P[vz];
+    F[tau] = U[tau] * P[vz] + P[pre]*P[vz];
+    F[Sx ] = U[Sx] * P[vz];
+    F[Sy ] = U[Sy] * P[vz];
+    F[Sz ] = U[Sz] * P[vz] + P[pre];
     break;
   }
 
-  if (ap == 0 || am == 0) return; // User may skip eigenvalue calculation
+  if (ap == NULL || am == NULL) return; // User may skip eigenvalue calculation
 
   const double vx2 = P[vx]*P[vx];
   const double vy2 = P[vy]*P[vy];
   const double vz2 = P[vz]*P[vz];
-  const double   e = P[pre] / (P[rho] * (AdiabaticGamma - 1.0));
-  const double cs2 = AdiabaticGamma * P[pre] / (P[pre] + P[rho] + P[rho]*e);
+  const double   e = P[pre] / (P[rho] * (gm - 1.0));
+  const double cs2 = gm * P[pre] / (P[pre] + P[rho] + P[rho]*e);
   const double v2  = vx2 + vy2 + vz2;
 
   switch (dimension) {
@@ -157,8 +173,6 @@ void Srhd::FluxAndEigenvalues(const double *U,
     *ap =  1.0;
     *am = -1.0;
   }
-
-  return;
 }
 
 
@@ -186,6 +200,7 @@ void Srhd::Eigensystem(const double *U, const double *P_,
 //
 // -----------------------------------------------------------------------------
 {
+  const double gm = Mara->GetEos<AdiabaticEos>().Gamma;
   const double T[3][5][5] =
   // Tx
     {{{1, 0, 0, 0, 0},
@@ -235,9 +250,9 @@ void Srhd::Eigensystem(const double *U, const double *P_,
   const double v = P[vy];  // vy
   const double w = P[vz];  // vz
 
-  const double sie = (p/D) / (AdiabaticGamma - 1); // specific internal energy
+  const double sie = (p/D) / (gm - 1); // specific internal energy
   const double h = 1 + sie + p/D;                  // specific enthalpy
-  const double cs2 = AdiabaticGamma * p / (D*h);   // sound speed squared
+  const double cs2 = gm * p / (D*h);   // sound speed squared
   const double V2 = u*u + v*v + w*w;
   const double W = 1.0 / sqrt(1 - V2);             // Lorentz factor
   const double W2 = W*W;
