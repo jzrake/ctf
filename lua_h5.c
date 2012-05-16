@@ -153,6 +153,10 @@ int luaC_h5_open_file(lua_State *L)
   else {
     printf("[hdf5] error: invalid file access mode '%s'\n", mode);
   }
+  if (PresentFile < 0) {
+    PresentFile = 0;
+    luaL_error(L, "could not open file %s for reading\n", fname);
+  }
   return 0;
 }
 

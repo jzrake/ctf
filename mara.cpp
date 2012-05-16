@@ -197,11 +197,14 @@ int main(int argc, char **argv)
   lua_vis_load(L);
 
   lua_getglobal(L, "package");
-  lua_pushfstring(L, "./?.lua;%s/conf/?.lua;%s/lib/lua/5.2/?.lua",
-                  __MARA_INSTALL_DIR,  __MARA_INSTALL_DIR);
+  lua_pushfstring(L, "./?.lua;%s/conf/?.lua;%s/lib/lua/5.2/?.lua;%s/lib/lua/5.2/?.so",
+                  __MARA_INSTALL_DIR, __MARA_INSTALL_DIR, __MARA_INSTALL_DIR);
   lua_setfield(L, -2, "path");
   lua_pop(L, 1);
 
+  const int MAXPATHLEN = 512;
+  char path[MAXPATHLEN];
+  getcwd(path, MAXPATHLEN);
 
 
   // ---------------------------------------------------------------------------
@@ -512,10 +515,8 @@ int luaC_advance(lua_State *L)
   try {
     Mara->advance->AdvanceState(U, dt);
     errors = Mara->godunov->ConsToPrim(U, P);
-    if (errors) printf("end time-step error\n");
   }
   catch (const GodunovOperator::IntermediateFailure &e) {
-    printf("intermediate error\n");
     errors = Mara_mpi_int_sum(Mara->FailureMask.sum());
   }
 
