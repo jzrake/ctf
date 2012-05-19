@@ -938,7 +938,8 @@ int luaC_test_sampling_many(lua_State *L)
   Mara_prim_at_point_many(Rinpt, Rlist, Plist, numsamp);
 
   for (int i=0; i<numsamp; ++i) {
-    //    printf("(%f %f %f) ", Rlist[3*i+0], Rlist[3*i+1], Rlist[3*i+2]);
+    //    printf("(%f %f %f)\n", Rinpt[3*i+0], Rinpt[3*i+1], Rinpt[3*i+2]);
+    //    printf("(%f %f %f)\n", Rlist[3*i+0], Rlist[3*i+1], Rlist[3*i+2]);
     //    std::cout << Mara->fluid->PrintPrim(&Plist[Nq*i]) << std::endl;
   }
 
