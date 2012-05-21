@@ -197,8 +197,10 @@ int main(int argc, char **argv)
   lua_vis_load(L);
 
   lua_getglobal(L, "package");
-  lua_pushfstring(L, "./?.lua;%s/conf/?.lua;%s/lib/lua/5.2/?.lua;%s/lib/lua/5.2/?.so",
-                  __MARA_INSTALL_DIR, __MARA_INSTALL_DIR, __MARA_INSTALL_DIR);
+  lua_pushfstring(L, "%s;./?.lua;%s/conf/?.lua;%s/lib/lua/5.2/?.lua;%s/lib/lua/5.2/?.so",
+                  getenv("LUA_PATH"),
+		  __MARA_INSTALL_DIR, __MARA_INSTALL_DIR,
+		  __MARA_INSTALL_DIR);
   lua_setfield(L, -2, "path");
   lua_pop(L, 1);
 

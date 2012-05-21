@@ -89,7 +89,7 @@ int luaC_h5_read_string(lua_State *L)
   hid_t strn = H5Dget_type(dset);
   hsize_t msize = H5Tget_size(strn);
 
-  char *string = (char*) malloc(msize*sizeof(char));
+  char *string = (char*) malloc((msize+1)*sizeof(char));
 
   H5Dread(dset, strn, fspc, fspc, H5P_DEFAULT, string);
   string[msize] = '\0'; // Make sure to null-terminate the string
