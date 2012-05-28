@@ -130,6 +130,58 @@ void OutflowBoundary2d::set_bc_y1_wall(std::valarray<double> &U) const
 }
 
 
+// PeriodicXOutflowY2d
+// -----------------------------------------------------------------------------
+void PeriodicXOutflowY2d::ApplyBoundaries(std::valarray<double> &U) const
+{
+  Mara->domain->Synchronize(U);
+
+  if (Mara->domain->GetSubgridIndex(0) == 0)
+    set_bc_x0_wall(U);
+  if (Mara->domain->GetSubgridIndex(0) == Mara->domain->GetSubgridSizes(0)-1)
+    set_bc_x1_wall(U);
+
+  if (Mara->domain->GetSubgridIndex(1) == 0)
+    set_bc_y0_wall(U);
+  if (Mara->domain->GetSubgridIndex(1) == Mara->domain->GetSubgridSizes(1)-1)
+    set_bc_y1_wall(U);
+}
+
+void PeriodicXOutflowY2d::set_bc_x0_wall(std::valarray<double> &U) const
+{
+  // periodic in x
+}
+void PeriodicXOutflowY2d::set_bc_x1_wall(std::valarray<double> &U) const
+{
+  // periodic in x
+}
+void PeriodicXOutflowY2d::set_bc_y0_wall(std::valarray<double> &U) const
+{
+  const int Nx = Mara->domain->get_N(1);
+  const int Ng = Mara->domain->get_Ng();
+
+  ValarrayManager M(Mara->domain->aug_shape(), Mara->domain->get_Nq());
+  for (int i=0; i<Nx+2*Ng; ++i)
+    for (int j=0; j<Ng; ++j)
+      {
+        U[ M(i,j) ] = U[ M(i,Ng) ];
+      }
+}
+void PeriodicXOutflowY2d::set_bc_y1_wall(std::valarray<double> &U) const
+{
+  const int Nx = Mara->domain->get_N(1);
+  const int Ny = Mara->domain->get_N(2);
+  const int Ng = Mara->domain->get_Ng();
+
+  ValarrayManager M(Mara->domain->aug_shape(), Mara->domain->get_Nq());
+  for (int i=0; i<Nx+2*Ng; ++i)
+    for (int j=Ny+Ng; j<Ny+2*Ng; ++j)
+      {
+        U[ M(i,j) ] = U[ M(i,Ny+Ng-1) ];
+      }
+}
+
+
 // OutflowBoundary3d
 // -----------------------------------------------------------------------------
 void OutflowBoundary3d::ApplyBoundaries(std::valarray<double> &U) const

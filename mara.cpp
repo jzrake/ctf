@@ -1260,6 +1260,9 @@ int luaC_set_boundary(lua_State *L)
   else if (strcmp(key, "outflow") == 0) {
     new_f = new OutflowBoundary;
   }
+  else if (strcmp(key, "perxouty") == 0) {
+    new_f = new PeriodicXOutflowY2d;
+  }
   else if (strcmp(key, "reflect2d") == 0) {
     int revx = luaL_checkinteger(L, 2);
     int revy = luaL_checkinteger(L, 3);
