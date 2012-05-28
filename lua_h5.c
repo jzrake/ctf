@@ -281,6 +281,8 @@ int luaC_h5_read_array(lua_State *L)
   H5Sclose(fspc);
   H5Dclose(dset);
   free(data);
+  free(dims);
+  free(dims_int);
 
   return 1;
 }
