@@ -191,22 +191,60 @@ void CharacterInput_draw_texture(int key, int state)
   }
 }
 
+void _draw_single_line(double *points, int N)
+{
+  double smax=-1e16, smin=1e16;
+  for (int m=0; m<N; ++m) {
+    const double s = points[4*m + 3];
+    if (s < smin) smin = s;
+    if (s > smax) smax = s;
+  }
+
+  const float *cmap_data = Mara_image_get_colormap(ColormapIndex);
+
+  glBegin(GL_LINE_STRIP);
+  for (int m=0; m<N; ++m) {
+    const double *x = &points[4*m];
+
+    int cm = 255.0 * (x[3] - smin) / (smax - smin);
+    double r = cmap_data[3*cm + 0];
+    double g = cmap_data[3*cm + 1];
+    double b = cmap_data[3*cm + 2];
+
+    glColor3d(r, g, b);
+    glVertex3d(x[0], x[1], x[2]);
+  }
+  glEnd();
+}
 
 int draw_lines3d(lua_State *L)
+// -----------------------------------------------------------------------------
+// @input : either a (N x 4) lunum array, or an integer-key table of such things
+// @output: nil
+// -----------------------------------------------------------------------------
 {
   if (!WindowOpen) {
     luaL_error(L, "there is no open window to draw in");
   }
 
-  struct Array *A = lunum_checkarray1(L, 1);
+  struct Array **lines = NULL;
+  int nlines;
 
-  if (A->dtype != ARRAY_TYPE_DOUBLE || A->ndims != 2) {
-    luaL_error(L, "need a (N x 4) array of doubles");
-    return 0;
+  if (lunum_hasmetatable(L, 1, "array")) {
+    nlines = 1;
+    lines = (struct Array**) malloc(nlines*sizeof(struct Array*));
+    lines[0] = lunum_checkarray1(L, 1);
   }
-  if (A->shape[1] != 4) {
-    luaL_error(L, "need a (N x 4) array of doubles");
-    return 0;
+  else {
+    nlines = lua_rawlen(L, 1);
+    lines = (struct Array**) malloc(nlines*sizeof(struct Array*));
+
+    for (int n=0; n<nlines; ++n) {
+      lua_rawgeti(L, 1, n+1);
+      struct Array *A = lunum_checkarray1(L, 2);
+      lua_pop(L, 1);
+      lines[n] = A;
+    }
   }
 
   glfwSetKeyCallback(KeyboardInput);
@@ -220,17 +258,10 @@ int draw_lines3d(lua_State *L)
 
   xTranslate = 0.0;
   yTranslate = 0.0;
+
   const double bounds[] = { -0.5, +0.5,
                             -0.5, +0.5,
                             -0.5, +0.5 };
-
-  double smax=-1e16, smin=1e16;
-  for (int m=0; m<A->shape[0]; ++m) {
-    const double s = ((double*) A->data)[4*m + 3];
-    if (s < smin) smin = s;
-    if (s > smax) smax = s;
-  }
-
   while (1) {
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -243,22 +274,24 @@ int draw_lines3d(lua_State *L)
     glRotatef(RotationAngleY, 0, 1, 0);
 
     DrawBoundingBox(bounds);
-    const float *cmap_data = Mara_image_get_colormap(ColormapIndex);
+    for (int n=0; n<nlines; ++n) {
 
-    glBegin(GL_LINE_STRIP);
-    for (int m=0; m<A->shape[0]; ++m) {
-      const double *x = ((double*) A->data) + 4*m;
+      struct Array *A = lines[n];
 
-      int cm = 255.0 * (x[3] - smin) / (smax - smin);
-      double r = cmap_data[3*cm + 0];
-      double g = cmap_data[3*cm + 1];
-      double b = cmap_data[3*cm + 2];
+      if (A->dtype != ARRAY_TYPE_DOUBLE || A->ndims != 2) {
+	free(lines);
+	luaL_error(L, "need a (N x 4) array of doubles");
+	return 0;
+      }
+      if (A->shape[1] != 4) {
+	free(lines);
+	luaL_error(L, "need a (N x 4) array of doubles");
+	return 0;
+      }
 
-      glColor3d(r, g, b);
-      glVertex3d(x[0], x[1], x[2]);
+      _draw_single_line((double*)A->data, A->shape[0]);
     }
 
-    glEnd();
     glFlush();
     glfwSwapBuffers();
 
@@ -273,6 +306,7 @@ int draw_lines3d(lua_State *L)
     }
   }
 
+  free(lines);
   return 0;
 }
 void CharacterInput_draw_lines3d(int key, int state)
