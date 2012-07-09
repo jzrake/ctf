@@ -65,22 +65,18 @@ tests.KelvinHelmholtz = {
          local x = x - 0.5
          local y = y - 0.5
          local z = z - 0.5
-         local rho,vx,vy
-         if self:layer_pos(x,y,z) then
-            rho = 1.0
-            vx = -0.5
-         else
-            rho = 2.0
-            vx =  0.5
-         end
-         vx = 0.02*(math.random() - 0.5) + vx
-         vy = 0.02*(math.random() - 0.5)
+	 local vx = 0.02*(math.random() - 0.5) + self:vx_profile(x,y,z)
+         local vy = 0.02*(math.random() - 0.5)
+	 local rho = self:rho_profile(x,y,z)
          return { rho, 2.5, vx, vy, 0.0 }
          end
          return g
    end,
-   layer_pos = function(self,x,y,z)
-      return math.abs(y) > 0.25
+   rho_profile = function(self,x,y,z)
+      return math.abs(y) > 0.25 and 1.0 or 2.0
+   end,
+   vx_profile = function(self,x,y,z)
+      return math.abs(y) > 0.25 and -.5 or 0.5
    end
 }
 
@@ -176,14 +172,6 @@ tests.TangentialVelocity = {
       end
 }
 
---[[******************************************************
-SSS  H  H  OOO   CCC K  K TTTTTT U   U BBBB  EEEE  SSS
-S     H  H O   O C    K K    TT   U   U B   B E    S
-SSS  HHHH O   O C    KK     TT   U   U BBBB  EEE   SSS
-S H  H O   O C    K K    TT   U   U B   B E        S
-SSSS  H  H  OOO   CCC K  K   TT    UUU  BBBB  EEEE SSSS
-******************************************************--]]
---A bunch of shocktubes with a generic maker--
 
 local make_2state_setup =
    function(states, opts)
@@ -223,6 +211,10 @@ local make_2state_setup =
    tests.SrhdCase2_DFIM98 = make_2state_setup
    ({ Pl = { 1, 1e+3, 0.0, 0.0, 0.0 },
       Pr = { 1, 1e-2, 0.0, 0.0, 0.0 } })
+
+   tests.SrhdHardTransverse_RAM = make_2state_setup
+   ({ Pl = { 1, 1e+3, 0.0, 0.9, 0.0 },
+      Pr = { 1, 1e-2, 0.0, 0.9, 0.0 } })
 
    tests.Shocktube1 = make_2state_setup
    ({ Pl = { 1.000, 1.000, 0.000, 0.0, 0.0 },

@@ -21,6 +21,10 @@ CoolingModuleT4::CoolingModuleT4(double Tref, double t0)
 void CoolingModuleT4::Cool(std::valarray<double> &P, double dt)
 {
   const int Nq = Mara->domain->get_Nq();
+  const double dx = Mara->domain->get_dx(1);
+  const double dy = Mara->domain->get_dx(2);
+  const double dz = Mara->domain->get_dx(3);
+  const double dV = dx*dy*dz;
 
   double *U0 = new double[Nq];
   double *U1 = new double[Nq];
@@ -37,8 +41,7 @@ void CoolingModuleT4::Cool(std::valarray<double> &P, double dt)
     P0[pre] = Mara->eos->Pressure(P0[rho], Mara->eos->TemperatureArb(P0[rho], T1));
     Mara->fluid->PrimToCons(&P0[0], &U1[0]);
 
-    energy_removed += U0[tau] - U1[tau];
-
+    energy_removed += (U0[tau] - U1[tau])*dV;
     P[m] = P0;
   }
 
@@ -64,6 +67,10 @@ CoolingModuleE4::CoolingModuleE4(double eref, double t0)
 void CoolingModuleE4::Cool(std::valarray<double> &P, double dt)
 {
   const int Nq = Mara->domain->get_Nq();
+  const double dx = Mara->domain->get_dx(1);
+  const double dy = Mara->domain->get_dx(2);
+  const double dz = Mara->domain->get_dx(3);
+  const double dV = dx*dy*dz;
 
   double *U0 = new double[Nq];
   double *U1 = new double[Nq];
@@ -83,8 +90,7 @@ void CoolingModuleE4::Cool(std::valarray<double> &P, double dt)
     P0[pre] = Mara->eos->Pressure(P0[rho], T1);
     Mara->fluid->PrimToCons(&P0[0], &U1[0]);
 
-    energy_removed += U0[tau] - U1[tau];
-
+    energy_removed += (U0[tau] - U1[tau])*dV;
     P[m] = P0;
   }
 

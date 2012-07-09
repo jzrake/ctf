@@ -73,6 +73,7 @@ extern "C"
   static int luaC_set_advance(lua_State *L);
   static int luaC_set_driving(lua_State *L);
   static int luaC_set_cooling(lua_State *L);
+  static int luaC_cooling_rate(lua_State *L);
   static int luaC_config_solver(lua_State *L);
 
   static int luaC_new_ou_field(lua_State *L);
@@ -288,6 +289,7 @@ int main(int argc, char **argv)
   lua_register(L, "set_cooling"  , luaC_set_cooling);
   lua_register(L, "config_solver", luaC_config_solver);
 
+  lua_register(L, "cooling_rate" , luaC_cooling_rate);
   lua_register(L, "new_ou_field" , luaC_new_ou_field);
   lua_register(L, "load_shen"    , luaC_load_shen);
   lua_register(L, "test_shen"    , luaC_test_shen);
@@ -1515,6 +1517,19 @@ int luaC_set_cooling(lua_State *L)
   return 0;
 }
 
+int luaC_cooling_rate(lua_State *L)
+{
+  const double dt = luaL_checknumber(L, 1);
+  double res;
+  if (Mara->cooling == NULL) {
+    res = 0.0;
+  }
+  else {
+    res = Mara->cooling->EnergyRemoved() / dt;
+  }
+  lua_pushnumber(L, res);
+  return 1;
+}
 
 int luaC_load_shen(lua_State *L)
 {
