@@ -124,7 +124,7 @@ double PhysicalUnits::GramsPerCubicCentimeter() const
 }
 double PhysicalUnits::ErgPerCubicCentimeter() const
 {
-  return this->GramsPerCubicCentimeter() * pow(this->LightSpeed(), 2.0);
+  return this->MeVPerCubicFemtometer() * 1e-33;
 }
 double PhysicalUnits::MeVPerCubicCentimeter() const
 {
