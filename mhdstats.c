@@ -111,6 +111,25 @@ cow_dfield *cow_scalarfield(cow_domain *domain, const char *name)
   return f;
 }
 
+void cow_dfield_transform(cow_dfield *f, cow_dfield **args, int narg,
+			  cow_transform op, void *userdata)
+{
+  cow_dfield_clearargs(f);
+  for (int n=0; n<narg; ++n) {
+    cow_dfield_pusharg(f, args[n]);
+  }
+  cow_dfield_settransform(f, op);
+  cow_dfield_setuserdata(f, userdata);
+  cow_dfield_transformexecute(f);
+}
+void cow_dfield_reduce2(cow_dfield *f, cow_transform op, double reduc[3])
+{
+  cow_dfield_clearargs(f);
+  cow_dfield_settransform(f, op);
+  cow_dfield_setuserdata(f, NULL);
+  cow_dfield_reduce(f, reduc);
+}
+
 
 void make_hist(cow_dfield *f, cow_transform op, const char *fout, const char *m)
 {
@@ -118,8 +137,7 @@ void make_hist(cow_dfield *f, cow_transform op, const char *fout, const char *m)
   snprintf(nickname, 1024, "%s-hist", m ? m : cow_dfield_getname(f));
 
   double reduc[3]; // min, max, sum
-  cow_dfield_reduce(f, op, reduc);
-
+  cow_dfield_reduce2(f, op, reduc);
   printf("max, min on %s = %e, %e\n", nickname, reduc[0], reduc[1]);
 
   cow_histogram *hist = cow_histogram_new();

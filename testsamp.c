@@ -5,6 +5,18 @@
 #include <mpi.h>
 #endif
 
+void cow_dfield_sampleglobalpos(cow_dfield *f, double *r0, int N, double *r1,
+				double *sample, int mode)
+{
+  cow_dfield_setsamplecoords(f, r0, N, 3);
+  cow_dfield_setsamplemode(f, mode);
+  cow_dfield_sampleexecute(f);
+  cow_dfield_getsamplecoords(f, &r1, NULL, NULL);
+  cow_dfield_getsampleresult(f, &sample, NULL, NULL);
+  // To save memory, reset the sample coordinate buffer
+  cow_dfield_setsamplecoords(f, NULL, 0, 3);
+}
+
 int main(int argc, char **argv)
 {
 #if (COW_MPI)
@@ -61,8 +73,8 @@ int main(int argc, char **argv)
   free(r1);
   free(sample);
 
-  double P[3];
-  cow_dfield_sampleglobalind(data, 12, 12, 12, P);
+  double *P;
+  cow_dfield_sampleglobalind(data, 12, 12, 12, &P, NULL);
   printf("%f %f %f\n", P[0], P[1], P[2]);
 
   cow_dfield_del(data);

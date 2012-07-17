@@ -85,7 +85,12 @@ int main(int argc, char **argv)
   cow_dfield_commit(divB);
   cow_dfield_syncguard(magf);
   cow_dfield_syncguard(divB);
-  cow_dfield_transform(divB, &magf, 1, stencildiv, NULL);
+
+  cow_dfield_clearargs(divB);
+  cow_dfield_pusharg(divB, magf);
+  cow_dfield_settransform(divB, stencildiv);
+  cow_dfield_setuserdata(divB, NULL);
+  cow_dfield_transformexecute(divB);
 
   int I0[] = { 3, 0, 0 };
   int I1[] = { 5, 0, 0 };
@@ -104,7 +109,11 @@ int main(int argc, char **argv)
   cow_dfield_setname(divB_copy, "divB_copy");
 
   double reduction[3];
-  cow_dfield_reduce(prim, pickmember1, reduction);
+  cow_dfield_clearargs(prim);
+  cow_dfield_settransform(prim, cow_trans_component);
+  cow_dfield_setuserdata(prim, prim);
+  cow_dfield_setiparam(prim, 0);
+  cow_dfield_reduce(prim, reduction);
   printf("(min max sum): %f %f %f\n", reduction[0], reduction[1], reduction[2]);
 
   cow_domain_setchunk(domain, 1);

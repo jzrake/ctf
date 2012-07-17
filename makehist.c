@@ -24,6 +24,16 @@ void take_mag3(double *result, double **args, int **s, void *u)
   *result = sqrt(m[0]*m[0] + m[1]*m[1] + m[2]*m[2]);
 }
 
+void cow_dfield_reduce2(cow_dfield *f, cow_transform op, double reduc[3])
+{
+  cow_dfield_clearargs(f);
+  cow_dfield_settransform(f, op);
+  cow_dfield_setuserdata(f, NULL);
+  cow_dfield_reduce(f, reduc);
+}
+
+
+
 int main(int argc, char **argv)
 {
 #if (COW_MPI)
@@ -69,7 +79,7 @@ int main(int argc, char **argv)
   cow_dfield_read(f, finp);
 
   double reduc[3]; // min, max, sum
-  cow_dfield_reduce(f, take_elem0, reduc);
+  cow_dfield_reduce2(f, take_elem0, reduc);
 
   cow_histogram *hist = cow_histogram_new();
   cow_histogram_setlower(hist, 0, reduc[0]);

@@ -47,6 +47,7 @@ cow_histogram *cow_histogram_new()
 
 void cow_histogram_commit(cow_histogram *h)
 {
+  if (h->committed) return;
   h->n_dims = h->nbinsy > 1 ? 2 : 1;
   if (h->n_dims == 1) {
     const double dx = (h->x1 - h->x0) / h->nbinsx;

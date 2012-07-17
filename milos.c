@@ -83,6 +83,19 @@ cow_dfield *cow_scalarfield(cow_domain *domain, const char *name)
   return f;
 }
 
+void cow_dfield_transform(cow_dfield *f, cow_dfield **args, int narg,
+			  cow_transform op, void *userdata)
+{
+  cow_dfield_clearargs(f);
+  for (int n=0; n<narg; ++n) {
+    cow_dfield_pusharg(f, args[n]);
+  }
+  cow_dfield_settransform(f, op);
+  cow_dfield_setuserdata(f, userdata);
+  cow_dfield_transformexecute(f);
+}
+
+
 int main(int argc, char **argv)
 {
 #if (COW_MPI)
