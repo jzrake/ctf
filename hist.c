@@ -202,9 +202,7 @@ static void popcb(double *result, double **args, int **s, void *u)
 void cow_histogram_populate(cow_histogram *h, cow_dfield *f, cow_transform op)
 {
   if (!h->committed || h->sealed) return;
-  cow_domain *d = f->domain;
   h->transform = op;
-  cow_histogram_setdomaincomm(h, d);
   cow_dfield_loop(f, popcb, h);
 }
 void cow_histogram_addsample1(cow_histogram *h, double x, double w)
