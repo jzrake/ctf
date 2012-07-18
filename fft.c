@@ -150,7 +150,6 @@ void cow_fft_helmholtzdecomp(cow_dfield *f, int mode)
     printf("[%s] error: need a 3-component field for pspecvectorfield", MODULE);
     return;
   }
-
   clock_t start = clock();
   int nx = cow_domain_getnumlocalzonesinterior(f->domain, 0);
   int ny = cow_domain_getnumlocalzonesinterior(f->domain, 1);
@@ -294,7 +293,6 @@ double *_rev(cow_dfield *f, FFT_DATA *Fk)
   FFT_DATA *Fx = NULL;
   double *fx = NULL;
   if (cow_mpirunning()) {
-    printf("running MPI\n");
 #if (COW_MPI)
   int nbuf;
   struct fft_plan_3d *plan = call_fft_plan_3d(f->domain, &nbuf);
@@ -309,9 +307,7 @@ double *_rev(cow_dfield *f, FFT_DATA *Fk)
 #endif // COW_MPI
   }
   else {
-    cow_domain *d = f->domain;
     int nbuf = cow_domain_getnumlocalzonesinterior(f->domain, COW_ALL_DIMS);
-    printf("running NON-MPI %d %d %d\n", d->L_nint[0], d->L_nint[1], d->L_nint[2]);
     fx = (double*) malloc(nbuf * sizeof(double));
     Fx = (FFT_DATA*) malloc(nbuf * sizeof(FFT_DATA));
     int *N = f->domain->L_nint;
