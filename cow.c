@@ -97,7 +97,7 @@ struct cow_domain *cow_domain_new()
     .comm_size = 1,
     .cart_rank = 0,
     .cart_size = 1,
-    .proc_sizes = { 1, 1, 1 },
+    .proc_sizes = { 0, 0, 0 }, // must be zero for dims_create to work
     .proc_index = { 0, 0, 0 },
     .num_neighbors = 0,
     .neighbors = NULL,
@@ -212,6 +212,9 @@ void cow_domain_commit(cow_domain *d)
       d->loc_lower[i] = d->glb_lower[i];
       d->loc_upper[i] = d->glb_upper[i];
       d->dx[i] = (d->glb_upper[i] - d->glb_lower[i]) / d->G_ntot[i];
+#if (COW_MPI)
+      d->proc_sizes[i] = 1;
+#endif
     }
   }
 #if (COW_HDF5)
@@ -275,6 +278,14 @@ int cow_domain_getcartrank(cow_domain *d)
   return 0;
 #endif
 }
+int cow_domain_getcartsize(cow_domain *d)
+{
+#if (COW_MPI)
+  return d->cart_size;
+#else
+  return 0;
+#endif
+}
 int cow_domain_subgridatposition(cow_domain *d, double x, double y, double z)
 {
 #if (COW_MPI)
@@ -286,8 +297,13 @@ int cow_domain_subgridatposition(cow_domain *d, double x, double y, double z)
     index[i] = d->proc_sizes[i] * (r[i] - x0[i]) / (x1[i] - x0[i]);
   }
   int their_rank;
-  MPI_Cart_rank(d->mpi_cart, index, &their_rank);
-  return their_rank;
+  if (cow_mpirunning()) {
+    MPI_Cart_rank(d->mpi_cart, index, &their_rank);
+    return their_rank;
+  }
+  else {
+    return 0;
+  }
 #else
   return 0;
 #endif
