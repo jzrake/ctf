@@ -142,6 +142,8 @@ void cow_trans_div5(double *result, double **args, int **s, void *u);
 void cow_trans_rot5(double *result, double **args, int **s, void *u);
 void cow_trans_component(double *result, double **args, int **s, void *u);
 void cow_trans_magnitude(double *result, double **args, int **s, void *u);
+void cow_trans_cross(double *result, double **args, int **s, void *u);
+void cow_trans_dot3(double *result, double **args, int **s, void *u);
 #endif // SWIG
 
 #ifdef COW_PRIVATE_DEFS

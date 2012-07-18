@@ -1017,7 +1017,7 @@ void _dfield_freetype(cow_dfield *f)
 // Special derivative operators used on vector fields. These do not divide by
 // the grid zone spacing.
 // -----------------------------------------------------------------------------
-
+#include <math.h>
 
 void cow_trans_divcorner(double *result, double **args, int **s, void *u)
 // -----------------------------------------------------------------------------
@@ -1064,7 +1064,6 @@ void cow_trans_component(double *result, double **args, int **s, void *u)
   cow_dfield *f = (cow_dfield*) u;
   result[0] = args[0][f->iparam];
 }
-#include <math.h>
 void cow_trans_magnitude(double *result, double **args, int **s, void *u)
 {
   cow_dfield *f = (cow_dfield*) u;
@@ -1074,3 +1073,18 @@ void cow_trans_magnitude(double *result, double **args, int **s, void *u)
   }
   result[0] = sqrt(res2);
 }
+void cow_trans_cross(double *result, double **args, int **s, void *u)
+{
+  double *v = args[0];
+  double *w = args[1];
+  result[0] = v[1]*w[2] - v[2]*w[1];
+  result[1] = v[2]*w[0] - v[0]*w[2];
+  result[2] = v[0]*w[1] - v[1]*w[0];
+}
+void cow_trans_dot3(double *result, double **args, int **s, void *u)
+{
+  double *v = args[0];
+  double *w = args[1];
+  *result = v[0]*w[0] + v[1]*w[1] + v[2]*w[2];
+}
+
