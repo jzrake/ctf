@@ -149,6 +149,7 @@ void make_hist(cow_dfield *f, cow_transform op, const char *fout, const char *m)
   cow_histogram_commit(hist);
   cow_histogram_setnickname(hist, nickname);
   cow_histogram_populate(hist, f, op);
+  cow_histogram_seal(hist);
   cow_histogram_dumphdf5(hist, fout, "");
   cow_histogram_del(hist);
 }

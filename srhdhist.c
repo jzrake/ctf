@@ -103,6 +103,7 @@ void make_hist(cow_dfield *f, cow_transform op, const char *fout, const char *m)
   cow_histogram_commit(hist);
   cow_histogram_setnickname(hist, nickname);
   cow_histogram_populate(hist, f, op);
+  cow_histogram_seal(hist);
   cow_histogram_dumphdf5(hist, fout, "");
   cow_histogram_del(hist);
 }
@@ -183,12 +184,14 @@ int main(int argc, char **argv)
     cow_histogram_setnickname(histlab, "gamma-rel-drlab-hist");
     cow_histogram_commit(histlab);
 
-    int nbatch = 5000;
+    int nbatch = 5;
     for (int n=0; n<nbatch; ++n) {
       relative_lorentz_factor(vel, histlab, 10000, 'l');
       relative_lorentz_factor(vel, histpro, 10000, 'p');
       printf("batch=%d\n", n);
     }
+    cow_histogram_seal(histpro);
+    cow_histogram_seal(histlab);
     cow_histogram_dumphdf5(histpro, fout, "");
     cow_histogram_dumphdf5(histlab, fout, "");
     cow_histogram_del(histlab);
