@@ -322,6 +322,10 @@ double cow_histogram_getbinval(cow_histogram *h, int i, int j)
     return 0.0;
   }
 }
+const char *cow_histogram_getname(cow_histogram *h)
+{
+  return h->nickname;
+}
 
 void cow_histogram_dumpascii(cow_histogram *h, const char *fn)
 // -----------------------------------------------------------------------------

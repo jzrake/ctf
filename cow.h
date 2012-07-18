@@ -131,6 +131,7 @@ void cow_histogram_getbinlocy(cow_histogram *h, double **x, int *n0);
 void cow_histogram_getbinval1(cow_histogram *h, double **x, int *n0);
 void cow_histogram_getbinval2(cow_histogram *h, double **x, int *n0, int *n1);
 double cow_histogram_getbinval(cow_histogram *h, int i, int j);
+const char *cow_histogram_getname(cow_histogram *h);
 
 void cow_fft_pspecvecfield(cow_dfield *f, cow_histogram *h);
 void cow_fft_helmholtzdecomp(cow_dfield *f, int mode);
@@ -141,7 +142,7 @@ void cow_trans_div5(double *result, double **args, int **s, void *u);
 void cow_trans_rot5(double *result, double **args, int **s, void *u);
 void cow_trans_component(double *result, double **args, int **s, void *u);
 void cow_trans_magnitude(double *result, double **args, int **s, void *u);
-#endif SWIG
+#endif // SWIG
 
 #ifdef COW_PRIVATE_DEFS
 
