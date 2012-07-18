@@ -245,14 +245,18 @@ void relative_lorentz_factor(cow_dfield *vel, cow_histogram *hist, int N,
   }
 
   cow_dfield_setsamplemode(vel, COW_SAMPLE_LINEAR);
-  cow_dfield_setsamplecoords(vel, x, N, 3);
+  int err = cow_dfield_setsamplecoords(vel, x, N, 3);
+  if (err) {
+    printf("error on setsamplecoords: %d\n", err);
+  }
   free(x);
 
+  int nout1, nout2;
   cow_dfield_sampleexecute(vel);
-  cow_dfield_getsamplecoords(vel, &x, NULL, NULL);
-  cow_dfield_getsampleresult(vel, &v, NULL, NULL);
+  cow_dfield_getsamplecoords(vel, &x, &nout1, NULL);
+  cow_dfield_getsampleresult(vel, &v, &nout2, NULL);
 
-  for (int n=0; n<N/2; ++n) {
+  for (int n=0; n<nout1/2; ++n) {
     double *x1 = &x[6*n + 0];
     double *x2 = &x[6*n + 3];
     double *v1 = &v[6*n + 0];

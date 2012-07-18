@@ -8,6 +8,7 @@
 #include "cow.h"
 
 #define MODULE "sampling"
+#define EPS 1e-12
 
 static void _sample1(cow_dfield *f, double *x, double *P, int mode);
 static void _sample2(cow_dfield *f, double *x, double *P, int mode);
@@ -17,14 +18,27 @@ static void _loc(cow_dfield *f, double *Ri, int Nsamp, double *Ro, double *Po,
 static void _rem(cow_dfield *f, double *Ri, int Nsamp, double *Ro, double *Po,
                  int mode);
 
-void cow_dfield_setsamplecoords(cow_dfield *f, double *x, int ns, int nd)
+int cow_dfield_setsamplecoords(cow_dfield *f, double *x, int ns, int nd)
 {
-  // nd must be 3
+  double *gx0 = f->domain->glb_lower;
+  double *gx1 = f->domain->glb_upper;
+  if (nd != 3) {
+    return COW_SAMPLE_ERROR_WRONGD; // nd must be 3
+  }
+  for (int m=0; m<ns; ++m) {
+    double *r1 = &x[3*m];
+    for (int d=0; d<f->domain->n_dims; ++d) {
+      if (gx0[d] > r1[d] - EPS || r1[d] + EPS > gx1[d]) {
+	return COW_SAMPLE_ERROR_OUT; // sample out of bounds
+      }
+    }
+  }
   int m = f->n_members;
   f->samplecoords = (double*) realloc(f->samplecoords, ns * 3 * sizeof(double));
   f->sampleresult = (double*) realloc(f->sampleresult, ns * m * sizeof(double));
   f->samplecoordslen = ns;
   memcpy(f->samplecoords, x, ns * 3 * sizeof(double));
+  return 0;
 }
 void cow_dfield_getsamplecoords(cow_dfield *f, double **x, int *ns, int *nd)
 {
@@ -179,6 +193,23 @@ void _sample3(cow_dfield *f, double *x, double *P, int mode)
   if (mode == COW_SAMPLE_NEAREST) {
     memcpy(P, A + M(i,j,k), f->n_members * sizeof(double));
   }
+
+  int nx = cow_domain_getnumlocalzonesincguard(f->domain, 0);
+  int ny = cow_domain_getnumlocalzonesincguard(f->domain, 1);
+  int nz = cow_domain_getnumlocalzonesincguard(f->domain, 2);
+
+  if (i >= nx-1 || j >= ny-1 || k >= nz-1) {
+    FILE *fout = stdout;
+    fprintf(fout, "out! (%d %d %d)/(%d %d %d): %f %f %f\n", i, j, k, nx, ny, nz,
+	    x[0], x[1], x[2]);
+  }
+  if (i < 1 || j < 1 || k < 1) {
+    FILE *fout = stdout;
+    fprintf(fout, "out! (%d %d %d)/(%d %d %d): %f %f %f\n", i, j, k, nx, ny, nz,
+	    x[0], x[1], x[2]);
+  }
+
+
   else if (mode == COW_SAMPLE_LINEAR) {
     double x0 = cow_domain_positionatindex(d, 0, i-1);
     double y0 = cow_domain_positionatindex(d, 1, j-1);
@@ -234,11 +265,6 @@ void _rem(cow_dfield *f, double *Ri, int Nsamp, double *Ro, double *Po,
   int rank = f->domain->cart_rank;
   int size = f->domain->cart_size;
   int Nd = f->domain->n_dims;
-  double *gx0 = f->domain->glb_lower;
-  double *gx1 = f->domain->glb_upper;
-  double Lx = (Nd>=1) ? gx1[0] - gx0[0] : 0.0;
-  double Ly = (Nd>=2) ? gx1[1] - gx0[1] : 0.0;
-  double Lz = (Nd>=3) ? gx1[2] - gx0[2] : 0.0;
   double **remote_r1 = (double**) malloc(size * sizeof(double*));
   double **remote_P1 = (double**) malloc(size * sizeof(double*));
   int *remote_r1_size = (int*) malloc(size * sizeof(int));
@@ -250,20 +276,7 @@ void _rem(cow_dfield *f, double *Ri, int Nsamp, double *Ro, double *Po,
     remote_P1_size[n] = 0;
   }
   for (int m=0; m<Nsamp; ++m) {
-    double r1[3];
-    r1[0] = Ri[3*m + 0];
-    r1[1] = Ri[3*m + 1];
-    r1[2] = Ri[3*m + 2];
-    // -------------------------------------------------------------------------
-    // Ensure that the target point is in the global domain by applying periodic
-    // boundary conditions.
-    // -------------------------------------------------------------------------
-    if (Nd>=1) while (r1[0] > gx1[0]) r1[0] -= Lx;
-    if (Nd>=2) while (r1[1] > gx1[1]) r1[1] -= Ly;
-    if (Nd>=3) while (r1[2] > gx1[2]) r1[2] -= Lz;
-    if (Nd>=1) while (r1[0] < gx0[0]) r1[0] += Lx;
-    if (Nd>=2) while (r1[1] < gx0[1]) r1[1] += Ly;
-    if (Nd>=3) while (r1[2] < gx0[2]) r1[2] += Lz;
+    double *r1 = &Ri[3*m];
     int remote = cow_domain_subgridatposition(f->domain, r1[0], r1[1], r1[2]);
     double **remR = &remote_r1[remote];
     double **remP = &remote_P1[remote];

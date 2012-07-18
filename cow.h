@@ -26,6 +26,8 @@
 #define COW_PROJECT_OUT_CURL     -48
 #define COW_SAMPLE_NEAREST       -49 // sample the nearest zone center
 #define COW_SAMPLE_LINEAR        -50 // use (uni/bi/tri) linear interp
+#define COW_SAMPLE_ERROR_OUT     -51 // out-of-bounds sample request
+#define COW_SAMPLE_ERROR_WRONGD  -52 // wrong number of dims on sample coords
 
 // -----------------------------------------------------------------------------
 //
@@ -94,7 +96,7 @@ size_t cow_dfield_getdatabytes(cow_dfield *f);
 void cow_dfield_setbuffer(cow_dfield *f, void *buffer);
 void cow_dfield_sampleglobalind(cow_dfield *f, int i, int j, int k, double **x,
 				int *n0);
-void cow_dfield_setsamplecoords(cow_dfield *f, double *x, int n0, int n1);
+int cow_dfield_setsamplecoords(cow_dfield *f, double *x, int n0, int n1);
 void cow_dfield_getsamplecoords(cow_dfield *f, double **x, int *n0, int *n1);
 void cow_dfield_getsampleresult(cow_dfield *f, double **x, int *n0, int *n1);
 void cow_dfield_setsamplemode(cow_dfield *f, int mode);
