@@ -159,11 +159,8 @@ struct cow_domain
   int G_strt[3]; // starting index into global domain
   int n_dims; // number of dimensions: 1, 2, 3
   int n_ghst; // number of guard zones: >= 0
-  //  int n_fields; // number of data fields (dynamically adjustable)
-  //  int field_iter; // index into data fields array used for iterating over them
   int balanced; // true when all subgrids have the same size
   int committed; // true after cow_domain_commit called, locks out size changes
-  //  cow_dfield **fields; // array of pointers to data fields
 #if (COW_MPI)
   int comm_rank; // rank with respect to MPI_COMM_WORLD communicator
   int comm_size; // size " "

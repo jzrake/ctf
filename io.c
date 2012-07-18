@@ -260,7 +260,9 @@ void _io_write(cow_dfield *f, const char *fname)
       H5Fclose(file);
 #if (!COW_HDF5_MPI && COW_MPI)
     }
-    MPI_Barrier(d->mpi_cart);
+    if (cow_mpirunning()) {
+      MPI_Barrier(d->mpi_cart);
+    }
   }
 #endif // !COW_HDF5_MPI && COW_MPI
 #endif
@@ -321,7 +323,9 @@ void _io_read(cow_dfield *f, const char *fname)
       H5Fclose(file);
 #if (!COW_HDF5_MPI && COW_MPI)
     }
-    MPI_Barrier(d->mpi_cart);
+    if (cow_mpirunning()) {
+      MPI_Barrier(d->mpi_cart);
+    }
   }
 #endif // !COW_HDF5_MPI && COW_MPI
 #endif

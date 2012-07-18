@@ -93,8 +93,17 @@ struct cow_domain *cow_domain_new()
     .balanced = 1,
     .committed = 0,
 #if (COW_MPI)
-    .proc_sizes = { 0, 0, 0 },
+    .comm_rank = 0,
+    .comm_size = 1,
+    .cart_rank = 0,
+    .cart_size = 1,
+    .proc_sizes = { 1, 1, 1 },
     .proc_index = { 0, 0, 0 },
+    .num_neighbors = 0,
+    .neighbors = NULL,
+    .send_tags = NULL,
+    .recv_tags = NULL,
+    .mpi_cart = MPI_COMM_NULL,
 #endif
   } ;
   *d = dom;
@@ -146,8 +155,8 @@ void cow_domain_setprocsizes(cow_domain *d, int dim, int size)
 void cow_domain_commit(cow_domain *d)
 {
   if (d->committed) return;
-#if (COW_MPI)
   if (cow_mpirunning()) {
+#if (COW_MPI)
     int w[3] = { 1, 1, 1 }; // 'wrap', periodic in all directions
     int r = 1; // 'reorder' allow MPI to choose a cart_rank != comm_rank
 
@@ -192,9 +201,9 @@ void cow_domain_commit(cow_domain *d)
     }
     printf("[cow] subgrid layout is (%d %d %d)\n",
            d->proc_sizes[0], d->proc_sizes[1], d->proc_sizes[2]);
+#endif
   }
   else {
-#endif
     for (int i=0; i<d->n_dims; ++i) {
       d->L_nint[i] = d->G_ntot[i];
       d->L_ntot[i] = d->G_ntot[i] + 2 * d->n_ghst;
@@ -204,9 +213,7 @@ void cow_domain_commit(cow_domain *d)
       d->loc_upper[i] = d->glb_upper[i];
       d->dx[i] = (d->glb_upper[i] - d->glb_lower[i]) / d->G_ntot[i];
     }
-#if (COW_MPI)
   }
-#endif
 #if (COW_HDF5)
   _io_domain_commit(d);
 #endif
