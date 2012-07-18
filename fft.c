@@ -85,7 +85,7 @@ void cow_fft_pspecvecfield(cow_dfield *f, cow_histogram *hist)
     printf("[%s] error: need a 3-component field for pspecvectorfield", MODULE);
     return;
   }
-  /*
+
   clock_t start = clock();
   int nx = cow_domain_getnumlocalzonesinterior(f->domain, 0);
   int ny = cow_domain_getnumlocalzonesinterior(f->domain, 1);
@@ -94,7 +94,6 @@ void cow_fft_pspecvecfield(cow_dfield *f, cow_histogram *hist)
   int Ny = cow_domain_getnumglobalzones(f->domain, 1);
   int Nz = cow_domain_getnumglobalzones(f->domain, 2);
   int ng = cow_domain_getguard(f->domain);
-  int nbuf;
   int ntot = nx * ny * nz;
   int I0[3] = { ng, ng, ng };
   int I1[3] = { nx + ng, ny + ng, nz + ng };
@@ -102,29 +101,11 @@ void cow_fft_pspecvecfield(cow_dfield *f, cow_histogram *hist)
   double *input = (double*) malloc(3 * ntot * sizeof(double));
   cow_dfield_extract(f, I0, I1, input);
 
-  struct fft_plan_3d *plan = call_fft_plan_3d(f->domain, &nbuf);
-  FFT_DATA *fx = (FFT_DATA*) malloc(nbuf * sizeof(FFT_DATA));
-  FFT_DATA *fy = (FFT_DATA*) malloc(nbuf * sizeof(FFT_DATA));
-  FFT_DATA *fz = (FFT_DATA*) malloc(nbuf * sizeof(FFT_DATA));
-  printf("[%s] need to allocate %d zones\n", MODULE, nbuf);
-  for (int i=0; i<nbuf; ++i) {
-    fx[i][0] = input[3*i + 0];
-    fy[i][0] = input[3*i + 1];
-    fz[i][0] = input[3*i + 2];
-    fx[i][1] = 0.0;
-    fy[i][1] = 0.0;
-    fz[i][1] = 0.0;
-  }
+  FFT_DATA *gx = _fwd(f, input, 0, 3); // start, stride
+  FFT_DATA *gy = _fwd(f, input, 1, 3);
+  FFT_DATA *gz = _fwd(f, input, 2, 3);
   free(input);
-  FFT_DATA *gx = (FFT_DATA*) malloc(nbuf * sizeof(FFT_DATA));
-  FFT_DATA *gy = (FFT_DATA*) malloc(nbuf * sizeof(FFT_DATA));
-  FFT_DATA *gz = (FFT_DATA*) malloc(nbuf * sizeof(FFT_DATA));
-  fft_3d(fx, gx, FFT_FWD, plan);
-  fft_3d(fy, gy, FFT_FWD, plan);
-  fft_3d(fz, gz, FFT_FWD, plan);
-  free(fx);
-  free(fy);
-  free(fz);
+
   cow_histogram_setlower(hist, 0, 1.0);
   cow_histogram_setupper(hist, 0, 0.5*sqrt(Nx*Nx + Ny*Ny + Nz*Nz));
   cow_histogram_setbinmode(hist, COW_HIST_BINMODE_DENSITY);
@@ -150,23 +131,12 @@ void cow_fft_pspecvecfield(cow_dfield *f, cow_histogram *hist)
       }
     }
   }
+  cow_histogram_seal(hist);
   free(gx);
   free(gy);
   free(gz);
-  cow_histogram_seal(hist);
-  fft_3d_destroy_plan(plan);
   printf("[%s] %s took %3.2f seconds\n",
 	 MODULE, __FUNCTION__, (double) (clock() - start) / CLOCKS_PER_SEC);
-  */
-  int Nx = cow_domain_getnumglobalzones(f->domain, 0);
-  int Ny = cow_domain_getnumglobalzones(f->domain, 1);
-  int Nz = cow_domain_getnumglobalzones(f->domain, 2);
-  cow_histogram_setlower(hist, 0, 1.0);
-  cow_histogram_setupper(hist, 0, 0.5*sqrt(Nx*Nx + Ny*Ny + Nz*Nz));
-  cow_histogram_setbinmode(hist, COW_HIST_BINMODE_DENSITY);
-  cow_histogram_setdomaincomm(hist, f->domain);
-  cow_histogram_commit(hist);
-  cow_histogram_seal(hist);
 #endif // COW_FFTW
 }
 
