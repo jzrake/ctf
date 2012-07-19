@@ -41,7 +41,7 @@ void srhdpack_relativelorentzpairs(cow_dfield *vel,
     srand(cow_domain_getcartrank(cow_dfield_getdomain(vel)));
   }
   else {
-    printf("[%s] seed=%d\n", MODULE);
+    printf("[%s] seed=%d\n", MODULE, seed);
   }
 
   cow_histogram_setbinmode(histpro, COW_HIST_BINMODE_AVERAGE);

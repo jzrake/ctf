@@ -184,7 +184,7 @@ int main(int argc, char **argv)
     cow_histogram_setnickname(histlab, "gamma-rel-drlab-hist");
     cow_histogram_commit(histlab);
 
-    int nbatch = 5;
+    int nbatch = 100;
     for (int n=0; n<nbatch; ++n) {
       relative_lorentz_factor(vel, histlab, 10000, 'l');
       relative_lorentz_factor(vel, histpro, 10000, 'p');
