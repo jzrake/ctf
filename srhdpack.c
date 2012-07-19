@@ -30,14 +30,18 @@ void srhdpack_relativelorentzpairs(cow_dfield *vel,
 // The histogram `histpro` bins the pairs in terms of their proper space-like
 // separation, while `histlab` uses their lab-frame separations.
 //
-// NOTE: this function generates its own sample points by calling rand(). If
-// running in parallel, the user is responsible for making sure to seed the
-// ranks differently, unless `seed` is set to 1, in which case srand will be
-// called with the domain's cartesian communicator rank.
+// NOTE: this function generates its own sample points by calling the math.h
+// rand() function. If running in parallel, the user is responsible for making
+// sure to seed the ranks differently, unless `seed` is set to 1, in which case
+// srand will be called with the domain's cartesian communicator rank.
 // -----------------------------------------------------------------------------
 {
   if (seed) {
+    printf("[%s] seed=%d, seeding the random number generator\n", MODULE, seed);
     srand(cow_domain_getcartrank(cow_dfield_getdomain(vel)));
+  }
+  else {
+    printf("[%s] seed=%d\n", MODULE);
   }
 
   cow_histogram_setbinmode(histpro, COW_HIST_BINMODE_AVERAGE);

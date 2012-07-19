@@ -52,6 +52,7 @@ void cow_init(int argc, char **argv, int modes)
 }
 void cow_finalize(void)
 {
+  printf("[cow] shutting down\n");
 #if (COW_MPI)
   int mpi_started;
   MPI_Initialized(&mpi_started);
