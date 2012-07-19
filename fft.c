@@ -70,12 +70,12 @@ void cow_fft_pspecvecfield(cow_dfield *f, cow_histogram *hist)
 // vector field represented in `f`. The user needs to supply a half-initialized
 // histogram, which has not yet been committed. This function will commit,
 // populate, and seal the histogram by doing the FFT's on the vector field
-// components. The user must have supplied the following fields like in the
-// example below, all other will be over-written.
+// components. The supplies the fields like in the example below, all other will
+// be over-written.
 //
-//  cow_histogram_setnbins(hist, 0, 200);
-//  cow_histogram_setspacing(hist, COW_HIST_SPACING_LOG/LINEAR);
-//  cow_histogram_setnickname(hist, "mypspec");
+//  cow_histogram_setnbins(hist, 0, 256);
+//  cow_histogram_setspacing(hist, COW_HIST_SPACING_LINEAR); // or LOG
+//  cow_histogram_setnickname(hist, "mypspec"); // optional
 //
 // -----------------------------------------------------------------------------
 {

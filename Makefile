@@ -19,7 +19,7 @@ DEFINES = \
 LIB = $(HDF5_LIB) $(FFTW_LIB)
 INC = $(HDF5_INC) $(FFTW_INC)
 
-OBJ = cow.o hist.o io.o samp.o fft.o fft_3d.o pack_3d.o remap_3d.o
+OBJ = cow.o hist.o io.o samp.o srhdpack.o fft.o fft_3d.o pack_3d.o remap_3d.o
 EXE = main makehist milos mhdstats srhdhist testhist testfft testsamp
 
 default : $(EXE)
