@@ -69,6 +69,7 @@ int cow_domain_getcartsize(cow_domain *d);
 int cow_domain_subgridatposition(cow_domain *d, double x, double y, double z);
 int cow_domain_indexatposition(cow_domain *d, int dim, double x);
 double cow_domain_positionatindex(cow_domain *d, int dim, int index);
+void cow_domain_barrier(cow_domain *d);
 
 cow_dfield *cow_dfield_new(cow_domain *domain, const char *name);
 cow_dfield *cow_dfield_dup(cow_dfield *f);

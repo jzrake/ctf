@@ -43,7 +43,7 @@ void cow_init(int argc, char **argv, int modes)
   }
   MPI_Initialized(&mpi_started);
   if (mpi_started) {
-    printf("[cow] MPI is now up and running on %d processes\n", size);
+    printf("[cow] MPI is up and running on %d processes\n", size);
   }
   else {
     printf("[cow] MPI suspended\n");
@@ -332,6 +332,14 @@ double cow_domain_positionatindex(cow_domain *d, int dim, int index)
 {
   if (dim >= 3 || !d->committed) return 0.0;
   return d->loc_lower[dim] + d->dx[dim] * (index - d->n_ghst + 0.5);
+}
+void cow_domain_barrier(cow_domain *d)
+{
+#if (COW_MPI)
+  if (cow_mpirunning()) {
+    MPI_Barrier(d->mpi_cart);
+  }
+#endif
 }
 
 // -----------------------------------------------------------------------------
