@@ -29,6 +29,8 @@ int cow_dfield_setsamplecoords(cow_dfield *f, double *x, int ns, int nd)
     double *r1 = &x[3*m];
     for (int d=0; d<f->domain->n_dims; ++d) {
       if (gx0[d] > r1[d] - EPS || r1[d] + EPS > gx1[d]) {
+	printf("[%s] warning: sample is off-bounds (%f %f %f)\n",
+	       MODULE, r1[0], r1[1], r1[2]);
 	return COW_SAMPLE_ERROR_OUT; // sample out of bounds
       }
     }
@@ -193,6 +195,7 @@ void _sample3(cow_dfield *f, double *x, double *P, int mode)
   if (mode == COW_SAMPLE_NEAREST) {
     memcpy(P, A + M(i,j,k), f->n_members * sizeof(double));
   }
+
   /*
   int nx = cow_domain_getnumlocalzonesincguard(f->domain, 0);
   int ny = cow_domain_getnumlocalzonesincguard(f->domain, 1);
@@ -242,7 +245,6 @@ void _sample3(cow_dfield *f, double *x, double *P, int mode)
 #undef M
 }
 
-
 void _loc(cow_dfield *f, double *Ri, int Nsamp, double *Ro, double *Po,
           int mode)
 {
@@ -257,6 +259,7 @@ void _loc(cow_dfield *f, double *Ri, int Nsamp, double *Ro, double *Po,
     }
   }
 }
+
 void _rem(cow_dfield *f, double *Ri, int Nsamp, double *Ro, double *Po,
           int mode)
 {
