@@ -24,6 +24,7 @@ cow_histogram *cow_histogram_new()
     .bedgesx = NULL,
     .bedgesy = NULL,
     .weight = NULL,
+    .totcounts = 0,
     .counts = NULL,
     .nickname = NULL,
     .fullname = NULL,
@@ -212,6 +213,7 @@ void cow_histogram_addsample1(cow_histogram *h, double x, double w)
     if (h->bedgesx[n] - 1e-14 < x && x < h->bedgesx[n+1] + 1e-14) {
       h->weight[n] += w;
       h->counts[n] += 1;
+      h->totcounts += 1;
       return;
     }
   }
@@ -238,6 +240,7 @@ void cow_histogram_addsample2(cow_histogram *h, double x, double y, double w)
   else {
     h->counts[nx * h->nbinsy + ny] += 1;
     h->weight[nx * h->nbinsy + ny] += w;
+    h->totcounts += 1;
     return;
   }
 }
@@ -250,6 +253,7 @@ void cow_histogram_seal(cow_histogram *h)
     MPI_Comm c = h->comm;
     MPI_Allreduce(MPI_IN_PLACE, h->weight, nbins, MPI_DOUBLE, MPI_SUM, c);
     MPI_Allreduce(MPI_IN_PLACE, h->counts, nbins, MPI_LONG, MPI_SUM, c);
+    MPI_Allreduce(MPI_IN_PLACE, &h->totcounts, 1, MPI_LONG, MPI_SUM, c);
   }
 #endif
   h->sealed = 1;
@@ -258,6 +262,10 @@ void cow_histogram_seal(cow_histogram *h)
 int cow_histogram_getsealed(cow_histogram *h)
 {
   return h->sealed;
+}
+long cow_histogram_gettotalcounts(cow_histogram *h)
+{
+  return h->totcounts;
 }
 void cow_histogram_getbinlocx(cow_histogram *h, double **x, int *n0)
 {
