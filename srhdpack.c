@@ -52,7 +52,8 @@ void srhdpack_relativelorentzpairs(cow_dfield *vel,
   for (int n=0; n<nbatch; ++n) {
     _dobatch(vel, histlab, nperbatch, 'l');
     _dobatch(vel, histpro, nperbatch, 'p');
-    printf("[%s] running batch %d/%d\n", MODULE, n, nbatch);
+    printf("[%s] running batch %d/%d of size %d\n", MODULE, n, nbatch,
+	   nperbatch);
   }
   cow_histogram_seal(histpro);
   cow_histogram_seal(histlab);
