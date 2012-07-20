@@ -90,17 +90,20 @@ void _boost(double u[4], double x[4], double xp[4])
 
 void _dobatch(cow_dfield *vel, cow_histogram *hist, int N, char mode)
 {
-  double *x = (double*) malloc(N * 3 * sizeof(double));
+  int npair = N;
+  int nsamp = N*2;
+
+  double *x = (double*) malloc(nsamp * 3 * sizeof(double));
   double *v;
 
-  for (int n=0; n<N; ++n) {
+  for (int n=0; n<nsamp; ++n) {
     x[3*n + 0] = (double) rand() / RAND_MAX;
     x[3*n + 1] = (double) rand() / RAND_MAX;
     x[3*n + 2] = (double) rand() / RAND_MAX;
   }
 
   cow_dfield_setsamplemode(vel, COW_SAMPLE_LINEAR);
-  int err = cow_dfield_setsamplecoords(vel, x, N, 3);
+  int err = cow_dfield_setsamplecoords(vel, x, nsamp, 3);
   if (err) {
     printf("error on setsamplecoords: %d\n", err);
   }
@@ -111,11 +114,13 @@ void _dobatch(cow_dfield *vel, cow_histogram *hist, int N, char mode)
   cow_dfield_getsamplecoords(vel, &x, &nout1, NULL);
   cow_dfield_getsampleresult(vel, &v, &nout2, NULL);
 
-  for (int n=0; n<nout1/2; ++n) {
-    double *x1 = &x[6*n + 0];
-    double *x2 = &x[6*n + 3];
-    double *v1 = &v[6*n + 0];
-    double *v2 = &v[6*n + 3];
+  for (int n=0; n<npair; ++n) {
+    int i1 = rand() % nsamp;
+    int i2 = rand() % nsamp;
+    double *x1 = &x[3*i1];
+    double *x2 = &x[3*i2];
+    double *v1 = &v[3*i1];
+    double *v2 = &v[3*i2];
     double g1 = 1.0 / sqrt(1.0 - (v1[0]*v1[0] + v1[1]*v1[1] + v1[2]*v1[2]));
     double g2 = 1.0 / sqrt(1.0 - (v2[0]*v2[0] + v2[1]*v2[1] + v2[2]*v2[2]));
     double umu1[4] = { g1, g1*v1[0], g1*v1[1], g1*v1[2] };

@@ -207,7 +207,7 @@ int main(int argc, char **argv)
 
 
 
-static void lorentz_boost(double u[4], double x[4], double xp[4])
+static void _boost(double u[4], double x[4], double xp[4])
 // -----------------------------------------------------------------------------
 // Maps the 4-vector x into xp by the boost formed from the 4-velocity u.
 //
@@ -238,17 +238,20 @@ static void lorentz_boost(double u[4], double x[4], double xp[4])
 void relative_lorentz_factor(cow_dfield *vel, cow_histogram *hist, int N,
                              char mode)
 {
-  double *x = (double*) malloc(N * 3 * sizeof(double));
+  int npair = N;
+  int nsamp = N*2;
+
+  double *x = (double*) malloc(nsamp * 3 * sizeof(double));
   double *v;
 
-  for (int n=0; n<N; ++n) {
+  for (int n=0; n<nsamp; ++n) {
     x[3*n + 0] = (double) rand() / RAND_MAX;
     x[3*n + 1] = (double) rand() / RAND_MAX;
     x[3*n + 2] = (double) rand() / RAND_MAX;
   }
 
   cow_dfield_setsamplemode(vel, COW_SAMPLE_LINEAR);
-  int err = cow_dfield_setsamplecoords(vel, x, N, 3);
+  int err = cow_dfield_setsamplecoords(vel, x, nsamp, 3);
   if (err) {
     printf("error on setsamplecoords: %d\n", err);
   }
@@ -259,11 +262,13 @@ void relative_lorentz_factor(cow_dfield *vel, cow_histogram *hist, int N,
   cow_dfield_getsamplecoords(vel, &x, &nout1, NULL);
   cow_dfield_getsampleresult(vel, &v, &nout2, NULL);
 
-  for (int n=0; n<nout1/2; ++n) {
-    double *x1 = &x[6*n + 0];
-    double *x2 = &x[6*n + 3];
-    double *v1 = &v[6*n + 0];
-    double *v2 = &v[6*n + 3];
+  for (int n=0; n<npair; ++n) {
+    int i1 = rand() % nsamp;
+    int i2 = rand() % nsamp;
+    double *x1 = &x[3*i1];
+    double *x2 = &x[3*i2];
+    double *v1 = &v[3*i1];
+    double *v2 = &v[3*i2];
     double g1 = 1.0 / sqrt(1.0 - (v1[0]*v1[0] + v1[1]*v1[1] + v1[2]*v1[2]));
     double g2 = 1.0 / sqrt(1.0 - (v2[0]*v2[0] + v2[1]*v2[1] + v2[2]*v2[2]));
     double umu1[4] = { g1, g1*v1[0], g1*v1[1], g1*v1[2] };
@@ -274,9 +279,9 @@ void relative_lorentz_factor(cow_dfield *vel, cow_histogram *hist, int N,
     double xmu2p[4];
     double xrel[4];
     double urel[4];
-    lorentz_boost(umu1, xmu1, xmu1p);
-    lorentz_boost(umu1, xmu2, xmu2p);
-    lorentz_boost(umu1, umu2, urel);
+    _boost(umu1, xmu1, xmu1p);
+    _boost(umu1, xmu2, xmu2p);
+    _boost(umu1, umu2, urel);
     xrel[0] = xmu2p[0] - xmu1p[0];
     xrel[1] = xmu2p[1] - xmu1p[1];
     xrel[2] = xmu2p[2] - xmu1p[2];
