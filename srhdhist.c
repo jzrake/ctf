@@ -169,17 +169,17 @@ int main(int argc, char **argv)
 
   if (dopair) {
     cow_histogram *histpro = cow_histogram_new();
-    cow_histogram_setlower(histpro, 0, 0.1);
-    cow_histogram_setupper(histpro, 0, 1.5);
-    cow_histogram_setnbins(histpro, 0, 500);
+    cow_histogram_setlower(histpro, 0, 0.0);
+    cow_histogram_setupper(histpro, 0, 2.5);
+    cow_histogram_setnbins(histpro, 0, 72);
     cow_histogram_setbinmode(histpro, COW_HIST_BINMODE_AVERAGE);
     cow_histogram_setnickname(histpro, "gamma-rel-drprop-hist");
     cow_histogram_commit(histpro);
 
     cow_histogram *histlab = cow_histogram_new();
-    cow_histogram_setlower(histlab, 0, 0.1);
-    cow_histogram_setupper(histlab, 0, 1.5);
-    cow_histogram_setnbins(histlab, 0, 500);
+    cow_histogram_setlower(histlab, 0, 0.0);
+    cow_histogram_setupper(histlab, 0, 2.5);
+    cow_histogram_setnbins(histlab, 0, 72);
     cow_histogram_setbinmode(histlab, COW_HIST_BINMODE_AVERAGE);
     cow_histogram_setnickname(histlab, "gamma-rel-drlab-hist");
     cow_histogram_commit(histlab);
