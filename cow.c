@@ -48,8 +48,11 @@ void cow_init(int argc, char **argv, int modes)
   else {
     printf("[cow] MPI suspended\n");
   }
+#else
+  printf("[cow] compiled without MPI support\n");
 #endif
 }
+
 void cow_finalize(void)
 {
   printf("[cow] shutting down\n");
