@@ -115,15 +115,17 @@ struct cow_domain *cow_domain_new()
 }
 void cow_domain_del(cow_domain *d)
 {
+  if (d->committed) {
 #if (COW_MPI)
-  if (cow_mpirunning()) {
-    MPI_Comm_free(&d->mpi_cart);
-    _domain_freetags(d);
-  }
+    if (cow_mpirunning()) {
+      MPI_Comm_free(&d->mpi_cart);
+      _domain_freetags(d);
+    }
 #endif
 #if (COW_HDF5)
-  _io_domain_del(d);
+    _io_domain_del(d);
 #endif
+  }
   free(d);
 }
 void cow_domain_setsize(cow_domain *d, int dim, int size)
@@ -378,7 +380,9 @@ cow_dfield *cow_dfield_new(void)
 void cow_dfield_del(cow_dfield *f)
 {
 #if (COW_MPI)
-  _dfield_freetype(f);
+  if (f->committed) {
+    _dfield_freetype(f);
+  }
 #endif
   for (int n=0; n<f->n_members; ++n) free(f->members[n]);
   free(f->members);

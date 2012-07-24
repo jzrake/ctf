@@ -107,7 +107,7 @@ void cow_histogram_commit(cow_histogram *h)
 void cow_histogram_del(cow_histogram *h)
 {
 #if (COW_MPI)
-  if (cow_mpirunning()) {
+  if (h->committed && cow_mpirunning()) {
     MPI_Comm_free(&h->comm);
   }
 #endif
