@@ -36,14 +36,16 @@ void srhdpack_relativelorentzpairs(cow_dfield *vel,
 // srand will be called with the domain's cartesian communicator rank.
 // -----------------------------------------------------------------------------
 {
+  cow_domain *d = cow_dfield_getdomain(vel);
   if (seed) {
     printf("[%s] seed=%d, seeding the random number generator\n", MODULE, seed);
-    srand(cow_domain_getcartrank(cow_dfield_getdomain(vel)));
+    srand(cow_domain_getcartrank(d));
   }
   else {
     printf("[%s] seed=%d\n", MODULE, seed);
   }
-
+  cow_histogram_setdomaincomm(histpro, d);
+  cow_histogram_setdomaincomm(histlab, d);
   cow_histogram_setbinmode(histpro, COW_HIST_BINMODE_AVERAGE);
   cow_histogram_setbinmode(histlab, COW_HIST_BINMODE_AVERAGE);
   cow_histogram_commit(histpro);
