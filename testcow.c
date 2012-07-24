@@ -17,6 +17,14 @@ void pickmember1(double *result, double **args, int **s, void *u)
   *result = args[0][0];
 }
 
+cow_dfield *cow_dfield_new2(cow_domain *domain, const char *name)
+{
+  cow_dfield *f = cow_dfield_new();
+  cow_dfield_setdomain(f, domain);
+  cow_dfield_setname(f, name);
+  return f;
+}
+
 int main(int argc, char **argv)
 {
 #if (COW_MPI)
@@ -30,8 +38,8 @@ int main(int argc, char **argv)
 #endif
 
   cow_domain *domain = cow_domain_new();
-  cow_dfield *prim = cow_dfield_new(domain, "primitive");
-  cow_dfield *magf = cow_dfield_new(domain, "magnetic");
+  cow_dfield *prim = cow_dfield_new2(domain, "primitive");
+  cow_dfield *magf = cow_dfield_new2(domain, "magnetic");
 
   cow_domain_setndim(domain, 1);
   cow_domain_setguard(domain, 3);
@@ -80,7 +88,7 @@ int main(int argc, char **argv)
     printf("(%02d) %f %f %f\n", i, P[si*i + 0], P[si*i + 1], P[si*i + 2]);
   }
 
-  cow_dfield *divB = cow_dfield_new(domain, "divB");
+  cow_dfield *divB = cow_dfield_new2(domain, "divB");
   cow_dfield_addmember(divB, "divB");
   cow_dfield_commit(divB);
   cow_dfield_syncguard(magf);

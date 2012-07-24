@@ -46,7 +46,7 @@ void cow_init(int argc, char **argv, int modes);
 void cow_finalize(void);
 int cow_mpirunning(void);
 
-cow_domain *cow_domain_new();
+cow_domain *cow_domain_new(void);
 void cow_domain_commit(cow_domain *d);
 void cow_domain_del(cow_domain *d);
 void cow_domain_setsize(cow_domain *d, int dim, int size);
@@ -71,10 +71,11 @@ int cow_domain_indexatposition(cow_domain *d, int dim, double x);
 double cow_domain_positionatindex(cow_domain *d, int dim, int index);
 void cow_domain_barrier(cow_domain *d);
 
-cow_dfield *cow_dfield_new(cow_domain *domain, const char *name);
+cow_dfield *cow_dfield_new(void);
 cow_dfield *cow_dfield_dup(cow_dfield *f);
 void cow_dfield_commit(cow_dfield *f);
 void cow_dfield_del(cow_dfield *f);
+void cow_dfield_setdomain(cow_dfield *f, cow_domain *d);
 void cow_dfield_addmember(cow_dfield *f, const char *name);
 void cow_dfield_setname(cow_dfield *f, const char *name);
 void cow_dfield_extract(cow_dfield *f, const int *I0, const int *I1, void *out);
@@ -109,7 +110,7 @@ void cow_dfield_reduce(cow_dfield *f, double x[3]);
 void cow_dfield_write(cow_dfield *f, const char *fname);
 void cow_dfield_read(cow_dfield *f, const char *fname);
 
-cow_histogram *cow_histogram_new();
+cow_histogram *cow_histogram_new(void);
 void cow_histogram_commit(cow_histogram *h);
 void cow_histogram_del(cow_histogram *h);
 void cow_histogram_setbinmode(cow_histogram *h, int binmode);

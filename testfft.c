@@ -20,6 +20,14 @@ void cow_fft_pspecvecfield2(cow_dfield *vel, const char *fout, const char *gname
   cow_histogram_del(hist);
 }
 
+cow_dfield *cow_dfield_new2(cow_domain *domain, const char *name)
+{
+  cow_dfield *f = cow_dfield_new();
+  cow_dfield_setdomain(f, domain);
+  cow_dfield_setname(f, name);
+  return f;
+}
+
 int main(int argc, char **argv)
 {
   int modes = 0;
@@ -41,7 +49,7 @@ int main(int argc, char **argv)
   char *finp = argv[1];
   char *fout = argv[2];
   cow_domain *domain = cow_domain_new();
-  cow_dfield *vel = cow_dfield_new(domain, "prim");
+  cow_dfield *vel = cow_dfield_new2(domain, "prim");
 
   cow_domain_setndim(domain, 3);
   cow_domain_setguard(domain, 2);

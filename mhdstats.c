@@ -94,9 +94,16 @@ static void kinEtrans(double *result, double **args, int **s, void *u)
   *result = 0.5 * rho[0] * (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
 
+cow_dfield *cow_dfield_new2(cow_domain *domain, const char *name)
+{
+  cow_dfield *f = cow_dfield_new();
+  cow_dfield_setdomain(f, domain);
+  cow_dfield_setname(f, name);
+  return f;
+}
 cow_dfield *cow_vectorfield(cow_domain *domain, const char *name)
 {
-  cow_dfield *f = cow_dfield_new(domain, name);
+  cow_dfield *f = cow_dfield_new2(domain, name);
   cow_dfield_addmember(f, "0");
   cow_dfield_addmember(f, "1");
   cow_dfield_addmember(f, "2");
@@ -105,7 +112,7 @@ cow_dfield *cow_vectorfield(cow_domain *domain, const char *name)
 }
 cow_dfield *cow_scalarfield(cow_domain *domain, const char *name)
 {
-  cow_dfield *f = cow_dfield_new(domain, name);
+  cow_dfield *f = cow_dfield_new2(domain, name);
   cow_dfield_addmember(f, "0");
   cow_dfield_commit(f);
   return f;
@@ -186,10 +193,10 @@ int main(int argc, char **argv)
   cow_domain_setcollective(domain, collective);
   cow_domain_setalign(domain, 4*KILOBYTES, 4*MEGABYTES);
 
-  cow_dfield *vel = cow_dfield_new(domain, "prim");
-  cow_dfield *mag = cow_dfield_new(domain, "prim");
-  cow_dfield *rho = cow_dfield_new(domain, "prim");
-  cow_dfield *pre = cow_dfield_new(domain, "prim");
+  cow_dfield *vel = cow_dfield_new2(domain, "prim");
+  cow_dfield *mag = cow_dfield_new2(domain, "prim");
+  cow_dfield *rho = cow_dfield_new2(domain, "prim");
+  cow_dfield *pre = cow_dfield_new2(domain, "prim");
   cow_dfield_addmember(vel, "vx");
   cow_dfield_addmember(vel, "vy");
   cow_dfield_addmember(vel, "vz");

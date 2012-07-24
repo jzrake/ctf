@@ -51,9 +51,17 @@ static void take_lorentzfactor(double *result, double **args, int **s, void *u)
   *result = 1.0 / sqrt(1.0 - (m[0]*m[0] + m[1]*m[1] + m[2]*m[2]));
 }
 
+cow_dfield *cow_dfield_new2(cow_domain *domain, const char *name)
+{
+  cow_dfield *f = cow_dfield_new();
+  cow_dfield_setdomain(f, domain);
+  cow_dfield_setname(f, name);
+  return f;
+}
+
 cow_dfield *cow_vectorfield(cow_domain *domain, const char *name)
 {
-  cow_dfield *f = cow_dfield_new(domain, name);
+  cow_dfield *f = cow_dfield_new2(domain, name);
   cow_dfield_addmember(f, "0");
   cow_dfield_addmember(f, "1");
   cow_dfield_addmember(f, "2");
@@ -62,7 +70,7 @@ cow_dfield *cow_vectorfield(cow_domain *domain, const char *name)
 }
 cow_dfield *cow_scalarfield(cow_domain *domain, const char *name)
 {
-  cow_dfield *f = cow_dfield_new(domain, name);
+  cow_dfield *f = cow_dfield_new2(domain, name);
   cow_dfield_addmember(f, "0");
   cow_dfield_commit(f);
   return f;
@@ -138,8 +146,8 @@ int main(int argc, char **argv)
 
   srand(cow_domain_getcartrank(domain));
 
-  cow_dfield *vel = cow_dfield_new(domain, "prim");
-  cow_dfield *rho = cow_dfield_new(domain, "prim");
+  cow_dfield *vel = cow_dfield_new2(domain, "prim");
+  cow_dfield *rho = cow_dfield_new2(domain, "prim");
   cow_dfield_addmember(vel, "vx");
   cow_dfield_addmember(vel, "vy");
   cow_dfield_addmember(vel, "vz");

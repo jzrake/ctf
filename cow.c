@@ -350,7 +350,7 @@ void cow_domain_barrier(cow_domain *d)
 // cow_dfield interface functions
 //
 // -----------------------------------------------------------------------------
-cow_dfield *cow_dfield_new(cow_domain *domain, const char *name)
+cow_dfield *cow_dfield_new(void)
 {
   cow_dfield *f = (cow_dfield*) malloc(sizeof(cow_dfield));
   cow_dfield field = {
@@ -362,7 +362,7 @@ cow_dfield *cow_dfield_new(cow_domain *domain, const char *name)
     .stride = { 0, 0, 0 },
     .committed = 0,
     .ownsdata = 0,
-    .domain = domain,
+    .domain = NULL,
     .transform = NULL,
     .transargs = NULL,
     .transargslen = 0,
@@ -373,7 +373,6 @@ cow_dfield *cow_dfield_new(cow_domain *domain, const char *name)
     .samplemode = COW_SAMPLE_LINEAR,
   } ;
   *f = field;
-  cow_dfield_setname(f, name);
   return f;
 }
 void cow_dfield_del(cow_dfield *f)
@@ -392,9 +391,16 @@ void cow_dfield_del(cow_dfield *f)
   free(f->sampleresult);
   free(f);
 }
+void cow_dfield_setdomain(cow_dfield *f, cow_domain *d)
+{
+  if (f->committed) return;
+  f->domain = d;
+}
 cow_dfield *cow_dfield_dup(cow_dfield *f)
 {
-  cow_dfield *g = cow_dfield_new(f->domain, f->name);
+  cow_dfield *g = cow_dfield_new();
+  cow_dfield_setdomain(g, f->domain);
+  cow_dfield_setname(g, f->name);
   for (int n=0; n<f->n_members; ++n) {
     cow_dfield_addmember(g, f->members[n]);
   }
@@ -497,7 +503,7 @@ const char *cow_dfield_nextmember(cow_dfield *f)
 }
 void cow_dfield_commit(cow_dfield *f)
 {
-  if (f->committed) return;
+  if (f->committed || f->domain == NULL) return;
 #if (COW_MPI)
   if (cow_mpirunning()) {
     switch (f->domain->n_dims) {

@@ -17,6 +17,14 @@ void cow_dfield_sampleglobalpos(cow_dfield *f, double *r0, int N, double *r1,
   cow_dfield_setsamplecoords(f, NULL, 0, 3);
 }
 
+cow_dfield *cow_dfield_new2(cow_domain *domain, const char *name)
+{
+  cow_dfield *f = cow_dfield_new();
+  cow_dfield_setdomain(f, domain);
+  cow_dfield_setname(f, name);
+  return f;
+}
+
 int main(int argc, char **argv)
 {
 #if (COW_MPI)
@@ -30,7 +38,7 @@ int main(int argc, char **argv)
 #endif
 
   cow_domain *domain = cow_domain_new();
-  cow_dfield *data = cow_dfield_new(domain, "data");
+  cow_dfield *data = cow_dfield_new2(domain, "data");
 
   cow_domain_setndim(domain, 3);
   cow_domain_setguard(domain, 2);
