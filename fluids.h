@@ -2,23 +2,29 @@
 #ifndef FLUIDS_HEADER_INCLUDED
 #define FLUIDS_HEADER_INCLUDED
 
-#define FLUIDS_LOCATION          (2<<0)
-#define FLUIDS_PASSIVE           (2<<1)
-#define FLUIDS_CONSERVED         (2<<2)
-#define FLUIDS_PRIMITIVE         (2<<3)
-#define FLUIDS_FLUX0             (2<<4)
-#define FLUIDS_FLUX1             (2<<5)
-#define FLUIDS_FLUX2             (2<<6)
-#define FLUIDS_MAGNETIC          (2<<7)
-#define FLUIDS_FOURVELOCITY      (2<<8)
-#define FLUIDS_EIGENVALUES       (2<<9)
-#define FLUIDS_EIGENVECTORS      (2<<10)
-#define FLUIDS_SOUNDSPEEDSQUARED (2<<11)
-#define FLUIDS_TEMPERATURE       (2<<12)
-#define FLUIDS_SPECIFICENTHALPY  (2<<13)
-#define FLUIDS_SPECIFICINTERNAL  (2<<14)
-#define FLUIDS_FLUXALL           (FLUIDS_FLUX0|FLUIDS_FLUX1|FLUIDS_FLUX2)
-#define FLUIDS_FLAGSALL          ((2<<31) - 1)
+#define FLUIDS_LOCATION          (1<<0)
+#define FLUIDS_PASSIVE           (1<<1)
+#define FLUIDS_CONSERVED         (1<<2)
+#define FLUIDS_PRIMITIVE         (1<<3)
+#define FLUIDS_MAGNETIC          (1<<4)
+#define FLUIDS_FOURVELOCITY      (1<<5)
+#define FLUIDS_FLUX0             (1<<6)
+#define FLUIDS_FLUX1             (1<<7)
+#define FLUIDS_FLUX2             (1<<8)
+#define FLUIDS_EIGENVALUES0      (1<<9)
+#define FLUIDS_EIGENVALUES1      (1<<10)
+#define FLUIDS_EIGENVALUES2      (1<<11)
+#define FLUIDS_LEIGENVECTORS0    (1<<12)
+#define FLUIDS_LEIGENVECTORS1    (1<<13)
+#define FLUIDS_LEIGENVECTORS2    (1<<14)
+#define FLUIDS_REIGENVECTORS0    (1<<15)
+#define FLUIDS_REIGENVECTORS1    (1<<16)
+#define FLUIDS_REIGENVECTORS2    (1<<17)
+#define FLUIDS_SOUNDSPEEDSQUARED (1<<18)
+#define FLUIDS_TEMPERATURE       (1<<19)
+#define FLUIDS_SPECIFICENTHALPY  (1<<20)
+#define FLUIDS_SPECIFICINTERNAL  (1<<21)
+#define FLUIDS_FLAGSALL          ((1<<30) - 1)
 
 #define FLUIDS_SCALAR_ADVECTION  -41
 #define FLUIDS_SCALAR_BURGERS    -42
@@ -46,39 +52,15 @@ typedef struct fluid_state fluid_state;
 
 fluid_state *fluids_new(void);
 int fluids_del(fluid_state *S);
+int fluids_update(fluid_state *S, long flags);
+int fluids_c2p(fluid_state *S);
+int fluids_p2c(fluid_state *S);
 int fluids_setfluid(fluid_state *S, int fluid);
 int fluids_seteos(fluid_state *S, int eos);
 int fluids_setcoordsystem(fluid_state *S, int coordsystem);
 int fluids_setnpassive(fluid_state *S, int n);
-int fluids_c2p(fluid_state *S);
-int fluids_p2c(fluid_state *S);
-int fluids_getlocation(fluid_state *S, double *x);
-int fluids_setlocation(fluid_state *S, double *x);
-int fluids_getpassive(fluid_state *S, double *x);
-int fluids_setpassive(fluid_state *S, double *x);
-int fluids_getconserved(fluid_state *S, double *x);
-int fluids_setconserved(fluid_state *S, double *x);
-int fluids_getprimitive(fluid_state *S, double *x);
-int fluids_setprimitive(fluid_state *S, double *x);
-int fluids_getflux0(fluid_state *S, double *x);
-int fluids_setflux0(fluid_state *S, double *x);
-int fluids_getflux1(fluid_state *S, double *x);
-int fluids_setflux1(fluid_state *S, double *x);
-int fluids_getflux2(fluid_state *S, double *x);
-int fluids_setflux2(fluid_state *S, double *x);
-int fluids_getmagnetic(fluid_state *S, double *x);
-int fluids_setmagnetic(fluid_state *S, double *x);
-int fluids_getfourvelocity(fluid_state *S, double *x);
-int fluids_setfourvelocity(fluid_state *S, double *x);
-int fluids_geteigenvalues(fluid_state *S, double *x);
-int fluids_seteigenvalues(fluid_state *S, double *x);
-int fluids_getleigenvectors(fluid_state *S, double *x);
-int fluids_setleigenvectors(fluid_state *S, double *x);
-int fluids_getreigenvectors(fluid_state *S, double *x);
-int fluids_setreigenvectors(fluid_state *S, double *x);
-
-
-int fluids_update(fluid_state *S, long flags);
+int fluids_getattrib(fluid_state *S, double *x, long flag);
+int fluids_setattrib(fluid_state *S, double *x, long flag);
 
 #ifdef FLUIDS_PRIVATE_DEFS
 struct fluid_state {
@@ -91,18 +73,17 @@ struct fluid_state {
   double *passive;
   double *conserved;
   double *primitive;
-  double *flux0;
-  double *flux1;
-  double *flux2;
   double *magnetic;
   double *fourvelocity;
-  double *eigenvalues;
-  double *leigenvectors;
-  double *reigenvectors;
+  double *flux[3];
+  double *eigenvalues[3];
+  double *leigenvectors[3];
+  double *reigenvectors[3];
   double soundspeedsquared;
   double temperature;
   double specificenthalpy;
   double specificinternal;
+  double gammalawindex;
 } ;
 #endif // FLUIDS_PRIVATE_DEFS
 #endif // FLUIDS_HEADER_INCLUDED

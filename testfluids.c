@@ -9,9 +9,9 @@ int main()
   double y[5];
 
   fluids_setfluid(S, FLUIDS_NRHYD);
-  fluids_setprimitive(S, x);
+  fluids_setattrib(S, x, FLUIDS_PRIMITIVE);
+  fluids_getattrib(S, y, FLUIDS_PRIMITIVE);
 
-  fluids_getprimitive(S, y);
   printf("%f %f %f %f %f\n", y[0], y[1], y[2], y[3], y[4]);
 
   fluids_del(S);
