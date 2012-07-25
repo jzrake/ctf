@@ -8,7 +8,6 @@ INCDIR       ?= $(INSTALL)/include
 
 CC           ?= cc
 AR           ?= ar
-#LDSHARED     ?= $(CC) -O -bundle -undefined dynamic_lookup -arch i386
 LDSHARED     ?= $(CC) -arch i386 -dynamiclib -undefined suppress -flat_namespace
 ARSTATIC     ?= $(AR) rcu
 FPIC         ?= -fPIC
