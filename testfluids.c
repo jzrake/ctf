@@ -74,8 +74,8 @@ int test3()
   fluids_setattrib(S, &gam, FLUIDS_GAMMALAWINDEX);
   fluids_setattrib(S, x, FLUIDS_PRIMITIVE);
   fluids_p2c(S);
-  fluids_update(S, FLUIDS_FLUX0 | FLUIDS_EIGENVALUES1);
-  fluids_getattrib(S, lam1, FLUIDS_EIGENVALUES1);
+  fluids_update(S, FLUIDS_FLUX0 | FLUIDS_EVALS1);
+  fluids_getattrib(S, lam1, FLUIDS_EVALS1);
   fluids_getattrib(S, &cs2, FLUIDS_SOUNDSPEEDSQUARED);
   fluids_del(S);
   assert(lam1[1] == 1.0);
@@ -98,9 +98,9 @@ int test4()
   fluids_setattrib(S, &gam, FLUIDS_GAMMALAWINDEX);
   fluids_setattrib(S, x, FLUIDS_PRIMITIVE);
   fluids_p2c(S);
-  fluids_update(S, FLUIDS_LEIGENVECTORS0 | FLUIDS_REIGENVECTORS0);
-  fluids_getattrib(S, L, FLUIDS_LEIGENVECTORS0);
-  fluids_getattrib(S, R, FLUIDS_REIGENVECTORS0);
+  fluids_update(S, FLUIDS_LEVECS0 | FLUIDS_REVECS0);
+  fluids_getattrib(S, L, FLUIDS_LEVECS0);
+  fluids_getattrib(S, R, FLUIDS_REVECS0);
   fluids_del(S);
   matrix_matrix_product(L, R, I, 5, 5, 5);
   for (int m=0; m<5; ++m) {

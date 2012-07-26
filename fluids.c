@@ -63,9 +63,10 @@ int fluids_setfluid(fluid_state *S, int fluid)
   modes |= FLUIDS_CONSERVED;
   modes |= FLUIDS_PRIMITIVE;
   modes |= FLUIDS_FLUXALL;
-  modes |= FLUIDS_EIGENVALUESALL;
-  modes |= FLUIDS_LEIGENVECTORSALL;
-  modes |= FLUIDS_REIGENVECTORSALL;
+  modes |= FLUIDS_EVALSALL;
+  modes |= FLUIDS_LEVECSALL;
+  modes |= FLUIDS_REVECSALL;
+  modes |= FLUIDS_JACOBIANALL;
 
   switch (fluid) {
   case FLUIDS_SCALAR_ADVECTION:
@@ -135,15 +136,15 @@ int _getsetattrib(fluid_state *S, double *x, long flag, char op)
     CASE(FLUX0, S->flux[0], S->nwaves);
     CASE(FLUX1, S->flux[1], S->nwaves);
     CASE(FLUX2, S->flux[2], S->nwaves);
-    CASE(EIGENVALUES0, S->eigenvalues[0], S->nwaves);
-    CASE(EIGENVALUES1, S->eigenvalues[1], S->nwaves);
-    CASE(EIGENVALUES2, S->eigenvalues[2], S->nwaves);
-    CASE(LEIGENVECTORS0, S->leigenvectors[0], S->nwaves*S->nwaves);
-    CASE(LEIGENVECTORS1, S->leigenvectors[1], S->nwaves*S->nwaves);
-    CASE(LEIGENVECTORS2, S->leigenvectors[2], S->nwaves*S->nwaves);
-    CASE(REIGENVECTORS0, S->reigenvectors[0], S->nwaves*S->nwaves);
-    CASE(REIGENVECTORS1, S->reigenvectors[1], S->nwaves*S->nwaves);
-    CASE(REIGENVECTORS2, S->reigenvectors[2], S->nwaves*S->nwaves);
+    CASE(EVALS0, S->eigenvalues[0], S->nwaves);
+    CASE(EVALS1, S->eigenvalues[1], S->nwaves);
+    CASE(EVALS2, S->eigenvalues[2], S->nwaves);
+    CASE(LEVECS0, S->leigenvectors[0], S->nwaves*S->nwaves);
+    CASE(LEVECS1, S->leigenvectors[1], S->nwaves*S->nwaves);
+    CASE(LEVECS2, S->leigenvectors[2], S->nwaves*S->nwaves);
+    CASE(REVECS0, S->reigenvectors[0], S->nwaves*S->nwaves);
+    CASE(REVECS1, S->reigenvectors[1], S->nwaves*S->nwaves);
+    CASE(REVECS2, S->reigenvectors[2], S->nwaves*S->nwaves);
     CASE(SOUNDSPEEDSQUARED, &S->soundspeedsquared, 1);
     CASE(TEMPERATURE, &S->temperature, 1);
     CASE(SPECIFICENTHALPY, &S->specificenthalpy, 1);
@@ -191,15 +192,15 @@ void _alloc_state(fluid_state *S, long modes, int op)
   A(flux[0], S->nwaves, FLUIDS_FLUX0);
   A(flux[1], S->nwaves, FLUIDS_FLUX1);
   A(flux[2], S->nwaves, FLUIDS_FLUX2);
-  A(eigenvalues[0], S->nwaves, FLUIDS_EIGENVALUES0);
-  A(eigenvalues[1], S->nwaves, FLUIDS_EIGENVALUES1);
-  A(eigenvalues[2], S->nwaves, FLUIDS_EIGENVALUES2);
-  A(leigenvectors[0], S->nwaves*S->nwaves, FLUIDS_LEIGENVECTORS0);
-  A(leigenvectors[1], S->nwaves*S->nwaves, FLUIDS_LEIGENVECTORS1);
-  A(leigenvectors[2], S->nwaves*S->nwaves, FLUIDS_LEIGENVECTORS2);
-  A(reigenvectors[0], S->nwaves*S->nwaves, FLUIDS_REIGENVECTORS0);
-  A(reigenvectors[1], S->nwaves*S->nwaves, FLUIDS_REIGENVECTORS1);
-  A(reigenvectors[2], S->nwaves*S->nwaves, FLUIDS_REIGENVECTORS2);
+  A(eigenvalues[0], S->nwaves, FLUIDS_EVALS0);
+  A(eigenvalues[1], S->nwaves, FLUIDS_EVALS1);
+  A(eigenvalues[2], S->nwaves, FLUIDS_EVALS2);
+  A(leigenvectors[0], S->nwaves*S->nwaves, FLUIDS_LEVECS0);
+  A(leigenvectors[1], S->nwaves*S->nwaves, FLUIDS_LEVECS1);
+  A(leigenvectors[2], S->nwaves*S->nwaves, FLUIDS_LEVECS2);
+  A(reigenvectors[0], S->nwaves*S->nwaves, FLUIDS_REVECS0);
+  A(reigenvectors[1], S->nwaves*S->nwaves, FLUIDS_REVECS1);
+  A(reigenvectors[2], S->nwaves*S->nwaves, FLUIDS_REVECS2);
 #undef A
 }
 
@@ -293,7 +294,7 @@ int _nrhyd_update(fluid_state *S, long modes)
     S->flux[2][Sz]   =  U[Sz]  * P[vz] + P[pre];
   }
 
-  if (modes & (FLUIDS_EIGENVALUESALL | FLUIDS_SOUNDSPEEDSQUARED)) {
+  if (modes & (FLUIDS_EVALSALL | FLUIDS_SOUNDSPEEDSQUARED)) {
     cs2 = _nrhyd_cs2(S);
     a = sqrt(cs2);
   }
@@ -302,21 +303,21 @@ int _nrhyd_update(fluid_state *S, long modes)
     S->soundspeedsquared = cs2;
   }
 
-  if (modes & FLUIDS_EIGENVALUES0) {
+  if (modes & FLUIDS_EVALS0) {
     S->eigenvalues[0][0] = P[vx] - a;
     S->eigenvalues[0][1] = P[vx];
     S->eigenvalues[0][2] = P[vx];
     S->eigenvalues[0][3] = P[vx];
     S->eigenvalues[0][4] = P[vx] + a;
   }
-  if (modes & FLUIDS_EIGENVALUES1) {
+  if (modes & FLUIDS_EVALS1) {
     S->eigenvalues[1][0] = P[vy] - a;
     S->eigenvalues[1][1] = P[vy];
     S->eigenvalues[1][2] = P[vy];
     S->eigenvalues[1][3] = P[vy];
     S->eigenvalues[1][4] = P[vy] + a;
   }
-  if (modes & FLUIDS_EIGENVALUES2) {
+  if (modes & FLUIDS_EVALS2) {
     S->eigenvalues[2][0] = P[vz] - a;
     S->eigenvalues[2][1] = P[vz];
     S->eigenvalues[2][2] = P[vz];
@@ -324,20 +325,20 @@ int _nrhyd_update(fluid_state *S, long modes)
     S->eigenvalues[2][4] = P[vz] + a;
   }
 
-  if (modes & (FLUIDS_LEIGENVECTORS0 | FLUIDS_REIGENVECTORS0)) {
+  if (modes & (FLUIDS_LEVECS0 | FLUIDS_REVECS0)) {
     _nrhyd_eigenvec(S, 0,
-		    modes & FLUIDS_LEIGENVECTORS0,
-		    modes & FLUIDS_REIGENVECTORS0);
+		    modes & FLUIDS_LEVECS0,
+		    modes & FLUIDS_REVECS0);
   }
-  if (modes & (FLUIDS_LEIGENVECTORS1 | FLUIDS_REIGENVECTORS1)) {
+  if (modes & (FLUIDS_LEVECS1 | FLUIDS_REVECS1)) {
     _nrhyd_eigenvec(S, 1,
-		    modes & FLUIDS_LEIGENVECTORS1,
-		    modes & FLUIDS_REIGENVECTORS1);
+		    modes & FLUIDS_LEVECS1,
+		    modes & FLUIDS_REVECS1);
   }
-  if (modes & (FLUIDS_LEIGENVECTORS2 | FLUIDS_REIGENVECTORS2)) {
+  if (modes & (FLUIDS_LEVECS2 | FLUIDS_REVECS2)) {
     _nrhyd_eigenvec(S, 2,
-		    modes & FLUIDS_LEIGENVECTORS2,
-		    modes & FLUIDS_REIGENVECTORS2);
+		    modes & FLUIDS_LEVECS2,
+		    modes & FLUIDS_REVECS2);
   }
   return 0;
 }
