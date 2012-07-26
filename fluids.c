@@ -194,9 +194,9 @@ void _alloc_state(fluid_state *S, long modes, int op)
   A(leigenvectors[0], S->nwaves*S->nwaves, FLUIDS_LEIGENVECTORS0);
   A(leigenvectors[1], S->nwaves*S->nwaves, FLUIDS_LEIGENVECTORS1);
   A(leigenvectors[2], S->nwaves*S->nwaves, FLUIDS_LEIGENVECTORS2);
-  A(leigenvectors[0], S->nwaves*S->nwaves, FLUIDS_REIGENVECTORS0);
-  A(leigenvectors[1], S->nwaves*S->nwaves, FLUIDS_REIGENVECTORS1);
-  A(leigenvectors[2], S->nwaves*S->nwaves, FLUIDS_REIGENVECTORS2);
+  A(reigenvectors[0], S->nwaves*S->nwaves, FLUIDS_REIGENVECTORS0);
+  A(reigenvectors[1], S->nwaves*S->nwaves, FLUIDS_REIGENVECTORS1);
+  A(reigenvectors[2], S->nwaves*S->nwaves, FLUIDS_REIGENVECTORS2);
 #undef A
 }
 
