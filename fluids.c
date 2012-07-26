@@ -3,6 +3,7 @@
 #define FLUIDS_PRIVATE_DEFS
 #define FLUIDS_INDEX_VARS
 #include "fluids.h"
+#include "matrix.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -17,7 +18,7 @@ static int _nrhyd_c2p(fluid_state *S);
 static int _nrhyd_p2c(fluid_state *S);
 static double _nrhyd_cs2(fluid_state *S);
 static int _nrhyd_update(fluid_state *S, long flags);
-
+static void _nrhyd_eigenvec(fluid_state *S, int dim, int doleft, int dorght);
 
 fluid_state *fluids_new()
 {
@@ -63,6 +64,8 @@ int fluids_setfluid(fluid_state *S, int fluid)
   modes |= FLUIDS_PRIMITIVE;
   modes |= FLUIDS_FLUXALL;
   modes |= FLUIDS_EIGENVALUESALL;
+  modes |= FLUIDS_LEIGENVECTORSALL;
+  modes |= FLUIDS_REIGENVECTORSALL;
 
   switch (fluid) {
   case FLUIDS_SCALAR_ADVECTION:
@@ -320,5 +323,118 @@ int _nrhyd_update(fluid_state *S, long modes)
     S->eigenvalues[2][3] = P[vz];
     S->eigenvalues[2][4] = P[vz] + a;
   }
+
+  if (modes & (FLUIDS_LEIGENVECTORS0 | FLUIDS_REIGENVECTORS0)) {
+    _nrhyd_eigenvec(S, 0,
+		    modes & FLUIDS_LEIGENVECTORS0,
+		    modes & FLUIDS_REIGENVECTORS0);
+  }
+  if (modes & (FLUIDS_LEIGENVECTORS1 | FLUIDS_REIGENVECTORS1)) {
+    _nrhyd_eigenvec(S, 1,
+		    modes & FLUIDS_LEIGENVECTORS1,
+		    modes & FLUIDS_REIGENVECTORS1);
+  }
+  if (modes & (FLUIDS_LEIGENVECTORS2 | FLUIDS_REIGENVECTORS2)) {
+    _nrhyd_eigenvec(S, 2,
+		    modes & FLUIDS_LEIGENVECTORS2,
+		    modes & FLUIDS_REIGENVECTORS2);
+  }
   return 0;
+}
+
+
+
+void _nrhyd_eigenvec(fluid_state *S, int dim, int doleft, int dorght)
+{
+  int v1=0, v2=0, v3=0;
+  switch (dim) {
+  case 0:
+    v1=vx; v2=vy; v3=vz;
+    break;
+  case 1:
+    v1=vy; v2=vz; v3=vx;
+    break;
+  case 2:
+    v1=vz; v2=vx; v3=vy;
+    break;
+  }
+
+  double *U = S->conserved;
+  double *P = S->primitive;
+  double *L = S->leigenvectors[dim];
+  double *R = S->reigenvectors[dim];
+  double gm = S->gammalawindex;
+  double gm1 = gm - 1.0;
+  double u = P[v1];
+  double v = P[v2];
+  double w = P[v3];
+  double V2 = u*u + v*v + w*w;
+  double a = sqrt(gm * P[pre] / P[rho]);
+  double H = (U[tau] + P[pre]) / P[rho];
+
+  // Toro Equation 3.82
+  // ---------------------------------------------------------------------------
+  double R_[5][5] =
+    { {       1,      1,      0,      0,     1   },
+      {     u-a,      u,      0,      0,     u+a },
+      {       v,      v,      1,      0,     v   },
+      {       w,      w,      0,      1,     w   },
+      { H - u*a, 0.5*V2,      v,      w, H + u*a } };
+
+  // Toro Equation 3.83 up to (gam - 1) / (2*a^2)
+  // ---------------------------------------------------------------------------
+  double L_[5][5] =
+    { {    H + (a/gm1)*(u-a),  -(u+a/gm1),        -v,        -w,  1 },
+      { -2*H + (4/gm1)*(a*a),         2*u,       2*v,       2*w, -2 },
+      {         -2*v*a*a/gm1,           0, 2*a*a/gm1,         0,  0 },
+      {         -2*w*a*a/gm1,           0,         0, 2*a*a/gm1,  0 },
+      {    H - (a/gm1)*(u+a),  -(u-a/gm1),        -v,        -w,  1 } };
+
+  // Permute the eigenvectors according to the direction:
+  // ---------------------------------------------------------------------------
+  // L' = L P
+  // R' = P^{-1} R
+  // ---------------------------------------------------------------------------
+  double P1[5][5] =
+    { { 1, 0, 0, 0, 0 },
+      { 0, 1, 0, 0, 0 },
+      { 0, 0, 1, 0, 0 },
+      { 0, 0, 0, 1, 0 },
+      { 0, 0, 0, 0, 1 } };
+
+  double P2[5][5] =
+    { { 1, 0, 0, 0, 0 },
+      { 0, 0, 1, 0, 0 },
+      { 0, 0, 0, 1, 0 },
+      { 0, 1, 0, 0, 0 },
+      { 0, 0, 0, 0, 1 } };
+
+  double P3[5][5] =
+    { { 1, 0, 0, 0, 0 },
+      { 0, 0, 0, 1, 0 },
+      { 0, 1, 0, 0, 0 },
+      { 0, 0, 1, 0, 0 },
+      { 0, 0, 0, 0, 1 } };
+
+  switch (dim) {
+  case 0:
+    if (doleft) matrix_matrix_product(L_[0], P1[0], L, 5, 5, 5);
+    if (dorght) matrix_matrix_product(P1[0], R_[0], R, 5, 5, 5);
+    break;
+  case 1:
+    if (doleft) matrix_matrix_product(L_[0], P2[0], L, 5, 5, 5);
+    if (dorght) matrix_matrix_product(P3[0], R_[0], R, 5, 5, 5);
+    break;
+  case 2:
+    if (doleft) matrix_matrix_product(L_[0], P3[0], L, 5, 5, 5);
+    if (dorght) matrix_matrix_product(P2[0], R_[0], R, 5, 5, 5);
+    break;
+  }
+
+  // Replace the term in eqn 3.83 : (gam - 1) / (2*a^2)
+  // ---------------------------------------------------------------------------
+  double norm = gm1 / (2*a*a);
+  for (int i=0; i<25; ++i) {
+    L[i] *= norm;
+  }
 }

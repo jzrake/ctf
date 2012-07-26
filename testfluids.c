@@ -1,8 +1,9 @@
 
-#include <assert.h>
 #include <stdio.h>
+#include <assert.h>
+#include <math.h>
 #include "fluids.h"
-
+#include "matrix.h"
 
 // Passes when get/set attributes work correctly
 // -----------------------------------------------------------------------------
@@ -83,10 +84,40 @@ int test3()
   return 0;
 }
 
+// Passes when the eigenvector calculation goes correctly
+// -----------------------------------------------------------------------------
+int test4()
+{
+  double x[5] = {1, 1, 1, 1, 1};
+  double gam = 1.4;
+  double L[25];
+  double R[25];
+  double I[25];
+  fluid_state *S = fluids_new();
+  fluids_setfluid(S, FLUIDS_NRHYD);
+  fluids_setattrib(S, &gam, FLUIDS_GAMMALAWINDEX);
+  fluids_setattrib(S, x, FLUIDS_PRIMITIVE);
+  fluids_p2c(S);
+  fluids_update(S, FLUIDS_LEIGENVECTORS0 | FLUIDS_REIGENVECTORS0);
+  fluids_getattrib(S, L, FLUIDS_LEIGENVECTORS0);
+  fluids_getattrib(S, R, FLUIDS_REIGENVECTORS0);
+  fluids_del(S);
+  matrix_matrix_product(L, R, I, 5, 5, 5);
+  for (int m=0; m<5; ++m) {
+    for (int n=0; n<5; ++n) {
+      assert(fabs(I[m*5 + n] - (double)(m==n)) < 1e-12);
+      printf("(L.R)[%d][%d] = %f\n", m, n, I[m*5 + n]);      
+    }
+  }
+  printf("TEST 4 PASSED\n");
+  return 0;
+}
+
 int main()
 {
   test1();
   test2();
   test3();
+  test4();
   return 0;
 }
