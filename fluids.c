@@ -13,6 +13,10 @@
 
 static void _alloc_state(fluid_state *S, long modes, int op);
 static int _getsetattrib(fluid_state *S, double *x, long flag, char op);
+static int _nrhyd_c2p(fluid_state *S);
+static int _nrhyd_p2c(fluid_state *S);
+static double _nrhyd_cs2(fluid_state *S);
+static int _nrhyd_update(fluid_state *S, long flags);
 
 
 fluid_state *fluids_new()
@@ -98,13 +102,8 @@ int fluids_setcoordsystem(fluid_state *S, int coordsystem)
 
 int fluids_setnpassive(fluid_state *S, int n)
 {
-  if (n < 0) {
-    return FLUIDS_ERROR_BADARG;
-  }
-  else {
-    S->npassive = n;
-    return 0;
-  }
+  S->npassive = n;
+  return 0;
 }
 
 int fluids_getattrib(fluid_state *S, double *x, long flag)
@@ -169,8 +168,17 @@ int _getsetattrib(fluid_state *S, double *x, long flag, char op)
 
 void _alloc_state(fluid_state *S, long modes, int op)
 {
-  // op is 0 for dealloc, 1 for alloc
-#define A(a,s,m) if(modes&m)S->a=(double*)realloc(S->a,(s)*op*sizeof(double))
+#define A(a,s,m) do {							\
+    if (modes & m) {							\
+      if (op == ALLOC) {						\
+	S->a = (double*) realloc(S->a,(s)*sizeof(double));		\
+      }									\
+      else if (op == DEALLOC) {						\
+	free(S->a);							\
+      }									\
+    }									\
+  } while (0)								\
+
   A(location, 3, FLUIDS_LOCATION);
   A(passive, S->npassive, FLUIDS_PASSIVE);
   A(conserved, S->nwaves, FLUIDS_CONSERVED);
@@ -191,12 +199,6 @@ void _alloc_state(fluid_state *S, long modes, int op)
   A(leigenvectors[2], S->nwaves*S->nwaves, FLUIDS_REIGENVECTORS2);
 #undef A
 }
-
-
-static int _nrhyd_c2p(fluid_state *S);
-static int _nrhyd_p2c(fluid_state *S);
-static double _nrhyd_cs2(fluid_state *S);
-static int _nrhyd_update(fluid_state *S, long flags);
 
 int fluids_update(fluid_state *S, long flags)
 {
@@ -264,12 +266,7 @@ int _nrhyd_update(fluid_state *S, long modes)
 {
   double *U = S->conserved;
   double *P = S->primitive;
-  double cs2 = _nrhyd_cs2(S);
-  double a = sqrt(cs2);
-
-  if (modes & FLUIDS_SOUNDSPEEDSQUARED) {
-    S->soundspeedsquared = cs2;
-  }
+  double a, cs2;
 
   if (modes & FLUIDS_FLUX0) {
     S->flux[0][rho]  =  U[rho] * P[vx];
@@ -291,6 +288,15 @@ int _nrhyd_update(fluid_state *S, long modes)
     S->flux[2][Sx]   =  U[Sx]  * P[vz];
     S->flux[2][Sy]   =  U[Sy]  * P[vz];
     S->flux[2][Sz]   =  U[Sz]  * P[vz] + P[pre];
+  }
+
+  if (modes & (FLUIDS_EIGENVALUESALL | FLUIDS_SOUNDSPEEDSQUARED)) {
+    cs2 = _nrhyd_cs2(S);
+    a = sqrt(cs2);
+  }
+
+  if (modes & FLUIDS_SOUNDSPEEDSQUARED) {
+    S->soundspeedsquared = cs2;
   }
 
   if (modes & FLUIDS_EIGENVALUES0) {

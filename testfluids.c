@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include "fluids.h"
 
+
+// Passes when get/set attributes work correctly
+// -----------------------------------------------------------------------------
 int test1()
 {
   double x[5] = {1, 1, 1, 1, 1};
@@ -24,6 +27,8 @@ int test1()
   return 0;
 }
 
+// Passes when fluxes and sound speeds are computed correctly
+// -----------------------------------------------------------------------------
 int test2()
 {
   double x[5] = {1, 1, 1, 1, 1};
@@ -56,9 +61,32 @@ int test2()
   return 0;
 }
 
+// Passes when sound speed calculation is skipped appropriately
+// -----------------------------------------------------------------------------
+int test3()
+{
+  double x[5] = {1, 1, 1, 1, 1};
+  double gam = 1.4;
+  double lam1[5], cs2;
+  fluid_state *S = fluids_new();
+  fluids_setfluid(S, FLUIDS_NRHYD);
+  fluids_setattrib(S, &gam, FLUIDS_GAMMALAWINDEX);
+  fluids_setattrib(S, x, FLUIDS_PRIMITIVE);
+  fluids_p2c(S);
+  fluids_update(S, FLUIDS_FLUX0 | FLUIDS_EIGENVALUES1);
+  fluids_getattrib(S, lam1, FLUIDS_EIGENVALUES1);
+  fluids_getattrib(S, &cs2, FLUIDS_SOUNDSPEEDSQUARED);
+  fluids_del(S);
+  assert(lam1[1] == 1.0);
+  assert(cs2 == 0.0);
+  printf("TEST 3 PASSED\n");
+  return 0;
+}
+
 int main()
 {
   test1();
   test2();
+  test3();
   return 0;
 }
