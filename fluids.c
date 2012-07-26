@@ -1,14 +1,19 @@
 
+
 #define FLUIDS_PRIVATE_DEFS
+#define FLUIDS_INDEX_VARS
 #include "fluids.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 
-static void _alloc_state(fluid_state *S, long modes);
-static void _dealloc_state(fluid_state *S, long modes);
+#define ALLOC 1
+#define DEALLOC 0
+
+static void _alloc_state(fluid_state *S, long modes, int op);
 static int _getsetattrib(fluid_state *S, double *x, long flag, char op);
+
 
 fluid_state *fluids_new()
 {
@@ -41,7 +46,7 @@ fluid_state *fluids_new()
 
 int fluids_del(fluid_state *S)
 {
-  _dealloc_state(S, FLUIDS_FLAGSALL);
+  _alloc_state(S, FLUIDS_FLAGSALL, DEALLOC);
   free(S);
   return 0;
 }
@@ -75,7 +80,7 @@ int fluids_setfluid(fluid_state *S, int fluid)
   default:
     return FLUIDS_ERROR_BADREQUEST;
   }
-  _alloc_state(S, modes);
+  _alloc_state(S, modes, ALLOC);
   return 0;
 }
 
@@ -162,33 +167,10 @@ int _getsetattrib(fluid_state *S, double *x, long flag, char op)
   return 0;
 }
 
-void _alloc_state(fluid_state *S, long modes)
+void _alloc_state(fluid_state *S, long modes, int op)
 {
-#define A(a,s,m) if(modes&m)S->a=(double*)realloc(S->a,(s)*sizeof(double))
-  A(location, 3, FLUIDS_LOCATION);
-  A(passive, S->npassive, FLUIDS_PASSIVE);
-  A(conserved, S->nwaves, FLUIDS_CONSERVED);
-  A(primitive, S->nwaves, FLUIDS_PRIMITIVE);
-  A(magnetic, 3, FLUIDS_MAGNETIC);
-  A(fourvelocity, 4, FLUIDS_FOURVELOCITY);
-  A(flux[0], S->nwaves, FLUIDS_FLUX0);
-  A(flux[1], S->nwaves, FLUIDS_FLUX1);
-  A(flux[2], S->nwaves, FLUIDS_FLUX2);
-  A(eigenvalues[0], S->nwaves, FLUIDS_EIGENVALUES0);
-  A(eigenvalues[1], S->nwaves, FLUIDS_EIGENVALUES1);
-  A(eigenvalues[2], S->nwaves, FLUIDS_EIGENVALUES2);
-  A(leigenvectors[0], S->nwaves*S->nwaves, FLUIDS_LEIGENVECTORS0);
-  A(leigenvectors[1], S->nwaves*S->nwaves, FLUIDS_LEIGENVECTORS1);
-  A(leigenvectors[2], S->nwaves*S->nwaves, FLUIDS_LEIGENVECTORS2);
-  A(leigenvectors[0], S->nwaves*S->nwaves, FLUIDS_REIGENVECTORS0);
-  A(leigenvectors[1], S->nwaves*S->nwaves, FLUIDS_REIGENVECTORS1);
-  A(leigenvectors[2], S->nwaves*S->nwaves, FLUIDS_REIGENVECTORS2);
-#undef A
-}
-
-void _dealloc_state(fluid_state *S, long modes)
-{
-#define A(a,s,m) if(modes&m)free(S->a)//=(double*)realloc(S->a, 0)
+  // op is 0 for dealloc, 1 for alloc
+#define A(a,s,m) if(modes&m)S->a=(double*)realloc(S->a,(s)*op*sizeof(double))
   A(location, 3, FLUIDS_LOCATION);
   A(passive, S->npassive, FLUIDS_PASSIVE);
   A(conserved, S->nwaves, FLUIDS_CONSERVED);
@@ -211,9 +193,6 @@ void _dealloc_state(fluid_state *S, long modes)
 }
 
 
-
-enum { ddd, tau, Sx, Sy, Sz, Bx, By, Bz }; // Conserved
-enum { rho, pre, vx, vy, vz };             // Primitive
 static int _nrhyd_c2p(fluid_state *S);
 static int _nrhyd_p2c(fluid_state *S);
 static double _nrhyd_cs2(fluid_state *S);

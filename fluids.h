@@ -57,6 +57,11 @@
 #define FLUIDS_ERROR_BADARG      -66
 #define FLUIDS_ERROR_BADREQUEST  -67
 
+#ifdef FLUIDS_INDEX_VARS
+enum { ddd, tau, Sx, Sy, Sz, Bx, By, Bz }; // Conserved
+enum { rho, pre, vx, vy, vz };             // Primitive
+#endif // FLUIDS_INDEX_VARS
+
 struct fluid_state;
 typedef struct fluid_state fluid_state;
 
