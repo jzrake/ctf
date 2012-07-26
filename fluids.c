@@ -19,6 +19,7 @@ static int _nrhyd_p2c(fluid_state *S);
 static double _nrhyd_cs2(fluid_state *S);
 static int _nrhyd_update(fluid_state *S, long flags);
 static void _nrhyd_eigenvec(fluid_state *S, int dim, int doleft, int dorght);
+static void _nrhyd_jacobian(fluid_state *S, int dim);
 
 fluid_state *fluids_new()
 {
@@ -346,6 +347,17 @@ int _nrhyd_update(fluid_state *S, long modes)
 		    modes & FLUIDS_LEVECS2,
 		    modes & FLUIDS_REVECS2);
   }
+
+  if (modes & FLUIDS_JACOBIAN0) {
+    _nrhyd_jacobian(S, 0);
+  }
+  if (modes & FLUIDS_JACOBIAN1) {
+    _nrhyd_jacobian(S, 1);
+  }
+  if (modes & FLUIDS_JACOBIAN2) {
+    _nrhyd_jacobian(S, 2);
+  }
+
   return 0;
 }
 
@@ -365,7 +377,6 @@ void _nrhyd_eigenvec(fluid_state *S, int dim, int doleft, int dorght)
     v1=vz; v2=vx; v3=vy;
     break;
   }
-
   double *U = S->conserved;
   double *P = S->primitive;
   double *L = S->leigenvectors[dim];
@@ -445,3 +456,52 @@ void _nrhyd_eigenvec(fluid_state *S, int dim, int doleft, int dorght)
     L[i] *= norm;
   }
 }
+
+void _nrhyd_jacobian(fluid_state *S, int dim)
+{
+  double gm = S->gammalawindex;
+  double g1 = gm - 1.0;
+  double g2 = gm - 2.0;
+
+ // inputs are Mara convention: {D,E,px,py,pz}
+  double *U = S->conserved;
+  double D = U[0];
+  double E = U[1];
+  double u = U[2]/D;
+  double v = U[3]/D;
+  double w = U[4]/D;
+
+  double nx = (dim == 0);
+  double ny = (dim == 1);
+  double nz = (dim == 2);
+  double vn = u*nx + v*ny + w*nz;
+  double ek = 0.5*(u*u + v*v + w*w);
+  double p0 = (E-D*ek)*g1; // pressure
+  double a2 = gm*p0/D;     // sound speed
+  double h0 = a2 / g1 + ek;
+
+  // output is A := dF{D,px,py,pz,E}/d{D,px,py,pz,E}, Toro's convention
+  double A[5][5] = { { 0, nx, ny, nz, 0 },
+		     { g1*ek*nx - u*vn,
+		       1*vn - g2*u*nx,
+		       u*ny - g1*v*nx,
+		       u*nz - g1*w*nx, g1*nx },
+		     
+		     { g1*ek*ny - v*vn,
+		       v*nx - g1*u*ny,
+		       1*vn - g2*v*ny,
+		       v*nz - g1*w*ny, g1*ny },
+		     
+		     { g1*ek*nz - w*vn,
+		       w*nx - g1*u*nz,
+		       w*ny - g1*v*nz,
+		       1*vn - g2*w*nz, g1*nz },
+		     
+		     { (g1*ek-h0)*vn,
+		       h0*nx - g1*u*vn,
+		       h0*ny - g1*v*vn,
+		       h0*nz - g1*w*vn, gm*vn } };
+
+  memcpy(S->jacobian[dim], A[0], 25*sizeof(double));
+}
+

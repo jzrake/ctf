@@ -54,10 +54,6 @@ int test2()
   assert(G[1] == 5.0);
   assert(G[2] == 1.0);
   assert(cs2 == 1.4);
-  printf("F[0] = %f G[0] = %f\n", F[0], G[0]);
-  printf("F[1] = %f G[1] = %f\n", F[1], G[1]);
-  printf("F[2] = %f G[2] = %f\n", F[2], G[2]);
-  printf("cs2 = %f\n", cs2);
   printf("TEST 2 PASSED\n");
   return 0;
 }
@@ -84,29 +80,43 @@ int test3()
   return 0;
 }
 
-// Passes when the eigenvector calculation goes correctly
+// Passes when
+// (1) L.R = I
+// (2) L.A.R = diag{ lam0, lam1, lam2, lam3, lam4 }
 // -----------------------------------------------------------------------------
 int test4()
 {
   double x[5] = {1, 1, 1, 1, 1};
   double gam = 1.4;
+  double V[5];
   double L[25];
   double R[25];
   double I[25];
+  double A[25];
+  double LA[25];
+  double LAR[25];
   fluid_state *S = fluids_new();
   fluids_setfluid(S, FLUIDS_NRHYD);
   fluids_setattrib(S, &gam, FLUIDS_GAMMALAWINDEX);
   fluids_setattrib(S, x, FLUIDS_PRIMITIVE);
   fluids_p2c(S);
-  fluids_update(S, FLUIDS_LEVECS0 | FLUIDS_REVECS0);
+  fluids_update(S,
+		FLUIDS_EVALS0 |
+		FLUIDS_LEVECS0 |
+		FLUIDS_REVECS0 |
+		FLUIDS_JACOBIAN0);
+  fluids_getattrib(S, V, FLUIDS_EVALS0);
   fluids_getattrib(S, L, FLUIDS_LEVECS0);
   fluids_getattrib(S, R, FLUIDS_REVECS0);
+  fluids_getattrib(S, A, FLUIDS_JACOBIAN0);
   fluids_del(S);
   matrix_matrix_product(L, R, I, 5, 5, 5);
+  matrix_matrix_product(L, A, LA, 5, 5, 5);
+  matrix_matrix_product(LA, R, LAR, 5, 5, 5);
   for (int m=0; m<5; ++m) {
     for (int n=0; n<5; ++n) {
-      assert(fabs(I[m*5 + n] - (double)(m==n)) < 1e-12);
-      printf("(L.R)[%d][%d] = %f\n", m, n, I[m*5 + n]);      
+      assert(fabs(I[m*5 + n] - (m==n)) < 1e-12);
+      assert(fabs(LAR[m*5 + n] - (m==n) * V[m]) < 1e-12);
     }
   }
   printf("TEST 4 PASSED\n");
