@@ -145,6 +145,9 @@ int _getsetattrib(fluid_state *S, double *x, long flag, char op)
     CASE(REVECS0, S->reigenvectors[0], S->nwaves*S->nwaves);
     CASE(REVECS1, S->reigenvectors[1], S->nwaves*S->nwaves);
     CASE(REVECS2, S->reigenvectors[2], S->nwaves*S->nwaves);
+    CASE(JACOBIAN0, S->jacobian[0], S->nwaves*S->nwaves);
+    CASE(JACOBIAN1, S->jacobian[1], S->nwaves*S->nwaves);
+    CASE(JACOBIAN2, S->jacobian[2], S->nwaves*S->nwaves);
     CASE(SOUNDSPEEDSQUARED, &S->soundspeedsquared, 1);
     CASE(TEMPERATURE, &S->temperature, 1);
     CASE(SPECIFICENTHALPY, &S->specificenthalpy, 1);
@@ -201,6 +204,9 @@ void _alloc_state(fluid_state *S, long modes, int op)
   A(reigenvectors[0], S->nwaves*S->nwaves, FLUIDS_REVECS0);
   A(reigenvectors[1], S->nwaves*S->nwaves, FLUIDS_REVECS1);
   A(reigenvectors[2], S->nwaves*S->nwaves, FLUIDS_REVECS2);
+  A(jacobian[0], S->nwaves*S->nwaves, FLUIDS_JACOBIAN0);
+  A(jacobian[1], S->nwaves*S->nwaves, FLUIDS_JACOBIAN1);
+  A(jacobian[2], S->nwaves*S->nwaves, FLUIDS_JACOBIAN2);
 #undef A
 }
 

@@ -94,6 +94,7 @@ struct fluid_state {
   double *eigenvalues[3];
   double *leigenvectors[3];
   double *reigenvectors[3];
+  double *jacobian[3];
   double soundspeedsquared;
   double temperature;
   double specificenthalpy;
