@@ -248,9 +248,9 @@ int _nrhyd_c2p(fluid_state *S)
   double *P = S->primitive;
   P[rho] =  U[ddd];
   P[pre] = (U[tau] - 0.5*(U[Sx]*U[Sx] + U[Sy]*U[Sy] + U[Sz]*U[Sz])/U[ddd])*gm1;
-  P[vx ] =  U[Sx ] / U[ddd];
-  P[vy ] =  U[Sy ] / U[ddd];
-  P[vz ] =  U[Sz ] / U[ddd];
+  P[vx]  =  U[Sx] / U[ddd];
+  P[vy]  =  U[Sy] / U[ddd];
+  P[vz]  =  U[Sz] / U[ddd];
   return 0;
 }
 
@@ -280,25 +280,25 @@ int _nrhyd_update(fluid_state *S, long modes)
   double a, cs2;
 
   if (modes & FLUIDS_FLUX0) {
-    S->flux[0][rho]  =  U[rho] * P[vx];
-    S->flux[0][tau]  = (U[tau] + P[pre])*P[vx];
-    S->flux[0][Sx]   =  U[Sx]  * P[vx] + P[pre];
-    S->flux[0][Sy]   =  U[Sy]  * P[vx];
-    S->flux[0][Sz]   =  U[Sz]  * P[vx];
+    S->flux[0][rho] = U[rho] * P[vx];
+    S->flux[0][tau] = (U[tau] + P[pre]) * P[vx];
+    S->flux[0][Sx] = U[Sx] * P[vx] + P[pre];
+    S->flux[0][Sy] = U[Sy] * P[vx];
+    S->flux[0][Sz] = U[Sz] * P[vx];
   }
   if (modes & FLUIDS_FLUX1) {
-    S->flux[1][rho]  =  U[rho] * P[vy];
-    S->flux[1][tau]  = (U[tau] + P[pre])*P[vy];
-    S->flux[1][Sx]   =  U[Sx]  * P[vy];
-    S->flux[1][Sy]   =  U[Sy]  * P[vy] + P[pre];
-    S->flux[1][Sz]   =  U[Sz]  * P[vy];
+    S->flux[1][rho] = U[rho] * P[vy];
+    S->flux[1][tau] = (U[tau] + P[pre]) * P[vy];
+    S->flux[1][Sx] = U[Sx] * P[vy];
+    S->flux[1][Sy] = U[Sy] * P[vy] + P[pre];
+    S->flux[1][Sz] = U[Sz] * P[vy];
   }
   if (modes & FLUIDS_FLUX2) {
-    S->flux[2][rho]  =  U[rho] * P[vz];
-    S->flux[2][tau]  = (U[tau] + P[pre])*P[vz];
-    S->flux[2][Sx]   =  U[Sx]  * P[vz];
-    S->flux[2][Sy]   =  U[Sy]  * P[vz];
-    S->flux[2][Sz]   =  U[Sz]  * P[vz] + P[pre];
+    S->flux[2][rho] = U[rho] * P[vz];
+    S->flux[2][tau] = (U[tau] + P[pre]) * P[vz];
+    S->flux[2][Sx] = U[Sx] * P[vz];
+    S->flux[2][Sy] = U[Sy] * P[vz];
+    S->flux[2][Sz] = U[Sz] * P[vz] + P[pre];
   }
 
   if (modes & (FLUIDS_EVALSALL | FLUIDS_SOUNDSPEEDSQUARED)) {
@@ -486,17 +486,14 @@ void _nrhyd_jacobian(fluid_state *S, int dim)
 		       1*vn - g2*u*nx,
 		       u*ny - g1*v*nx,
 		       u*nz - g1*w*nx, g1*nx },
-		     
 		     { g1*ek*ny - v*vn,
 		       v*nx - g1*u*ny,
 		       1*vn - g2*v*ny,
 		       v*nz - g1*w*ny, g1*ny },
-		     
 		     { g1*ek*nz - w*vn,
 		       w*nx - g1*u*nz,
 		       w*ny - g1*v*nz,
 		       1*vn - g2*w*nz, g1*nz },
-		     
 		     { (g1*ek-h0)*vn,
 		       h0*nx - g1*u*vn,
 		       h0*ny - g1*v*vn,
