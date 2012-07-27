@@ -1,6 +1,4 @@
 
-
-
 #define FLUIDS_PRIVATE_DEFS
 #define FLUIDS_INDEX_VARS
 #include "fluids.h"
@@ -26,7 +24,6 @@ struct fluid_riemann
   double gm0, gm1, gm2, gm3, gm4, gm5;
   double pL, pR, uL, uR, aL, aR, AL, AR, BL, BR;
 } ;
-
 
 fluid_riemann *fluids_riemann_new()
 {
@@ -78,6 +75,7 @@ int fluids_riemann_setstateR(fluid_riemann *R, fluid_state *S)
   R->SR = S;
   return 0;
 }
+
 int fluids_riemann_execute(fluid_riemann *R)
 {
   if (R->SL == NULL || R->SR == NULL) {
@@ -141,6 +139,7 @@ int fluids_riemann_execute(fluid_riemann *R)
   }
   return err;
 }
+
 int fluids_riemann_sample(fluid_riemann *R, fluid_state *S, double s)
 {
   _sample(R, s, S->primitive);

@@ -123,6 +123,10 @@ int test4()
   return 0;
 }
 
+// Passes when the exact riemann solver creates a sane response to the trivial
+// Riemann problem. Also writes a file containing thee solution to the Brio-Wu
+// shocktube.
+// -----------------------------------------------------------------------------
 int test5()
 {
   double Pl[5] = {1, 1, 1, 1, 1};
@@ -148,20 +152,44 @@ int test5()
   fluids_riemann_setdim(R, 0);
   fluids_riemann_setstateL(R, SL);
   fluids_riemann_setstateR(R, SR);
-
   fluids_riemann_execute(R);
   fluids_riemann_sample(R, S_, 0.2);
-  fluids_riemann_del(R);
   fluids_getattrib(S_, P_, FLUIDS_PRIMITIVE);
-
   for (int n=0; n<5; ++n) {
     assert(P_[n] == Pl[n]);
   }
+  printf("TEST 5 PASSED\n");
+
+  Pl[0] = 1.0;
+  Pl[1] = 1.0;
+  Pl[2] = 0.0;
+  Pl[3] = 0.0;
+  Pl[4] = 0.0;
+  Pr[0] = 0.1;
+  Pr[1] = 0.125;
+  Pr[2] = 0.0;
+  Pr[3] = 0.0;
+  Pr[4] = 0.0;
+
+  fluids_setattrib(SL, Pl, FLUIDS_PRIMITIVE);
+  fluids_setattrib(SR, Pr, FLUIDS_PRIMITIVE);
+  fluids_riemann_setstateL(R, SL);
+  fluids_riemann_setstateR(R, SR);
+  fluids_riemann_execute(R);
+
+  FILE *outf = fopen("riemann.dat", "w");
+  for (int n=0; n<4000; ++n) {
+    double x = -2.0 + 1e-3 * (n + 0.5);
+    fluids_riemann_sample(R, S_, x);
+    fluids_getattrib(S_, P_, FLUIDS_PRIMITIVE);
+    fprintf(outf, "%f %f %f %f %f %f\n", x, P_[0], P_[1], P_[2], P_[3], P_[4]);
+  }
+  fclose(outf);
+
+  fluids_riemann_del(R);
   fluids_del(SL);
   fluids_del(SR);
   fluids_del(S_);
-
-  printf("TEST 5 PASSED\n");
   return 0;
 }
 
