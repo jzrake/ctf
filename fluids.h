@@ -56,6 +56,8 @@
 
 #define FLUIDS_ERROR_BADARG      -66
 #define FLUIDS_ERROR_BADREQUEST  -67
+#define FLUIDS_ERROR_RIEMANN     -68
+
 
 #ifdef FLUIDS_INDEX_VARS
 enum { ddd, tau, Sx, Sy, Sz, Bx, By, Bz }; // Conserved
@@ -63,7 +65,9 @@ enum { rho, pre, vx, vy, vz };             // Primitive
 #endif // FLUIDS_INDEX_VARS
 
 struct fluid_state;
+struct fluid_riemann;
 typedef struct fluid_state fluid_state;
+typedef struct fluid_riemann fluid_riemann;
 
 fluid_state *fluids_new(void);
 int fluids_del(fluid_state *S);
@@ -76,6 +80,14 @@ int fluids_setcoordsystem(fluid_state *S, int coordsystem);
 int fluids_setnpassive(fluid_state *S, int n);
 int fluids_getattrib(fluid_state *S, double *x, long flag);
 int fluids_setattrib(fluid_state *S, double *x, long flag);
+
+fluid_riemann *fluids_riemann_new(void);
+int fluids_riemann_del(fluid_riemann *R);
+int fluids_riemann_setstateL(fluid_riemann *R, fluid_state *S);
+int fluids_riemann_setstateR(fluid_riemann *R, fluid_state *S);
+int fluids_riemann_setdim(fluid_riemann *R, int dim);
+int fluids_riemann_execute(fluid_riemann *R);
+int fluids_riemann_sample(fluid_riemann *R, fluid_state *S, double s);
 
 #ifdef FLUIDS_PRIVATE_DEFS
 struct fluid_state {
@@ -101,5 +113,6 @@ struct fluid_state {
   double specificinternal;
   double gammalawindex;
 } ;
+
 #endif // FLUIDS_PRIVATE_DEFS
 #endif // FLUIDS_HEADER_INCLUDED

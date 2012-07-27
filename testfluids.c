@@ -123,11 +123,54 @@ int test4()
   return 0;
 }
 
+int test5()
+{
+  double Pl[5] = {1, 1, 1, 1, 1};
+  double Pr[5] = {1, 1, 1, 1, 1};
+  double P_[5];
+  double gam = 1.4;
+  fluid_state *SL = fluids_new();
+  fluid_state *SR = fluids_new();
+  fluid_state *S_ = fluids_new();
+
+  fluids_setfluid(SL, FLUIDS_NRHYD);
+  fluids_setfluid(SR, FLUIDS_NRHYD);
+  fluids_setfluid(S_, FLUIDS_NRHYD);
+
+  fluids_setattrib(SL, &gam, FLUIDS_GAMMALAWINDEX);
+  fluids_setattrib(SR, &gam, FLUIDS_GAMMALAWINDEX);
+  fluids_setattrib(S_, &gam, FLUIDS_GAMMALAWINDEX);
+
+  fluids_setattrib(SL, Pl, FLUIDS_PRIMITIVE);
+  fluids_setattrib(SR, Pr, FLUIDS_PRIMITIVE);
+
+  fluid_riemann *R = fluids_riemann_new();
+  fluids_riemann_setdim(R, 0);
+  fluids_riemann_setstateL(R, SL);
+  fluids_riemann_setstateR(R, SR);
+
+  fluids_riemann_execute(R);
+  fluids_riemann_sample(R, S_, 0.2);
+  fluids_riemann_del(R);
+  fluids_getattrib(S_, P_, FLUIDS_PRIMITIVE);
+
+  for (int n=0; n<5; ++n) {
+    assert(P_[n] == Pl[n]);
+  }
+  fluids_del(SL);
+  fluids_del(SR);
+  fluids_del(S_);
+
+  printf("TEST 5 PASSED\n");
+  return 0;
+}
+
 int main()
 {
   test1();
   test2();
   test3();
   test4();
+  test5();
   return 0;
 }
