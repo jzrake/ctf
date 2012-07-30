@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 #include "cow.h"
 #define MODULE "srhdpack"
@@ -117,11 +118,28 @@ void _dobatch(cow_dfield *vel, cow_histogram *hist, int N, char mode)
   cow_dfield_getsamplecoords(vel, &x, &nout1, NULL);
   cow_dfield_getsampleresult(vel, &v, &nout2, NULL);
 
+  double x1[3];
+  double x2[3];
+
   for (int n=0; n<npair; ++n) {
     int i1 = rand() % nsamp;
     int i2 = rand() % nsamp;
-    double *x1 = &x[3*i1];
-    double *x2 = &x[3*i2];
+    memcpy(x1, &x[3*i1], 3*sizeof(double));
+    memcpy(x2, &x[3*i2], 3*sizeof(double));
+    // -------------------------------------------------------------------------
+    // With periodic BC's on the unit cube, points are never actually more than
+    // 1/2 away from one another along a given axis. Of the two possible
+    // orderings of points x1 and x2 along axis `d`, we choose the one which
+    // keeps them closer together.
+    // -------------------------------------------------------------------------
+    for (int d=0; d<3; ++d) {
+      if (x1[d] - x2[d] > 0.5) {
+	x1[d] -= 1.0;
+      }
+      else if (x1[d] - x2[d] < -0.5) {
+	x1[d] += 1.0;
+      }
+    }
     double *v1 = &v[3*i1];
     double *v2 = &v[3*i2];
     double g1 = 1.0 / sqrt(1.0 - (v1[0]*v1[0] + v1[1]*v1[1] + v1[2]*v1[2]));
