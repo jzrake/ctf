@@ -137,9 +137,9 @@ int _getsetattrib(fluid_state *S, double *x, long flag, char op)
     CASE(FLUX0, S->flux[0], S->nwaves);
     CASE(FLUX1, S->flux[1], S->nwaves);
     CASE(FLUX2, S->flux[2], S->nwaves);
-    CASE(EVALS0, S->eigenvalues[0], S->nwaves);
-    CASE(EVALS1, S->eigenvalues[1], S->nwaves);
-    CASE(EVALS2, S->eigenvalues[2], S->nwaves);
+    CASE(EVAL0, S->eigenvalues[0], S->nwaves);
+    CASE(EVAL1, S->eigenvalues[1], S->nwaves);
+    CASE(EVAL2, S->eigenvalues[2], S->nwaves);
     CASE(LEVECS0, S->leigenvectors[0], S->nwaves*S->nwaves);
     CASE(LEVECS1, S->leigenvectors[1], S->nwaves*S->nwaves);
     CASE(LEVECS2, S->leigenvectors[2], S->nwaves*S->nwaves);
@@ -196,9 +196,9 @@ void _alloc_state(fluid_state *S, long modes, int op)
   A(flux[0], S->nwaves, FLUIDS_FLUX0);
   A(flux[1], S->nwaves, FLUIDS_FLUX1);
   A(flux[2], S->nwaves, FLUIDS_FLUX2);
-  A(eigenvalues[0], S->nwaves, FLUIDS_EVALS0);
-  A(eigenvalues[1], S->nwaves, FLUIDS_EVALS1);
-  A(eigenvalues[2], S->nwaves, FLUIDS_EVALS2);
+  A(eigenvalues[0], S->nwaves, FLUIDS_EVAL0);
+  A(eigenvalues[1], S->nwaves, FLUIDS_EVAL1);
+  A(eigenvalues[2], S->nwaves, FLUIDS_EVAL2);
   A(leigenvectors[0], S->nwaves*S->nwaves, FLUIDS_LEVECS0);
   A(leigenvectors[1], S->nwaves*S->nwaves, FLUIDS_LEVECS1);
   A(leigenvectors[2], S->nwaves*S->nwaves, FLUIDS_LEVECS2);
@@ -310,21 +310,21 @@ int _nrhyd_update(fluid_state *S, long modes)
     S->soundspeedsquared = cs2;
   }
 
-  if (modes & FLUIDS_EVALS0) {
+  if (modes & FLUIDS_EVAL0) {
     S->eigenvalues[0][0] = P[vx] - a;
     S->eigenvalues[0][1] = P[vx];
     S->eigenvalues[0][2] = P[vx];
     S->eigenvalues[0][3] = P[vx];
     S->eigenvalues[0][4] = P[vx] + a;
   }
-  if (modes & FLUIDS_EVALS1) {
+  if (modes & FLUIDS_EVAL1) {
     S->eigenvalues[1][0] = P[vy] - a;
     S->eigenvalues[1][1] = P[vy];
     S->eigenvalues[1][2] = P[vy];
     S->eigenvalues[1][3] = P[vy];
     S->eigenvalues[1][4] = P[vy] + a;
   }
-  if (modes & FLUIDS_EVALS2) {
+  if (modes & FLUIDS_EVAL2) {
     S->eigenvalues[2][0] = P[vz] - a;
     S->eigenvalues[2][1] = P[vz];
     S->eigenvalues[2][2] = P[vz];

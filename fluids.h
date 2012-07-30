@@ -11,9 +11,9 @@
 #define FLUIDS_FLUX0             (1<<6)
 #define FLUIDS_FLUX1             (1<<7)
 #define FLUIDS_FLUX2             (1<<8)
-#define FLUIDS_EVALS0            (1<<9)
-#define FLUIDS_EVALS1            (1<<10)
-#define FLUIDS_EVALS2            (1<<11)
+#define FLUIDS_EVAL0             (1<<9)
+#define FLUIDS_EVAL1             (1<<10)
+#define FLUIDS_EVAL2             (1<<11)
 #define FLUIDS_LEVECS0           (1<<12)
 #define FLUIDS_LEVECS1           (1<<13)
 #define FLUIDS_LEVECS2           (1<<14)
@@ -31,7 +31,7 @@
 #define FLUIDS_FLAGSALL          ((1<<30) - 1)
 
 #define FLUIDS_FLUXALL           (FLUIDS_FLUX0|FLUIDS_FLUX1|FLUIDS_FLUX2)
-#define FLUIDS_EVALSALL          (FLUIDS_EVALS0|FLUIDS_EVALS1|FLUIDS_EVALS2)
+#define FLUIDS_EVALSALL          (FLUIDS_EVAL0|FLUIDS_EVAL1|FLUIDS_EVAL2)
 #define FLUIDS_LEVECSALL         (FLUIDS_LEVECS0|FLUIDS_LEVECS1|FLUIDS_LEVECS2)
 #define FLUIDS_REVECSALL         (FLUIDS_REVECS0|FLUIDS_REVECS1|FLUIDS_REVECS2)
 #define FLUIDS_JACOBIANALL       (FLUIDS_JACOBIAN0|FLUIDS_JACOBIAN1|FLUIDS_JACOBIAN2)
@@ -57,6 +57,10 @@
 #define FLUIDS_ERROR_BADARG      -66
 #define FLUIDS_ERROR_BADREQUEST  -67
 #define FLUIDS_ERROR_RIEMANN     -68
+
+#define FLUIDS_RIEMANN_HLL       -69
+#define FLUIDS_RIEMANN_HLLC      -70
+#define FLUIDS_RIEMANN_EXACT     -71
 
 
 #ifdef FLUIDS_INDEX_VARS
@@ -88,6 +92,7 @@ int fluids_riemann_setstateR(fluid_riemann *R, fluid_state *S);
 int fluids_riemann_setdim(fluid_riemann *R, int dim);
 int fluids_riemann_execute(fluid_riemann *R);
 int fluids_riemann_sample(fluid_riemann *R, fluid_state *S, double s);
+int fluids_riemann_setsolver(fluid_riemann *R, int solver);
 
 #ifdef FLUIDS_PRIVATE_DEFS
 struct fluid_state {
@@ -96,6 +101,7 @@ struct fluid_state {
   int coordsystem;
   int nwaves;
   int npassive;
+  long needsupdateflags;
   double *location;
   double *passive;
   double *conserved;

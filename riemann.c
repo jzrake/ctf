@@ -1,28 +1,58 @@
 
-#define FLUIDS_PRIVATE_DEFS
-#define FLUIDS_INDEX_VARS
-#include "fluids.h"
+/*------------------------------------------------------------------------------
+ * FILE: riemann.c
+ *
+ * AUTHOR: Jonathan Zrake, NYU CCPP: zrake@nyu.edu
+ *
+ * PURPOSE: Obtains the intercell flux between two constant states
+ *
+ * POLICY:
+ *
+ * The input states must contain valid (matching) conserved and primitive
+ * values. Fluxes and eigenvalues will then be obtained as needed within. The
+ * output state is guarenteed to have a conserved value and a flux. The flux in
+ * the case of HLL is not the flux derived from those values, but rather from
+ * the HLL formula directly, which satisfies the conservative jump
+ * conditions. After the call is executed the user is free to obtain the
+ * primitives by calling c2p on the output state, although primitives might
+ * already have been calculated, as in the case of the exact solver.
+ *
+ * ------------------------------------------------------------------------------
+ */
+
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
+#define FLUIDS_PRIVATE_DEFS
+#define FLUIDS_INDEX_VARS
+#include "fluids.h"
+
+static const long FLUIDS_FLUX[3] = {FLUIDS_FLUX0, FLUIDS_FLUX1, FLUIDS_FLUX2};
+static const long FLUIDS_EVAL[3] = {FLUIDS_EVAL0, FLUIDS_EVAL1, FLUIDS_EVAL2};
 
 static double _soln_f(fluid_riemann *R, double p);
 static double _soln_g(fluid_riemann *R, double p);
 static double _soln_estimate(fluid_riemann *R, int attempt);
 static int _soln_solve(fluid_riemann *R, double *p);
-static void _sample(fluid_riemann *R, double S, double *P);
-
+static int _hll_exec(fluid_riemann *R);
+static int _hll_sample(fluid_riemann *R, fluid_state *S, double s);
+static int _nrhyd_exact_exec(fluid_riemann *R);
+static int _nrhyd_exact_sample(fluid_riemann *R, fluid_state *S, double s);
 
 struct fluid_riemann
 {
   fluid_state *SL;
   fluid_state *SR;
-  int v1, v2, v3;
-  int dim;
   double p_solution;
   double gm0, gm1, gm2, gm3, gm4, gm5;
   double pL, pR, uL, uR, aL, aR, AL, AR, BL, BR;
+  double ap, am;
+  double *U_hll;
+  double *F_hll;
+  int v1, v2, v3;
+  int dim;
+  int solver;
 } ;
 
 fluid_riemann *fluids_riemann_new()
@@ -31,10 +61,6 @@ fluid_riemann *fluids_riemann_new()
   fluid_riemann riem = {
     .SL = NULL,
     .SR = NULL,
-    .v1 = 0,
-    .v2 = 0,
-    .v3 = 0,
-    .dim = 0,
     .gm0 = 0.0,
     .gm1 = 0.0,
     .gm2 = 0.0,
@@ -51,12 +77,21 @@ fluid_riemann *fluids_riemann_new()
     .AR = 0.0,
     .BL = 0.0,
     .BR = 0.0,
+    .U_hll = NULL,
+    .F_hll = NULL,
+    .v1 = 0,
+    .v2 = 0,
+    .v3 = 0,
+    .dim = 0,
+    .solver = FLUIDS_RIEMANN_HLL,
   } ;
   *R = riem;
   return R;
 }
 int fluids_riemann_del(fluid_riemann *R)
 {
+  free(R->U_hll);
+  free(R->F_hll);
   free(R);
   return 0;
 }
@@ -75,27 +110,96 @@ int fluids_riemann_setstateR(fluid_riemann *R, fluid_state *S)
   R->SR = S;
   return 0;
 }
+int fluids_riemann_setsolver(fluid_riemann *R, int solver)
+{
+  R->solver = solver;
+  return 0;
+}
 
 int fluids_riemann_execute(fluid_riemann *R)
 {
-  if (R->SL == NULL || R->SR == NULL) {
-    return FLUIDS_ERROR_BADARG;
-  }
+  fluids_update(R->SL, FLUIDS_EVAL[R->dim] | FLUIDS_FLUX[R->dim]);
+  fluids_update(R->SR, FLUIDS_EVAL[R->dim] | FLUIDS_FLUX[R->dim]);
 
   switch (R->dim) {
-  case 0:
-    R->v1=vx; R->v2=vy; R->v3=vz;
-    break;
-  case 1:
-    R->v1=vy; R->v2=vz; R->v3=vx;
-    break;
-  case 2:
-    R->v1=vz; R->v2=vx; R->v3=vy;
-    break;
-  default:
-    return FLUIDS_ERROR_BADARG;
+  case 0: R->v1=vx; R->v2=vy; R->v3=vz; break;
+  case 1: R->v1=vy; R->v2=vz; R->v3=vx; break;
+  case 2: R->v1=vz; R->v2=vx; R->v3=vy; break;
+  default: return FLUIDS_ERROR_BADARG;
   }
 
+  switch (R->solver) {
+  case FLUIDS_RIEMANN_HLL:
+    return _hll_exec(R);
+  case FLUIDS_RIEMANN_HLLC:
+    return FLUIDS_ERROR_BADREQUEST;
+  case FLUIDS_RIEMANN_EXACT:
+    return _nrhyd_exact_exec(R);
+  default:
+    return FLUIDS_ERROR_BADREQUEST;
+  }
+}
+
+int fluids_riemann_sample(fluid_riemann *R, fluid_state *S, double s)
+{
+  switch (R->solver) {
+  case FLUIDS_RIEMANN_HLL:
+    return _hll_sample(R, S, s);
+  case FLUIDS_RIEMANN_HLLC:
+    return FLUIDS_ERROR_BADREQUEST;
+  case FLUIDS_RIEMANN_EXACT:
+    _nrhyd_exact_sample(R, S, s);
+  default:
+    return FLUIDS_ERROR_BADREQUEST;
+  }
+  return 0;
+}
+
+int _hll_exec(fluid_riemann *R)
+{
+  int nw = R->SL->nwaves;
+  double epl = R->SL->eigenvalues[R->dim][nw - 1];
+  double epr = R->SR->eigenvalues[R->dim][nw - 1];
+  double eml = R->SL->eigenvalues[R->dim][0];
+  double emr = R->SR->eigenvalues[R->dim][0];
+  double ap = R->ap = (epl>epr) ? epl : epr;
+  double am = R->am = (eml<emr) ? eml : emr;
+  double *Ul = R->SL->conserved;
+  double *Ur = R->SR->conserved;
+  double *Fl = R->SL->flux[R->dim];
+  double *Fr = R->SR->flux[R->dim];
+  R->U_hll = (double*) realloc(R->U_hll, nw * sizeof(double));
+  R->F_hll = (double*) realloc(R->F_hll, nw * sizeof(double));
+  for (int i=0; i<nw; ++i) {
+    R->U_hll[i] = (ap*Ur[i] - am*Ul[i] +       (Fl[i] - Fr[i])) / (ap - am);
+    R->F_hll[i] = (ap*Fl[i] - am*Fr[i] + ap*am*(Ur[i] - Ul[i])) / (ap - am);
+  }
+  return 0;
+}
+
+int _hll_sample(fluid_riemann *R, fluid_state *S, double s)
+{
+  double ap = R->ap;
+  double am = R->am;
+  double *Ul = R->SL->conserved;
+  double *Ur = R->SR->conserved;
+  double *Fl = R->SL->flux[R->dim];
+  double *Fr = R->SR->flux[R->dim];
+  double *U = S->conserved;
+  double *F = S->flux[R->dim];
+  int i;
+  int nw = R->SL->nwaves;
+  if      (         s<=am ) for (i=0; i<nw; ++i) U[i] = Ul[i];
+  else if ( am<s && s<=ap ) for (i=0; i<nw; ++i) U[i] = R->U_hll[i];
+  else if ( ap<s          ) for (i=0; i<nw; ++i) U[i] = Ur[i];  
+  if      (         s<=am ) for (i=0; i<nw; ++i) F[i] = Fl[i];
+  else if ( am<s && s<=ap ) for (i=0; i<nw; ++i) F[i] = R->F_hll[i];
+  else if ( ap<s          ) for (i=0; i<nw; ++i) F[i] = Fr[i];
+  return 0;
+}
+
+int _nrhyd_exact_exec(fluid_riemann *R)
+{
   double *Pl = R->SL->primitive;
   double *Pr = R->SR->primitive;
 
@@ -140,13 +244,7 @@ int fluids_riemann_execute(fluid_riemann *R)
   return err;
 }
 
-int fluids_riemann_sample(fluid_riemann *R, fluid_state *S, double s)
-{
-  _sample(R, s, S->primitive);
-  return 0;
-}
-
-static int _soln_solve(fluid_riemann *R, double *p)
+int _soln_solve(fluid_riemann *R, double *p)
 {
   double f, g;
   int niter = 0;
@@ -242,7 +340,7 @@ double _soln_estimate(fluid_riemann *R, int attempt)
   }
 }
 
-void _sample(fluid_riemann *R, double S, double *P)
+int _nrhyd_exact_sample(fluid_riemann *R, fluid_state *S, double s)
 {
   /* Underscore after variable is Toro's (*), which indicates the Star Region */
   double p_ = R->p_solution;
@@ -290,6 +388,7 @@ void _sample(fluid_riemann *R, double S, double *P)
   double FrhoR_ = Pr[rho]*pow(p_/pR, 1.0/gm0); // eqn 4.60
   double SrhoL_ = Pl[rho]*(p_/pL + gm3) / (gm3*p_/pL + 1); // eqn 4.50 (shock)
   double SrhoR_ = Pr[rho]*(p_/pR + gm3) / (gm3*p_/pR + 1); // eqn 4.57
+  double *P = S->primitive;
 
   /* ---------------------------------------------------------------------------
      The logic below is the sampling procedure outlined by Toro in the flow
@@ -299,9 +398,9 @@ void _sample(fluid_riemann *R, double S, double *P)
      ------------------------------------------------------------------------ */
   /*                    |   |   |                                             */
   /*                    |   |   |                                             */
-  if (S < u_) {         // sampling left of particle velocity characteristic
+  if (s < u_) {         // sampling left of particle velocity characteristic
     if (p_ > pL) {          // left-moving wave is a shock
-      if (S < SL) {             // left region
+      if (s < SL) {             // left region
         memcpy(P, Pl, 5*sizeof(double));
       }
       else {                    // left star region
@@ -313,14 +412,14 @@ void _sample(fluid_riemann *R, double S, double *P)
       }
     }
     else {                  // left-moving wave is a rarefaction
-      if (S < SHL) {            // left region
+      if (s < SHL) {            // left region
         memcpy(P, Pl, 5*sizeof(double));
       }
       else {
-        if (S < STL) {          // left fan
-          P[rho] = Pl[rho]*pow(gm4 + gm3*(uL - S)/aL, gm5); // eqn 4.56
-          P[pre] = Pl[pre]*pow(gm4 + gm3*(uL - S)/aL, 1.0/gm2);
-          P[v1 ] = gm4*(aL + uL/gm5 + S);
+        if (s < STL) {          // left fan
+          P[rho] = Pl[rho]*pow(gm4 + gm3*(uL - s)/aL, gm5); // eqn 4.56
+          P[pre] = Pl[pre]*pow(gm4 + gm3*(uL - s)/aL, 1.0/gm2);
+          P[v1 ] = gm4*(aL + uL/gm5 + s);
           P[v2 ] = Pl[v2];
           P[v3 ] = Pl[v3];
         }
@@ -339,7 +438,7 @@ void _sample(fluid_riemann *R, double S, double *P)
   /*                    |   |   |                                             */
   else {                // sampling right of particle velocity characteristic
     if (p_ > pR) {          // right-moving wave is a shock
-      if (S > SR) {             // right region
+      if (s > SR) {             // right region
         memcpy(P, Pr, 5*sizeof(double));
       }
       else {                    // right star region
@@ -351,14 +450,14 @@ void _sample(fluid_riemann *R, double S, double *P)
       }
     }
     else {                  // right-moving wave is a rarefaction
-      if (S > SHR) {            // right region
+      if (s > SHR) {            // right region
         memcpy(P, Pr, 5*sizeof(double));
       }
       else {
-        if (S > STR) {          // right fan
-          P[rho] = Pr[rho]*pow(gm4 - gm3*(uR - S)/aR, gm5); // eqn 4.63
-          P[pre] = Pr[pre]*pow(gm4 - gm3*(uR - S)/aR, 1.0/gm2);
-          P[v1 ] = gm4*(-aR + uR/gm5 + S);
+        if (s > STR) {          // right fan
+          P[rho] = Pr[rho]*pow(gm4 - gm3*(uR - s)/aR, gm5); // eqn 4.63
+          P[pre] = Pr[pre]*pow(gm4 - gm3*(uR - s)/aR, 1.0/gm2);
+          P[v1 ] = gm4*(-aR + uR/gm5 + s);
           P[v2 ] = Pr[v2];
           P[v3 ] = Pr[v3];
         }
@@ -372,4 +471,7 @@ void _sample(fluid_riemann *R, double S, double *P)
       }
     }
   }
+  fluids_p2c(S);
+  fluids_update(S, FLUIDS_FLUX[R->dim]);
+  return 0;
 }
