@@ -136,6 +136,7 @@ void cow_histogram_getbinval2(cow_histogram *h, double **x, int *n0, int *n1);
 double cow_histogram_getbinval(cow_histogram *h, int i, int j);
 const char *cow_histogram_getname(cow_histogram *h);
 
+void cow_fft_pspecscafield(cow_dfield *f, cow_histogram *h);
 void cow_fft_pspecvecfield(cow_dfield *f, cow_histogram *h);
 void cow_fft_helmholtzdecomp(cow_dfield *f, int mode);
 

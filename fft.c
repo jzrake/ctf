@@ -64,6 +64,79 @@ static FFT_DATA *_fwd(cow_dfield *f, double *fx, int start, int stride);
 static double *_rev(cow_dfield *f, FFT_DATA *Fk);
 #endif // COW_FFTW
 
+void cow_fft_pspecscafield(cow_dfield *f, cow_histogram *hist)
+// -----------------------------------------------------------------------------
+// This function computes the spherically integrated power spectrum of the
+// scalar field represented in `f`. The user needs to supply a half-initialized
+// histogram, which has not yet been committed. This function will commit,
+// populate, and seal the histogram by doing the FFT's on the vector field
+// components. The supplies the fields like in the example below, all other will
+// be over-written.
+//
+//  cow_histogram_setnbins(hist, 0, 256);
+//  cow_histogram_setspacing(hist, COW_HIST_SPACING_LINEAR); // or LOG
+//  cow_histogram_setnickname(hist, "mypspec"); // optional
+//
+// -----------------------------------------------------------------------------
+{
+#if (COW_FFTW)
+  if (!f->committed) return;
+  if (f->n_members != 1) {
+    printf("[%s] error: need a 1-component field for %s", MODULE, __FUNCTION__);
+    return;
+  }
+
+  clock_t start = clock();
+  int nx = cow_domain_getnumlocalzonesinterior(f->domain, 0);
+  int ny = cow_domain_getnumlocalzonesinterior(f->domain, 1);
+  int nz = cow_domain_getnumlocalzonesinterior(f->domain, 2);
+  int Nx = cow_domain_getnumglobalzones(f->domain, 0);
+  int Ny = cow_domain_getnumglobalzones(f->domain, 1);
+  int Nz = cow_domain_getnumglobalzones(f->domain, 2);
+  int ng = cow_domain_getguard(f->domain);
+  int ntot = nx * ny * nz;
+  int I0[3] = { ng, ng, ng };
+  int I1[3] = { nx + ng, ny + ng, nz + ng };
+
+  double *input = (double*) malloc(ntot * sizeof(double));
+  cow_dfield_extract(f, I0, I1, input);
+
+  FFT_DATA *gx = _fwd(f, input, 0, 1); // start, stride
+  free(input);
+
+  cow_histogram_setlower(hist, 0, 1.0);
+  cow_histogram_setupper(hist, 0, 0.5*sqrt(Nx*Nx + Ny*Ny + Nz*Nz));
+  cow_histogram_setbinmode(hist, COW_HIST_BINMODE_DENSITY);
+  cow_histogram_setdomaincomm(hist, f->domain);
+  cow_histogram_commit(hist);
+  for (int i=0; i<nx; ++i) {
+    for (int j=0; j<ny; ++j) {
+      for (int k=0; k<nz; ++k) {
+	int m = i*ny*nz + j*nz + k;
+	double kvec[3];
+        double khat[3];
+	khat_at(f->domain, i, j, k, khat);
+	// ---------------------------------------------------------------------
+	// Here we are taking the complex norm (absolute value squared) of the
+	// Fourier amplitude corresponding to the wave-vector, k.
+	//
+	//                        P(k) = |\vec{f}_\vec{k}|^2
+	//
+	// ---------------------------------------------------------------------
+	double Kijk = k_at(f->domain, i, j, k, kvec);
+	double Pijk = cnorm(gx[m]);
+	cow_histogram_addsample1(hist, Kijk, Pijk);
+      }
+    }
+  }
+  cow_histogram_seal(hist);
+  free(gx);
+  printf("[%s] %s took %3.2f seconds\n",
+	 MODULE, __FUNCTION__, (double) (clock() - start) / CLOCKS_PER_SEC);
+#endif // COW_FFTW
+}
+
+
 void cow_fft_pspecvecfield(cow_dfield *f, cow_histogram *hist)
 // -----------------------------------------------------------------------------
 // This function computes the spherically integrated power spectrum of the
@@ -82,7 +155,7 @@ void cow_fft_pspecvecfield(cow_dfield *f, cow_histogram *hist)
 #if (COW_FFTW)
   if (!f->committed) return;
   if (f->n_members != 3) {
-    printf("[%s] error: need a 3-component field for pspecvectorfield", MODULE);
+    printf("[%s] error: need a 3-component field for %s", MODULE, __FUNCTION__);
     return;
   }
 
@@ -139,8 +212,6 @@ void cow_fft_pspecvecfield(cow_dfield *f, cow_histogram *hist)
 	 MODULE, __FUNCTION__, (double) (clock() - start) / CLOCKS_PER_SEC);
 #endif // COW_FFTW
 }
-
-
 
 void cow_fft_helmholtzdecomp(cow_dfield *f, int mode)
 {
