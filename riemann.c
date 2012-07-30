@@ -6,6 +6,10 @@
  *
  * PURPOSE: Obtains the intercell flux between two constant states
  *
+ * REFERENCES:
+ *
+ * Toro (1999) Riemann Solvers and Numerical Methods for Fluid Dynamics
+ *
  * POLICY:
  *
  * The input states must contain valid (matching) conserved and primitive
@@ -37,6 +41,8 @@ static double _soln_estimate(fluid_riemann *R, int attempt);
 static int _soln_solve(fluid_riemann *R, double *p);
 static int _hll_exec(fluid_riemann *R);
 static int _hll_sample(fluid_riemann *R, fluid_state *S, double s);
+static int _nrhyd_hllc_exec(fluid_riemann *R);
+static int _nrhyd_hllc_sample(fluid_riemann *R, fluid_state *S, double s);
 static int _nrhyd_exact_exec(fluid_riemann *R);
 static int _nrhyd_exact_sample(fluid_riemann *R, fluid_state *S, double s);
 
@@ -47,10 +53,13 @@ struct fluid_riemann
   double p_solution;
   double gm0, gm1, gm2, gm3, gm4, gm5;
   double pL, pR, uL, uR, aL, aR, AL, AR, BL, BR;
-  double ap, am;
+  double ap, am, lc;
   double *U_hll;
   double *F_hll;
+  double *Ur_;
+  double *Ul_;
   int v1, v2, v3;
+  int p1, p2, p3;
   int dim;
   int solver;
 } ;
@@ -61,7 +70,7 @@ fluid_riemann *fluids_riemann_new()
   fluid_riemann riem = {
     .SL = NULL,
     .SR = NULL,
-    .gm0 = 0.0,
+    .gm0 = 0.0, // used by the exact solver
     .gm1 = 0.0,
     .gm2 = 0.0,
     .gm3 = 0.0,
@@ -77,11 +86,19 @@ fluid_riemann *fluids_riemann_new()
     .AR = 0.0,
     .BL = 0.0,
     .BR = 0.0,
-    .U_hll = NULL,
+    .ap = 0.0, // max right-going wavespeed
+    .am = 0.0, // max left-going wavespeed
+    .lc = 0.0, // contact speed
+    .U_hll = NULL, // used by HLL solver
     .F_hll = NULL,
-    .v1 = 0,
+    .Ul_ = NULL, // used by HLLC solver
+    .Ur_ = NULL,
+    .v1 = 0, // permutation of velocity/momentum indices
     .v2 = 0,
     .v3 = 0,
+    .p1 = 0,
+    .p2 = 0,
+    .p3 = 0,
     .dim = 0,
     .solver = FLUIDS_RIEMANN_HLL,
   } ;
@@ -92,6 +109,8 @@ int fluids_riemann_del(fluid_riemann *R)
 {
   free(R->U_hll);
   free(R->F_hll);
+  free(R->Ul_);
+  free(R->Ur_);
   free(R);
   return 0;
 }
@@ -122,17 +141,16 @@ int fluids_riemann_execute(fluid_riemann *R)
   fluids_update(R->SR, FLUIDS_EVAL[R->dim] | FLUIDS_FLUX[R->dim]);
 
   switch (R->dim) {
-  case 0: R->v1=vx; R->v2=vy; R->v3=vz; break;
-  case 1: R->v1=vy; R->v2=vz; R->v3=vx; break;
-  case 2: R->v1=vz; R->v2=vx; R->v3=vy; break;
+  case 0: R->v1=vx; R->v2=vy; R->v3=vz; R->p1=Sx; R->p2=Sy; R->p3=Sz; break;
+  case 1: R->v1=vy; R->v2=vz; R->v3=vx; R->p1=Sy; R->p2=Sz; R->p3=Sx; break;
+  case 2: R->v1=vz; R->v2=vx; R->v3=vy; R->p1=Sz; R->p2=Sx; R->p3=Sy; break;
   default: return FLUIDS_ERROR_BADARG;
   }
-
   switch (R->solver) {
   case FLUIDS_RIEMANN_HLL:
     return _hll_exec(R);
   case FLUIDS_RIEMANN_HLLC:
-    return FLUIDS_ERROR_BADREQUEST;
+    return _nrhyd_hllc_exec(R);
   case FLUIDS_RIEMANN_EXACT:
     return _nrhyd_exact_exec(R);
   default:
@@ -146,9 +164,9 @@ int fluids_riemann_sample(fluid_riemann *R, fluid_state *S, double s)
   case FLUIDS_RIEMANN_HLL:
     return _hll_sample(R, S, s);
   case FLUIDS_RIEMANN_HLLC:
-    return FLUIDS_ERROR_BADREQUEST;
+    return _nrhyd_hllc_sample(R, S, s);
   case FLUIDS_RIEMANN_EXACT:
-    _nrhyd_exact_sample(R, S, s);
+    return _nrhyd_exact_sample(R, S, s);
   default:
     return FLUIDS_ERROR_BADREQUEST;
   }
@@ -189,12 +207,89 @@ int _hll_sample(fluid_riemann *R, fluid_state *S, double s)
   double *F = S->flux[R->dim];
   int i;
   int nw = R->SL->nwaves;
-  if      (         s<=am ) for (i=0; i<nw; ++i) U[i] = Ul[i];
-  else if ( am<s && s<=ap ) for (i=0; i<nw; ++i) U[i] = R->U_hll[i];
-  else if ( ap<s          ) for (i=0; i<nw; ++i) U[i] = Ur[i];  
-  if      (         s<=am ) for (i=0; i<nw; ++i) F[i] = Fl[i];
-  else if ( am<s && s<=ap ) for (i=0; i<nw; ++i) F[i] = R->F_hll[i];
-  else if ( ap<s          ) for (i=0; i<nw; ++i) F[i] = Fr[i];
+  if      (        s<=am) for (i=0; i<nw; ++i) U[i] = Ul[i];
+  else if (am<s && s<=ap) for (i=0; i<nw; ++i) U[i] = R->U_hll[i];
+  else if (ap<s         ) for (i=0; i<nw; ++i) U[i] = Ur[i];  
+  if      (        s<=am) for (i=0; i<nw; ++i) F[i] = Fl[i];
+  else if (am<s && s<=ap) for (i=0; i<nw; ++i) F[i] = R->F_hll[i];
+  else if (ap<s         ) for (i=0; i<nw; ++i) F[i] = Fr[i];
+  return 0;
+}
+
+int _nrhyd_hllc_exec(fluid_riemann *R)
+{
+  int nw = R->SL->nwaves;
+  double epl = R->SL->eigenvalues[R->dim][nw - 1];
+  double epr = R->SR->eigenvalues[R->dim][nw - 1];
+  double eml = R->SL->eigenvalues[R->dim][0];
+  double emr = R->SR->eigenvalues[R->dim][0];
+  double ap = R->ap = (epl>epr) ? epl : epr;
+  double am = R->am = (eml<emr) ? eml : emr;
+  double *Ul = R->SL->conserved;
+  double *Ur = R->SR->conserved;
+  double *Pl = R->SL->primitive;
+  double *Pr = R->SR->primitive;
+  double fact = 0.0;
+  int v1 = R->v1;
+  int v2 = R->v2;
+  int v3 = R->v3;
+  int p1 = R->p1;
+  int p2 = R->p2;
+  int p3 = R->p3;
+
+  R->Ul_ = (double*) realloc(R->Ul_, nw * sizeof(double));
+  R->Ur_ = (double*) realloc(R->Ur_, nw * sizeof(double));
+
+  double lc = ((Pr[pre] - Pr[rho]*Pr[v1]*(ap - Pr[v1])) -
+	       (Pl[pre] - Pl[rho]*Pl[v1]*(am - Pl[v1]))) /
+    (Pl[rho]*(am - Pl[v1]) - Pr[rho]*(ap - Pr[v1])); // eqn 10.58
+
+  R->lc = lc;
+
+  fact = Pl[rho] * (am - Pl[v1]) / (am - lc); // eqn 10.33
+  R->Ul_[rho] = fact;
+  R->Ul_[tau] = fact * (Ul[tau]/Pl[rho] + (lc - Pl[v1]) *
+			(lc + Pl[pre]/(Pl[rho]*(am-Pl[v1]))));
+  R->Ul_[p1 ] = fact * lc;
+  R->Ul_[p2 ] = fact * Pl[v2];
+  R->Ul_[p3 ] = fact * Pl[v3];
+
+  fact = Pr[rho] * (ap - Pr[v1]) / (ap - lc); // eqn 10.33
+  R->Ur_[rho] = fact;
+  R->Ur_[tau] = fact * (Ur[tau]/Pr[rho] + (lc - Pr[v1]) *
+			(lc + Pr[pre]/(Pr[rho]*(ap-Pr[v1]))));
+  R->Ur_[p1 ] = fact * lc;
+  R->Ur_[p2 ] = fact * Pr[v2];
+  R->Ur_[p3 ] = fact * Pr[v3];
+
+  return 0;
+}
+
+int _nrhyd_hllc_sample(fluid_riemann *R, fluid_state *S, double s)
+{
+  double ap = R->ap;
+  double am = R->am;
+  double *Ul = R->SL->conserved;
+  double *Ur = R->SR->conserved;
+  double *Ul_ = R->Ul_;
+  double *Ur_ = R->Ur_;
+  double *Fl = R->SL->flux[R->dim];
+  double *Fr = R->SR->flux[R->dim];
+  double *U = S->conserved;
+  double *F = S->flux[R->dim];
+  double lc = R->lc;
+  int i;
+
+  if      (        s<=am) for (i=0; i<5; ++i) U[i] = Ul [i];
+  else if (am<s && s<=lc) for (i=0; i<5; ++i) U[i] = Ul_[i];
+  else if (lc<s && s<=ap) for (i=0; i<5; ++i) U[i] = Ur_[i];
+  else if (ap<s         ) for (i=0; i<5; ++i) U[i] = Ur [i];
+
+  if      (        s<=am) for (i=0; i<5; ++i) F[i] = Fl[i];
+  else if (am<s && s<=lc) for (i=0; i<5; ++i) F[i] = Fl[i] + am*(Ul_[i]-Ul[i]);
+  else if (lc<s && s<=ap) for (i=0; i<5; ++i) F[i] = Fr[i] + ap*(Ur_[i]-Ur[i]);
+  else if (ap<s         ) for (i=0; i<5; ++i) F[i] = Fr[i];
+
   return 0;
 }
 

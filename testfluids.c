@@ -127,13 +127,14 @@ int test4()
 }
 
 // Passes when the exact riemann solver creates a sane response to the trivial
-// Riemann problem. Also writes a file containing thee solution to the Brio-Wu
-// shocktube.
+// Riemann problem.
 // -----------------------------------------------------------------------------
 int test5()
 {
-  int solvers[2] = {FLUIDS_RIEMANN_HLL, FLUIDS_RIEMANN_EXACT};
-  for (int solver=0; solver<2; ++solver) {
+  int solvers[3] = {FLUIDS_RIEMANN_HLL,
+		    FLUIDS_RIEMANN_HLLC,
+		    FLUIDS_RIEMANN_EXACT};
+  for (int solver=0; solver<3; ++solver) {
     double Pl[5] = {1, 1, 1, 1, 1};
     double Pr[5] = {1, 1, 1, 1, 1};
     double P_[5];
