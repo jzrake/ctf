@@ -125,6 +125,7 @@ void _io_write_prim_h5mpi(const char *fname, const char **pnames, const double *
   free(a_nint);
   free(l_ntot);
   free(l_strt);
+  free(stride);
 
   // Always close the hid_t handles in the reverse order they were opened in.
   // ---------------------------------------------------------------------------
@@ -196,6 +197,7 @@ void _io_read_prim_h5mpi(const char *fname, const char **pnames, double *data)
   free(a_nint);
   free(l_ntot);
   free(l_strt);
+  free(stride);
 
   // Always close the hid_t handles in the reverse order they were opened in.
   // ---------------------------------------------------------------------------
