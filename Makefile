@@ -36,7 +36,8 @@ EXE = 	$(BINDIR)/mhdstats \
 	$(TSTDIR)/testcow \
 	$(TSTDIR)/testhist \
 	$(TSTDIR)/testfft \
-	$(TSTDIR)/testsamp
+	$(TSTDIR)/testsamp \
+	$(TSTDIR)/testio
 
 LIBS = $(LIBDIR)/libcow.so $(LIBDIR)/libcow.a
 HEADERS = $(INCDIR)/cow.h $(INCDIR)/srhdpack.h
@@ -91,6 +92,9 @@ $(TSTDIR)/testfft : testfft.o $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ $(LIB)
 
 $(TSTDIR)/testsamp : testsamp.o $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $^ $(LIB)
+
+$(TSTDIR)/testio : testio.o $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ $(LIB)
 
 clean :

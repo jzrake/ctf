@@ -73,8 +73,12 @@ void _io_domain_del(cow_domain *d)
 
 void cow_domain_setcollective(cow_domain *d, int mode)
 {
-  if (!cow_mpirunning()) return;
 #if (COW_HDF5 && COW_HDF5_MPI)
+  if (mode && !cow_mpirunning()) {
+    printf("[%s] requested collective without MPI running: "
+	   "revert to independent\n", MODULE);
+    mode = 0;
+  }
   if (mode) {
     printf("[%s] setting HDF5 io mode to collective\n", MODULE);
     H5Pset_dxpl_mpio(d->dxpl, H5FD_MPIO_COLLECTIVE);
@@ -100,7 +104,6 @@ void cow_domain_setchunk(cow_domain *d, int mode)
   }
   else {
     printf("[%s] disabled chunking on HDF5 files\n", MODULE);
-    H5Pset_chunk(d->dcpl, d->n_dims, d->G_ntot_h5);
   }
 #endif
 }

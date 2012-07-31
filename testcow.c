@@ -5,6 +5,11 @@
 #include <mpi.h>
 #endif
 
+#define KILOBYTES (1<<10)
+#define MEGABYTES (1<<20)
+#define GETENVINT(a,dflt) (getenv(a) ? atoi(getenv(a)) : dflt)
+#define GETENVDBL(a,dflt) (getenv(a) ? atof(getenv(a)) : dflt)
+
 void stencildiv(double *result, double **args, int **s, void *u)
 {
   double *x = args[0];
@@ -27,15 +32,12 @@ cow_dfield *cow_dfield_new2(cow_domain *domain, const char *name)
 
 int main(int argc, char **argv)
 {
-#if (COW_MPI)
-  {
-    int rank;
-    MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    if (rank != 0) freopen("/dev/null", "w", stdout);
-    printf("was compiled with MPI support\n");
-  }
-#endif
+  int modes = 0;
+  int collective = GETENVINT("COW_HDF5_COLLECTIVE", 0);
+  modes |= GETENVINT("COW_NOREOPEN_STDOUT", 0) ? COW_NOREOPEN_STDOUT : 0;
+  modes |= GETENVINT("COW_DISABLE_MPI", 0) ? COW_DISABLE_MPI : 0;
+
+  cow_init(argc, argv, modes);
 
   cow_domain *domain = cow_domain_new();
   cow_dfield *prim = cow_dfield_new2(domain, "primitive");
@@ -45,6 +47,11 @@ int main(int argc, char **argv)
   cow_domain_setguard(domain, 3);
   cow_domain_setsize(domain, 0, 10);
   cow_domain_commit(domain);
+
+  cow_domain_setchunk(domain, 1);
+  cow_domain_setcollective(domain, collective);
+  cow_domain_setalign(domain, 4*KILOBYTES, 4*MEGABYTES);
+  cow_domain_setcollective(domain, collective);
 
   cow_dfield_addmember(prim, "vx");
   cow_dfield_addmember(prim, "vy");
@@ -124,11 +131,6 @@ int main(int argc, char **argv)
   cow_dfield_reduce(prim, reduction);
   printf("(min max sum): %f %f %f\n", reduction[0], reduction[1], reduction[2]);
 
-  cow_domain_setchunk(domain, 1);
-  cow_domain_setcollective(domain, 0);
-  cow_domain_setalign(domain, 4096, 4*1024*1024);
-
-
   cow_dfield_write(divB_copy, "thefile.h5");
   cow_dfield_write(divB, "thefile.h5");
   cow_dfield_write(magf, "thefile.h5");
@@ -141,8 +143,7 @@ int main(int argc, char **argv)
   cow_dfield_del(prim);
   cow_dfield_del(magf);
   cow_domain_del(domain);
-#if (COW_MPI)
-  MPI_Finalize();
-#endif
+
+  cow_finalize();
   return 0;
 }
