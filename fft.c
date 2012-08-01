@@ -342,10 +342,11 @@ FFT_DATA *_fwd(cow_dfield *f, double *fx, int start, int stride)
   }
   else {
     int nbuf = cow_domain_getnumlocalzonesinterior(f->domain, COW_ALL_DIMS);
+    int ntot = cow_domain_getnumglobalzones(f->domain, COW_ALL_DIMS);
     Fx = (FFT_DATA*) malloc(nbuf * sizeof(FFT_DATA));
     Fk = (FFT_DATA*) malloc(nbuf * sizeof(FFT_DATA));
     for (int n=0; n<nbuf; ++n) {
-      Fx[n][0] = fx[stride * n + start];
+      Fx[n][0] = fx[stride * n + start] / ntot;
       Fx[n][1] = 0.0;
     }
     int *N = f->domain->L_nint;
@@ -388,7 +389,7 @@ double *_rev(cow_dfield *f, FFT_DATA *Fk)
 					FFTW_BACKWARD, FFTW_ESTIMATE);
     fftw_execute(plan);
     for (int n=0; n<nbuf; ++n) {
-      fx[n] = Fx[n][0] / nbuf;
+      fx[n] = Fx[n][0];
     }
     free(Fx);
     fftw_destroy_plan(plan);

@@ -86,7 +86,7 @@ void fft_3d(FFT_DATA *in, FFT_DATA *out, int flag, struct fft_plan_3d *plan)
   total = plan->total1;
   length = plan->length1;
   {
-    int sign = flag == -1 ? FFTW_FORWARD : FFTW_BACKWARD;
+    int sign = flag == +1 ? FFTW_FORWARD : FFTW_BACKWARD;
     int N = length;
     fftw_plan fftplan = fftw_plan_many_dft(1, &N, total/length,
 					   data, NULL,
@@ -114,7 +114,7 @@ void fft_3d(FFT_DATA *in, FFT_DATA *out, int flag, struct fft_plan_3d *plan)
   total = plan->total2;
   length = plan->length2;
   {
-    int sign = flag == -1 ? FFTW_FORWARD : FFTW_BACKWARD;
+    int sign = flag == +1 ? FFTW_FORWARD : FFTW_BACKWARD;
     int N = length;
     fftw_plan fftplan = fftw_plan_many_dft(1, &N, total/length,
 					   data, NULL,
@@ -142,7 +142,7 @@ void fft_3d(FFT_DATA *in, FFT_DATA *out, int flag, struct fft_plan_3d *plan)
   total = plan->total3;
   length = plan->length3;
   {
-    int sign = flag == -1 ? FFTW_FORWARD : FFTW_BACKWARD;
+    int sign = flag == +1 ? FFTW_FORWARD : FFTW_BACKWARD;
     int N = length;
     fftw_plan fftplan = fftw_plan_many_dft(1, &N, total/length,
 					   data, NULL,
