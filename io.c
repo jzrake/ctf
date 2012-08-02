@@ -242,15 +242,9 @@ void _io_write(cow_dfield *f, const char *fname)
       hid_t memb = H5Gopen(file, gname, H5P_DEFAULT);
       hid_t mspc = H5Screate_simple(ndp1, l_ntot, NULL);
       hid_t fspc = H5Screate_simple(n_dims, G_ntot, NULL);
-      hid_t dset;
       for (int n=0; n<n_memb; ++n) {
-	if (H5Lexists(memb, pnames[n], H5P_DEFAULT)) {
-	  dset = H5Dopen(memb, pnames[n], H5P_DEFAULT);
-	}
-	else {
-	  dset = H5Dcreate(memb, pnames[n], H5T_NATIVE_DOUBLE, fspc,
-			   H5P_DEFAULT, d->dcpl, H5P_DEFAULT);
-	}
+	int dset = H5Dcreate(memb, pnames[n], H5T_NATIVE_DOUBLE, fspc,
+			     H5P_DEFAULT, d->dcpl, H5P_DEFAULT);
 	l_strt[ndp1 - 1] = n;
 	H5Sselect_hyperslab(mspc, H5S_SELECT_SET, l_strt, stride, l_nint, NULL);
 	H5Sselect_hyperslab(fspc, H5S_SELECT_SET, G_strt, NULL, L_nint, NULL);
