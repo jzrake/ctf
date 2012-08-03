@@ -906,6 +906,17 @@ void cow_dfield_transformexecute(cow_dfield *f)
   cow_dfield_syncguard(result);
 }
 
+void cow_dfield_setflag(cow_dfield *f, int index, int flag)
+{
+  if (!f->committed) return;
+  f->flag[index] = flag;
+}
+int cow_dfield_getflag(cow_dfield *f, int index)
+{
+  if (!f->committed) return 0;
+  return f->flag[index];
+}
+
 int cow_dfield_getnuminfnan(cow_dfield *f)
 {
   int *S = f->stride;
