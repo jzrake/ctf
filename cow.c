@@ -11,6 +11,30 @@
 // private helper functions
 //
 // -----------------------------------------------------------------------------
+
+#ifndef isnan
+# define isnan(x)                                       \
+  (sizeof (x) == sizeof (long double) ? isnan_ld (x)    \
+   : sizeof (x) == sizeof (double) ? isnan_d (x)        \
+   : isnan_f (x))
+static inline int isnan_f  (float       x) { return x != x; }
+static inline int isnan_d  (double      x) { return x != x; }
+static inline int isnan_ld (long double x) { return x != x; }
+#endif
+
+#ifndef isinf
+# define isinf(x)                                       \
+  (sizeof (x) == sizeof (long double) ? isinf_ld (x)    \
+   : sizeof (x) == sizeof (double) ? isinf_d (x)        \
+   : isinf_f (x))
+static inline int isinf_f  (float       x)
+{ return !isnan (x) && isnan (x - x); }
+static inline int isinf_d  (double      x)
+{ return !isnan (x) && isnan (x - x); }
+static inline int isinf_ld (long double x)
+{ return !isnan (x) && isnan (x - x); }
+#endif
+
 #if (COW_MPI)
 static void _domain_maketags1d(cow_domain *d);
 static void _domain_maketags2d(cow_domain *d);
@@ -839,6 +863,55 @@ void cow_dfield_transformexecute(cow_dfield *f)
   free(S);
   free(x);
   cow_dfield_syncguard(result);
+}
+
+int cow_dfield_getnuminfnan(cow_dfield *f)
+{
+  int *S = f->stride;
+  int ni = cow_domain_getnumlocalzonesinterior(f->domain, 0);
+  int nj = cow_domain_getnumlocalzonesinterior(f->domain, 1);
+  int nk = cow_domain_getnumlocalzonesinterior(f->domain, 2);
+  int ng = cow_domain_getguard(f->domain);
+  int errors = 0;
+  switch (f->domain->n_dims) {
+  case 1:
+    for (int i=ng; i<ni+ng; ++i) {
+      double *x = (double*)f->data + (S[0]*i);
+      for (int n=0; n<f->n_members; ++n) {
+        errors += isnan(x[n]) || isinf(x[n]);
+      }
+    }
+    break;
+  case 2:
+    for (int i=ng; i<ni+ng; ++i) {
+      for (int j=ng; j<nj+ng; ++j) {
+        double *x = (double*)f->data + (S[0]*i + S[1]*j);
+        for (int n=0; n<f->n_members; ++n) {
+          errors += isnan(x[n]) || isinf(x[n]);
+        }
+      }
+    }
+    break;
+  case 3:
+    for (int i=ng; i<ni+ng; ++i) {
+      for (int j=ng; j<nj+ng; ++j) {
+        for (int k=ng; k<nk+ng; ++k) {
+          double *x = (double*)f->data + (S[0]*i + S[1]*j + S[2]*k);
+          for (int n=0; n<f->n_members; ++n) {
+            errors += isnan(x[n]) || isinf(x[n]);
+          }
+        }
+      }
+    }
+    break;
+  }
+#if (COW_MPI)
+  cow_domain *d = f->domain;
+  if (cow_mpirunning()) {
+    MPI_Allreduce(MPI_IN_PLACE, &errors, 1, MPI_INT, MPI_SUM, d->mpi_cart);
+  }
+#endif
+  return errors;
 }
 
 #if (COW_MPI)

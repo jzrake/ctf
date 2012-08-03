@@ -94,6 +94,7 @@ char *cow_dfield_getname(cow_dfield *f);
 cow_domain *cow_dfield_getdomain(cow_dfield *f);
 int cow_dfield_getstride(cow_dfield *f, int dim);
 int cow_dfield_getnmembers(cow_dfield *f);
+int cow_dfield_getnuminfnan(cow_dfield *f);
 size_t cow_dfield_getdatabytes(cow_dfield *f);
 void cow_dfield_setbuffer(cow_dfield *f, void *buffer);
 void cow_dfield_sampleglobalind(cow_dfield *f, int i, int j, int k, double **x,
