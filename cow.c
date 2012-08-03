@@ -23,8 +23,8 @@ static void _dfield_maketype3d(cow_dfield *f);
 static void _dfield_alloctype(cow_dfield *f);
 static void _dfield_freetype(cow_dfield *f);
 #endif
-static void _dfield_extractreplace(cow_dfield *f, const int *I0, const int *I1,
-                                   void *out, char op);
+static void _dfield_extractreplace(cow_dfield *f, int *I0, int *I1, void *out,
+                                   char op);
 
 void cow_init(int argc, char **argv, int modes)
 {
@@ -181,11 +181,11 @@ void cow_domain_commit(cow_domain *d)
       // proc_sizes[i] does not divide the G_ntot[i]. For each dimension, we add
       // a zone to the first R subgrids , where R is given below:
       // -----------------------------------------------------------------------
-      const int R = d->G_ntot[i] % d->proc_sizes[i];
-      const int normal_size = d->G_ntot[i] / d->proc_sizes[i];
-      const int augmnt_size = normal_size + 1;
-      const int thisdm_size = (d->proc_index[i]<R) ? augmnt_size : normal_size;
-      const double dx = (d->glb_upper[i] - d->glb_lower[i]) / d->G_ntot[i];
+      int R = d->G_ntot[i] % d->proc_sizes[i];
+      int normal_size = d->G_ntot[i] / d->proc_sizes[i];
+      int augmnt_size = normal_size + 1;
+      int thisdm_size = (d->proc_index[i]<R) ? augmnt_size : normal_size;
+      double dx = (d->glb_upper[i] - d->glb_lower[i]) / d->G_ntot[i];
 
       d->dx[i] = dx;
       if (R != 0) d->balanced = 0;
@@ -414,7 +414,7 @@ cow_dfield *cow_dfield_dup(cow_dfield *f)
   g->transform = f->transform;
   return g;
 }
-void cow_dfield_setname(cow_dfield *f, const char *name)
+void cow_dfield_setname(cow_dfield *f, char *name)
 {
   f->name = (char*) realloc(f->name, strlen(name)+1);
   strcpy(f->name, name);
@@ -428,7 +428,7 @@ int cow_dfield_getnmembers(cow_dfield *f)
 {
   return f->n_members;
 }
-const char *cow_dfield_getname(cow_dfield *f)
+char *cow_dfield_getname(cow_dfield *f)
 {
   return f->name;
 }
@@ -488,7 +488,7 @@ void *cow_dfield_getbuffer(cow_dfield *f)
 {
   return f->data;
 }
-void cow_dfield_addmember(cow_dfield *f, const char *name)
+void cow_dfield_addmember(cow_dfield *f, char *name)
 {
   if (f->committed) return;
   f->n_members++;
@@ -496,12 +496,12 @@ void cow_dfield_addmember(cow_dfield *f, const char *name)
   f->members[f->n_members-1] = (char*) malloc(strlen(name)+1);
   strcpy(f->members[f->n_members-1], name);
 }
-const char *cow_dfield_iteratemembers(cow_dfield *f)
+char *cow_dfield_iteratemembers(cow_dfield *f)
 {
   f->member_iter = 0;
   return cow_dfield_nextmember(f);
 }
-const char *cow_dfield_nextmember(cow_dfield *f)
+char *cow_dfield_nextmember(cow_dfield *f)
 {
   return f->member_iter++ < f->n_members ? f->members[f->member_iter-1] : NULL;
 }
@@ -624,16 +624,15 @@ void cow_dfield_syncguard(cow_dfield *f)
   }
 }
 
-void cow_dfield_extract(cow_dfield *f, const int *I0, const int *I1, void *out)
+void cow_dfield_extract(cow_dfield *f, int *I0, int *I1, void *out)
 {
   _dfield_extractreplace(f, I0, I1, out, 'e');
 }
-void cow_dfield_replace(cow_dfield *f, const int *I0, const int *I1, void *out)
+void cow_dfield_replace(cow_dfield *f, int *I0, int *I1, void *out)
 {
   _dfield_extractreplace(f, I0, I1, out, 'r');
 }
-void _dfield_extractreplace(cow_dfield *f, const int *I0, const int *I1,
-                            void *out, char op)
+void _dfield_extractreplace(cow_dfield *f, int *I0, int *I1, void *out, char op)
 {
   int mi = I1[0] - I0[0];
   int mj = I1[1] - I0[1];

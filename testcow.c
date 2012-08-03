@@ -22,7 +22,7 @@ void pickmember1(double *result, double **args, int **s, void *u)
   *result = args[0][0];
 }
 
-cow_dfield *cow_dfield_new2(cow_domain *domain, const char *name)
+cow_dfield *cow_dfield_new2(cow_domain *domain, char *name)
 {
   cow_dfield *f = cow_dfield_new();
   cow_dfield_setdomain(f, domain);
@@ -64,12 +64,12 @@ int main(int argc, char **argv)
   cow_dfield_commit(magf);
 
   printf("%s\n", cow_dfield_getname(prim));
-  for (const char *m = cow_dfield_iteratemembers(magf);
+  for (char *m = cow_dfield_iteratemembers(magf);
        m != NULL; m = cow_dfield_nextmember(magf)) {
     printf("\t%s\n", m);
   }
   printf("%s\n", cow_dfield_getname(magf));
-  for (const char *m = cow_dfield_iteratemembers(magf);
+  for (char *m = cow_dfield_iteratemembers(magf);
        m != NULL; m = cow_dfield_nextmember(magf)) {
     printf("\t%s\n", m);
   }

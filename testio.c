@@ -11,7 +11,7 @@
 #define GETENVINT(a,dflt) (getenv(a) ? atoi(getenv(a)) : dflt)
 #define GETENVDBL(a,dflt) (getenv(a) ? atof(getenv(a)) : dflt)
 
-cow_dfield *cow_dfield_new2(cow_domain *domain, const char *name)
+cow_dfield *cow_dfield_new2(cow_domain *domain, char *name)
 {
   cow_dfield *f = cow_dfield_new();
   cow_dfield_setdomain(f, domain);

@@ -7,7 +7,7 @@
 #define MODULE "hist"
 
 #if (COW_HDF5)
-static int H5Lexists_safe(hid_t base, const char *path);
+static int H5Lexists_safe(hid_t base, char *path);
 #endif
 static void _filloutput(cow_histogram *h);
 
@@ -51,7 +51,7 @@ void cow_histogram_commit(cow_histogram *h)
   if (h->committed) return;
   h->n_dims = h->nbinsy > 1 ? 2 : 1;
   if (h->n_dims == 1) {
-    const double dx = (h->x1 - h->x0) / h->nbinsx;
+    double dx = (h->x1 - h->x0) / h->nbinsx;
     h->bedgesx = (double*) malloc((h->nbinsx+1)*sizeof(double));
     h->weight = (double*) malloc((h->nbinsx)*sizeof(double));
     h->counts = (long*) malloc((h->nbinsx)*sizeof(long));
@@ -69,9 +69,9 @@ void cow_histogram_commit(cow_histogram *h)
     }
   }
   else if (h->n_dims == 2) {
-    const int nbins = h->nbinsx * h->nbinsy;
-    const double dx = (h->y1 - h->y0) / h->nbinsx;
-    const double dy = (h->y1 - h->y0) / h->nbinsy;
+    int nbins = h->nbinsx * h->nbinsy;
+    double dx = (h->y1 - h->y0) / h->nbinsx;
+    double dy = (h->y1 - h->y0) / h->nbinsy;
     h->bedgesx = (double*) malloc((h->nbinsx+1)*sizeof(double));
     h->bedgesy = (double*) malloc((h->nbinsy+1)*sizeof(double));
     h->weight = (double*) malloc(nbins*sizeof(double));
@@ -178,12 +178,12 @@ void cow_histogram_setupper(cow_histogram *h, int dim, double v1)
   default: break;
   }
 }
-void cow_histogram_setfullname(cow_histogram *h, const char *fullname)
+void cow_histogram_setfullname(cow_histogram *h, char *fullname)
 {
   h->fullname = (char*) realloc(h->fullname, strlen(fullname)+1);
   strcpy(h->fullname, fullname);
 }
-void cow_histogram_setnickname(cow_histogram *h, const char *nickname)
+void cow_histogram_setnickname(cow_histogram *h, char *nickname)
 {
   h->nickname = (char*) realloc(h->nickname, strlen(nickname)+1);
   strcpy(h->nickname, nickname);
@@ -328,12 +328,12 @@ double cow_histogram_getbinval(cow_histogram *h, int i, int j)
     return 0.0;
   }
 }
-const char *cow_histogram_getname(cow_histogram *h)
+char *cow_histogram_getname(cow_histogram *h)
 {
   return h->nickname;
 }
 
-void cow_histogram_dumpascii(cow_histogram *h, const char *fn)
+void cow_histogram_dumpascii(cow_histogram *h, char *fn)
 // -----------------------------------------------------------------------------
 // Dumps the histogram as ascii to the file named `fn`. Synchronizes it across
 // processes before doing so. The function uses rank 0 to do the write.
@@ -375,7 +375,7 @@ void cow_histogram_dumpascii(cow_histogram *h, const char *fn)
   fclose(file);
 }
 
-void cow_histogram_dumphdf5(cow_histogram *h, const char *fn, const char *gn)
+void cow_histogram_dumphdf5(cow_histogram *h, char *fn, char *gn)
 // -----------------------------------------------------------------------------
 // Dumps the histogram to the HDF5 file named `fn`, under the group
 // `gn`/h->fullname. The function uses rank 0 to do the write.
@@ -494,7 +494,7 @@ void _filloutput(cow_histogram *h)
 }
 
 #if (COW_HDF5)
-int H5Lexists_safe(hid_t base, const char *path)
+int H5Lexists_safe(hid_t base, char *path)
 // -----------------------------------------------------------------------------
 // The HDF5 specification only allows H5Lexists to be called on an immediate
 // child of the current object. However, you may wish to see whether a whole

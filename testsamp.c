@@ -17,7 +17,7 @@ void cow_dfield_sampleglobalpos(cow_dfield *f, double *r0, int N, double *r1,
   cow_dfield_setsamplecoords(f, NULL, 0, 3);
 }
 
-cow_dfield *cow_dfield_new2(cow_domain *domain, const char *name)
+cow_dfield *cow_dfield_new2(cow_domain *domain, char *name)
 {
   cow_dfield *f = cow_dfield_new();
   cow_dfield_setdomain(f, domain);

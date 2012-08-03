@@ -9,7 +9,7 @@
 #define GETENVINT(a,dflt) (getenv(a) ? atoi(getenv(a)) : dflt)
 #define GETENVDBL(a,dflt) (getenv(a) ? atof(getenv(a)) : dflt)
 
-void cow_fft_pspecvecfield2(cow_dfield *vel, const char *fout, const char *gname)
+void cow_fft_pspecvecfield2(cow_dfield *vel, char *fout, char *gname)
 {
   cow_histogram *hist = cow_histogram_new();
   cow_histogram_setnbins(hist, 0, 200);
@@ -20,7 +20,7 @@ void cow_fft_pspecvecfield2(cow_dfield *vel, const char *fout, const char *gname
   cow_histogram_del(hist);
 }
 
-cow_dfield *cow_dfield_new2(cow_domain *domain, const char *name)
+cow_dfield *cow_dfield_new2(cow_domain *domain, char *name)
 {
   cow_dfield *f = cow_dfield_new();
   cow_dfield_setdomain(f, domain);

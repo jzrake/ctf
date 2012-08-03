@@ -11,7 +11,7 @@ static void histcb(double *result, double **args, int **s, void *u)
   result[0] = args[0][0];
 }
 
-cow_dfield *cow_dfield_new2(cow_domain *domain, const char *name)
+cow_dfield *cow_dfield_new2(cow_domain *domain, char *name)
 {
   cow_dfield *f = cow_dfield_new();
   cow_dfield_setdomain(f, domain);

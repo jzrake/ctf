@@ -94,14 +94,14 @@ static void kinEtrans(double *result, double **args, int **s, void *u)
   *result = 0.5 * rho[0] * (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
 
-cow_dfield *cow_dfield_new2(cow_domain *domain, const char *name)
+cow_dfield *cow_dfield_new2(cow_domain *domain, char *name)
 {
   cow_dfield *f = cow_dfield_new();
   cow_dfield_setdomain(f, domain);
   cow_dfield_setname(f, name);
   return f;
 }
-cow_dfield *cow_vectorfield(cow_domain *domain, const char *name)
+cow_dfield *cow_vectorfield(cow_domain *domain, char *name)
 {
   cow_dfield *f = cow_dfield_new2(domain, name);
   cow_dfield_addmember(f, "0");
@@ -110,7 +110,7 @@ cow_dfield *cow_vectorfield(cow_domain *domain, const char *name)
   cow_dfield_commit(f);
   return f;
 }
-cow_dfield *cow_scalarfield(cow_domain *domain, const char *name)
+cow_dfield *cow_scalarfield(cow_domain *domain, char *name)
 {
   cow_dfield *f = cow_dfield_new2(domain, name);
   cow_dfield_addmember(f, "0");
@@ -138,7 +138,7 @@ void cow_dfield_reduce2(cow_dfield *f, cow_transform op, double reduc[3])
 }
 
 
-void make_hist(cow_dfield *f, cow_transform op, const char *fout, const char *m)
+void make_hist(cow_dfield *f, cow_transform op, char *fout, char *m)
 {
   char nickname[1024];
   snprintf(nickname, 1024, "%s-hist", m ? m : cow_dfield_getname(f));
