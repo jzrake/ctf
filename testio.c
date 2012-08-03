@@ -25,7 +25,7 @@ int main(int argc, char **argv)
 
   int modes = 0;
   int collective = GETENVINT("COW_HDF5_COLLECTIVE", 0);
-  int chunking = GETENVINT("COW_HDF5_CHUNKING", 1);
+  int chunk = GETENVINT("COW_HDF5_CHUNK", 1);
   modes |= GETENVINT("COW_NOREOPEN_STDOUT", 0) ? COW_NOREOPEN_STDOUT : 0;
   modes |= GETENVINT("COW_DISABLE_MPI", 0) ? COW_DISABLE_MPI : 0;
 
@@ -41,7 +41,7 @@ int main(int argc, char **argv)
   cow_domain_setsize(domain, 2, 512);
   cow_domain_commit(domain);
 
-  cow_domain_setchunk(domain, chunking);
+  cow_domain_setchunk(domain, chunk);
   cow_domain_setcollective(domain, collective);
   cow_domain_setalign(domain, 4*KILOBYTES, 4*MEGABYTES);
 
@@ -52,7 +52,7 @@ int main(int argc, char **argv)
   cow_dfield_addmember(prim, "vz");
   cow_dfield_commit(prim);
 
-  double *P = (double*) cow_dfield_getbuffer(prim);
+  double *P = (double*) cow_dfield_getdatabuffer(prim);
 
   for (int i=0; i<cow_domain_getnumlocalzonesincguard(domain, COW_ALL_DIMS);
        ++i) {

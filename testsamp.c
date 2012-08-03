@@ -5,6 +5,11 @@
 #include <mpi.h>
 #endif
 
+#define KILOBYTES (1<<10)
+#define MEGABYTES (1<<20)
+#define GETENVINT(a,dflt) (getenv(a) ? atoi(getenv(a)) : dflt)
+#define GETENVDBL(a,dflt) (getenv(a) ? atof(getenv(a)) : dflt)
+
 void cow_dfield_sampleglobalpos(cow_dfield *f, double *r0, int N, double *r1,
 				double *sample, int mode)
 {
@@ -27,15 +32,13 @@ cow_dfield *cow_dfield_new2(cow_domain *domain, char *name)
 
 int main(int argc, char **argv)
 {
-#if (COW_MPI)
-  {
-    int rank;
-    MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    if (rank != 0) freopen("/dev/null", "w", stdout);
-    printf("was compiled with MPI support\n");
-  }
-#endif
+  int modes = 0;
+  //  int collective = GETENVINT("COW_HDF5_COLLECTIVE", 0);
+  //  int chunk = GETENVINT("COW_HDF5_CHUNK", 1);
+  modes |= GETENVINT("COW_NOREOPEN_STDOUT", 0) ? COW_NOREOPEN_STDOUT : 0;
+  modes |= GETENVINT("COW_DISABLE_MPI", 0) ? COW_DISABLE_MPI : 0;
+
+  cow_init(argc, argv, modes);
 
   cow_domain *domain = cow_domain_new();
   cow_dfield *data = cow_dfield_new2(domain, "data");
@@ -52,7 +55,7 @@ int main(int argc, char **argv)
   cow_dfield_addmember(data, "d3");
   cow_dfield_commit(data);
 
-  double *A = (double*) cow_dfield_getbuffer(data);
+  double *A = (double*) cow_dfield_getdatabuffer(data);
   for (int i=0; i<cow_domain_getnumlocalzonesincguard(domain, COW_ALL_DIMS);
        ++i) {
     A[3*i + 0] = 0.1;
@@ -87,9 +90,6 @@ int main(int argc, char **argv)
 
   cow_dfield_del(data);
   cow_domain_del(domain);
-
-#if (COW_MPI)
-  MPI_Finalize();
-#endif
+  cow_finalize();
   return 0;
 }

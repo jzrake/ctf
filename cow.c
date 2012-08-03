@@ -385,6 +385,7 @@ cow_dfield *cow_dfield_new(void)
     .n_members = 0,
     .member_iter = 0,
     .data = NULL,
+    .flag = NULL,
     .stride = { 0, 0, 0 },
     .committed = 0,
     .ownsdata = 0,
@@ -413,6 +414,9 @@ void cow_dfield_del(cow_dfield *f)
   free(f->name);
   if (f->ownsdata) {
     free(f->data);
+  }
+  if (f->ownsflag) {
+    free(f->flag);
   }
   free(f->transargs);
   free(f->samplecoords);
@@ -466,7 +470,7 @@ size_t cow_dfield_getdatabytes(cow_dfield *f)
   return cow_domain_getnumlocalzonesincguard(f->domain, COW_ALL_DIMS) *
     f->n_members * sizeof(double);
 }
-void cow_dfield_setbuffer(cow_dfield *f, void *buffer)
+void cow_dfield_setdatabuffer(cow_dfield *f, void *buffer)
 // -----------------------------------------------------------------------------
 //
 // -> If `f` already owns its data:
@@ -504,13 +508,49 @@ void cow_dfield_setbuffer(cow_dfield *f, void *buffer)
     }
   }
 }
+
+void cow_dfield_setflagbuffer(cow_dfield *f, int *buffer)
+// -----------------------------------------------------------------------------
+// Same logic as in setdatabuffer
+// -----------------------------------------------------------------------------
+{
+  if (f->ownsflag) {
+    if (buffer == NULL || (buffer != NULL && buffer == f->flag)) {
+    }
+    else {
+      free(f->flag);
+      f->flag = buffer;
+      f->ownsflag = 0;
+    }
+  }
+  else {
+    if (buffer == NULL) {
+      int nz = cow_domain_getnumlocalzonesincguard(f->domain, COW_ALL_DIMS);
+      f->flag = malloc(nz * sizeof(int));
+      f->ownsflag = 1;
+    }
+    else {
+      f->flag = buffer;
+    }
+  }
+}
+
 int cow_dfield_getownsdata(cow_dfield *f)
 {
   return f->ownsdata;
 }
-void *cow_dfield_getbuffer(cow_dfield *f)
+void *cow_dfield_getdatabuffer(cow_dfield *f)
 {
   return f->data;
+}
+
+int cow_dfield_getownsflag(cow_dfield *f)
+{
+  return f->ownsflag;
+}
+int *cow_dfield_getflagbuffer(cow_dfield *f)
+{
+  return f->flag;
 }
 void cow_dfield_addmember(cow_dfield *f, char *name)
 {
@@ -543,16 +583,17 @@ void cow_dfield_commit(cow_dfield *f)
 #endif
   // ---------------------------------------------------------------------------
   // The way cow_dfield is initialized, f does not own its buffer and its value
-  // is NULL. This corresponds to case (C) in setbuffer: `f` takes ownership of
-  // and allocates its buffer. If before being committed, client code has called
-  // set_buffer with something other than NULL, then f->ownsdata is still false,
-  // but f->data is not NULL. Then the call below triggers case (D) which will
-  // have no effect. If client code has called set_buffer with NULL prior to
-  // this call, then case (C) will already have been realized, `f` will already
-  // own its data, and all subsequent redundant calls including the one below
-  // trigger case (A) and have no effect.
+  // is NULL. This corresponds to case (C) in setdatabuffer: `f` takes ownership
+  // of and allocates its buffer. If before being committed, client code has
+  // called set_buffer with something other than NULL, then f->ownsdata is still
+  // false, but f->data is not NULL. Then the call below triggers case (D) which
+  // will have no effect. If client code has called set_buffer with NULL prior
+  // to this call, then case (C) will already have been realized, `f` will
+  // already own its data, and all subsequent redundant calls including the one
+  // below trigger case (A) and have no effect.
   // ---------------------------------------------------------------------------
-  cow_dfield_setbuffer(f, f->data);
+  cow_dfield_setdatabuffer(f, f->data);
+  cow_dfield_setflagbuffer(f, f->flag);
   int *N = f->domain->L_ntot;
   switch (f->domain->n_dims) {
   case 1:

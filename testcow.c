@@ -33,7 +33,9 @@ cow_dfield *cow_dfield_new2(cow_domain *domain, char *name)
 int main(int argc, char **argv)
 {
   int modes = 0;
+
   int collective = GETENVINT("COW_HDF5_COLLECTIVE", 0);
+  int chunk = GETENVINT("COW_HDF5_CHUNK", 1);
   modes |= GETENVINT("COW_NOREOPEN_STDOUT", 0) ? COW_NOREOPEN_STDOUT : 0;
   modes |= GETENVINT("COW_DISABLE_MPI", 0) ? COW_DISABLE_MPI : 0;
 
@@ -48,10 +50,9 @@ int main(int argc, char **argv)
   cow_domain_setsize(domain, 0, 10);
   cow_domain_commit(domain);
 
-  cow_domain_setchunk(domain, 1);
+  cow_domain_setchunk(domain, chunk);
   cow_domain_setcollective(domain, collective);
   cow_domain_setalign(domain, 4*KILOBYTES, 4*MEGABYTES);
-  cow_domain_setcollective(domain, collective);
 
   cow_dfield_addmember(prim, "vx");
   cow_dfield_addmember(prim, "vy");
@@ -77,8 +78,8 @@ int main(int argc, char **argv)
   int si = cow_dfield_getstride(prim, 0);
   int ng = cow_domain_getguard(domain);
 
-  double *P = (double*) cow_dfield_getbuffer(prim);
-  double *B = (double*) cow_dfield_getbuffer(magf);
+  double *P = (double*) cow_dfield_getdatabuffer(prim);
+  double *B = (double*) cow_dfield_getdatabuffer(magf);
   for (int i=ng; i<cow_domain_getnumlocalzonesinterior(domain, 0)+ng; ++i) {
     P[si*i + 0] = 1.0;
     P[si*i + 1] = 2.0;
