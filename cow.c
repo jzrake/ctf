@@ -552,6 +552,18 @@ int *cow_dfield_getflagbuffer(cow_dfield *f)
 {
   return f->flag;
 }
+void cow_dfield_updateflaginfnan(cow_dfield *f)
+{
+  int nz = cow_domain_getnumlocalzonesincguard(f->domain, COW_ALL_DIMS);
+  for (int n=0; n<nz; ++n) {
+    double *x = (double*)f->data + n * f->n_members;
+    for (int m=0; m<f->n_members; ++m) {
+      f->flag[n] |= isnan(x[m]) ? COW_HASNAN : 0;
+      f->flag[n] |= isinf(x[m]) ? COW_HASINF : 0;
+    }
+  }
+}
+
 void cow_dfield_addmember(cow_dfield *f, char *name)
 {
   if (f->committed) return;
@@ -915,55 +927,6 @@ int cow_dfield_getflag(cow_dfield *f, int index)
 {
   if (!f->committed) return 0;
   return f->flag[index];
-}
-
-int cow_dfield_getnuminfnan(cow_dfield *f)
-{
-  int *S = f->stride;
-  int ni = cow_domain_getnumlocalzonesinterior(f->domain, 0);
-  int nj = cow_domain_getnumlocalzonesinterior(f->domain, 1);
-  int nk = cow_domain_getnumlocalzonesinterior(f->domain, 2);
-  int ng = cow_domain_getguard(f->domain);
-  int errors = 0;
-  switch (f->domain->n_dims) {
-  case 1:
-    for (int i=ng; i<ni+ng; ++i) {
-      double *x = (double*)f->data + (S[0]*i);
-      for (int n=0; n<f->n_members; ++n) {
-        errors += isnan(x[n]) || isinf(x[n]);
-      }
-    }
-    break;
-  case 2:
-    for (int i=ng; i<ni+ng; ++i) {
-      for (int j=ng; j<nj+ng; ++j) {
-        double *x = (double*)f->data + (S[0]*i + S[1]*j);
-        for (int n=0; n<f->n_members; ++n) {
-          errors += isnan(x[n]) || isinf(x[n]);
-        }
-      }
-    }
-    break;
-  case 3:
-    for (int i=ng; i<ni+ng; ++i) {
-      for (int j=ng; j<nj+ng; ++j) {
-        for (int k=ng; k<nk+ng; ++k) {
-          double *x = (double*)f->data + (S[0]*i + S[1]*j + S[2]*k);
-          for (int n=0; n<f->n_members; ++n) {
-            errors += isnan(x[n]) || isinf(x[n]);
-          }
-        }
-      }
-    }
-    break;
-  }
-#if (COW_MPI)
-  cow_domain *d = f->domain;
-  if (cow_mpirunning()) {
-    MPI_Allreduce(MPI_IN_PLACE, &errors, 1, MPI_INT, MPI_SUM, d->mpi_cart);
-  }
-#endif
-  return errors;
 }
 
 #if (COW_MPI)

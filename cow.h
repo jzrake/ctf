@@ -14,8 +14,11 @@
 #endif // COW_PRIVATE_DEFS
 
 
-#define COW_NOREOPEN_STDOUT   (2<<0)
-#define COW_DISABLE_MPI       (2<<1)
+#define COW_NOREOPEN_STDOUT   (1<<0)
+#define COW_DISABLE_MPI       (1<<1)
+#define COW_HASNAN            (1<<2)
+#define COW_HASINF            (1<<3)
+
 #define COW_ALL_DIMS             -41
 #define COW_HIST_SPACING_LINEAR  -42
 #define COW_HIST_SPACING_LOG     -43
@@ -95,11 +98,11 @@ char *cow_dfield_getname(cow_dfield *f);
 cow_domain *cow_dfield_getdomain(cow_dfield *f);
 int cow_dfield_getstride(cow_dfield *f, int dim);
 int cow_dfield_getnmembers(cow_dfield *f);
-int cow_dfield_getnuminfnan(cow_dfield *f);
 int cow_dfield_getflag(cow_dfield *f, int index);
 size_t cow_dfield_getdatabytes(cow_dfield *f);
 void cow_dfield_setdatabuffer(cow_dfield *f, void *buffer);
 void cow_dfield_setflagbuffer(cow_dfield *f, int *buffer);
+void cow_dfield_updateflaginfnan(cow_dfield *f);
 void cow_dfield_sampleglobalind(cow_dfield *f, int i, int j, int k, double **x,
 				int *n0);
 int cow_dfield_setsamplecoords(cow_dfield *f, double *x, int n0, int n1);
