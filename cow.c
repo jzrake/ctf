@@ -252,30 +252,33 @@ void cow_domain_commit(cow_domain *d)
 #endif
   d->committed = 1;
 }
-int cow_domain_getnumlocalzonesincguard(cow_domain *d, int dim)
+long long cow_domain_getnumlocalzonesincguard(cow_domain *d, int dim)
 {
   switch (dim) {
-  case COW_ALL_DIMS: return d->L_ntot[0] * d->L_ntot[1] * d->L_ntot[2];
+  case COW_ALL_DIMS: return ((long long)d->L_ntot[0] *
+			     (long long)d->L_ntot[1] * (long long)d->L_ntot[2]);
   case 0: return d->L_ntot[0];
   case 1: return d->L_ntot[1];
   case 2: return d->L_ntot[2];
   default: return 0;
   }
 }
-int cow_domain_getnumlocalzonesinterior(cow_domain *d, int dim)
+long long cow_domain_getnumlocalzonesinterior(cow_domain *d, int dim)
 {
   switch (dim) {
-  case COW_ALL_DIMS: return d->L_nint[0] * d->L_nint[1] * d->L_nint[2];
+  case COW_ALL_DIMS: return ((long long)d->L_nint[0] *
+			     (long long)d->L_nint[1] * (long long)d->L_nint[2]);
   case 0: return d->L_nint[0];
   case 1: return d->L_nint[1];
   case 2: return d->L_nint[2];
   default: return 0;
   }
 }
-int cow_domain_getnumglobalzones(cow_domain *d, int dim)
+long long cow_domain_getnumglobalzones(cow_domain *d, int dim)
 {
   switch (dim) {
-  case COW_ALL_DIMS: return d->G_ntot[0] * d->G_ntot[1] * d->G_ntot[2];
+  case COW_ALL_DIMS: return ((long long)d->G_ntot[0] *
+			     (long long)d->G_ntot[1] * (long long)d->G_ntot[2]);
   case 0: return d->G_ntot[0];
   case 1: return d->G_ntot[1];
   case 2: return d->G_ntot[2];

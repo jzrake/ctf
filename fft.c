@@ -317,7 +317,7 @@ struct fft_plan_3d *call_fft_plan_3d(cow_domain *d, int *nbuf)
                             Nz, Ny, Nx,
                             k0,k1, j0,j1, i0,i1,
                             k0,k1, j0,j1, i0,i1,
-                            SCALED_YES, PERMUTE_NONE, nbuf);
+                            SCALED_NOT, PERMUTE_NONE, nbuf);
 }
 #endif // COW_MPI
 
@@ -328,11 +328,12 @@ FFT_DATA *_fwd(cow_dfield *f, double *fx, int start, int stride)
   if (cow_mpirunning()) {
 #if (COW_MPI)
     int nbuf;
+    long long ntot = cow_domain_getnumglobalzones(f->domain, COW_ALL_DIMS);
     struct fft_plan_3d *plan = call_fft_plan_3d(f->domain, &nbuf);
     Fx = (FFT_DATA*) malloc(nbuf * sizeof(FFT_DATA));
     Fk = (FFT_DATA*) malloc(nbuf * sizeof(FFT_DATA));
     for (int n=0; n<nbuf; ++n) {
-      Fx[n][0] = fx[stride * n + start];
+      Fx[n][0] = fx[stride * n + start] / ntot;
       Fx[n][1] = 0.0;
     }
     fft_3d(Fx, Fk, FFT_FWD, plan);
@@ -342,7 +343,7 @@ FFT_DATA *_fwd(cow_dfield *f, double *fx, int start, int stride)
   }
   else {
     int nbuf = cow_domain_getnumlocalzonesinterior(f->domain, COW_ALL_DIMS);
-    int ntot = cow_domain_getnumglobalzones(f->domain, COW_ALL_DIMS);
+    long long ntot = cow_domain_getnumglobalzones(f->domain, COW_ALL_DIMS);
     Fx = (FFT_DATA*) malloc(nbuf * sizeof(FFT_DATA));
     Fk = (FFT_DATA*) malloc(nbuf * sizeof(FFT_DATA));
     for (int n=0; n<nbuf; ++n) {
