@@ -8,6 +8,19 @@
 
 #define asserteq(x,y) assert(fabs(x-y) < 1e-12)
 
+static long fields()
+{
+  long modes = 0;
+  modes |= FLUIDS_CONSERVED;
+  modes |= FLUIDS_PRIMITIVE;
+  modes |= FLUIDS_FLUXALL;
+  modes |= FLUIDS_EVALSALL;
+  modes |= FLUIDS_LEVECSALL;
+  modes |= FLUIDS_REVECSALL;
+  modes |= FLUIDS_JACOBIANALL;
+  return modes;
+}
+
 // Passes when get/set attributes work correctly
 // -----------------------------------------------------------------------------
 int test1()
@@ -18,6 +31,7 @@ int test1()
   double Gam;
   fluid_state *S = fluids_new();
   fluids_setfluid(S, FLUIDS_NRHYD);
+  fluids_alloc(S, fields());
   fluids_setattrib(S, &gam, FLUIDS_GAMMALAWINDEX);
   fluids_getattrib(S, &Gam, FLUIDS_GAMMALAWINDEX);
   fluids_setattrib(S, x, FLUIDS_PRIMITIVE);
@@ -42,10 +56,10 @@ int test2()
   double cs2;
   fluid_state *S = fluids_new();
   fluids_setfluid(S, FLUIDS_NRHYD);
+  fluids_alloc(S, fields());
   fluids_setattrib(S, &gam, FLUIDS_GAMMALAWINDEX);
   fluids_setattrib(S, x, FLUIDS_PRIMITIVE);
   fluids_p2c(S);
-  fluids_update(S, FLUIDS_FLUX0 | FLUIDS_FLUX1 | FLUIDS_SOUNDSPEEDSQUARED);
   fluids_getattrib(S, F, FLUIDS_FLUX0);
   fluids_getattrib(S, G, FLUIDS_FLUX1);
   fluids_getattrib(S, &cs2, FLUIDS_SOUNDSPEEDSQUARED);
@@ -58,28 +72,6 @@ int test2()
   asserteq(G[2], 1.0);
   asserteq(cs2, 1.4);
   printf("TEST 2 PASSED\n");
-  return 0;
-}
-
-// Passes when sound speed calculation is skipped appropriately
-// -----------------------------------------------------------------------------
-int test3()
-{
-  double x[5] = {1, 1, 1, 1, 1};
-  double gam = 1.4;
-  double lam1[5], cs2;
-  fluid_state *S = fluids_new();
-  fluids_setfluid(S, FLUIDS_NRHYD);
-  fluids_setattrib(S, &gam, FLUIDS_GAMMALAWINDEX);
-  fluids_setattrib(S, x, FLUIDS_PRIMITIVE);
-  fluids_p2c(S);
-  fluids_update(S, FLUIDS_FLUX0 | FLUIDS_EVAL1);
-  fluids_getattrib(S, lam1, FLUIDS_EVAL1);
-  fluids_getattrib(S, &cs2, FLUIDS_SOUNDSPEEDSQUARED);
-  fluids_del(S);
-  asserteq(lam1[1], 1.0);
-  asserteq(cs2, 0.0);
-  printf("TEST 3 PASSED\n");
   return 0;
 }
 
@@ -100,14 +92,10 @@ int test4()
   double LAR[25];
   fluid_state *S = fluids_new();
   fluids_setfluid(S, FLUIDS_NRHYD);
+  fluids_alloc(S, fields());
   fluids_setattrib(S, &gam, FLUIDS_GAMMALAWINDEX);
   fluids_setattrib(S, x, FLUIDS_PRIMITIVE);
   fluids_p2c(S);
-  fluids_update(S,
-                FLUIDS_EVAL0 |
-                FLUIDS_LEVECS0 |
-                FLUIDS_REVECS0 |
-                FLUIDS_JACOBIAN0);
   fluids_getattrib(S, V, FLUIDS_EVAL0);
   fluids_getattrib(S, L, FLUIDS_LEVECS0);
   fluids_getattrib(S, R, FLUIDS_REVECS0);
@@ -146,6 +134,9 @@ int test5()
     fluids_setfluid(SL, FLUIDS_NRHYD);
     fluids_setfluid(SR, FLUIDS_NRHYD);
     fluids_setfluid(S_, FLUIDS_NRHYD);
+    fluids_alloc(SL, fields());
+    fluids_alloc(SR, fields());
+    fluids_alloc(S_, fields());
 
     fluids_setattrib(SL, &gam, FLUIDS_GAMMALAWINDEX);
     fluids_setattrib(SR, &gam, FLUIDS_GAMMALAWINDEX);
@@ -207,7 +198,7 @@ int main()
 {
   test1();
   test2();
-  test3();
+  //  test3();
   test4();
   test5();
   test6();

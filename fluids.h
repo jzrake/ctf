@@ -76,6 +76,8 @@ typedef struct fluid_riemann fluid_riemann;
 fluid_state *fluids_new(void);
 int fluids_del(fluid_state *S);
 int fluids_update(fluid_state *S, long flags);
+int fluids_resetcache(fluid_state *S);
+int fluids_alloc(fluid_state *S, long flags);
 int fluids_c2p(fluid_state *S);
 int fluids_p2c(fluid_state *S);
 int fluids_setfluid(fluid_state *S, int fluid);

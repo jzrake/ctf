@@ -63,16 +63,6 @@ int fluids_del(fluid_state *S)
 int fluids_setfluid(fluid_state *S, int fluid)
 {
   S->needsupdateflags = FLUIDS_FLAGSALL;
-  long modes = 0;
-
-  modes |= FLUIDS_CONSERVED;
-  modes |= FLUIDS_PRIMITIVE;
-  modes |= FLUIDS_FLUXALL;
-  modes |= FLUIDS_EVALSALL;
-  modes |= FLUIDS_LEVECSALL;
-  modes |= FLUIDS_REVECSALL;
-  modes |= FLUIDS_JACOBIANALL;
-
   switch (fluid) {
   case FLUIDS_SCALAR_ADVECTION:
     S->fluid = fluid;
@@ -93,7 +83,6 @@ int fluids_setfluid(fluid_state *S, int fluid)
   default:
     return FLUIDS_ERROR_BADREQUEST;
   }
-  _alloc_state(S, modes, ALLOC);
   return 0;
 }
 
@@ -120,6 +109,7 @@ int fluids_setnpassive(fluid_state *S, int n)
 
 int fluids_getattrib(fluid_state *S, double *x, long flag)
 {
+  fluids_update(S, flag);
   return _getsetattrib(S, x, flag, 'g');
 }
 
@@ -227,6 +217,18 @@ int fluids_update(fluid_state *S, long flags)
   default:
     return FLUIDS_ERROR_BADREQUEST;
   }
+}
+
+int fluids_resetcache(fluid_state *S)
+{
+  S->needsupdateflags = FLUIDS_FLAGSALL;
+  return 0;
+}
+
+int fluids_alloc(fluid_state *S, long flags)
+{
+  _alloc_state(S, flags, ALLOC);
+  return 0;
 }
 
 int fluids_c2p(fluid_state *S)
