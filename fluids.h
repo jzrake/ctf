@@ -119,6 +119,6 @@ struct fluid_state {
   double specificinternal;
   double gammalawindex;
 } ;
-
 #endif // FLUIDS_PRIVATE_DEFS
+
 #endif // FLUIDS_HEADER_INCLUDED

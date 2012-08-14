@@ -9,6 +9,8 @@
 #include <string.h>
 #include <math.h>
 
+/* http://en.wikipedia.org/wiki/Bitwise_operation#NOT */
+#define BITWISENOT(x) -(x) - 1
 #define ALLOC 1
 #define DEALLOC 0
 
@@ -30,6 +32,7 @@ fluid_state *fluids_new()
     .coordsystem = FLUIDS_COORD_CARTESIAN,
     .nwaves = 0,
     .npassive = 0,
+    .needsupdateflags = FLUIDS_FLAGSALL,
     .location = NULL,
     .passive = NULL,
     .conserved = NULL,
@@ -59,6 +62,7 @@ int fluids_del(fluid_state *S)
 
 int fluids_setfluid(fluid_state *S, int fluid)
 {
+  S->needsupdateflags = FLUIDS_FLAGSALL;
   long modes = 0;
 
   modes |= FLUIDS_CONSERVED;
@@ -95,18 +99,21 @@ int fluids_setfluid(fluid_state *S, int fluid)
 
 int fluids_seteos(fluid_state *S, int eos)
 {
+  S->needsupdateflags = FLUIDS_FLAGSALL;
   S->eos = eos;
   return 0;
 }
 
 int fluids_setcoordsystem(fluid_state *S, int coordsystem)
 {
+  S->needsupdateflags = FLUIDS_FLAGSALL;
   S->coordsystem = coordsystem;
   return 0;
 }
 
 int fluids_setnpassive(fluid_state *S, int n)
 {
+  S->needsupdateflags = FLUIDS_FLAGSALL;
   S->npassive = n;
   return 0;
 }
@@ -118,6 +125,7 @@ int fluids_getattrib(fluid_state *S, double *x, long flag)
 
 int fluids_setattrib(fluid_state *S, double *x, long flag)
 {
+  S->needsupdateflags = FLUIDS_FLAGSALL; // most conservative invalidation rule
   return _getsetattrib(S, x, flag, 's');
 }
 
@@ -275,9 +283,25 @@ double _nrhyd_cs2(fluid_state *S)
 
 int _nrhyd_update(fluid_state *S, long modes)
 {
+  /* It's only necessary to update the fields which were requested in `modes`,
+   * but also have their needsupdate bit enabled.
+   *
+   * modes:                    001101011
+   * needsupdateflags:         000010001
+   * modes becomes:            000000001 (modes &= S->needsupdateflags)
+   *
+   * After the update is finished, any bit in needsupdateflags which is enabled
+   * in modes should be set to zero. In other words:
+   *
+   * needsupdateflags:         000010001
+   * modes:                    000000001
+   * needsupdateflags becomes: 000010000 (needsupdateflags &= !modes)
+   */
+  modes &= S->needsupdateflags;
+
   double *U = S->conserved;
   double *P = S->primitive;
-  double a, cs2;
+  double a=0.0, cs2=0.0;
 
   if (modes & FLUIDS_FLUX0) {
     S->flux[0][rho] = U[rho] * P[vx];
@@ -358,6 +382,7 @@ int _nrhyd_update(fluid_state *S, long modes)
     _nrhyd_jacobian(S, 2);
   }
 
+  S->needsupdateflags &= BITWISENOT(modes);
   return 0;
 }
 

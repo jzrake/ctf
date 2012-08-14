@@ -178,6 +178,31 @@ int test5()
   return 0;
 }
 
+// Passes when the FLUIDS_FLAGSALL macro bits 0 through 29 inclusively are
+// enabled, and 30 and 31 are disabled, and when the BITWISENOT macro performs
+// the correct bit-complement operation.
+// -----------------------------------------------------------------------------
+int test6()
+{
+#define BITWISENOT(x) -(x) - 1
+  for (int n=0; n<30; ++n) {
+    assert(FLUIDS_FLAGSALL & (1<<n));
+  }
+  assert(!(FLUIDS_FLAGSALL & (1<<30)));
+  assert(!(FLUIDS_FLAGSALL & (1<<31)));
+  long modes = FLUIDS_PRIMITIVE | FLUIDS_CONSERVED;
+  assert(modes & FLUIDS_PRIMITIVE);
+  assert(modes & FLUIDS_CONSERVED);
+  assert(!(modes & FLUIDS_FLUX0));
+  modes = BITWISENOT(modes);
+  assert(!(modes & FLUIDS_PRIMITIVE));
+  assert(!(modes & FLUIDS_CONSERVED));
+  assert(modes & FLUIDS_FLUX0);
+  printf("TEST 6 PASSED\n");
+  return 0;
+#undef BITWISENOT
+}
+
 int main()
 {
   test1();
@@ -185,5 +210,6 @@ int main()
   test3();
   test4();
   test5();
+  test6();
   return 0;
 }
