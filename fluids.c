@@ -10,7 +10,7 @@
 #include <math.h>
 
 /* http://en.wikipedia.org/wiki/Bitwise_operation#NOT */
-#define BITWISENOT(x) -(x) - 1
+#define BITWISENOT(x) (-(x) - 1)
 #define ALLOC 1
 #define DEALLOC 0
 
@@ -115,7 +115,7 @@ int fluids_getattrib(fluid_state *S, double *x, long flag)
 
 int fluids_setattrib(fluid_state *S, double *x, long flag)
 {
-  S->needsupdateflags = FLUIDS_FLAGSALL; // most conservative invalidation rule
+  S->needsupdateflags = FLUIDS_FLAGSALL & BITWISENOT(flag);
   return _getsetattrib(S, x, flag, 's');
 }
 
@@ -219,9 +219,19 @@ int fluids_update(fluid_state *S, long flags)
   }
 }
 
-int fluids_resetcache(fluid_state *S)
+int fluids_setcachevalid(fluid_state *S, long flags)
 {
-  S->needsupdateflags = FLUIDS_FLAGSALL;
+  /* Disables all needsupdateflags bits in `flags` so that they do not need to
+     be updated. */
+  S->needsupdateflags &= BITWISENOT(flags);
+  return 0;
+}
+
+int fluids_setcacheinvalid(fluid_state *S, long flags)
+{
+  /* Enables all needsupdateflags bits in `flags` so that they will need to be
+     updated. */
+  S->needsupdateflags |= flags;
   return 0;
 }
 
@@ -235,26 +245,6 @@ int fluids_alloc(fluid_state *S, long flags)
 {
   _alloc_state(S, flags, ALLOC);
   return 0;
-}
-
-int fluids_c2p(fluid_state *S)
-{
-  switch (S->fluid) {
-  case FLUIDS_NRHYD:
-    return _nrhyd_c2p(S);
-  default:
-    return FLUIDS_ERROR_BADREQUEST;
-  }
-}
-
-int fluids_p2c(fluid_state *S)
-{
-  switch (S->fluid) {
-  case FLUIDS_NRHYD:
-    return _nrhyd_p2c(S);
-  default:
-    return FLUIDS_ERROR_BADREQUEST;
-  }
 }
 
 int _nrhyd_c2p(fluid_state *S)
@@ -306,6 +296,19 @@ int _nrhyd_update(fluid_state *S, long modes)
    * needsupdateflags becomes: 000010000 (needsupdateflags &= !modes)
    */
   modes &= S->needsupdateflags;
+
+  if ((S->needsupdateflags & FLUIDS_PRIMITIVE) &
+      (S->needsupdateflags & FLUIDS_CONSERVED)) {
+    /* If both the primitive and conserved fields are out of date there's
+       nothing we can do. */
+    return FLUIDS_ERROR_BADREQUEST;
+  }
+  else if (S->needsupdateflags & FLUIDS_CONSERVED) {
+    _nrhyd_p2c(S);
+  }
+  else if (S->needsupdateflags & FLUIDS_PRIMITIVE) {
+    _nrhyd_c2p(S);
+  }
 
   double *U = S->conserved;
   double *P = S->primitive;

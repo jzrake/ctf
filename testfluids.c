@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
-#define FLUIDS_PRIVATE_DEFS
 #include "fluids.h"
 #include "matrix.h"
 
@@ -59,7 +58,6 @@ int test2()
   fluids_alloc(S, fields());
   fluids_setattrib(S, &gam, FLUIDS_GAMMALAWINDEX);
   fluids_setattrib(S, x, FLUIDS_PRIMITIVE);
-  fluids_p2c(S);
   fluids_getattrib(S, F, FLUIDS_FLUX0);
   fluids_getattrib(S, G, FLUIDS_FLUX1);
   fluids_getattrib(S, &cs2, FLUIDS_SOUNDSPEEDSQUARED);
@@ -89,7 +87,6 @@ int test3()
   fluids_alloc(S, fields());
   fluids_setattrib(S, &gam, FLUIDS_GAMMALAWINDEX);
   fluids_setattrib(S, x, FLUIDS_PRIMITIVE);
-  fluids_p2c(S);
 
   // First update (un-cached)
   fluids_getattrib(S, F, FLUIDS_FLUX0);
@@ -132,7 +129,6 @@ int test4()
   fluids_alloc(S, fields());
   fluids_setattrib(S, &gam, FLUIDS_GAMMALAWINDEX);
   fluids_setattrib(S, x, FLUIDS_PRIMITIVE);
-  fluids_p2c(S);
   fluids_getattrib(S, V, FLUIDS_EVAL0);
   fluids_getattrib(S, L, FLUIDS_LEVECS0);
   fluids_getattrib(S, R, FLUIDS_REVECS0);
@@ -180,8 +176,6 @@ int test5()
     fluids_setattrib(S_, &gam, FLUIDS_GAMMALAWINDEX);
     fluids_setattrib(SL, Pl, FLUIDS_PRIMITIVE);
     fluids_setattrib(SR, Pr, FLUIDS_PRIMITIVE);
-    fluids_p2c(SL);
-    fluids_p2c(SR);
 
     fluid_riemann *R = fluids_riemann_new();
     fluids_riemann_setsolver(R, solvers[solver]);
@@ -190,7 +184,6 @@ int test5()
     fluids_riemann_setstateR(R, SR);
     fluids_riemann_execute(R);
     fluids_riemann_sample(R, S_, 0.2);
-    fluids_c2p(S_);
     fluids_getattrib(S_, P_, FLUIDS_PRIMITIVE);
 
     for (int n=0; n<5; ++n) {
@@ -212,7 +205,7 @@ int test5()
 // -----------------------------------------------------------------------------
 int test6()
 {
-#define BITWISENOT(x) -(x) - 1
+#define BITWISENOT(x) (-(x) - 1)
   for (int n=0; n<30; ++n) {
     assert(FLUIDS_FLAGSALL & (1<<n));
   }

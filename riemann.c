@@ -213,6 +213,8 @@ int _hll_sample(fluid_riemann *R, fluid_state *S, double s)
   if      (        s<=am) for (i=0; i<nw; ++i) F[i] = Fl[i];
   else if (am<s && s<=ap) for (i=0; i<nw; ++i) F[i] = R->F_hll[i];
   else if (ap<s         ) for (i=0; i<nw; ++i) F[i] = Fr[i];
+
+  fluids_setcachevalid(S, FLUIDS_CONSERVED | FLUIDS_FLUX[R->dim]);
   return 0;
 }
 
@@ -290,6 +292,7 @@ int _nrhyd_hllc_sample(fluid_riemann *R, fluid_state *S, double s)
   else if (lc<s && s<=ap) for (i=0; i<5; ++i) F[i] = Fr[i] + ap*(Ur_[i]-Ur[i]);
   else if (ap<s         ) for (i=0; i<5; ++i) F[i] = Fr[i];
 
+  fluids_setcachevalid(S, FLUIDS_CONSERVED | FLUIDS_FLUX[R->dim]);
   return 0;
 }
 
@@ -566,7 +569,7 @@ int _nrhyd_exact_sample(fluid_riemann *R, fluid_state *S, double s)
       }
     }
   }
-  fluids_p2c(S);
-  fluids_update(S, FLUIDS_FLUX[R->dim]);
+
+  fluids_setcachevalid(S, FLUIDS_PRIMITIVE);
   return 0;
 }
