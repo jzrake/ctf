@@ -75,6 +75,43 @@ int test2()
   return 0;
 }
 
+// Passes when cached values work correctly
+// -----------------------------------------------------------------------------
+int test3()
+{
+  double x[5] = {1, 1, 1, 1, 1};
+  double F[5];
+  double gam = 1.4;
+  double cs2;
+  long modes;
+  fluid_state *S = fluids_new();
+  fluids_setfluid(S, FLUIDS_NRHYD);
+  fluids_alloc(S, fields());
+  fluids_setattrib(S, &gam, FLUIDS_GAMMALAWINDEX);
+  fluids_setattrib(S, x, FLUIDS_PRIMITIVE);
+  fluids_p2c(S);
+
+  // First update (un-cached)
+  fluids_getattrib(S, F, FLUIDS_FLUX0);
+  fluids_getlastupdate(S, &modes);
+  assert(modes == FLUIDS_FLUX0);
+  fluids_getattrib(S, &cs2, FLUIDS_SOUNDSPEEDSQUARED);
+  fluids_getlastupdate(S, &modes);
+  assert(modes == FLUIDS_SOUNDSPEEDSQUARED);
+
+  // First update (cached)
+  fluids_getattrib(S, F, FLUIDS_FLUX0);
+  fluids_getlastupdate(S, &modes);
+  assert(modes == 0);
+  fluids_getattrib(S, &cs2, FLUIDS_SOUNDSPEEDSQUARED);
+  fluids_getlastupdate(S, &modes);
+  assert(modes == 0);
+
+  fluids_del(S);
+  printf("TEST 3 PASSED\n");
+  return 0;
+}
+
 // Passes when
 // (1) L.R = I
 // (2) L.A.R = diag{ lam0, lam1, lam2, lam3, lam4 }
@@ -198,7 +235,7 @@ int main()
 {
   test1();
   test2();
-  //  test3();
+  test3();
   test4();
   test5();
   test6();

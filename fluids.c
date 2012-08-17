@@ -225,6 +225,12 @@ int fluids_resetcache(fluid_state *S)
   return 0;
 }
 
+int fluids_getlastupdate(fluid_state *S, long *flags)
+{
+  *flags = S->lastupdatedflags;
+  return 0;
+}
+
 int fluids_alloc(fluid_state *S, long flags)
 {
   _alloc_state(S, flags, ALLOC);
@@ -384,6 +390,7 @@ int _nrhyd_update(fluid_state *S, long modes)
     _nrhyd_jacobian(S, 2);
   }
 
+  S->lastupdatedflags = modes;
   S->needsupdateflags &= BITWISENOT(modes);
   return 0;
 }
