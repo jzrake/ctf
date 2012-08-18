@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
+#define FLUIDS_PRIVATE_DEFS
 #include "fluids.h"
 #include "matrix.h"
 
@@ -205,7 +206,6 @@ int test5()
 // -----------------------------------------------------------------------------
 int test6()
 {
-#define BITWISENOT(x) (-(x) - 1)
   for (int n=0; n<30; ++n) {
     assert(FLUIDS_FLAGSALL & (1<<n));
   }
@@ -221,7 +221,32 @@ int test6()
   assert(modes & FLUIDS_FLUX0);
   printf("TEST 6 PASSED\n");
   return 0;
-#undef BITWISENOT
+}
+
+// A repeat of test1, but with mapping conserved over a user buffer
+// -----------------------------------------------------------------------------
+int test7()
+{
+  double x[5] = {1, 1, 1, 1, 1};
+  double U[5];
+  double y[5];
+  double gam = 1.4;
+  double Gam;
+  fluid_state *S = fluids_new();
+  fluids_setfluid(S, FLUIDS_NRHYD);
+  fluids_alloc(S, fields() & BITWISENOT(FLUIDS_CONSERVED));
+  fluids_mapbuffer(S, FLUIDS_CONSERVED, U);
+  fluids_setattrib(S, &gam, FLUIDS_GAMMALAWINDEX);
+  fluids_getattrib(S, &Gam, FLUIDS_GAMMALAWINDEX);
+  fluids_setattrib(S, x, FLUIDS_PRIMITIVE);
+  fluids_getattrib(S, y, FLUIDS_PRIMITIVE);
+  fluids_del(S);
+  asserteq(Gam, gam);
+  for (int n=0; n<5; ++n) {
+    asserteq(y[n], 1.0);
+  }
+  printf("TEST 7 PASSED\n");
+  return 0;
 }
 
 int main()
@@ -232,5 +257,6 @@ int main()
   test4();
   test5();
   test6();
+  test7();
   return 0;
 }

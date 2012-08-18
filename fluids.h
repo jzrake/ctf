@@ -80,6 +80,7 @@ int fluids_setcachevalid(fluid_state *S, long flags);
 int fluids_setcacheinvalid(fluid_state *S, long flags);
 int fluids_getlastupdate(fluid_state *S, long *flags);
 int fluids_alloc(fluid_state *S, long flags);
+int fluids_mapbuffer(fluid_state *S, long flag, void *buffer);
 int fluids_setfluid(fluid_state *S, int fluid);
 int fluids_seteos(fluid_state *S, int eos);
 int fluids_setcoordsystem(fluid_state *S, int coordsystem);
@@ -103,6 +104,7 @@ struct fluid_state {
   int coordsystem;
   int nwaves;
   int npassive;
+  long ownsbufferflags;
   long needsupdateflags;
   long lastupdatedflags;
   double *location;
@@ -122,6 +124,13 @@ struct fluid_state {
   double specificinternal;
   double gammalawindex;
 } ;
+
+/* http://en.wikipedia.org/wiki/Bitwise_operation#NOT */
+#define BITWISENOT(x) (-(x) - 1)
+#define MAPBUF 2
+#define ALLOC 1
+#define DEALLOC 0
+
 #endif // FLUIDS_PRIVATE_DEFS
 
 #endif // FLUIDS_HEADER_INCLUDED

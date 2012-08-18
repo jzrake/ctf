@@ -9,19 +9,14 @@
 #include <string.h>
 #include <math.h>
 
-/* http://en.wikipedia.org/wiki/Bitwise_operation#NOT */
-#define BITWISENOT(x) (-(x) - 1)
-#define ALLOC 1
-#define DEALLOC 0
-
-static void _alloc_state(fluid_state *S, long modes, int op);
 static int _getsetattrib(fluid_state *S, double *x, long flag, char op);
 static int _nrhyd_c2p(fluid_state *S);
 static int _nrhyd_p2c(fluid_state *S);
-static double _nrhyd_cs2(fluid_state *S);
 static int _nrhyd_update(fluid_state *S, long flags);
+static void _nrhyd_cs2(fluid_state *S, double *cs2);
 static void _nrhyd_eigenvec(fluid_state *S, int dim, int doleft, int dorght);
 static void _nrhyd_jacobian(fluid_state *S, int dim);
+static void _alloc_state(fluid_state *S, long modes, int op, void *buffer);
 
 fluid_state *fluids_new()
 {
@@ -32,7 +27,9 @@ fluid_state *fluids_new()
     .coordsystem = FLUIDS_COORD_CARTESIAN,
     .nwaves = 0,
     .npassive = 0,
+    .ownsbufferflags = FLUIDS_FLAGSALL,
     .needsupdateflags = FLUIDS_FLAGSALL,
+    .lastupdatedflags = 0,
     .location = NULL,
     .passive = NULL,
     .conserved = NULL,
@@ -55,7 +52,7 @@ fluid_state *fluids_new()
 
 int fluids_del(fluid_state *S)
 {
-  _alloc_state(S, FLUIDS_FLAGSALL, DEALLOC);
+  _alloc_state(S, FLUIDS_FLAGSALL, DEALLOC, NULL);
   free(S);
   return 0;
 }
@@ -172,15 +169,22 @@ int _getsetattrib(fluid_state *S, double *x, long flag, char op)
   return 0;
 }
 
-void _alloc_state(fluid_state *S, long modes, int op)
+void _alloc_state(fluid_state *S, long modes, int op, void *buffer)
 {
 #define A(a,s,m) do {							\
     if (modes & m) {							\
       if (op == ALLOC) {						\
 	S->a = (double*) realloc(S->a,(s)*sizeof(double));		\
+	S->ownsbufferflags |= m;					\
       }									\
       else if (op == DEALLOC) {						\
-	free(S->a);							\
+	if (S->ownsbufferflags & m) {					\
+	  free(S->a);							\
+	}								\
+      }									\
+      else if (op == MAPBUF) {						\
+	S->a = buffer;							\
+	S->ownsbufferflags &= BITWISENOT(m);				\
       }									\
     }									\
   } while (0)								\
@@ -243,7 +247,13 @@ int fluids_getlastupdate(fluid_state *S, long *flags)
 
 int fluids_alloc(fluid_state *S, long flags)
 {
-  _alloc_state(S, flags, ALLOC);
+  _alloc_state(S, flags, ALLOC, NULL);
+  return 0;
+}
+
+int fluids_mapbuffer(fluid_state *S, long flag, void *buffer)
+{
+  _alloc_state(S, flag, MAPBUF, buffer);
   return 0;
 }
 
@@ -273,10 +283,10 @@ int _nrhyd_p2c(fluid_state *S)
   return 0;
 }
 
-double _nrhyd_cs2(fluid_state *S)
+void _nrhyd_cs2(fluid_state *S, double *cs2)
 {
   double gm = S->gammalawindex;
-  return gm * S->primitive[pre] / S->primitive[rho];
+  *cs2 = gm * S->primitive[pre] / S->primitive[rho];
 }
 
 int _nrhyd_update(fluid_state *S, long modes)
@@ -337,7 +347,7 @@ int _nrhyd_update(fluid_state *S, long modes)
   }
 
   if (modes & (FLUIDS_EVALSALL | FLUIDS_SOUNDSPEEDSQUARED)) {
-    cs2 = _nrhyd_cs2(S);
+    _nrhyd_cs2(S, &cs2);
     a = sqrt(cs2);
   }
 
