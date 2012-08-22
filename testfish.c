@@ -27,6 +27,9 @@ static long fields()
 int test1()
 {
   fish_state *S = fish_new();
+  fish_setfluid(S, FLUIDS_NRHYD);
+  fish_setreconstruction(S, FISH_NONE);
+
   double P[5] = {1, 1, 1, 1, 1};
   double gam = 1.4;
   fluid_state *fluid[100];
@@ -38,7 +41,7 @@ int test1()
     fluids_setattrib(fluid[n], &gam, FLUIDS_GAMMALAWINDEX);
     fluids_setattrib(fluid[n], P, FLUIDS_PRIMITIVE);
   }
-  fish_intercellflux(S, fluid, Fiph, 100);
+  fish_intercellflux(S, fluid, Fiph, 100, 0);
   for (int n=0; n<100-1; ++n) {
     asserteq(Fiph[5*n], 1.0);
   }

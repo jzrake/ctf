@@ -40,8 +40,13 @@ void finish()
 int timederiv(double *L)
 {
   fish_state *S = fish_new();
+  fish_setfluid(S, FLUIDS_NRHYD);
+  fish_setriemannsolver(S, FLUIDS_RIEMANN_EXACT);
+  fish_setreconstruction(S, FISH_PLM);
+  fish_setplmtheta(S, 2.0);
+
   double Fiph[500];
-  fish_intercellflux(S, fluid, Fiph, 100);
+  fish_intercellflux(S, fluid, Fiph, 100, 0);
 
   for (int n=2; n<100-2; ++n) {
     for (int q=0; q<5; ++q) {
