@@ -59,7 +59,7 @@ int fish_setplmtheta(fish_state *S, double plmtheta)
 }
 
 int fish_intercellflux(fish_state *S, fluid_state **fluid, double *F, int N,
-		       int dim)
+                       int dim)
 {
   int Q = fluids_getnwaves(S->fluid);
   fluid_state *S_ = fluids_new();
@@ -120,34 +120,30 @@ int fish_intercellflux(fish_state *S, fluid_state **fluid, double *F, int N,
 
 void _plm(fluid_state **src, fluid_state *L, fluid_state *R, int Q)
 {
-  double P0[MAXQ], P1[MAXQ], P2[MAXQ], P3[MAXQ];
+  double P[4][MAXQ];
   double Pl[MAXQ], Pr[MAXQ];
-
-  fluids_getattrib(src[-1], P0, FLUIDS_PRIMITIVE);
-  fluids_getattrib(src[ 0], P1, FLUIDS_PRIMITIVE);
-  fluids_getattrib(src[ 1], P2, FLUIDS_PRIMITIVE);
-  fluids_getattrib(src[ 2], P3, FLUIDS_PRIMITIVE);
-
+  for (int j=-1; j<3; ++j) {
+    fluids_getattrib(src[j], P[j+1], FLUIDS_PRIMITIVE);
+  }
   for (int q=0; q<Q; ++q) {
-    double v[4] = {P0[q], P1[q], P2[q], P3[q]};
+    double v[4];
+    for (int j=0; j<4; ++j) {
+      v[j] = P[j][q];
+    }
     Pl[q] = reconstruct(&v[1], PLM_C2R);
     Pr[q] = reconstruct(&v[2], PLM_C2L);
   }
-
   fluids_setattrib(L, Pl, FLUIDS_PRIMITIVE);
   fluids_setattrib(R, Pr, FLUIDS_PRIMITIVE);
 }
-
 
 void _weno5(fluid_state **src, fluid_state *L, fluid_state *R, int Q)
 {
   double P[6][MAXQ];
   double Pl[MAXQ], Pr[MAXQ];
-
   for (int j=-2; j<4; ++j) {
     fluids_getattrib(src[j], P[j+2], FLUIDS_PRIMITIVE);
   }
-
   for (int q=0; q<Q; ++q) {
     double v[6];
     for (int j=0; j<6; ++j) {
@@ -156,7 +152,6 @@ void _weno5(fluid_state **src, fluid_state *L, fluid_state *R, int Q)
     Pl[q] = reconstruct(&v[2], WENO5_FD_C2R);
     Pr[q] = reconstruct(&v[3], WENO5_FD_C2L);
   }
-
   fluids_setattrib(L, Pl, FLUIDS_PRIMITIVE);
   fluids_setattrib(R, Pr, FLUIDS_PRIMITIVE);
 }

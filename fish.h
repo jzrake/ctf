@@ -7,7 +7,6 @@
 #define FISH_PLM               -43
 #define FISH_WENO5             -44
 
-#include "cow.h"
 #include "fluids.h"
 
 struct fish_state;

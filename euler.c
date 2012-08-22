@@ -42,7 +42,7 @@ int timederiv(double *L)
   fish_state *S = fish_new();
   fish_setfluid(S, FLUIDS_NRHYD);
   fish_setriemannsolver(S, FLUIDS_RIEMANN_EXACT);
-  fish_setreconstruction(S, FISH_WENO5);
+  fish_setreconstruction(S, FISH_PLM);
   fish_setplmtheta(S, 2.0);
 
   double Fiph[500];
