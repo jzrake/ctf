@@ -11,7 +11,6 @@ static double plm_theta = 2.0;    // [1 -> 2 (most aggressive)]
 static double shenzha10_A = 50.0; // [0 -> ~100 (most aggressive)]
 static enum SmoothnessIndicator IS_mode = OriginalJiangShu96;
 
-
 static const double CeesA2C_FV[3][3] = { {23./24.,  1./12.,  -1./24.},
                                          {-1./24., 13./12.,  -1./24.},
                                          {-1./24.,  1./12.,  23./24.} };
