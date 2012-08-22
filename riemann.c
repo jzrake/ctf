@@ -570,6 +570,7 @@ int _nrhyd_exact_sample(fluid_riemann *R, fluid_state *S, double s)
     }
   }
 
+  fluids_setcacheinvalid(S, FLUIDS_FLAGSALL);
   fluids_setcachevalid(S, FLUIDS_PRIMITIVE);
   return 0;
 }
