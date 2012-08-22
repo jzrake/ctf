@@ -13,8 +13,8 @@ ARSTATIC     ?= $(AR) rcu
 FPIC         ?= -fPIC
 CFLAGS       ?= -Wall -g -O0
 
-OBJ = fish.o
-EXE = $(BINDIR)/testfish
+OBJ = fish.o weno.o
+EXE = $(BINDIR)/testfish $(BINDIR)/euler
 
 LIBS = $(LIBDIR)/libfish.so $(LIBDIR)/libfish.a
 HEADERS = $(INCDIR)/fish.h
@@ -62,6 +62,9 @@ $(LIBDIR)/libfish.a : $(OBJ)
 	$(ARSTATIC) $@ $?
 
 $(BINDIR)/testfish : testfish.o $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $^ $(LIB)
+
+$(BINDIR)/euler : euler.o $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ $(LIB)
 
 clean :

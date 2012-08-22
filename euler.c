@@ -37,13 +37,13 @@ void finish()
   }
 }
 
-int advance()
+int timederiv(double *L)
 {
   fish_state *S = fish_new();
-  double L[500], Fiph[500];
+  double Fiph[500];
   fish_intercellflux(S, fluid, Fiph, 100);
 
-  for (int n=1; n<100-1; ++n) {
+  for (int n=2; n<100-2; ++n) {
     for (int q=0; q<5; ++q) {
       L[5*n + q] = -(Fiph[5*n + q] - Fiph[5*(n-1) + q]) / dx;
     }
@@ -51,26 +51,47 @@ int advance()
 
   for (int q=0; q<5; ++q) {
     L[5* 0 + q] = 0.0;
+    L[5* 1 + q] = 0.0;
+    L[5*98 + q] = 0.0;
     L[5*99 + q] = 0.0;
   }
+  fish_del(S);
+  return 0;
+}
 
+int advance()
+{
+  double L[500], U0[500];
+  for (int n=0; n<100; ++n) {
+    fluids_getattrib(fluid[n], &U0[5*n], FLUIDS_CONSERVED);
+  }
+
+  timederiv(L);
   for (int n=0; n<100; ++n) {
     double U[5];
     fluids_getattrib(fluid[n], U, FLUIDS_CONSERVED);
     for (int q=0; q<5; ++q) {
-      U[q] += L[5*n + q] * dt;
+      U[q] += L[5*n + q] * dt * 0.5;
     }
     fluids_setattrib(fluid[n], U, FLUIDS_CONSERVED);
   }
 
-  fish_del(S);
+  timederiv(L);
+  for (int n=0; n<100; ++n) {
+    double U[5];
+    fluids_getattrib(fluid[n], U, FLUIDS_CONSERVED);
+    for (int q=0; q<5; ++q) {
+      U[q] = U0[5*n + q] + L[5*n + q] * dt;
+    }
+    fluids_setattrib(fluid[n], U, FLUIDS_CONSERVED);
+  }
   return 0;
 }
 
 int main()
 {
   init();
-  for (int n=0; n<100; ++n) {
+  for (int n=0; n<200; ++n) {
     advance();
   }
   FILE *outf = fopen("euler.dat", "w");
