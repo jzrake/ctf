@@ -18,6 +18,17 @@ static void _nrhyd_eigenvec(fluid_state *S, int dim, int doleft, int dorght);
 static void _nrhyd_jacobian(fluid_state *S, int dim);
 static void _alloc_state(fluid_state *S, long modes, int op, void *buffer);
 
+int fluids_getnwaves(int fluid)
+{
+  switch (fluid) {
+  case FLUIDS_SCALAR_ADVECTION: return 1;
+  case FLUIDS_SCALAR_BURGERS: return 1;
+  case FLUIDS_SHALLOW_WATER: return 4;
+  case FLUIDS_NRHYD: return 5;
+  default: return 0;
+  }
+}
+
 fluid_state *fluids_new()
 {
   fluid_state *S = (fluid_state*) malloc(sizeof(fluid_state));
@@ -60,26 +71,8 @@ int fluids_del(fluid_state *S)
 int fluids_setfluid(fluid_state *S, int fluid)
 {
   S->needsupdateflags = FLUIDS_FLAGSALL;
-  switch (fluid) {
-  case FLUIDS_SCALAR_ADVECTION:
-    S->fluid = fluid;
-    S->nwaves = 1;
-    break;
-  case FLUIDS_SCALAR_BURGERS:
-    S->fluid = fluid;
-    S->nwaves = 1;
-    break;
-  case FLUIDS_SHALLOW_WATER:
-    S->fluid = fluid;
-    S->nwaves = 4;
-    break;
-  case FLUIDS_NRHYD:
-    S->fluid = fluid;
-    S->nwaves = 5;
-    break;
-  default:
-    return FLUIDS_ERROR_BADREQUEST;
-  }
+  S->fluid = fluid;
+  S->nwaves = fluids_getnwaves(fluid);
   return 0;
 }
 

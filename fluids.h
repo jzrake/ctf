@@ -87,6 +87,7 @@ int fluids_setcoordsystem(fluid_state *S, int coordsystem);
 int fluids_setnpassive(fluid_state *S, int n);
 int fluids_getattrib(fluid_state *S, double *x, long flag);
 int fluids_setattrib(fluid_state *S, double *x, long flag);
+int fluids_getnwaves(int fluid);
 
 fluid_riemann *fluids_riemann_new(void);
 int fluids_riemann_del(fluid_riemann *R);
