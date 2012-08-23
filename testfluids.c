@@ -33,8 +33,8 @@ int test1()
   fluids_setfluid(S, FLUIDS_NRHYD);
   fluids_alloc(S, fields());
   fluids_setattrib(S, &gam, FLUIDS_GAMMALAWINDEX);
-  fluids_getattrib(S, &Gam, FLUIDS_GAMMALAWINDEX);
   fluids_setattrib(S, x, FLUIDS_PRIMITIVE);
+  fluids_getattrib(S, &Gam, FLUIDS_GAMMALAWINDEX);
   fluids_getattrib(S, y, FLUIDS_PRIMITIVE);
   fluids_del(S);
   asserteq(Gam, gam);
@@ -237,8 +237,8 @@ int test7()
   fluids_alloc(S, fields() & BITWISENOT(FLUIDS_CONSERVED));
   fluids_mapbuffer(S, FLUIDS_CONSERVED, U);
   fluids_setattrib(S, &gam, FLUIDS_GAMMALAWINDEX);
-  fluids_getattrib(S, &Gam, FLUIDS_GAMMALAWINDEX);
   fluids_setattrib(S, x, FLUIDS_PRIMITIVE);
+  fluids_getattrib(S, &Gam, FLUIDS_GAMMALAWINDEX);
   fluids_getattrib(S, y, FLUIDS_PRIMITIVE);
   fluids_del(S);
   asserteq(Gam, gam);
@@ -246,6 +246,21 @@ int test7()
     asserteq(y[n], 1.0);
   }
   printf("TEST 7 PASSED\n");
+  return 0;
+}
+
+// Passes when an incomplete state is correctly identified
+// -----------------------------------------------------------------------------
+int test8()
+{
+  double y[5];
+  fluid_state *S = fluids_new();
+  fluids_setfluid(S, FLUIDS_NRHYD);
+  fluids_alloc(S, fields());
+  int err = fluids_getattrib(S, y, FLUIDS_PRIMITIVE);
+  assert(err == FLUIDS_ERROR_INCOMPLETE);
+  fluids_del(S);
+  printf("TEST 8 PASSED\n");
   return 0;
 }
 
@@ -258,5 +273,6 @@ int main()
   test5();
   test6();
   test7();
+  test8();
   return 0;
 }

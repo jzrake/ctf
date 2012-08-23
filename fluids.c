@@ -99,8 +99,13 @@ int fluids_setnpassive(fluid_state *S, int n)
 
 int fluids_getattrib(fluid_state *S, double *x, long flag)
 {
-  fluids_update(S, flag);
-  return _getsetattrib(S, x, flag, 'g');
+  int err = fluids_update(S, flag);
+  if (err) {
+    return err;
+  }
+  else {
+    return _getsetattrib(S, x, flag, 'g');
+  }
 }
 
 int fluids_setattrib(fluid_state *S, double *x, long flag)
@@ -300,11 +305,11 @@ int _nrhyd_update(fluid_state *S, long modes)
    */
   modes &= S->needsupdateflags;
 
-  if ((S->needsupdateflags & FLUIDS_PRIMITIVE) &
+  if ((S->needsupdateflags & FLUIDS_PRIMITIVE) &&
       (S->needsupdateflags & FLUIDS_CONSERVED)) {
     /* If both the primitive and conserved fields are out of date there's
        nothing we can do. */
-    return FLUIDS_ERROR_BADREQUEST;
+    return FLUIDS_ERROR_INCOMPLETE;
   }
   else if (S->needsupdateflags & FLUIDS_CONSERVED) {
     _nrhyd_p2c(S);
