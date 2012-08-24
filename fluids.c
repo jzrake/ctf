@@ -249,6 +249,12 @@ int fluids_alloc(fluid_state *S, long flags)
   return 0;
 }
 
+int fluids_dealloc(fluid_state *S, long flags)
+{
+  _alloc_state(S, flags, DEALLOC, NULL);
+  return 0;
+}
+
 int fluids_mapbuffer(fluid_state *S, long flag, void *buffer)
 {
   _alloc_state(S, flag, MAPBUF, buffer);

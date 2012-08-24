@@ -81,6 +81,7 @@ int fluids_setcachevalid(fluid_state *S, long flags);
 int fluids_setcacheinvalid(fluid_state *S, long flags);
 int fluids_getlastupdate(fluid_state *S, long *flags);
 int fluids_alloc(fluid_state *S, long flags);
+int fluids_dealloc(fluid_state *S, long flags);
 int fluids_mapbuffer(fluid_state *S, long flag, void *buffer);
 int fluids_setfluid(fluid_state *S, int fluid);
 int fluids_seteos(fluid_state *S, int eos);
