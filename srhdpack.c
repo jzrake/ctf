@@ -153,7 +153,7 @@ void sl94(cow_dfield *vel, cow_histogram *hist,
     double dulon[4];
 
     project3(dxlab, &dvlab[1], &dvlat[1], &dvlon[1]);
-    project3(dxlab, &dupro[1], &dulat[1], &dulon[1]);
+    project3(dxpro, &dupro[1], &dulat[1], &dulon[1]);
 
     dvlat[0] = len3(&dvlat[1]);
     dvlon[0] = len3(&dvlon[1]);
@@ -227,7 +227,7 @@ double dot3(double *u, double *v)
 }
 double gamm(double *x)
 {
-  return 1.0 / sqrt(1.0 - len3(x));
+  return 1.0 / sqrt(1.0 - dot3(x, x));
 }
 void project3(double *dx, double *u, double *ulat, double *ulon)
 // -----------------------------------------------------------------------------
