@@ -18,9 +18,9 @@ void srhdpack_shelevequescaling(cow_dfield *vel,
 				int velmode,
 				int sepmode,
 				int projmode,
-				int exponent,
 				int nbatch,
 				int nperbatch,
-				int seed);
+				int seed,
+				double exponent);
 
 #endif // SRHDPACK_HEADER_INCLUDED

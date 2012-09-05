@@ -10,8 +10,8 @@ static void sl94(cow_dfield *vel, cow_histogram *hist,
 		 int velmode,
 		 int sepmode,
 		 int projmode,
-		 int exponent,
-		 int N);
+		 int N,
+		 double exponent);
 static void boost(double u[4], double x[4], double xp[4]);
 static double len3(double *x);
 static double gamm(double *x);
@@ -23,10 +23,10 @@ void srhdpack_shelevequescaling(cow_dfield *vel,
 				int velmode,
 				int sepmode,
 				int projmode,
-				int exponent,
 				int nbatch,
 				int nperbatch,
-				int seed)
+				int seed,
+				double exponent)
 // -----------------------------------------------------------------------------
 // This function computes the pairwise relative Lorentz factor between many
 // points in the 3-velocity field `vel`. The user needs to supply two
@@ -54,7 +54,7 @@ void srhdpack_shelevequescaling(cow_dfield *vel,
 // Velocity options: GAMMA, BETA, GAMMABETA
 // Separation vector: LAB, PROPER
 // Projection options: LONGITUDINAL, TRANSVERSE
-// Exponent options: p=1,2,...
+// Exponent options: p=0.5,1.0,2.0,...
 // -----------------------------------------------------------------------------
 {
   cow_domain *d = cow_dfield_getdomain(vel);
@@ -70,7 +70,7 @@ void srhdpack_shelevequescaling(cow_dfield *vel,
   cow_histogram_commit(hist);
 
   for (int n=0; n<nbatch; ++n) {
-    sl94(vel, hist, velmode, sepmode, projmode, exponent, nperbatch);
+    sl94(vel, hist, velmode, sepmode, projmode, nperbatch, exponent);
     printf("[%s] running batch %d/%d of size %d\n", MODULE, n, nbatch,
 	   nperbatch);
   }
@@ -82,8 +82,8 @@ void sl94(cow_dfield *vel, cow_histogram *hist,
 	  int velmode,
 	  int sepmode,
 	  int projmode,
-	  int exponent,
-	  int N)
+	  int N,
+	  double exponent)
 {
   int npair = N;
   int nsamp = N*2;
