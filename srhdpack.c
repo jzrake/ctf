@@ -53,7 +53,7 @@ void srhdpack_shelevequescaling(cow_dfield *vel,
 //
 // Velocity options: GAMMA, BETA, GAMMABETA
 // Separation vector: LAB, PROPER
-// Projection options: LONGITUDINAL, TRANSVERSE
+// Projection options: NONE, LONGITUDINAL, TRANSVERSE
 // Exponent options: p=0.5,1.0,2.0,...
 // -----------------------------------------------------------------------------
 {
@@ -237,7 +237,7 @@ void project3(double *dx, double *u, double *ulat, double *ulon)
 {
   double dxlen = len3(dx); if (dxlen<1e-12) dxlen = 1.0; // don't divide by zero
   double dxhat[3] = { dx[0] / dxlen, dx[1] / dxlen, dx[2] / dxlen };
-  double ulonlen = dot3(dxhat, ulon);
+  double ulonlen = dot3(dxhat, u);
   ulon[0] = ulonlen * dxhat[0];
   ulon[1] = ulonlen * dxhat[1];
   ulon[2] = ulonlen * dxhat[2];
