@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include "cow.h"
+#include "srhdpack.h"
 #if (COW_MPI)
 #include <mpi.h>
 #endif
@@ -87,6 +88,16 @@ int main(int argc, char **argv)
   double *P;
   cow_dfield_sampleglobalind(data, 12, 12, 12, &P, NULL);
   printf("%f %f %f\n", P[0], P[1], P[2]);
+
+  srhdpack_samplemode mode = { 2.0,
+			       SRHDPACK_VELOCITY_GAMMABETA,
+			       SRHDPACK_SEPARATION_PROPER,
+			       SRHDPACK_PROJECTION_LONGITUDINAL };
+  double samploc[150];
+  double outbufx[50];
+  double outbufy[50];
+  for (int n=0; n<150; ++n) samploc[n] = 0.5;
+  srhdpack_collectpairs(data, &mode, 1, 50, 50, samploc, outbufx, outbufy);
 
   cow_dfield_del(data);
   cow_domain_del(domain);

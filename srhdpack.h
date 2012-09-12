@@ -13,6 +13,14 @@
 #define SRHDPACK_PROJECTION_TRANSVERSE   -49
 #define SRHDPACK_PROJECTION_LONGITUDINAL -48
 
+typedef struct srhdpack_samplemode
+{
+  double exponent; // exponent value: p
+  int velmode; // SRHDPACK_VELOCITY
+  int sepmode; // SRHDPACK_SEPARATION
+  int projmode; // SRHDPACK_PROJECTION
+} srhdpack_samplemode;
+
 void srhdpack_shelevequescaling(cow_dfield *vel,
 				cow_histogram *hist,
 				int velmode,
@@ -22,5 +30,14 @@ void srhdpack_shelevequescaling(cow_dfield *vel,
 				int nperbatch,
 				int seed,
 				double exponent);
+
+void srhdpack_collectpairs(cow_dfield *vel,
+			   srhdpack_samplemode *modes,
+			   int num_modes,
+			   int num_pairs,
+			   int num_samps,
+			   double *samploc,
+			   double *outbufx,
+			   double *outbufy);
 
 #endif // SRHDPACK_HEADER_INCLUDED
