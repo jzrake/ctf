@@ -72,6 +72,12 @@ void cow_dfield_sampleexecute(cow_dfield *f)
 // P:    OUT  list of filled samples (N x Q) where Q = f->n_members
 // -----------------------------------------------------------------------------
 {
+  if (cow_domain_getguard(f->domain) < 1 &&
+      f->samplemode == COW_SAMPLE_LINEAR) {
+    printf("[%s] warning: sample mode COW_SAMPLE_LINEAR requires at least one"
+	   " guard zone, sampleexecute function will have no effect\n", MODULE);
+    return;
+  }
   double *xout = (double*) malloc(f->samplecoordslen * 3 * sizeof(double));
   double *xin = f->samplecoords;
   int N = f->samplecoordslen;
@@ -195,24 +201,6 @@ void _sample3(cow_dfield *f, double *x, double *P, int mode)
   if (mode == COW_SAMPLE_NEAREST) {
     memcpy(P, A + M(i,j,k), f->n_members * sizeof(double));
   }
-
-  /*
-  int nx = cow_domain_getnumlocalzonesincguard(f->domain, 0);
-  int ny = cow_domain_getnumlocalzonesincguard(f->domain, 1);
-  int nz = cow_domain_getnumlocalzonesincguard(f->domain, 2);
-
-  if (i >= nx-1 || j >= ny-1 || k >= nz-1) {
-    FILE *fout = stdout;
-    fprintf(fout, "out! (%d %d %d)/(%d %d %d): %f %f %f\n", i, j, k, nx, ny, nz,
-	    x[0], x[1], x[2]);
-  }
-  if (i < 1 || j < 1 || k < 1) {
-    FILE *fout = stdout;
-    fprintf(fout, "out! (%d %d %d)/(%d %d %d): %f %f %f\n", i, j, k, nx, ny, nz,
-	    x[0], x[1], x[2]);
-  }
-  */
-
   else if (mode == COW_SAMPLE_LINEAR) {
     double x0 = cow_domain_positionatindex(d, 0, i-1);
     double y0 = cow_domain_positionatindex(d, 1, j-1);
