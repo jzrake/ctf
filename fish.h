@@ -22,6 +22,10 @@ int fish_setfluid(fish_state *S, int fluid);
 int fish_setriemannsolver(fish_state *S, int riemannsolver);
 int fish_setreconstruction(fish_state *S, int reconstruction);
 int fish_setplmtheta(fish_state *S, double plmtheta);
+int fish_getfluid(fish_state *S, int *fluid);
+int fish_getriemannsolver(fish_state *S, int *riemannsolver);
+int fish_getreconstruction(fish_state *S, int *reconstruction);
+int fish_getplmtheta(fish_state *S, double *plmtheta);
 
 #ifdef FISH_PRIVATE_DEFS
 struct fish_state {

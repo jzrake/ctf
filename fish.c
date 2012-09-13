@@ -27,7 +27,6 @@ fish_state *fish_new(void)
   *S = state;
   return S;
 }
-
 int fish_del(fish_state *S)
 {
   free(S);
@@ -39,13 +38,11 @@ int fish_setfluid(fish_state *S, int fluid)
   S->fluid = fluid;
   return 0;
 }
-
 int fish_setriemannsolver(fish_state *S, int riemannsolver)
 {
   S->riemannsolver = riemannsolver;
   return 0;
 }
-
 int fish_setreconstruction(fish_state *S, int reconstruction)
 {
   S->reconstruction = reconstruction;
@@ -55,6 +52,26 @@ int fish_setreconstruction(fish_state *S, int reconstruction)
 int fish_setplmtheta(fish_state *S, double plmtheta)
 {
   S->plmtheta = plmtheta;
+  return 0;
+}
+int fish_getfluid(fish_state *S, int *fluid)
+{
+  *fluid = S->fluid;
+  return 0;
+}
+int fish_getriemannsolver(fish_state *S, int *riemannsolver)
+{
+  *riemannsolver = S->riemannsolver;
+  return 0;
+}
+int fish_getreconstruction(fish_state *S, int *reconstruction)
+{
+  *reconstruction = S->reconstruction;
+  return 0;
+}
+int fish_getplmtheta(fish_state *S, double *plmtheta)
+{
+  *plmtheta = S->plmtheta;
   return 0;
 }
 
@@ -68,7 +85,7 @@ int fish_intercellflux(fish_state *S, fluid_state **fluid, double *F, int N,
 
   fluid_riemann *R = fluids_riemann_new();
   fluids_riemann_setsolver(R, S->riemannsolver);
-  fluids_riemann_setdim(R, 0);
+  fluids_riemann_setdim(R, dim);
 
   fluid_state *SL = fluids_new();
   fluid_state *SR = fluids_new();
