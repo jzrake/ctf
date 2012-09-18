@@ -11,7 +11,7 @@ AR           ?= ar
 LDSHARED     ?= $(CC) -arch i386 -dynamiclib -undefined suppress -flat_namespace
 ARSTATIC     ?= $(AR) rcu
 FPIC         ?= -fPIC
-CFLAGS       ?= -Wall -g -O0
+CFLAGS       ?= -Wall -O3
 
 OBJ = fish.o weno.o
 EXE = $(BINDIR)/testfish $(BINDIR)/euler
