@@ -292,6 +292,7 @@ int _nrhyd_hllc_sample(fluid_riemann *R, fluid_state *S, double s)
   else if (lc<s && s<=ap) for (i=0; i<5; ++i) F[i] = Fr[i] + ap*(Ur_[i]-Ur[i]);
   else if (ap<s         ) for (i=0; i<5; ++i) F[i] = Fr[i];
 
+  fluids_setcacheinvalid(S, FLUIDS_FLAGSALL);
   fluids_setcachevalid(S, FLUIDS_CONSERVED | FLUIDS_FLUX[R->dim]);
   return 0;
 }
