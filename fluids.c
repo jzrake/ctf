@@ -13,7 +13,7 @@ static int _getsetcacheattr(fluids_cache *C, double *x, long flag, char op);
 static int _getsetstateattr(fluids_state *S, double *x, long flag, char op);
 static void _alloc_cache(fluids_cache *C, int op);
 
-//static int _nrhyd_c2p(fluids_state *S);
+static int _nrhyd_c2p(fluids_state *S, double *U);
 static int _nrhyd_p2c(fluids_state *S);
 static int _nrhyd_update(fluids_state *S, long flags);
 static void _nrhyd_cs2(fluids_state *S, double *cs2);
@@ -202,6 +202,18 @@ int fluids_state_setattr(fluids_state *S, double *x, long flag)
   return 0;
 }
 
+int fluids_state_fromcons(fluids_state *S, double *U)
+/*
+ * The fluid state `S` must be complete, except for its primitive field. The
+ * conserved state `U` is utilized to set the primitive. If the inversion from
+ * conserved to primitive requires a rootfinder, then the existing primitive in
+ * `S` may be used a guess value.
+ */
+{
+  _nrhyd_c2p(S, U);
+  return 0;
+}
+
 int fluids_state_derive(fluids_state *S, double *x, int flag)
 {
   if (S->cache == NULL) {
@@ -209,10 +221,8 @@ int fluids_state_derive(fluids_state *S, double *x, int flag)
     S->cache->state = S;
     _alloc_cache(S->cache, ALLOC);
   }
-
   _nrhyd_update(S, flag);
   _getsetcacheattr(S->cache, x, flag, 'g');
-
   return 0;
 }
 
@@ -340,10 +350,9 @@ void _alloc_cache(fluids_cache *C, int op)
 
 
 
-int _nrhyd_c2p(fluids_state *S)
+int _nrhyd_c2p(fluids_state *S, double *U)
 {
   double gm1 = S->descr->gammalawindex - 1.0;
-  double *U = S->cache->conserved;
   double *P = S->primitive;
   P[rho] =  U[ddd];
   P[pre] = (U[tau] - 0.5*(U[Sx]*U[Sx] + U[Sy]*U[Sy] + U[Sz]*U[Sz])/U[ddd])*gm1;
@@ -373,29 +382,45 @@ void _nrhyd_cs2(fluids_state *S, double *cs2)
 }
 
 int _nrhyd_update(fluids_state *S, long modes)
+/*
+ * First `modes` is augmented with other modes which are dependencies. For
+ * example, the sound speed is required for eigenvalues, so if `modes` includes
+ * the latter and not the former, then the sound speed is tacked onto `modes`.
+ *
+ * Then `modes` is stripped of all modes which are already current, in other
+ * words do not have their needsupdate bit enabled.
+ *
+ * modes:                    001101011
+ * needsupdateflags:         000010001
+ * modes becomes:            000000001 (modes &= C->needsupdateflags)
+ *
+ * After the update is finished, any bit in needsupdateflags which is enabled in
+ * modes should be set to zero. In other words:
+ *
+ * needsupdateflags:         000010001
+ * modes:                    000000001
+ * needsupdateflags becomes: 000010000 (needsupdateflags &= !modes)
+ */
 {
-  /* It's only necessary to update the fields which were requested in `modes`,
-   * but also have their needsupdate bit enabled.
-   *
-   * modes:                    001101011
-   * needsupdateflags:         000010001
-   * modes becomes:            000000001 (modes &= S->needsupdateflags)
-   *
-   * After the update is finished, any bit in needsupdateflags which is enabled
-   * in modes should be set to zero. In other words:
-   *
-   * needsupdateflags:         000010001
-   * modes:                    000000001
-   * needsupdateflags becomes: 000010000 (needsupdateflags &= !modes)
-   */
   fluids_cache *C = S->cache;
   double *U = C->conserved;
   double *P = S->primitive;
   double a=0.0, cs2=0.0;
 
+  if (modes & FLUIDS_FLAGSALL) {
+    modes |= FLUIDS_CONSERVED; // conserved quantities are used for everything
+  }
+  if (modes & FLUIDS_EVALSALL) {
+    modes |= FLUIDS_SOUNDSPEEDSQUARED; // cs is used for eigenvalues
+  }
   modes &= C->needsupdateflags;
 
-  if (C->needsupdateflags & FLUIDS_CONSERVED) {
+  /*
+    printf("update conserved? %s\n", (modes & FLUIDS_CONSERVED) ? "yes" : "no");
+    printf("update flux0? %s\n", (modes & FLUIDS_FLUX0) ? "yes" : "no");
+  */
+
+  if (modes & FLUIDS_CONSERVED) {
     _nrhyd_p2c(S);
   }
 
@@ -421,12 +446,9 @@ int _nrhyd_update(fluids_state *S, long modes)
     C->flux[2][Sz] = U[Sz] * P[vz] + P[pre];
   }
 
-  if (modes & (FLUIDS_EVALSALL | FLUIDS_SOUNDSPEEDSQUARED)) {
+  if (modes & FLUIDS_SOUNDSPEEDSQUARED) {
     _nrhyd_cs2(S, &cs2);
     a = sqrt(cs2);
-  }
-
-  if (modes & FLUIDS_SOUNDSPEEDSQUARED) {
     C->soundspeedsquared = cs2;
   }
 

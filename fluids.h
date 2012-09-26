@@ -97,6 +97,7 @@ int fluids_state_setdescr(fluids_state *S, fluids_descr *D);
 int fluids_state_clearcache(fluids_state *S);
 int fluids_state_getattr(fluids_state *S, double *x, long flag);
 int fluids_state_setattr(fluids_state *S, double *x, long flag);
+int fluids_state_fromcons(fluids_state *S, double *U);
 int fluids_state_derive(fluids_state *S, double *x, int flag);
 
 
