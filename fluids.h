@@ -63,6 +63,9 @@
 #define FLUIDS_RIEMANN_HLLC      -71
 #define FLUIDS_RIEMANN_EXACT     -72
 
+#define FLUIDS_CACHE_NOTOUCH     -73
+#define FLUIDS_CACHE_RESET       -74
+#define FLUIDS_CACHE_ERASE       -75
 
 #ifdef FLUIDS_INDEX_VARS
 enum { ddd, tau, Sx, Sy, Sz, Bx, By, Bz }; // Conserved
@@ -94,10 +97,11 @@ int fluids_descr_setgamma(fluids_descr *D, double gam);
 fluids_state *fluids_state_new(void);
 int fluids_state_del(fluids_state *S);
 int fluids_state_setdescr(fluids_state *S, fluids_descr *D);
-int fluids_state_clearcache(fluids_state *S);
+int fluids_state_resetcache(fluids_state *S);
+int fluids_state_erasecache(fluids_state *S);
 int fluids_state_getattr(fluids_state *S, double *x, long flag);
 int fluids_state_setattr(fluids_state *S, double *x, long flag);
-int fluids_state_fromcons(fluids_state *S, double *U);
+int fluids_state_fromcons(fluids_state *S, double *U, int cachebehavior);
 int fluids_state_derive(fluids_state *S, double *x, int flag);
 
 

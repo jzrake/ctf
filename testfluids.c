@@ -92,7 +92,7 @@ int test3()
   fluids_descr_seteos(D, FLUIDS_EOS_GAMMALAW);
 
   fluids_state_setdescr(S, D);
-  fluids_state_fromcons(S, U);
+  fluids_state_fromcons(S, U, FLUIDS_CACHE_ERASE);
   fluids_state_derive(S, F, FLUIDS_FLUX0);
   fluids_state_getattr(S, P, FLUIDS_PRIMITIVE);
 
@@ -115,8 +115,49 @@ int test3()
   return 0;
 }
 
+// Passes when
+// (1) L.R = I
+// (2) L.A.R = diag{ lam0, lam1, lam2, lam3, lam4 }
+// -----------------------------------------------------------------------------
+/*
+int test4()
+{
+  double x[5] = {1, 1, 1, 1, 1};
+  double gam = 1.4;
+  double V[5];
+  double L[25];
+  double R[25];
+  double I[25];
+  double A[25];
+  double LA[25];
+  double LAR[25];
+  fluid_state *S = fluids_new();
+  fluids_setfluid(S, FLUIDS_NRHYD);
+  fluids_alloc(S, fields());
+  fluids_setattrib(S, &gam, FLUIDS_GAMMALAWINDEX);
+  fluids_setattrib(S, x, FLUIDS_PRIMITIVE);
+  fluids_getattrib(S, V, FLUIDS_EVAL0);
+  fluids_getattrib(S, L, FLUIDS_LEVECS0);
+  fluids_getattrib(S, R, FLUIDS_REVECS0);
+  fluids_getattrib(S, A, FLUIDS_JACOBIAN0);
+  fluids_del(S);
+  matrix_matrix_product(L, R, I, 5, 5, 5);
+  matrix_matrix_product(L, A, LA, 5, 5, 5);
+  matrix_matrix_product(LA, R, LAR, 5, 5, 5);
+  for (int m=0; m<5; ++m) {
+    for (int n=0; n<5; ++n) {
+      asserteq(I[m*5 + n], (m==n));
+      asserteq(LAR[m*5 + n], (m==n) * V[m]);
+    }
+  }
+  printf("TEST 4 PASSED\n");
+  return 0;
+}
+*/
 int main()
 {
+  printf("sizeof(fluid_state) = %ld\n", sizeof(fluids_state));
+  printf("sizeof(fluid_cache) = %ld\n", sizeof(fluids_cache));
   test1();
   test2();
   test3();

@@ -155,7 +155,7 @@ fluids_state *fluids_state_new(void)
 int fluids_state_del(fluids_state *S)
 {
   if (S != NULL) {
-    fluids_state_clearcache(S);
+    fluids_state_erasecache(S);
     free(S->primitive);
     free(S->passive);
     free(S->gravity);
@@ -182,7 +182,16 @@ int fluids_state_setdescr(fluids_state *S, fluids_descr *D)
   return 0;
 }
 
-int fluids_state_clearcache(fluids_state *S)
+int fluids_state_resetcache(fluids_state *S)
+{
+  fluids_cache_del(S->cache);
+  S->cache = fluids_cache_new();
+  S->cache->state = S;
+  _alloc_cache(S->cache, ALLOC);
+  return 0;
+}
+
+int fluids_state_erasecache(fluids_state *S)
 {
   fluids_cache_del(S->cache);
   S->cache = NULL;
@@ -197,32 +206,56 @@ int fluids_state_getattr(fluids_state *S, double *x, long flag)
 
 int fluids_state_setattr(fluids_state *S, double *x, long flag)
 {
-  fluids_state_clearcache(S);
+  fluids_state_resetcache(S);
   _getsetstateattr(S, x, flag, 's');
   return 0;
 }
 
-int fluids_state_fromcons(fluids_state *S, double *U)
+int fluids_state_fromcons(fluids_state *S, double *U, int cachebehavior)
 /*
- * The fluid state `S` must be complete, except for its primitive field. The
- * conserved state `U` is utilized to set the primitive. If the inversion from
- * conserved to primitive requires a rootfinder, then the existing primitive in
- * `S` may be used a guess value.
+ * The fluid state `S` must be complete except for its primitive field, which
+ * will be over-written, derived from the conserved state `U`. If the inversion
+ * from conserved to primitive requires a rootfinder, then the existing
+ * primitive in `S` may be used a guess value.
+ *
+ * `cachebehavior` is one of:
+ *
+ *     NOTOUCH ... will be left alone
+ *     RESET   ... (recommended) then the state's cache will be reset
+ *     ERASE   ... will be erased 
  */
 {
   _nrhyd_c2p(S, U);
+  switch (cachebehavior) {
+  case FLUIDS_CACHE_NOTOUCH:
+    break;    
+  case FLUIDS_CACHE_RESET:
+    fluids_state_resetcache(S);
+    break;
+  case FLUIDS_CACHE_ERASE:
+    fluids_state_erasecache(S);
+    break;
+  default:
+    fluids_state_resetcache(S);
+    break;
+  }
   return 0;
 }
 
 int fluids_state_derive(fluids_state *S, double *x, int flag)
+/*
+ * If `x` is not NULL, then `flag` must represent only a single field, and that
+ * field will be (deep) copied into the array `x`. If `x` is NULL then it will
+ * not be used, `flag` may reference many fields which will all be updated.
+ */
 {
   if (S->cache == NULL) {
-    S->cache = fluids_cache_new();
-    S->cache->state = S;
-    _alloc_cache(S->cache, ALLOC);
+    fluids_state_resetcache(S);
   }
   _nrhyd_update(S, flag);
-  _getsetcacheattr(S->cache, x, flag, 'g');
+  if (x != NULL) {
+    _getsetcacheattr(S->cache, x, flag, 'g');
+  }
   return 0;
 }
 

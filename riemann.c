@@ -35,21 +35,21 @@
 static const long FLUIDS_FLUX[3] = {FLUIDS_FLUX0, FLUIDS_FLUX1, FLUIDS_FLUX2};
 static const long FLUIDS_EVAL[3] = {FLUIDS_EVAL0, FLUIDS_EVAL1, FLUIDS_EVAL2};
 
-static double _soln_f(fluid_riemann *R, double p);
-static double _soln_g(fluid_riemann *R, double p);
-static double _soln_estimate(fluid_riemann *R, int attempt);
-static int _soln_solve(fluid_riemann *R, double *p);
-static int _hll_exec(fluid_riemann *R);
-static int _hll_sample(fluid_riemann *R, fluid_state *S, double s);
-static int _nrhyd_hllc_exec(fluid_riemann *R);
-static int _nrhyd_hllc_sample(fluid_riemann *R, fluid_state *S, double s);
-static int _nrhyd_exact_exec(fluid_riemann *R);
-static int _nrhyd_exact_sample(fluid_riemann *R, fluid_state *S, double s);
+static double _soln_f(fluids_riemn *R, double p);
+static double _soln_g(fluids_riemn *R, double p);
+static double _soln_estimate(fluids_riemn *R, int attempt);
+static int _soln_solve(fluids_riemn *R, double *p);
+static int _hll_exec(fluids_riemn *R);
+static int _hll_sample(fluids_riemn *R, fluids_state *S, double s);
+static int _nrhyd_hllc_exec(fluids_riemn *R);
+static int _nrhyd_hllc_sample(fluids_riemn *R, fluids_state *S, double s);
+static int _nrhyd_exact_exec(fluids_riemn *R);
+static int _nrhyd_exact_sample(fluids_riemn *R, fluids_state *S, double s);
 
-struct fluid_riemann
+struct fluids_riemn
 {
-  fluid_state *SL;
-  fluid_state *SR;
+  fluids_state *SL;
+  fluids_state *SR;
   double p_solution;
   double gm0, gm1, gm2, gm3, gm4, gm5;
   double pL, pR, uL, uR, aL, aR, AL, AR, BL, BR;
@@ -64,10 +64,10 @@ struct fluid_riemann
   int solver;
 } ;
 
-fluid_riemann *fluids_riemann_new()
+fluids_riemn *fluids_riemann_new()
 {
-  fluid_riemann *R = (fluid_riemann*) malloc(sizeof(fluid_riemann));
-  fluid_riemann riem = {
+  fluids_riemn *R = (fluids_riemn*) malloc(sizeof(fluids_riemn));
+  fluids_riemn riem = {
     .SL = NULL,
     .SR = NULL,
     .gm0 = 0.0, // used by the exact solver
@@ -105,7 +105,7 @@ fluid_riemann *fluids_riemann_new()
   *R = riem;
   return R;
 }
-int fluids_riemann_del(fluid_riemann *R)
+int fluids_riemann_del(fluids_riemn *R)
 {
   free(R->U_hll);
   free(R->F_hll);
@@ -114,31 +114,31 @@ int fluids_riemann_del(fluid_riemann *R)
   free(R);
   return 0;
 }
-int fluids_riemann_setdim(fluid_riemann *R, int dim)
+int fluids_riemann_setdim(fluids_riemn *R, int dim)
 {
   R->dim = dim;
   return 0;
 }
-int fluids_riemann_setstateL(fluid_riemann *R, fluid_state *S)
+int fluids_riemann_setstateL(fluids_riemn *R, fluids_state *S)
 {
   R->SL = S;
   return 0;
 }
-int fluids_riemann_setstateR(fluid_riemann *R, fluid_state *S)
+int fluids_riemann_setstateR(fluids_riemn *R, fluids_state *S)
 {
   R->SR = S;
   return 0;
 }
-int fluids_riemann_setsolver(fluid_riemann *R, int solver)
+int fluids_riemann_setsolver(fluids_riemn *R, int solver)
 {
   R->solver = solver;
   return 0;
 }
 
-int fluids_riemann_execute(fluid_riemann *R)
+int fluids_riemann_execute(fluids_riemn *R)
 {
-  fluids_update(R->SL, FLUIDS_EVAL[R->dim] | FLUIDS_FLUX[R->dim]);
-  fluids_update(R->SR, FLUIDS_EVAL[R->dim] | FLUIDS_FLUX[R->dim]);
+  fluids_state_derive(R->SL, NULL, FLUIDS_EVAL[R->dim] | FLUIDS_FLUX[R->dim]);
+  fluids_state_derive(R->SR, NULL, FLUIDS_EVAL[R->dim] | FLUIDS_FLUX[R->dim]);
 
   switch (R->dim) {
   case 0: R->v1=vx; R->v2=vy; R->v3=vz; R->p1=Sx; R->p2=Sy; R->p3=Sz; break;
@@ -158,7 +158,7 @@ int fluids_riemann_execute(fluid_riemann *R)
   }
 }
 
-int fluids_riemann_sample(fluid_riemann *R, fluid_state *S, double s)
+int fluids_riemann_sample(fluids_riemn *R, fluids_state *S, double s)
 {
   switch (R->solver) {
   case FLUIDS_RIEMANN_HLL:
@@ -173,19 +173,19 @@ int fluids_riemann_sample(fluid_riemann *R, fluid_state *S, double s)
   return 0;
 }
 
-int _hll_exec(fluid_riemann *R)
+int _hll_exec(fluids_riemn *R)
 {
-  int nw = R->SL->nwaves;
-  double epl = R->SL->eigenvalues[R->dim][nw - 1];
-  double epr = R->SR->eigenvalues[R->dim][nw - 1];
-  double eml = R->SL->eigenvalues[R->dim][0];
-  double emr = R->SR->eigenvalues[R->dim][0];
+  int nw = R->SL->descr->nprimitive;
+  double epl = R->SL->cache->eigenvalues[R->dim][nw - 1];
+  double epr = R->SR->cache->eigenvalues[R->dim][nw - 1];
+  double eml = R->SL->cache->eigenvalues[R->dim][0];
+  double emr = R->SR->cache->eigenvalues[R->dim][0];
   double ap = R->ap = (epl>epr) ? epl : epr;
   double am = R->am = (eml<emr) ? eml : emr;
-  double *Ul = R->SL->conserved;
-  double *Ur = R->SR->conserved;
-  double *Fl = R->SL->flux[R->dim];
-  double *Fr = R->SR->flux[R->dim];
+  double *Ul = R->SL->cache->conserved;
+  double *Ur = R->SR->cache->conserved;
+  double *Fl = R->SL->cache->flux[R->dim];
+  double *Fr = R->SR->cache->flux[R->dim];
   R->U_hll = (double*) realloc(R->U_hll, nw * sizeof(double));
   R->F_hll = (double*) realloc(R->F_hll, nw * sizeof(double));
   for (int i=0; i<nw; ++i) {
@@ -195,40 +195,51 @@ int _hll_exec(fluid_riemann *R)
   return 0;
 }
 
-int _hll_sample(fluid_riemann *R, fluid_state *S, double s)
+int _hll_sample(fluids_riemn *R, fluids_state *S, double s)
 {
+  fluids_state_resetcache(S);
+  fluids_cache *C = S->cache;
   double ap = R->ap;
   double am = R->am;
-  double *Ul = R->SL->conserved;
-  double *Ur = R->SR->conserved;
-  double *Fl = R->SL->flux[R->dim];
-  double *Fr = R->SR->flux[R->dim];
-  double *U = S->conserved;
-  double *F = S->flux[R->dim];
-  int i;
-  int nw = R->SL->nwaves;
-  if      (        s<=am) for (i=0; i<nw; ++i) U[i] = Ul[i];
-  else if (am<s && s<=ap) for (i=0; i<nw; ++i) U[i] = R->U_hll[i];
-  else if (ap<s         ) for (i=0; i<nw; ++i) U[i] = Ur[i];  
-  if      (        s<=am) for (i=0; i<nw; ++i) F[i] = Fl[i];
-  else if (am<s && s<=ap) for (i=0; i<nw; ++i) F[i] = R->F_hll[i];
-  else if (ap<s         ) for (i=0; i<nw; ++i) F[i] = Fr[i];
+  double *Ul = R->SL->cache->conserved;
+  double *Ur = R->SR->cache->conserved;
+  double *Fl = R->SL->cache->flux[R->dim];
+  double *Fr = R->SR->cache->flux[R->dim];
+  double *U = S->cache->conserved;
+  double *F = S->cache->flux[R->dim];
+  int nw = R->SL->descr->nprimitive;
+  if      (        s<=am) for (int i=0; i<nw; ++i) U[i] = Ul[i];
+  else if (am<s && s<=ap) for (int i=0; i<nw; ++i) U[i] = R->U_hll[i];
+  else if (ap<s         ) for (int i=0; i<nw; ++i) U[i] = Ur[i];  
+  if      (        s<=am) for (int i=0; i<nw; ++i) F[i] = Fl[i];
+  else if (am<s && s<=ap) for (int i=0; i<nw; ++i) F[i] = R->F_hll[i];
+  else if (ap<s         ) for (int i=0; i<nw; ++i) F[i] = Fr[i];
 
-  fluids_setcachevalid(S, FLUIDS_CONSERVED | FLUIDS_FLUX[R->dim]);
+  for (int n=0; n<nw; ++n) {
+    S->cache->eigenvalues[R->dim][n] = 0.0;
+  }
+  S->cache->eigenvalues[R->dim][0] = am;
+  S->cache->eigenvalues[R->dim][nw-1] = ap;
+
+  C->needsupdateflags &= BITWISENOT(FLUIDS_CONSERVED |
+				    FLUIDS_EVAL[R->dim] |
+				    FLUIDS_FLUX[R->dim]);
+  // sets the primitive, if doing so makes any sense
+  fluids_state_fromcons(S, C->conserved, FLUIDS_CACHE_NOTOUCH);
   return 0;
 }
 
-int _nrhyd_hllc_exec(fluid_riemann *R)
+int _nrhyd_hllc_exec(fluids_riemn *R)
 {
-  int nw = R->SL->nwaves;
-  double epl = R->SL->eigenvalues[R->dim][nw - 1];
-  double epr = R->SR->eigenvalues[R->dim][nw - 1];
-  double eml = R->SL->eigenvalues[R->dim][0];
-  double emr = R->SR->eigenvalues[R->dim][0];
+  int nw = R->SL->descr->nprimitive;
+  double epl = R->SL->cache->eigenvalues[R->dim][nw - 1];
+  double epr = R->SR->cache->eigenvalues[R->dim][nw - 1];
+  double eml = R->SL->cache->eigenvalues[R->dim][0];
+  double emr = R->SR->cache->eigenvalues[R->dim][0];
   double ap = R->ap = (epl>epr) ? epl : epr;
   double am = R->am = (eml<emr) ? eml : emr;
-  double *Ul = R->SL->conserved;
-  double *Ur = R->SR->conserved;
+  double *Ul = R->SL->cache->conserved;
+  double *Ur = R->SR->cache->conserved;
   double *Pl = R->SL->primitive;
   double *Pr = R->SR->primitive;
   double fact = 0.0;
@@ -267,18 +278,20 @@ int _nrhyd_hllc_exec(fluid_riemann *R)
   return 0;
 }
 
-int _nrhyd_hllc_sample(fluid_riemann *R, fluid_state *S, double s)
+int _nrhyd_hllc_sample(fluids_riemn *R, fluids_state *S, double s)
 {
+  fluids_state_resetcache(S);
+  fluids_cache *C = S->cache;
   double ap = R->ap;
   double am = R->am;
-  double *Ul = R->SL->conserved;
-  double *Ur = R->SR->conserved;
+  double *Ul = R->SL->cache->conserved;
+  double *Ur = R->SR->cache->conserved;
   double *Ul_ = R->Ul_;
   double *Ur_ = R->Ur_;
-  double *Fl = R->SL->flux[R->dim];
-  double *Fr = R->SR->flux[R->dim];
-  double *U = S->conserved;
-  double *F = S->flux[R->dim];
+  double *Fl = R->SL->cache->flux[R->dim];
+  double *Fr = R->SR->cache->flux[R->dim];
+  double *U = S->cache->conserved;
+  double *F = S->cache->flux[R->dim];
   double lc = R->lc;
   int i;
 
@@ -292,17 +305,26 @@ int _nrhyd_hllc_sample(fluid_riemann *R, fluid_state *S, double s)
   else if (lc<s && s<=ap) for (i=0; i<5; ++i) F[i] = Fr[i] + ap*(Ur_[i]-Ur[i]);
   else if (ap<s         ) for (i=0; i<5; ++i) F[i] = Fr[i];
 
-  fluids_setcacheinvalid(S, FLUIDS_FLAGSALL);
-  fluids_setcachevalid(S, FLUIDS_CONSERVED | FLUIDS_FLUX[R->dim]);
+  S->cache->eigenvalues[R->dim][0] = am;
+  S->cache->eigenvalues[R->dim][1] = lc; // contact speed
+  S->cache->eigenvalues[R->dim][2] = lc;
+  S->cache->eigenvalues[R->dim][3] = lc;
+  S->cache->eigenvalues[R->dim][4] = ap;
+
+  C->needsupdateflags &= BITWISENOT(FLUIDS_CONSERVED |
+				    FLUIDS_EVAL[R->dim] |
+				    FLUIDS_FLUX[R->dim]);
+  // sets the primitive, if doing so makes any sense
+  fluids_state_fromcons(S, C->conserved, FLUIDS_CACHE_NOTOUCH);
   return 0;
 }
 
-int _nrhyd_exact_exec(fluid_riemann *R)
+int _nrhyd_exact_exec(fluids_riemn *R)
 {
   double *Pl = R->SL->primitive;
   double *Pr = R->SR->primitive;
 
-  R->gm0 = R->SR->gammalawindex;
+  R->gm0 = R->SR->descr->gammalawindex;
   R->gm1 = (R->gm0+1) / (2*R->gm0);
   R->gm2 = (R->gm0-1) / (2*R->gm0);
   R->gm3 = (R->gm0-1) / (R->gm0+1);
@@ -343,7 +365,7 @@ int _nrhyd_exact_exec(fluid_riemann *R)
   return err;
 }
 
-int _soln_solve(fluid_riemann *R, double *p)
+int _soln_solve(fluids_riemn *R, double *p)
 {
   double f, g;
   int niter = 0;
@@ -359,7 +381,7 @@ int _soln_solve(fluid_riemann *R, double *p)
 }
 
 /* function whose root is needed */
-double _soln_f(fluid_riemann *R, double p)
+double _soln_f(fluids_riemn *R, double p)
 {
   double *Pl = R->SL->primitive;
   double *Pr = R->SR->primitive;
@@ -386,7 +408,7 @@ double _soln_f(fluid_riemann *R, double p)
 }
 
 /* df/fx */
-double _soln_g(fluid_riemann *R, double p)
+double _soln_g(fluids_riemn *R, double p)
 {
   double *Pl = R->SL->primitive;
   double *Pr = R->SR->primitive;
@@ -411,7 +433,7 @@ double _soln_g(fluid_riemann *R, double p)
   return fpL + fpR;
 }
 
-double _soln_estimate(fluid_riemann *R, int attempt)
+double _soln_estimate(fluids_riemn *R, int attempt)
 {
   double *Pl = R->SL->primitive;
   double *Pr = R->SR->primitive;
@@ -439,7 +461,7 @@ double _soln_estimate(fluid_riemann *R, int attempt)
   }
 }
 
-int _nrhyd_exact_sample(fluid_riemann *R, fluid_state *S, double s)
+int _nrhyd_exact_sample(fluids_riemn *R, fluids_state *S, double s)
 {
   /* Underscore after variable is Toro's (*), which indicates the Star Region */
   double p_ = R->p_solution;
@@ -570,8 +592,16 @@ int _nrhyd_exact_sample(fluid_riemann *R, fluid_state *S, double s)
       }
     }
   }
+  fluids_state_resetcache(S);
 
-  fluids_setcacheinvalid(S, FLUIDS_FLAGSALL);
-  fluids_setcachevalid(S, FLUIDS_PRIMITIVE);
+  S->cache->eigenvalues[R->dim][0] = SL;
+  S->cache->eigenvalues[R->dim][1] = u_; // contact speed
+  S->cache->eigenvalues[R->dim][2] = u_;
+  S->cache->eigenvalues[R->dim][3] = u_;
+  S->cache->eigenvalues[R->dim][4] = SR;
+
+  fluids_state_derive(S, NULL, FLUIDS_CONSERVED);
+  S->cache->needsupdateflags &= BITWISENOT(FLUIDS_EVAL[R->dim] |
+					   FLUIDS_FLUX[R->dim]);
   return 0;
 }
