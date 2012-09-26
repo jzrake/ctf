@@ -97,6 +97,7 @@ int fluids_state_setdescr(fluids_state *S, fluids_descr *D);
 int fluids_state_clearcache(fluids_state *S);
 int fluids_state_getattr(fluids_state *S, double *x, long flag);
 int fluids_state_setattr(fluids_state *S, double *x, long flag);
+int fluids_state_derive(fluids_state *S, double *x, int flag);
 
 
 /* fluids_riemn member functions */
@@ -113,18 +114,19 @@ int fluids_riemn_setsolver(fluids_riemn *R, int solver);
 #ifdef FLUIDS_PRIVATE_DEFS
 
 struct fluids_cache {
+  double *conserved;
+  double *fourvelocity;
   double *flux[3];
   double *eigenvalues[3];
   double *leigenvectors[3];
   double *reigenvectors[3];
   double *jacobian[3];
-  double *fourvelocity;
   double soundspeedsquared;
   double temperature;
   double specificenthalpy;
   double specificinternal;
-  fluids_state *state;
   long needsupdateflags;
+  fluids_state *state;
 } ;
 
 struct fluids_descr {
@@ -136,6 +138,7 @@ struct fluids_descr {
   int ngravity;
   int nmagnetic;
   int nlocation;
+  long cacheflags;
   double gammalawindex;
 } ;
 
