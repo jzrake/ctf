@@ -2,32 +2,32 @@
 #ifndef FLUIDS_HEADER_INCLUDED
 #define FLUIDS_HEADER_INCLUDED
 
-#define FLUIDS_LOCATION          (1<<0)
-#define FLUIDS_PASSIVE           (1<<1)
-#define FLUIDS_CONSERVED         (1<<2)
-#define FLUIDS_PRIMITIVE         (1<<3)
+#define FLUIDS_PRIMITIVE         (1<<1)
+#define FLUIDS_PASSIVE           (1<<2)
+#define FLUIDS_GRAVITY           (1<<3)
 #define FLUIDS_MAGNETIC          (1<<4)
-#define FLUIDS_FOURVELOCITY      (1<<5)
-#define FLUIDS_FLUX0             (1<<6)
-#define FLUIDS_FLUX1             (1<<7)
-#define FLUIDS_FLUX2             (1<<8)
-#define FLUIDS_EVAL0             (1<<9)
-#define FLUIDS_EVAL1             (1<<10)
-#define FLUIDS_EVAL2             (1<<11)
-#define FLUIDS_LEVECS0           (1<<12)
-#define FLUIDS_LEVECS1           (1<<13)
-#define FLUIDS_LEVECS2           (1<<14)
-#define FLUIDS_REVECS0           (1<<15)
-#define FLUIDS_REVECS1           (1<<16)
-#define FLUIDS_REVECS2           (1<<17)
-#define FLUIDS_JACOBIAN0         (1<<18)
-#define FLUIDS_JACOBIAN1         (1<<19)
-#define FLUIDS_JACOBIAN2         (1<<20)
-#define FLUIDS_SOUNDSPEEDSQUARED (1<<21)
-#define FLUIDS_TEMPERATURE       (1<<22)
-#define FLUIDS_SPECIFICENTHALPY  (1<<23)
-#define FLUIDS_SPECIFICINTERNAL  (1<<24)
-#define FLUIDS_GAMMALAWINDEX     (1<<25)
+#define FLUIDS_LOCATION          (1<<5)
+#define FLUIDS_CONSERVED         (1<<6)
+#define FLUIDS_FOURVELOCITY      (1<<7)
+#define FLUIDS_FLUX0             (1<<8)
+#define FLUIDS_FLUX1             (1<<9)
+#define FLUIDS_FLUX2             (1<<10)
+#define FLUIDS_EVAL0             (1<<11)
+#define FLUIDS_EVAL1             (1<<12)
+#define FLUIDS_EVAL2             (1<<13)
+#define FLUIDS_LEVECS0           (1<<14)
+#define FLUIDS_LEVECS1           (1<<15)
+#define FLUIDS_LEVECS2           (1<<16)
+#define FLUIDS_REVECS0           (1<<17)
+#define FLUIDS_REVECS1           (1<<18)
+#define FLUIDS_REVECS2           (1<<19)
+#define FLUIDS_JACOBIAN0         (1<<20)
+#define FLUIDS_JACOBIAN1         (1<<21)
+#define FLUIDS_JACOBIAN2         (1<<22)
+#define FLUIDS_SOUNDSPEEDSQUARED (1<<23)
+#define FLUIDS_TEMPERATURE       (1<<24)
+#define FLUIDS_SPECIFICENTHALPY  (1<<25)
+#define FLUIDS_SPECIFICINTERNAL  (1<<26)
 #define FLUIDS_FLAGSALL          ((1<<30) - 1)
 
 #define FLUIDS_FLUXALL           (FLUIDS_FLUX0|FLUIDS_FLUX1|FLUIDS_FLUX2)
@@ -36,16 +36,16 @@
 #define FLUIDS_REVECSALL         (FLUIDS_REVECS0|FLUIDS_REVECS1|FLUIDS_REVECS2)
 #define FLUIDS_JACOBIANALL       (FLUIDS_JACOBIAN0|FLUIDS_JACOBIAN1|FLUIDS_JACOBIAN2)
 
-#define FLUIDS_SCALAR_ADVECTION  -41
-#define FLUIDS_SCALAR_BURGERS    -42
-#define FLUIDS_SHALLOW_WATER     -43
-#define FLUIDS_NRHYD             -44
-#define FLUIDS_SRHYD             -45
-#define FLUIDS_URHYD             -46
-#define FLUIDS_GRHYD             -47
-#define FLUIDS_NRMHD             -48
-#define FLUIDS_SRMHD             -49
-#define FLUIDS_GRMHD             -50
+#define FLUIDS_SCADV             -41 // Scalar advection
+#define FLUIDS_SCBRG             -42 // Burgers equation
+#define FLUIDS_SHWAT             -43 // Shalloow water equations
+#define FLUIDS_NRHYD             -44 // Euler equations
+#define FLUIDS_SRHYD             -45 // Special relativistic
+#define FLUIDS_URHYD             -46 // Ultra relativistic
+#define FLUIDS_GRHYD             -47 // General relativistic
+#define FLUIDS_NRMHD             -48 // Magnetohydrodynamic (MHD)
+#define FLUIDS_SRMHD             -49 // Special relativistic MHD
+#define FLUIDS_GRMHD             -50 // General relativistic MHD
 
 #define FLUIDS_EOS_GAMMALAW      -51
 #define FLUIDS_EOS_TABULATED     -52
@@ -67,65 +67,86 @@
 #ifdef FLUIDS_INDEX_VARS
 enum { ddd, tau, Sx, Sy, Sz, Bx, By, Bz }; // Conserved
 enum { rho, pre, vx, vy, vz };             // Primitive
+enum { phi, phidot, gradphi };             // Gravity
 #endif // FLUIDS_INDEX_VARS
 
-struct fluid_state;
-struct fluid_riemann;
-typedef struct fluid_state fluid_state;
-typedef struct fluid_riemann fluid_riemann;
 
-fluid_state *fluids_new(void);
-int fluids_del(fluid_state *S);
-int fluids_update(fluid_state *S, long flags);
-int fluids_setcachevalid(fluid_state *S, long flags);
-int fluids_setcacheinvalid(fluid_state *S, long flags);
-int fluids_getlastupdate(fluid_state *S, long *flags);
-int fluids_alloc(fluid_state *S, long flags);
-int fluids_dealloc(fluid_state *S, long flags);
-int fluids_mapbuffer(fluid_state *S, long flag, void *buffer);
-int fluids_setfluid(fluid_state *S, int fluid);
-int fluids_seteos(fluid_state *S, int eos);
-int fluids_setcoordsystem(fluid_state *S, int coordsystem);
-int fluids_setnpassive(fluid_state *S, int n);
-int fluids_getattrib(fluid_state *S, double *x, long flag);
-int fluids_setattrib(fluid_state *S, double *x, long flag);
-int fluids_getnwaves(int fluid);
+typedef struct fluids_descr fluids_descr;
+typedef struct fluids_cache fluids_cache;
+typedef struct fluids_state fluids_state;
+typedef struct fluids_riemn fluids_riemn;
 
-fluid_riemann *fluids_riemann_new(void);
-int fluids_riemann_del(fluid_riemann *R);
-int fluids_riemann_setstateL(fluid_riemann *R, fluid_state *S);
-int fluids_riemann_setstateR(fluid_riemann *R, fluid_state *S);
-int fluids_riemann_setdim(fluid_riemann *R, int dim);
-int fluids_riemann_execute(fluid_riemann *R);
-int fluids_riemann_sample(fluid_riemann *R, fluid_state *S, double s);
-int fluids_riemann_setsolver(fluid_riemann *R, int solver);
+
+/* fluids_descr member functions */
+fluids_descr *fluids_descr_new(void);
+int fluids_descr_del(fluids_descr *D);
+int fluids_descr_getfluid(fluids_descr *D, int *fluid);
+int fluids_descr_setfluid(fluids_descr *D, int fluid);
+int fluids_descr_geteos(fluids_descr *D, int *eos);
+int fluids_descr_seteos(fluids_descr *D, int eos);
+int fluids_descr_getcoordsystem(fluids_descr *D, int *coordsystem);
+int fluids_descr_setcoordsystem(fluids_descr *D, int coordsystem);
+int fluids_descr_getgamma(fluids_descr *D, double *gam);
+int fluids_descr_setgamma(fluids_descr *D, double gam);
+
+
+/* fluids_state member functions */
+fluids_state *fluids_state_new(void);
+int fluids_state_del(fluids_state *S);
+int fluids_state_setdescr(fluids_state *S, fluids_descr *D);
+int fluids_state_clearcache(fluids_state *S);
+int fluids_state_getattr(fluids_state *S, double *x, long flag);
+int fluids_state_setattr(fluids_state *S, double *x, long flag);
+
+
+/* fluids_riemn member functions */
+fluids_riemn *fluids_riemn_new(void);
+int fluids_riemn_del(fluids_riemn *R);
+int fluids_riemn_setstateL(fluids_riemn *R, fluids_state *S);
+int fluids_riemn_setstateR(fluids_riemn *R, fluids_state *S);
+int fluids_riemn_setdim(fluids_riemn *R, int dim);
+int fluids_riemn_execute(fluids_riemn *R);
+int fluids_riemn_sample(fluids_riemn *R, fluids_state *S, double s);
+int fluids_riemn_setsolver(fluids_riemn *R, int solver);
+
 
 #ifdef FLUIDS_PRIVATE_DEFS
-struct fluid_state {
-  int fluid;
-  int eos;
-  int coordsystem;
-  int nwaves;
-  int npassive;
-  long ownsbufferflags;
-  long needsupdateflags;
-  long lastupdatedflags;
-  double *location;
-  double *passive;
-  double *conserved;
-  double *primitive;
-  double *magnetic;
-  double *fourvelocity;
+
+struct fluids_cache {
   double *flux[3];
   double *eigenvalues[3];
   double *leigenvectors[3];
   double *reigenvectors[3];
   double *jacobian[3];
+  double *fourvelocity;
   double soundspeedsquared;
   double temperature;
   double specificenthalpy;
   double specificinternal;
+  fluids_state *state;
+  long needsupdateflags;
+} ;
+
+struct fluids_descr {
+  int fluid;
+  int eos;
+  int coordsystem;
+  int nprimitive;
+  int npassive;
+  int ngravity;
+  int nmagnetic;
+  int nlocation;
   double gammalawindex;
+} ;
+
+struct fluids_state {
+  double *primitive;
+  double *passive;
+  double *gravity;
+  double *magnetic;
+  double *location;
+  fluids_cache *cache;
+  fluids_descr *descr;
 } ;
 
 /* http://en.wikipedia.org/wiki/Bitwise_operation#NOT */

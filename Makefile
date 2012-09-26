@@ -13,7 +13,7 @@ ARSTATIC     ?= $(AR) rcu
 FPIC         ?= -fPIC
 CFLAGS       ?= -Wall -O3
 
-OBJ = fluids.o matrix.o riemann.o
+OBJ = fluids.o matrix.o
 EXE = 	$(BINDIR)/testfluids
 
 LIBS = $(LIBDIR)/libfluids.so $(LIBDIR)/libfluids.a
