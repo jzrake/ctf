@@ -9,45 +9,39 @@
 
 #define asserteq(x,y) assert(fabs(x-y) < 1e-12)
 
-static long fields()
-{
-  long modes = 0;
-  modes |= FLUIDS_CONSERVED;
-  modes |= FLUIDS_PRIMITIVE;
-  modes |= FLUIDS_FLUXALL;
-  modes |= FLUIDS_EVALSALL;
-  modes |= FLUIDS_LEVECSALL;
-  modes |= FLUIDS_REVECSALL;
-  modes |= FLUIDS_JACOBIANALL;
-  return modes;
-}
-
 // Passes when a trivial 1d problem produces the correct intercell fluxes
 // -----------------------------------------------------------------------------
 int test1()
 {
   fish_state *S = fish_new();
   fish_setfluid(S, FLUIDS_NRHYD);
-  fish_setreconstruction(S, FISH_NONE);
+  fish_setreconstruction(S, FISH_PLM);
+  fish_setriemannsolver(S, FLUIDS_RIEMANN_EXACT);
+
+  fluids_descr *D = fluids_descr_new();
+  fluids_descr_setfluid(D, FLUIDS_NRHYD);
+  fluids_descr_setgamma(D, 1.4);
+  fluids_descr_seteos(D, FLUIDS_EOS_GAMMALAW);
 
   double P[5] = {1, 1, 1, 1, 1};
-  double gam = 1.4;
-  fluid_state *fluid[100];
+  fluids_state *fluid[100];
+
   double Fiph[500];
   for (int n=0; n<100; ++n) {
-    fluid[n] = fluids_new();
-    fluids_setfluid(fluid[n], FLUIDS_NRHYD);
-    fluids_alloc(fluid[n], fields());
-    fluids_setattrib(fluid[n], &gam, FLUIDS_GAMMALAWINDEX);
-    fluids_setattrib(fluid[n], P, FLUIDS_PRIMITIVE);
+    fluid[n] = fluids_state_new();
+    fluids_state_setdescr(fluid[n], D);
+    fluids_state_setattr(fluid[n], P, FLUIDS_PRIMITIVE);
   }
+
   fish_intercellflux(S, fluid, Fiph, 100, 0);
-  for (int n=0; n<100-1; ++n) {
+  for (int n=1; n<100-2; ++n) {
     asserteq(Fiph[5*n], 1.0);
   }
   for (int n=0; n<100; ++n) {
-    fluids_del(fluid[n]);
+    fluids_state_del(fluid[n]);
   }
+
+  fluids_descr_del(D);
   fish_del(S);
   printf("TEST 1 PASSED\n");
   return 0;
