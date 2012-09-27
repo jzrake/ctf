@@ -201,10 +201,12 @@ int fluids_state_setdescr(fluids_state *S, fluids_descr *D)
 
 int fluids_state_resetcache(fluids_state *S)
 {
-  fluids_cache_del(S->cache);
-  S->cache = fluids_cache_new();
-  S->cache->state = S;
-  _alloc_cache(S->cache, ALLOC);
+  if (S->cache == NULL) {
+    S->cache = fluids_cache_new();
+    S->cache->state = S;
+    _alloc_cache(S->cache, ALLOC);
+  }
+  S->cache->needsupdateflags = FLUIDS_FLAGSALL;
   return 0;
 }
 
