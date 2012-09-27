@@ -177,6 +177,12 @@ int fluids_state_del(fluids_state *S)
   return 0;
 }
 
+int fluids_state_getdescr(fluids_state *S, fluids_descr **D)
+{
+  *D = S->descr;
+  return 0;
+}
+
 int fluids_state_setdescr(fluids_state *S, fluids_descr *D)
 {
   int np = D->nprimitive;
