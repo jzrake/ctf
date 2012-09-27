@@ -14,7 +14,7 @@ FPIC         ?= -fPIC
 CFLAGS       ?= -Wall -O3
 
 OBJ = fish.o weno.o
-EXE = $(BINDIR)/testfish # $(BINDIR)/euler
+EXE = $(BINDIR)/testfish $(BINDIR)/euler
 
 LIBS = $(LIBDIR)/libfish.so $(LIBDIR)/libfish.a
 HEADERS = $(INCDIR)/fish.h
