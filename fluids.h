@@ -112,6 +112,7 @@ int fluids_riemn_setstateR(fluids_riemn *R, fluids_state *S);
 int fluids_riemn_setdim(fluids_riemn *R, int dim);
 int fluids_riemn_execute(fluids_riemn *R);
 int fluids_riemn_sample(fluids_riemn *R, fluids_state *S, double s);
+int fluids_riemn_getsolver(fluids_riemn *R, int *solver);
 int fluids_riemn_setsolver(fluids_riemn *R, int solver);
 
 

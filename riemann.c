@@ -129,6 +129,11 @@ int fluids_riemn_setstateR(fluids_riemn *R, fluids_state *S)
   R->SR = S;
   return 0;
 }
+int fluids_riemn_getsolver(fluids_riemn *R, int *solver)
+{
+  *solver = R->solver;
+  return 0;
+}
 int fluids_riemn_setsolver(fluids_riemn *R, int solver)
 {
   R->solver = solver;
@@ -463,6 +468,7 @@ double _soln_estimate(fluids_riemn *R, int attempt)
 
 int _nrhyd_exact_sample(fluids_riemn *R, fluids_state *S, double s)
 {
+  fluids_state_resetcache(S);
   /* Underscore after variable is Toro's (*), which indicates the Star Region */
   double p_ = R->p_solution;
   double *Pl = R->SL->primitive;
@@ -592,16 +598,11 @@ int _nrhyd_exact_sample(fluids_riemn *R, fluids_state *S, double s)
       }
     }
   }
-  fluids_state_resetcache(S);
-
   S->cache->eigenvalues[R->dim][0] = SL;
   S->cache->eigenvalues[R->dim][1] = u_; // contact speed
   S->cache->eigenvalues[R->dim][2] = u_;
   S->cache->eigenvalues[R->dim][3] = u_;
   S->cache->eigenvalues[R->dim][4] = SR;
-
-  fluids_state_derive(S, NULL, FLUIDS_CONSERVED);
-  S->cache->needsupdateflags &= BITWISENOT(FLUIDS_EVAL[R->dim] |
-					   FLUIDS_FLUX[R->dim]);
+  S->cache->needsupdateflags &= BITWISENOT(FLUIDS_EVAL[R->dim]);
   return 0;
 }
