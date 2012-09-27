@@ -119,41 +119,106 @@ int test3()
 // (1) L.R = I
 // (2) L.A.R = diag{ lam0, lam1, lam2, lam3, lam4 }
 // -----------------------------------------------------------------------------
-/*
 int test4()
 {
-  double x[5] = {1, 1, 1, 1, 1};
-  double gam = 1.4;
+  double P[5] = { 1.0, 1.0, 1.0, 1.0, 1.0 };
   double V[5];
   double L[25];
   double R[25];
-  double I[25];
   double A[25];
+  double I[25];
   double LA[25];
   double LAR[25];
-  fluid_state *S = fluids_new();
-  fluids_setfluid(S, FLUIDS_NRHYD);
-  fluids_alloc(S, fields());
-  fluids_setattrib(S, &gam, FLUIDS_GAMMALAWINDEX);
-  fluids_setattrib(S, x, FLUIDS_PRIMITIVE);
-  fluids_getattrib(S, V, FLUIDS_EVAL0);
-  fluids_getattrib(S, L, FLUIDS_LEVECS0);
-  fluids_getattrib(S, R, FLUIDS_REVECS0);
-  fluids_getattrib(S, A, FLUIDS_JACOBIAN0);
-  fluids_del(S);
+
+  fluids_descr *D = fluids_descr_new();
+  fluids_state *S = fluids_state_new();
+
+  fluids_descr_setfluid(D, FLUIDS_NRHYD);
+  fluids_descr_setgamma(D, 1.4);
+  fluids_descr_seteos(D, FLUIDS_EOS_GAMMALAW);
+
+  fluids_state_setdescr(S, D);
+  fluids_state_setattr(S, P, FLUIDS_PRIMITIVE);
+  fluids_state_derive(S, V, FLUIDS_EVAL0);
+  fluids_state_derive(S, L, FLUIDS_LEVECS0);
+  fluids_state_derive(S, R, FLUIDS_REVECS0);
+  fluids_state_derive(S, A, FLUIDS_JACOBIAN0);
+
+  fluids_state_del(S);
+  fluids_descr_del(D);
+
   matrix_matrix_product(L, R, I, 5, 5, 5);
   matrix_matrix_product(L, A, LA, 5, 5, 5);
   matrix_matrix_product(LA, R, LAR, 5, 5, 5);
+
   for (int m=0; m<5; ++m) {
     for (int n=0; n<5; ++n) {
       asserteq(I[m*5 + n], (m==n));
       asserteq(LAR[m*5 + n], (m==n) * V[m]);
     }
   }
+
   printf("TEST 4 PASSED\n");
   return 0;
 }
-*/
+
+// Passes when the exact riemann solver creates a sane response to the trivial
+// Riemann problem.
+// -----------------------------------------------------------------------------
+int test5()
+{
+  int solvers[3] = {FLUIDS_RIEMANN_HLL,
+                    FLUIDS_RIEMANN_HLLC,
+                    FLUIDS_RIEMANN_EXACT};
+  for (int solver=0; solver<3; ++solver) {
+    double Pl[5] = {1, 1, 1, 1, 1};
+    double Pr[5] = {1, 1, 1, 1, 1};
+    double Ul[5];
+    double P_[5];
+    double U_[5];
+    fluids_descr *D = fluids_descr_new();
+    fluids_state *SL = fluids_state_new();
+    fluids_state *SR = fluids_state_new();
+    fluids_state *S_ = fluids_state_new();
+
+    fluids_descr_setfluid(D, FLUIDS_NRHYD);
+    fluids_descr_setgamma(D, 1.4);
+    fluids_descr_seteos(D, FLUIDS_EOS_GAMMALAW);
+
+    fluids_state_setdescr(SL, D);
+    fluids_state_setdescr(SR, D);
+    fluids_state_setdescr(S_, D);
+
+    fluids_state_setattr(SL, Pl, FLUIDS_PRIMITIVE);
+    fluids_state_setattr(SR, Pr, FLUIDS_PRIMITIVE);
+
+    fluids_riemn *R = fluids_riemn_new();
+    fluids_riemn_setsolver(R, solvers[solver]);
+
+    fluids_riemn_setdim(R, 0);
+    fluids_riemn_setstateL(R, SL);
+    fluids_riemn_setstateR(R, SR);
+    fluids_riemn_execute(R);
+    fluids_riemn_sample(R, S_, 0.2);
+    fluids_state_getattr(S_, P_, FLUIDS_PRIMITIVE);
+    fluids_state_derive(S_, U_, FLUIDS_CONSERVED);
+    fluids_state_derive(SL, Ul, FLUIDS_CONSERVED);
+
+    for (int n=0; n<5; ++n) {
+      asserteq(P_[n], Pl[n]);
+      asserteq(U_[n], Ul[n]);
+    }
+    printf("TEST 5.%d PASSED\n", solver);
+
+    fluids_riemn_del(R);
+    fluids_state_del(SL);
+    fluids_state_del(SR);
+    fluids_state_del(S_);
+    fluids_descr_del(D);
+  }
+  return 0;
+}
+
 int main()
 {
   printf("sizeof(fluid_state) = %ld\n", sizeof(fluids_state));
@@ -161,5 +226,7 @@ int main()
   test1();
   test2();
   test3();
+  test4();
+  test5();
   return 0;
 }

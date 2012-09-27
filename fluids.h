@@ -38,7 +38,7 @@
 
 #define FLUIDS_SCADV             -41 // Scalar advection
 #define FLUIDS_SCBRG             -42 // Burgers equation
-#define FLUIDS_SHWAT             -43 // Shalloow water equations
+#define FLUIDS_SHWAT             -43 // Shallow water equations
 #define FLUIDS_NRHYD             -44 // Euler equations
 #define FLUIDS_SRHYD             -45 // Special relativistic
 #define FLUIDS_URHYD             -46 // Ultra relativistic

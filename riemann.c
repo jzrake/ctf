@@ -64,7 +64,7 @@ struct fluids_riemn
   int solver;
 } ;
 
-fluids_riemn *fluids_riemann_new()
+fluids_riemn *fluids_riemn_new()
 {
   fluids_riemn *R = (fluids_riemn*) malloc(sizeof(fluids_riemn));
   fluids_riemn riem = {
@@ -105,7 +105,7 @@ fluids_riemn *fluids_riemann_new()
   *R = riem;
   return R;
 }
-int fluids_riemann_del(fluids_riemn *R)
+int fluids_riemn_del(fluids_riemn *R)
 {
   free(R->U_hll);
   free(R->F_hll);
@@ -114,28 +114,28 @@ int fluids_riemann_del(fluids_riemn *R)
   free(R);
   return 0;
 }
-int fluids_riemann_setdim(fluids_riemn *R, int dim)
+int fluids_riemn_setdim(fluids_riemn *R, int dim)
 {
   R->dim = dim;
   return 0;
 }
-int fluids_riemann_setstateL(fluids_riemn *R, fluids_state *S)
+int fluids_riemn_setstateL(fluids_riemn *R, fluids_state *S)
 {
   R->SL = S;
   return 0;
 }
-int fluids_riemann_setstateR(fluids_riemn *R, fluids_state *S)
+int fluids_riemn_setstateR(fluids_riemn *R, fluids_state *S)
 {
   R->SR = S;
   return 0;
 }
-int fluids_riemann_setsolver(fluids_riemn *R, int solver)
+int fluids_riemn_setsolver(fluids_riemn *R, int solver)
 {
   R->solver = solver;
   return 0;
 }
 
-int fluids_riemann_execute(fluids_riemn *R)
+int fluids_riemn_execute(fluids_riemn *R)
 {
   fluids_state_derive(R->SL, NULL, FLUIDS_EVAL[R->dim] | FLUIDS_FLUX[R->dim]);
   fluids_state_derive(R->SR, NULL, FLUIDS_EVAL[R->dim] | FLUIDS_FLUX[R->dim]);
@@ -158,7 +158,7 @@ int fluids_riemann_execute(fluids_riemn *R)
   }
 }
 
-int fluids_riemann_sample(fluids_riemn *R, fluids_state *S, double s)
+int fluids_riemn_sample(fluids_riemn *R, fluids_state *S, double s)
 {
   switch (R->solver) {
   case FLUIDS_RIEMANN_HLL:
