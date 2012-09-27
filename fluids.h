@@ -91,7 +91,7 @@ int fluids_descr_getcoordsystem(fluids_descr *D, int *coordsystem);
 int fluids_descr_setcoordsystem(fluids_descr *D, int coordsystem);
 int fluids_descr_getgamma(fluids_descr *D, double *gam);
 int fluids_descr_setgamma(fluids_descr *D, double gam);
-
+int fluids_descr_getncomp(fluids_descr *D, long flag);
 
 /* fluids_state member functions */
 fluids_state *fluids_state_new(void);
@@ -103,7 +103,6 @@ int fluids_state_getattr(fluids_state *S, double *x, long flag);
 int fluids_state_setattr(fluids_state *S, double *x, long flag);
 int fluids_state_fromcons(fluids_state *S, double *U, int cachebehavior);
 int fluids_state_derive(fluids_state *S, double *x, int flag);
-
 
 /* fluids_riemn member functions */
 fluids_riemn *fluids_riemn_new(void);

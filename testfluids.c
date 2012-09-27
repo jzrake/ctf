@@ -108,6 +108,9 @@ int test3()
   asserteq(F[3], 1.0);
   asserteq(F[4], 1.0);
 
+  asserteq(fluids_descr_getncomp(D, FLUIDS_PRIMITIVE), 5);
+  asserteq(fluids_descr_getncomp(D, FLUIDS_GRAVITY), 0);
+
   fluids_state_del(S);
   fluids_descr_del(D);
 

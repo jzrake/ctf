@@ -136,6 +136,17 @@ int fluids_descr_setgamma(fluids_descr *D, double gam)
   D->gammalawindex = gam;
   return 0;
 }
+int fluids_descr_getncomp(fluids_descr *D, long flag)
+{
+  switch (flag) {
+  case FLUIDS_PRIMITIVE: return D->nprimitive;
+  case FLUIDS_PASSIVE: return D->npassive;
+  case FLUIDS_GRAVITY: return D->ngravity;
+  case FLUIDS_MAGNETIC: return D->nmagnetic;
+  case FLUIDS_LOCATION: return D->nlocation;
+  default: return FLUIDS_ERROR_BADARG;
+  }
+}
 
 fluids_state *fluids_state_new(void)
 {
