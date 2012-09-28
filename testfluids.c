@@ -14,6 +14,7 @@ int test1()
 {
   double P[5] = { 1.0, 1.0, 1.0, 1.0, 1.0 };
   double Q[5];
+  double R[5];
   double gam;
 
   fluids_descr *D = fluids_descr_new();
@@ -28,13 +29,25 @@ int test1()
   fluids_state_getattr(S, Q, FLUIDS_PRIMITIVE);
   fluids_descr_getgamma(D, &gam);
 
-  fluids_state_del(S);
-  fluids_descr_del(D);
-
   asserteq(1.4, gam);
   for (int n=0; n<5; ++n) {
     asserteq(Q[n], 1.0);
   }
+
+  fluids_state_mapbuffer(S, R, FLUIDS_PRIMITIVE);
+  R[0] = 2.0;
+  R[1] = 2.0;
+  R[2] = 2.0;
+  R[3] = 2.0;
+  R[4] = 2.0;
+  fluids_state_getattr(S, Q, FLUIDS_PRIMITIVE);
+  for (int n=0; n<5; ++n) {
+    asserteq(Q[n], 2.0);
+  }
+
+  fluids_state_del(S);
+  fluids_descr_del(D);
+
   printf("TEST 1 PASSED\n");
   return 0;
 }

@@ -174,11 +174,21 @@ int fluids_state_del(fluids_state *S)
     if (S->ownscache) {
       fluids_cache_del(S->cache);
     }
-    free(S->primitive);
-    free(S->passive);
-    free(S->gravity);
-    free(S->magnetic);
-    free(S->location);
+    if (S->ownsbufferflags & FLUIDS_PRIMITIVE) {
+      free(S->primitive);
+    }
+    if (S->ownsbufferflags & FLUIDS_PASSIVE) {
+      free(S->passive);
+    }
+    if (S->ownsbufferflags & FLUIDS_GRAVITY) {
+      free(S->gravity);
+    }
+    if (S->ownsbufferflags & FLUIDS_MAGNETIC) {
+      free(S->magnetic);
+    }
+    if (S->ownsbufferflags & FLUIDS_LOCATION) {
+      free(S->location);
+    }
     free(S);
   }
   return 0;
@@ -203,6 +213,7 @@ int fluids_state_setdescr(fluids_state *S, fluids_descr *D)
   S->magnetic = (double*) realloc(S->magnetic, nm * sizeof(double));
   S->location = (double*) realloc(S->location, nl * sizeof(double));
   S->descr = D;
+  S->ownsbufferflags = FLUIDS_FLAGSALL;
   S->ownscache = 0;
   S->cache = D->cache;
   D->cache->state = S;
@@ -248,6 +259,44 @@ int fluids_state_cache(fluids_state *S, int operation)
   return 0;
 }
 
+int fluids_state_mapbuffer(fluids_state *S, double *buffer, long flag)
+{
+  switch (flag) {
+  case FLUIDS_PRIMITIVE:
+    if (S->ownsbufferflags & FLUIDS_PRIMITIVE) {
+      free(S->primitive);
+    }
+    S->primitive = buffer;
+    break;
+  case FLUIDS_PASSIVE:
+    if (S->ownsbufferflags & FLUIDS_PASSIVE) {
+      free(S->passive);
+    }
+    S->passive = buffer;
+    break;
+  case FLUIDS_GRAVITY:
+    if (S->ownsbufferflags & FLUIDS_GRAVITY) {
+      free(S->gravity);
+    }
+    S->gravity = buffer;
+    break;
+  case FLUIDS_MAGNETIC:
+    if (S->ownsbufferflags & FLUIDS_MAGNETIC) {
+      free(S->magnetic);
+    }
+    S->magnetic = buffer;
+    break;
+  case FLUIDS_LOCATION:
+    if (S->ownsbufferflags & FLUIDS_LOCATION) {
+      free(S->location);
+    }
+    S->location = buffer;
+    break;
+  }
+  S->ownsbufferflags &= BITWISENOT(flag);
+  return 0;
+}
+
 int fluids_state_getattr(fluids_state *S, double *x, long flag)
 {
   _getsetstateattr(S, x, flag, 'g');
@@ -270,7 +319,7 @@ int fluids_state_fromcons(fluids_state *S, double *U, int cache)
   return 0;
 }
 
-int fluids_state_derive(fluids_state *S, double *x, int flag)
+int fluids_state_derive(fluids_state *S, double *x, long flag)
 /*
  * If `x` is not NULL, then `flag` must represent only a single field, and that
  * field will be (deep) copied into the array `x`. If `x` is NULL then it will
