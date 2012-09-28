@@ -203,6 +203,9 @@ int fluids_state_setdescr(fluids_state *S, fluids_descr *D)
   S->magnetic = (double*) realloc(S->magnetic, nm * sizeof(double));
   S->location = (double*) realloc(S->location, nl * sizeof(double));
   S->descr = D;
+  S->ownscache = 0;
+  S->cache = D->cache;
+  D->cache->state = S;
   return 0;
 }
 
@@ -220,14 +223,14 @@ int fluids_state_cache(fluids_state *S, int operation)
       _alloc_cache(S->cache, ALLOC, S->descr->nprimitive, S->descr->cacheflags);
     }
   case FLUIDS_CACHE_STEAL: /* has no effect if the state already has its own
-			      cache or it's already holding the descriptor's
-			      cache */
-    if (!S->ownscache && S->cache != S->descr->cache) {
+			      cache or the descriptor's cache is already
+			      pointing to it */
+    if (!S->ownscache && S->descr->cache->state != S) {
       S->cache = S->descr->cache;
       S->cache->state = S;
       S->cache->needsupdateflags = FLUIDS_FLAGSALL;
     }
-  case FLUIDS_CACHE_RESET : /* has no effect if the state does not own its own
+  case FLUIDS_CACHE_RESET: /* has no effect if the state does not own its own
 			       cache */
     if (S->ownscache) {
       S->cache->needsupdateflags = FLUIDS_FLAGSALL;

@@ -118,11 +118,57 @@ int test3()
   return 0;
 }
 
+// Passes when the cache logic over many states works correctly
+// -----------------------------------------------------------------------------
+int test4()
+{
+  double U[5] = { 1.0, 4.0, 1.0, 1.0, 1.0 };
+  double P[5];
+  fluids_descr *D = fluids_descr_new();
+  fluids_state *S[3];
+
+  fluids_descr_setfluid(D, FLUIDS_NRHYD);
+  fluids_descr_setgamma(D, 1.4);
+  fluids_descr_seteos(D, FLUIDS_EOS_GAMMALAW);
+
+  for (int n=0; n<3; ++n) {
+    U[4] = n;
+    S[n] = fluids_state_new();
+    fluids_state_setdescr(S[n], D);
+    fluids_state_cache(S[n], FLUIDS_CACHE_CREATE);
+    fluids_state_fromcons(S[n], U, FLUIDS_CACHE_DEFAULT);
+  }
+  for (int n=0; n<3; ++n) {
+    fluids_state_getattr(S[n], P, FLUIDS_PRIMITIVE);
+    fluids_state_derive(S[n], U, FLUIDS_CONSERVED);
+    asserteq(P[4], n);
+    asserteq(U[4], n);
+  }
+
+  for (int n=0; n<3; ++n) {
+    fluids_state_cache(S[n], FLUIDS_CACHE_ERASE);
+  }
+  for (int n=0; n<3; ++n) {
+    fluids_state_getattr(S[n], P, FLUIDS_PRIMITIVE);
+    fluids_state_derive(S[n], U, FLUIDS_CONSERVED);
+    asserteq(P[4], n);
+    asserteq(U[4], n);
+  }
+
+  for (int n=0; n<3; ++n) {
+    fluids_state_del(S[n]);
+  }
+  fluids_descr_del(D);
+
+  printf("TEST 4 PASSED\n");
+  return 0;
+}
+
 // Passes when
 // (1) L.R = I
 // (2) L.A.R = diag{ lam0, lam1, lam2, lam3, lam4 }
 // -----------------------------------------------------------------------------
-int test4()
+int test5()
 {
   double P[5] = { 1.0, 1.0, 1.0, 1.0, 1.0 };
   double V[5];
@@ -161,14 +207,14 @@ int test4()
     }
   }
 
-  printf("TEST 4 PASSED\n");
+  printf("TEST 5 PASSED\n");
   return 0;
 }
 
 // Passes when the exact riemann solver creates a sane response to the trivial
 // Riemann problem.
 // -----------------------------------------------------------------------------
-int test5()
+int test6()
 {
   int solvers[3] = {FLUIDS_RIEMANN_HLL,
                     FLUIDS_RIEMANN_HLLC,
@@ -211,7 +257,7 @@ int test5()
       asserteq(P_[n], Pl[n]);
       asserteq(U_[n], Ul[n]);
     }
-    printf("TEST 5.%d PASSED\n", solver);
+    printf("TEST 6.%d PASSED\n", solver);
 
     fluids_riemn_del(R);
     fluids_state_del(SL);
@@ -231,5 +277,6 @@ int main()
   test3();
   test4();
   test5();
+  test6();
   return 0;
 }
