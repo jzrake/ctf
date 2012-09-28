@@ -10,6 +10,7 @@
 
 #define MAXQ 8 // for small statically-declared arrays
 
+static void _pcm(fluids_state **src, fluids_state *L, fluids_state *R, int Q);
 static void _plm(fluids_state **src, fluids_state *L, fluids_state *R, int Q);
 static void _weno5(fluids_state **src, fluids_state *L, fluids_state *R, int Q);
 static const long FLUIDS_FLUX[3] = {FLUIDS_FLUX0, FLUIDS_FLUX1, FLUIDS_FLUX2};
@@ -86,21 +87,25 @@ int fish_intercellflux(fish_state *S, fluids_state **fluid, double *F, int N,
   fluids_state *SL = fluids_state_new();
   fluids_state *SR = fluids_state_new();
 
-  // Assumes all states have the same descriptor, after all what sense does this
-  // make otherwise?
+  /* Assumes all states have the same descriptor, after all what sense does this
+     make otherwise? */
   fluids_state_setdescr(S_, D);
   fluids_state_setdescr(SL, D);
   fluids_state_setdescr(SR, D);
+  fluids_state_cache(S_, FLUIDS_CACHE_CREATE);
+  fluids_state_cache(SL, FLUIDS_CACHE_CREATE);
+  fluids_state_cache(SR, FLUIDS_CACHE_CREATE);
 
   fluids_riemn *R = fluids_riemn_new();
   fluids_riemn_setsolver(R, S->riemannsolver);
   fluids_riemn_setdim(R, dim);
+  fluids_riemn_setstateL(R, SL);
+  fluids_riemn_setstateR(R, SR);
 
   switch (S->reconstruction) {
   case FISH_NONE:
     for (int n=0; n<N-1; ++n) {
-      fluids_riemn_setstateL(R, fluid[n]);
-      fluids_riemn_setstateR(R, fluid[n+1]);
+      _pcm(&fluid[n], SL, SR, Q);
       fluids_riemn_execute(R);
       fluids_riemn_sample(R, S_, 0.0);
       fluids_state_derive(S_, &F[Q*n], FLUIDS_FLUX[dim]);
@@ -110,8 +115,6 @@ int fish_intercellflux(fish_state *S, fluids_state **fluid, double *F, int N,
     reconstruct_set_plm_theta(S->plmtheta);
     for (int n=1; n<N-2; ++n) {
       _plm(&fluid[n], SL, SR, Q);
-      fluids_riemn_setstateL(R, SL);
-      fluids_riemn_setstateR(R, SR);
       fluids_riemn_execute(R);
       fluids_riemn_sample(R, S_, 0.0);
       fluids_state_derive(S_, &F[Q*n], FLUIDS_FLUX[dim]);
@@ -120,8 +123,6 @@ int fish_intercellflux(fish_state *S, fluids_state **fluid, double *F, int N,
   case FISH_WENO5:
     for (int n=2; n<N-3; ++n) {
       _weno5(&fluid[n], SL, SR, Q);
-      fluids_riemn_setstateL(R, SL);
-      fluids_riemn_setstateR(R, SR);
       fluids_riemn_execute(R);
       fluids_riemn_sample(R, S_, 0.0);
       fluids_state_derive(S_, &F[Q*n], FLUIDS_FLUX[dim]);
@@ -135,6 +136,15 @@ int fish_intercellflux(fish_state *S, fluids_state **fluid, double *F, int N,
   fluids_state_del(S_);
   fluids_riemn_del(R);
   return 0;
+}
+
+void _pcm(fluids_state **src, fluids_state *L, fluids_state *R, int Q)
+{
+  double Pl[MAXQ], Pr[MAXQ];
+  fluids_state_getattr(src[0], Pl, FLUIDS_PRIMITIVE);
+  fluids_state_getattr(src[1], Pr, FLUIDS_PRIMITIVE);
+  fluids_state_setattr(L, Pl, FLUIDS_PRIMITIVE);
+  fluids_state_setattr(R, Pr, FLUIDS_PRIMITIVE);
 }
 
 void _plm(fluids_state **src, fluids_state *L, fluids_state *R, int Q)

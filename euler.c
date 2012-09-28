@@ -85,7 +85,7 @@ int advance()
     for (int q=0; q<5; ++q) {
       U[q] += L[5*n + q] * dt * 0.5;
     }
-    fluids_state_fromcons(fluid[n], U, FLUIDS_CACHE_RESET);
+    fluids_state_fromcons(fluid[n], U, FLUIDS_CACHE_DEFAULT);
   }
 
   timederiv(L);
@@ -95,7 +95,7 @@ int advance()
     for (int q=0; q<5; ++q) {
       U[q] = U0[5*n + q] + L[5*n + q] * dt;
     }
-    fluids_state_fromcons(fluid[n], U, FLUIDS_CACHE_RESET);
+    fluids_state_fromcons(fluid[n], U, FLUIDS_CACHE_DEFAULT);
   }
   return 0;
 }
@@ -103,7 +103,7 @@ int advance()
 int main()
 {
   init();
-  for (int n=0; n<200; ++n) {
+  for (int n=0; n<100; ++n) {
     clock_t start = clock();
     advance();
     clock_t del = clock() - start;
