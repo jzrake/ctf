@@ -216,6 +216,7 @@ int fluids_state_cache(fluids_state *S, int operation)
     if (!S->ownscache) {
       S->cache = fluids_cache_new();
       S->cache->state = S;
+      S->ownscache = 1;
       _alloc_cache(S->cache, ALLOC, S->descr->nprimitive, S->descr->cacheflags);
     }
   case FLUIDS_CACHE_STEAL: /* has no effect if the state already has its own
