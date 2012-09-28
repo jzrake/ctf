@@ -11,7 +11,7 @@
 
 static int _getsetcacheattr(fluids_cache *C, double *x, long flag, char op);
 static int _getsetstateattr(fluids_state *S, double *x, long flag, char op);
-static void _alloc_cache(fluids_cache *C, int op);
+static void _alloc_cache(fluids_cache *C, int op, int np, long flags);
 
 static int _nrhyd_c2p(fluids_state *S, double *U);
 static int _nrhyd_p2c(fluids_state *S);
@@ -45,7 +45,7 @@ fluids_cache *fluids_cache_new(void)
 int fluids_cache_del(fluids_cache *C)
 {
   if (C != NULL) {
-    _alloc_cache(C, DEALLOC);
+    _alloc_cache(C, DEALLOC, 0, FLUIDS_FLAGSALL);
     free(C);
   }
   return 0;
@@ -65,6 +65,7 @@ fluids_descr *fluids_descr_new(void)
     .nlocation = 0,
     .cacheflags = 0,
     .gammalawindex = 1.4,
+    .cache = NULL,
   } ;
   *D = descr;
   return D;
@@ -73,6 +74,7 @@ fluids_descr *fluids_descr_new(void)
 int fluids_descr_del(fluids_descr *D)
 {
   if (D != NULL) {
+    fluids_cache_del(D->cache);
     free(D);
   }
   return 0;
@@ -104,6 +106,8 @@ int fluids_descr_setfluid(fluids_descr *D, int fluid)
     D->cacheflags = FLUIDS_FLAGSALL;
     break;
   }
+  D->cache = fluids_cache_new();
+  _alloc_cache(D->cache, ALLOC, D->nprimitive, D->cacheflags);
   return 0;
 }
 int fluids_descr_geteos(fluids_descr *D, int *eos)
@@ -156,6 +160,7 @@ fluids_state *fluids_state_new(void)
     .gravity = NULL,
     .location = NULL,
     .passive = NULL,
+    .ownscache = 0,
     .cache = NULL,
     .descr = NULL,
   } ;
@@ -166,7 +171,9 @@ fluids_state *fluids_state_new(void)
 int fluids_state_del(fluids_state *S)
 {
   if (S != NULL) {
-    fluids_state_erasecache(S);
+    if (S->ownscache) {
+      fluids_cache_del(S->cache);
+    }
     free(S->primitive);
     free(S->passive);
     free(S->gravity);
@@ -199,21 +206,41 @@ int fluids_state_setdescr(fluids_state *S, fluids_descr *D)
   return 0;
 }
 
-int fluids_state_resetcache(fluids_state *S)
+int fluids_state_cache(fluids_state *S, int operation)
 {
-  if (S->cache == NULL) {
-    S->cache = fluids_cache_new();
-    S->cache->state = S;
-    _alloc_cache(S->cache, ALLOC);
+  switch (operation) {
+  case FLUIDS_CACHE_NOTOUCH:
+    break;
+  case FLUIDS_CACHE_CREATE: /* has no effect if the state already has its own
+			       cache */
+    if (!S->ownscache) {
+      S->cache = fluids_cache_new();
+      S->cache->state = S;
+      _alloc_cache(S->cache, ALLOC, S->descr->nprimitive, S->descr->cacheflags);
+    }
+  case FLUIDS_CACHE_STEAL: /* has no effect if the state already has its own
+			      cache or it's already holding the descriptor's
+			      cache */
+    if (!S->ownscache && S->cache != S->descr->cache) {
+      S->cache = S->descr->cache;
+      S->cache->state = S;
+      S->cache->needsupdateflags = FLUIDS_FLAGSALL;
+    }
+  case FLUIDS_CACHE_RESET : /* has no effect if the state does not own its own
+			       cache */
+    if (S->ownscache) {
+      S->cache->needsupdateflags = FLUIDS_FLAGSALL;
+    }
+    break;
+  case FLUIDS_CACHE_ERASE:
+    if (S->ownscache) {
+      fluids_cache_del(S->cache);
+      S->cache = S->descr->cache;
+      S->ownscache = 0;
+    }
+  default:
+    return FLUIDS_ERROR_BADARG;
   }
-  S->cache->needsupdateflags = FLUIDS_FLAGSALL;
-  return 0;
-}
-
-int fluids_state_erasecache(fluids_state *S)
-{
-  fluids_cache_del(S->cache);
-  S->cache = NULL;
   return 0;
 }
 
@@ -225,39 +252,17 @@ int fluids_state_getattr(fluids_state *S, double *x, long flag)
 
 int fluids_state_setattr(fluids_state *S, double *x, long flag)
 {
-  fluids_state_resetcache(S);
+  fluids_state_cache(S, FLUIDS_CACHE_RESET);
   _getsetstateattr(S, x, flag, 's');
   return 0;
 }
 
-int fluids_state_fromcons(fluids_state *S, double *U, int cachebehavior)
-/*
- * The fluid state `S` must be complete except for its primitive field, which
- * will be over-written, derived from the conserved state `U`. If the inversion
- * from conserved to primitive requires a rootfinder, then the existing
- * primitive in `S` may be used a guess value.
- *
- * `cachebehavior` is one of:
- *
- *     NOTOUCH ... will be left alone
- *     RESET   ... (recommended) then the state's cache will be reset
- *     ERASE   ... will be erased 
- */
+int fluids_state_fromcons(fluids_state *S, double *U, int cache)
 {
-  _nrhyd_c2p(S, U);
-  switch (cachebehavior) {
-  case FLUIDS_CACHE_NOTOUCH:
-    break;    
-  case FLUIDS_CACHE_RESET:
-    fluids_state_resetcache(S);
-    break;
-  case FLUIDS_CACHE_ERASE:
-    fluids_state_erasecache(S);
-    break;
-  default:
-    fluids_state_resetcache(S);
-    break;
+  if (cache != FLUIDS_CACHE_NOTOUCH) {
+    fluids_state_cache(S, FLUIDS_CACHE_RESET);
   }
+  _nrhyd_c2p(S, U);
   return 0;
 }
 
@@ -265,11 +270,13 @@ int fluids_state_derive(fluids_state *S, double *x, int flag)
 /*
  * If `x` is not NULL, then `flag` must represent only a single field, and that
  * field will be (deep) copied into the array `x`. If `x` is NULL then it will
- * not be used, `flag` may reference many fields which will all be updated.
+ * not be used, `flag` may reference many fields which will all be updated,
+ * provided the state has a cache. This function will NOT have the side-effect
+ * of creating a cache if the state does not have one.
  */
 {
-  if (S->cache == NULL) {
-    fluids_state_resetcache(S);
+  if (!S->ownscache) {
+    fluids_state_cache(S, FLUIDS_CACHE_STEAL);
   }
   _nrhyd_update(S, flag);
   if (x != NULL) {
@@ -359,10 +366,10 @@ int _getsetstateattr(fluids_state *S, double *x, long flag, char op)
   return 0;
 }
 
-void _alloc_cache(fluids_cache *C, int op)
+void _alloc_cache(fluids_cache *C, int op, int np, long flags)
 {
 #define A(a,s,m) do {                                           \
-    if (C->state->descr->cacheflags & m) {                      \
+    if (flags & m) {						\
       if (op == ALLOC) {                                        \
         C->a = (double*) realloc(C->a, (s)*sizeof(double));     \
       }                                                         \
@@ -372,7 +379,6 @@ void _alloc_cache(fluids_cache *C, int op)
       }                                                         \
     }                                                           \
   } while (0)
-  int np = C->state->descr->nprimitive;
   A(conserved, np, FLUIDS_CONSERVED);
   A(fourvelocity, 4, FLUIDS_FOURVELOCITY);
   A(flux[0], np, FLUIDS_FLUX0);
@@ -466,11 +472,6 @@ int _nrhyd_update(fluids_state *S, long modes)
     modes |= FLUIDS_SOUNDSPEEDSQUARED; // cs is used for eigenvalues
   }
   modes &= C->needsupdateflags;
-
-  /*
-    printf("update conserved? %s\n", (modes & FLUIDS_CONSERVED) ? "yes" : "no");
-    printf("update flux0? %s\n", (modes & FLUIDS_FLUX0) ? "yes" : "no");
-  */
 
   if (modes & FLUIDS_CONSERVED) {
     _nrhyd_p2c(S);

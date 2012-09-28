@@ -92,7 +92,7 @@ int test3()
   fluids_descr_seteos(D, FLUIDS_EOS_GAMMALAW);
 
   fluids_state_setdescr(S, D);
-  fluids_state_fromcons(S, U, FLUIDS_CACHE_ERASE);
+  fluids_state_fromcons(S, U, FLUIDS_CACHE_DEFAULT);
   fluids_state_derive(S, F, FLUIDS_FLUX0);
   fluids_state_getattr(S, P, FLUIDS_PRIMITIVE);
 

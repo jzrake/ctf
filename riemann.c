@@ -142,6 +142,8 @@ int fluids_riemn_setsolver(fluids_riemn *R, int solver)
 
 int fluids_riemn_execute(fluids_riemn *R)
 {
+  fluids_state_cache(R->SL, FLUIDS_CACHE_CREATE);
+  fluids_state_cache(R->SR, FLUIDS_CACHE_CREATE);
   fluids_state_derive(R->SL, NULL, FLUIDS_EVAL[R->dim] | FLUIDS_FLUX[R->dim]);
   fluids_state_derive(R->SR, NULL, FLUIDS_EVAL[R->dim] | FLUIDS_FLUX[R->dim]);
 
@@ -202,7 +204,9 @@ int _hll_exec(fluids_riemn *R)
 
 int _hll_sample(fluids_riemn *R, fluids_state *S, double s)
 {
-  fluids_state_resetcache(S);
+  /* garantee that S has its own cache */
+  fluids_state_cache(S, FLUIDS_CACHE_CREATE);
+  fluids_state_cache(S, FLUIDS_CACHE_RESET);
   fluids_cache *C = S->cache;
   double ap = R->ap;
   double am = R->am;
@@ -285,7 +289,9 @@ int _nrhyd_hllc_exec(fluids_riemn *R)
 
 int _nrhyd_hllc_sample(fluids_riemn *R, fluids_state *S, double s)
 {
-  fluids_state_resetcache(S);
+  /* garantee that S has its own cache */
+  fluids_state_cache(S, FLUIDS_CACHE_CREATE);
+  fluids_state_cache(S, FLUIDS_CACHE_RESET);
   fluids_cache *C = S->cache;
   double ap = R->ap;
   double am = R->am;
@@ -468,8 +474,9 @@ double _soln_estimate(fluids_riemn *R, int attempt)
 
 int _nrhyd_exact_sample(fluids_riemn *R, fluids_state *S, double s)
 {
-  fluids_state_resetcache(S);
-  /* Underscore after variable is Toro's (*), which indicates the Star Region */
+  /* garantee that S has its own cache */
+  fluids_state_cache(S, FLUIDS_CACHE_CREATE);
+  fluids_state_cache(S, FLUIDS_CACHE_RESET);
   double p_ = R->p_solution;
   double *Pl = R->SL->primitive;
   double *Pr = R->SR->primitive;

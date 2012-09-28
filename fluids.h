@@ -63,9 +63,12 @@
 #define FLUIDS_RIEMANN_HLLC      -71
 #define FLUIDS_RIEMANN_EXACT     -72
 
-#define FLUIDS_CACHE_NOTOUCH     -73
-#define FLUIDS_CACHE_RESET       -74
-#define FLUIDS_CACHE_ERASE       -75
+#define FLUIDS_CACHE_DEFAULT     -73
+#define FLUIDS_CACHE_NOTOUCH     -74
+#define FLUIDS_CACHE_CREATE      -75
+#define FLUIDS_CACHE_STEAL       -76
+#define FLUIDS_CACHE_RESET       -77
+#define FLUIDS_CACHE_ERASE       -78
 
 #ifdef FLUIDS_INDEX_VARS
 enum { ddd, tau, Sx, Sy, Sz, Bx, By, Bz }; // Conserved
@@ -93,17 +96,18 @@ int fluids_descr_getgamma(fluids_descr *D, double *gam);
 int fluids_descr_setgamma(fluids_descr *D, double gam);
 int fluids_descr_getncomp(fluids_descr *D, long flag);
 
+
 /* fluids_state member functions */
 fluids_state *fluids_state_new(void);
 int fluids_state_del(fluids_state *S);
 int fluids_state_getdescr(fluids_state *S, fluids_descr **D);
 int fluids_state_setdescr(fluids_state *S, fluids_descr *D);
-int fluids_state_resetcache(fluids_state *S);
-int fluids_state_erasecache(fluids_state *S);
 int fluids_state_getattr(fluids_state *S, double *x, long flag);
 int fluids_state_setattr(fluids_state *S, double *x, long flag);
-int fluids_state_fromcons(fluids_state *S, double *U, int cachebehavior);
+int fluids_state_fromcons(fluids_state *S, double *U, int cache);
 int fluids_state_derive(fluids_state *S, double *x, int flag);
+int fluids_state_cache(fluids_state *S, int operation);
+
 
 /* fluids_riemn member functions */
 fluids_riemn *fluids_riemn_new(void);
@@ -146,6 +150,7 @@ struct fluids_descr {
   int nlocation;
   long cacheflags;
   double gammalawindex;
+  fluids_cache *cache;
 } ;
 
 struct fluids_state {
@@ -154,6 +159,7 @@ struct fluids_state {
   double *gravity;
   double *magnetic;
   double *location;
+  char ownscache;
   fluids_cache *cache;
   fluids_descr *descr;
 } ;
