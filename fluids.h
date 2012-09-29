@@ -113,6 +113,7 @@ int fluids_state_setattr(fluids_state *S, double *x, long flag);
 int fluids_state_fromcons(fluids_state *S, double *U, int cache);
 int fluids_state_derive(fluids_state *S, double *x, long flags);
 int fluids_state_cache(fluids_state *S, int operation);
+int fluids_state_mapbuffer(fluids_state *S, double *buffer, long flag);
 
 
 /* fluids_riemn member functions */
@@ -167,6 +168,7 @@ struct fluids_state {
   double *magnetic;
   double *location;
   char ownscache;
+  long ownsbufferflags;
   fluids_cache *cache;
   fluids_descr *descr;
 } ;
