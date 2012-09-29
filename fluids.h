@@ -8,26 +8,27 @@
 #define FLUIDS_MAGNETIC          (1<<4)
 #define FLUIDS_LOCATION          (1<<5)
 #define FLUIDS_CONSERVED         (1<<6)
-#define FLUIDS_FOURVELOCITY      (1<<7)
-#define FLUIDS_FLUX0             (1<<8)
-#define FLUIDS_FLUX1             (1<<9)
-#define FLUIDS_FLUX2             (1<<10)
-#define FLUIDS_EVAL0             (1<<11)
-#define FLUIDS_EVAL1             (1<<12)
-#define FLUIDS_EVAL2             (1<<13)
-#define FLUIDS_LEVECS0           (1<<14)
-#define FLUIDS_LEVECS1           (1<<15)
-#define FLUIDS_LEVECS2           (1<<16)
-#define FLUIDS_REVECS0           (1<<17)
-#define FLUIDS_REVECS1           (1<<18)
-#define FLUIDS_REVECS2           (1<<19)
-#define FLUIDS_JACOBIAN0         (1<<20)
-#define FLUIDS_JACOBIAN1         (1<<21)
-#define FLUIDS_JACOBIAN2         (1<<22)
-#define FLUIDS_SOUNDSPEEDSQUARED (1<<23)
-#define FLUIDS_TEMPERATURE       (1<<24)
-#define FLUIDS_SPECIFICENTHALPY  (1<<25)
-#define FLUIDS_SPECIFICINTERNAL  (1<<26)
+#define FLUIDS_SOURCETERMS       (1<<7)
+#define FLUIDS_FOURVELOCITY      (1<<8)
+#define FLUIDS_FLUX0             (1<<9)
+#define FLUIDS_FLUX1             (1<<10)
+#define FLUIDS_FLUX2             (1<<11)
+#define FLUIDS_EVAL0             (1<<12)
+#define FLUIDS_EVAL1             (1<<13)
+#define FLUIDS_EVAL2             (1<<14)
+#define FLUIDS_LEVECS0           (1<<15)
+#define FLUIDS_LEVECS1           (1<<16)
+#define FLUIDS_LEVECS2           (1<<17)
+#define FLUIDS_REVECS0           (1<<18)
+#define FLUIDS_REVECS1           (1<<19)
+#define FLUIDS_REVECS2           (1<<20)
+#define FLUIDS_JACOBIAN0         (1<<21)
+#define FLUIDS_JACOBIAN1         (1<<22)
+#define FLUIDS_JACOBIAN2         (1<<23)
+#define FLUIDS_SOUNDSPEEDSQUARED (1<<24)
+#define FLUIDS_TEMPERATURE       (1<<25)
+#define FLUIDS_SPECIFICENTHALPY  (1<<26)
+#define FLUIDS_SPECIFICINTERNAL  (1<<27)
 #define FLUIDS_FLAGSALL          ((1<<30) - 1)
 
 #define FLUIDS_FLUXALL           (FLUIDS_FLUX0|FLUIDS_FLUX1|FLUIDS_FLUX2)
@@ -40,40 +41,40 @@
 #define FLUIDS_SCBRG             -42 // Burgers equation
 #define FLUIDS_SHWAT             -43 // Shallow water equations
 #define FLUIDS_NRHYD             -44 // Euler equations
-#define FLUIDS_SRHYD             -45 // Special relativistic
-#define FLUIDS_URHYD             -46 // Ultra relativistic
-#define FLUIDS_GRHYD             -47 // General relativistic
-#define FLUIDS_NRMHD             -48 // Magnetohydrodynamic (MHD)
-#define FLUIDS_SRMHD             -49 // Special relativistic MHD
-#define FLUIDS_GRMHD             -50 // General relativistic MHD
+#define FLUIDS_GRAVS             -45 // Gravitating Euler equation (with source terms)
+#define FLUIDS_SRHYD             -46 // Special relativistic
+#define FLUIDS_URHYD             -47 // Ultra relativistic
+#define FLUIDS_GRHYD             -48 // General relativistic
+#define FLUIDS_NRMHD             -49 // Magnetohydrodynamic (MHD)
+#define FLUIDS_SRMHD             -50 // Special relativistic MHD
+#define FLUIDS_GRMHD             -51 // General relativistic MHD
 
-#define FLUIDS_EOS_GAMMALAW      -51
-#define FLUIDS_EOS_TABULATED     -52
+#define FLUIDS_EOS_GAMMALAW      -52
+#define FLUIDS_EOS_TABULATED     -53
 
-#define FLUIDS_COORD_CARTESIAN   -53
-#define FLUIDS_COORD_SPHERICAL   -54
-#define FLUIDS_COORD_CYLINDRICAL -55
+#define FLUIDS_COORD_CARTESIAN   -54
+#define FLUIDS_COORD_SPHERICAL   -55
+#define FLUIDS_COORD_CYLINDRICAL -56
+#define FLUIDS_ERROR_BADARG      -57
+#define FLUIDS_ERROR_BADREQUEST  -58
+#define FLUIDS_ERROR_RIEMANN     -59
+#define FLUIDS_ERROR_INCOMPLETE  -60
 
-#define FLUIDS_ERROR_BADARG      -66
-#define FLUIDS_ERROR_BADREQUEST  -67
-#define FLUIDS_ERROR_RIEMANN     -68
-#define FLUIDS_ERROR_INCOMPLETE  -69
+#define FLUIDS_RIEMANN_HLL       -61
+#define FLUIDS_RIEMANN_HLLC      -62
+#define FLUIDS_RIEMANN_EXACT     -63
 
-#define FLUIDS_RIEMANN_HLL       -70
-#define FLUIDS_RIEMANN_HLLC      -71
-#define FLUIDS_RIEMANN_EXACT     -72
-
-#define FLUIDS_CACHE_DEFAULT     -73
-#define FLUIDS_CACHE_NOTOUCH     -74
-#define FLUIDS_CACHE_CREATE      -75
-#define FLUIDS_CACHE_STEAL       -76
-#define FLUIDS_CACHE_RESET       -77
-#define FLUIDS_CACHE_ERASE       -78
+#define FLUIDS_CACHE_DEFAULT     -74
+#define FLUIDS_CACHE_NOTOUCH     -75
+#define FLUIDS_CACHE_CREATE      -76
+#define FLUIDS_CACHE_STEAL       -77
+#define FLUIDS_CACHE_RESET       -78
+#define FLUIDS_CACHE_ERASE       -79
 
 #ifdef FLUIDS_INDEX_VARS
 enum { ddd, tau, Sx, Sy, Sz, Bx, By, Bz }; // Conserved
 enum { rho, pre, vx, vy, vz };             // Primitive
-enum { phi, phidot, gradphi };             // Gravity
+enum { phi=0, phd=1, gph=2, gpd=5 };       // Gravity
 #endif // FLUIDS_INDEX_VARS
 
 
@@ -105,7 +106,7 @@ int fluids_state_setdescr(fluids_state *S, fluids_descr *D);
 int fluids_state_getattr(fluids_state *S, double *x, long flag);
 int fluids_state_setattr(fluids_state *S, double *x, long flag);
 int fluids_state_fromcons(fluids_state *S, double *U, int cache);
-int fluids_state_derive(fluids_state *S, double *x, int flag);
+int fluids_state_derive(fluids_state *S, double *x, long flags);
 int fluids_state_cache(fluids_state *S, int operation);
 
 
@@ -125,6 +126,7 @@ int fluids_riemn_setsolver(fluids_riemn *R, int solver);
 
 struct fluids_cache {
   double *conserved;
+  double *sourceterms;
   double *fourvelocity;
   double *flux[3];
   double *eigenvalues[3];

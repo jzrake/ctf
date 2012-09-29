@@ -9,22 +9,45 @@
 #include <string.h>
 #include <math.h>
 
-static int _getsetcacheattr(fluids_cache *C, double *x, long flag, char op);
-static int _getsetstateattr(fluids_state *S, double *x, long flag, char op);
-static void _alloc_cache(fluids_cache *C, int op, int np, long flags);
+
+static int _c2p(fluids_state *S, double *U);
+static int _p2c(fluids_state *S);
+static int _sources(fluids_state *S);
+static int _cs2(fluids_state *S, double *cs2);
+static int _flux(fluids_state *S, long modes);
+static int _eigenval(fluids_state *S, long modes);
+static int _eigenvec(fluids_state *S, int dim, int doleft, int dorght);
+static int _jacobian(fluids_state *S, int dim);
 
 static int _nrhyd_c2p(fluids_state *S, double *U);
 static int _nrhyd_p2c(fluids_state *S);
-static int _nrhyd_update(fluids_state *S, long flags);
-static void _nrhyd_cs2(fluids_state *S, double *cs2);
-static void _nrhyd_eigenvec(fluids_state *S, int dim, int doleft, int dorght);
-static void _nrhyd_jacobian(fluids_state *S, int dim);
+static int _nrhyd_sources(fluids_state *S);
+static int _nrhyd_cs2(fluids_state *S, double *cs2);
+static int _nrhyd_flux(fluids_state *S, long modes);
+static int _nrhyd_eigenval(fluids_state *S, long modes);
+static int _nrhyd_eigenvec(fluids_state *S, int dim, int doleft, int dorght);
+static int _nrhyd_jacobian(fluids_state *S, int dim);
+
+static int _gravs_c2p(fluids_state *S, double *U);
+static int _gravs_p2c(fluids_state *S);
+static int _gravs_sources(fluids_state *S);
+static int _gravs_cs2(fluids_state *S, double *cs2);
+static int _gravs_flux(fluids_state *S, long modes);
+static int _gravs_eigenval(fluids_state *S, long modes);
+static int _gravs_eigenvec(fluids_state *S, int dim, int doleft, int dorght);
+static int _gravs_jacobian(fluids_state *S, int dim);
+
+static int _getsetcacheattr(fluids_cache *C, double *x, long flag, char op);
+static int _getsetstateattr(fluids_state *S, double *x, long flag, char op);
+static int _alloc_cache(fluids_cache *C, int op, int np, long flags);
 
 
 fluids_cache *fluids_cache_new(void)
 {
   fluids_cache *C = (fluids_cache*) malloc(sizeof(fluids_cache));
   fluids_cache cache = {
+    .conserved = NULL,
+    .sourceterms = NULL,
     .flux = { NULL, NULL, NULL },
     .eigenvalues = { NULL, NULL, NULL },
     .leigenvectors = { NULL, NULL, NULL },
@@ -88,23 +111,23 @@ int fluids_descr_getfluid(fluids_descr *D, int *fluid)
 int fluids_descr_setfluid(fluids_descr *D, int fluid)
 {
   D->fluid = fluid;
+  D->nprimitive = 0;
+  D->npassive = 0;
+  D->ngravity = 0;
+  D->nmagnetic = 0;
+  D->nlocation = 0;
+  D->cacheflags = FLUIDS_FLAGSALL;
+
   switch (fluid) {
   case FLUIDS_SCADV:
     D->nprimitive = 1;
-    D->npassive = 0;
-    D->ngravity = 0;
-    D->nmagnetic = 0;
-    D->nlocation = 0;
-    D->cacheflags = FLUIDS_FLAGSALL;
     break;
   case FLUIDS_NRHYD:
     D->nprimitive = 5;
-    D->npassive = 0;
-    D->ngravity = 0;
-    D->nmagnetic = 0;
-    D->nlocation = 0;
-    D->cacheflags = FLUIDS_FLAGSALL;
     break;
+  case FLUIDS_GRAVS:
+    D->nprimitive = 5;
+    D->ngravity = 4;
   }
   D->cache = fluids_cache_new();
   _alloc_cache(D->cache, ALLOC, D->nprimitive, D->cacheflags);
@@ -266,25 +289,88 @@ int fluids_state_fromcons(fluids_state *S, double *U, int cache)
   if (cache != FLUIDS_CACHE_NOTOUCH) {
     fluids_state_cache(S, FLUIDS_CACHE_RESET);
   }
-  _nrhyd_c2p(S, U);
+  _c2p(S, U);
   return 0;
 }
 
-int fluids_state_derive(fluids_state *S, double *x, int flag)
+int fluids_state_derive(fluids_state *S, double *x, long flags)
 /*
  * If `x` is not NULL, then `flag` must represent only a single field, and that
  * field will be (deep) copied into the array `x`. If `x` is NULL then it will
  * not be used, `flag` may reference many fields which will all be updated,
  * provided the state has a cache. This function will NOT have the side-effect
  * of creating a cache if the state does not have one.
+ *
+ *
+ * First `modes` is augmented with other modes which are dependencies. For
+ * example, the sound speed is required for eigenvalues, so if `modes` includes
+ * the latter and not the former, then the sound speed is tacked onto `modes`.
+ *
+ * Then `modes` is stripped of all modes which are already current, in other
+ * words do not have their needsupdate bit enabled.
+ *
+ * modes:                    001101011
+ * needsupdateflags:         000010001
+ * modes becomes:            000000001 (modes &= C->needsupdateflags)
+ *
+ * After the update is finished, any bit in needsupdateflags which is enabled in
+ * modes should be set to zero. In other words:
+ *
+ * needsupdateflags:         000010001
+ * modes:                    000000001
+ * needsupdateflags becomes: 000010000 (needsupdateflags &= !modes)
  */
 {
   if (!S->ownscache) {
     fluids_state_cache(S, FLUIDS_CACHE_STEAL);
   }
-  _nrhyd_update(S, flag);
+  fluids_cache *C = S->cache;
+  long modes = flags;
+
+  if (modes & FLUIDS_FLAGSALL) {
+    modes |= FLUIDS_CONSERVED; // conserved quantities are used for everything
+  }
+  if (modes & FLUIDS_EVALSALL) {
+    modes |= FLUIDS_SOUNDSPEEDSQUARED; // cs is used for eigenvalues
+  }
+  modes &= C->needsupdateflags;
+
+  if (modes & FLUIDS_CONSERVED) {
+    _p2c(S);
+  }
+  if (modes & FLUIDS_SOUNDSPEEDSQUARED) {
+    _cs2(S, &C->soundspeedsquared);
+  }
+
+  _flux(S, modes);
+  _eigenval(S, modes);
+
+  if (modes & (FLUIDS_LEVECS0 | FLUIDS_REVECS0)) {
+    _eigenvec(S, 0, modes & FLUIDS_LEVECS0, modes & FLUIDS_REVECS0);
+  }
+  if (modes & (FLUIDS_LEVECS1 | FLUIDS_REVECS1)) {
+    _eigenvec(S, 1, modes & FLUIDS_LEVECS1, modes & FLUIDS_REVECS1);
+  }
+  if (modes & (FLUIDS_LEVECS2 | FLUIDS_REVECS2)) {
+    _eigenvec(S, 2, modes & FLUIDS_LEVECS2, modes & FLUIDS_REVECS2);
+  }
+  if (modes & FLUIDS_JACOBIAN0) {
+    _jacobian(S, 0);
+  }
+  if (modes & FLUIDS_JACOBIAN1) {
+    _jacobian(S, 1);
+  }
+  if (modes & FLUIDS_JACOBIAN2) {
+    _jacobian(S, 2);
+  }
+  if (modes & FLUIDS_SOURCETERMS) {
+    _sources(S);
+  }
+
+  C->needsupdateflags &= BITWISENOT(modes);
+  /* only makes sense when flags contains a single bit */
   if (x != NULL) {
-    _getsetcacheattr(S->cache, x, flag, 'g');
+    _getsetcacheattr(S->cache, x, flags, 'g');
   }
   return 0;
 }
@@ -301,6 +387,7 @@ int _getsetcacheattr(fluids_cache *C, double *x, long flag, char op)
 #define CASE(f,m,s)case FLUIDS_##f: a = m; size = s; break
   switch (flag) {
     CASE(CONSERVED, C->conserved, np);
+    CASE(SOURCETERMS, C->sourceterms, np);
     CASE(FOURVELOCITY, C->fourvelocity, 4);
     CASE(FLUX0, C->flux[0], np);
     CASE(FLUX1, C->flux[1], np);
@@ -370,7 +457,7 @@ int _getsetstateattr(fluids_state *S, double *x, long flag, char op)
   return 0;
 }
 
-void _alloc_cache(fluids_cache *C, int op, int np, long flags)
+int _alloc_cache(fluids_cache *C, int op, int np, long flags)
 {
 #define A(a,s,m) do {                                           \
     if (flags & m) {						\
@@ -401,12 +488,8 @@ void _alloc_cache(fluids_cache *C, int op, int np, long flags)
   A(jacobian[1], np*np, FLUIDS_JACOBIAN1);
   A(jacobian[2], np*np, FLUIDS_JACOBIAN2);
 #undef A
+  return 0;
 }
-
-
-
-
-
 
 
 
@@ -437,50 +520,23 @@ int _nrhyd_p2c(fluids_state *S)
   return 0;
 }
 
-void _nrhyd_cs2(fluids_state *S, double *cs2)
+int _nrhyd_sources(fluids_state *S)
+{
+  return 0;
+}
+
+int _nrhyd_cs2(fluids_state *S, double *cs2)
 {
   double gm = S->descr->gammalawindex;
   *cs2 = gm * S->primitive[pre] / S->primitive[rho];
+  return 0;
 }
 
-int _nrhyd_update(fluids_state *S, long modes)
-/*
- * First `modes` is augmented with other modes which are dependencies. For
- * example, the sound speed is required for eigenvalues, so if `modes` includes
- * the latter and not the former, then the sound speed is tacked onto `modes`.
- *
- * Then `modes` is stripped of all modes which are already current, in other
- * words do not have their needsupdate bit enabled.
- *
- * modes:                    001101011
- * needsupdateflags:         000010001
- * modes becomes:            000000001 (modes &= C->needsupdateflags)
- *
- * After the update is finished, any bit in needsupdateflags which is enabled in
- * modes should be set to zero. In other words:
- *
- * needsupdateflags:         000010001
- * modes:                    000000001
- * needsupdateflags becomes: 000010000 (needsupdateflags &= !modes)
- */
+int _nrhyd_flux(fluids_state *S, long modes)
 {
   fluids_cache *C = S->cache;
-  double *U = C->conserved;
   double *P = S->primitive;
-  double a=0.0, cs2=0.0;
-
-  if (modes & FLUIDS_FLAGSALL) {
-    modes |= FLUIDS_CONSERVED; // conserved quantities are used for everything
-  }
-  if (modes & FLUIDS_EVALSALL) {
-    modes |= FLUIDS_SOUNDSPEEDSQUARED; // cs is used for eigenvalues
-  }
-  modes &= C->needsupdateflags;
-
-  if (modes & FLUIDS_CONSERVED) {
-    _nrhyd_p2c(S);
-  }
-
+  double *U = C->conserved;
   if (modes & FLUIDS_FLUX0) {
     C->flux[0][rho] = U[rho] * P[vx];
     C->flux[0][tau] = (U[tau] + P[pre]) * P[vx];
@@ -502,13 +558,14 @@ int _nrhyd_update(fluids_state *S, long modes)
     C->flux[2][Sy] = U[Sy] * P[vz];
     C->flux[2][Sz] = U[Sz] * P[vz] + P[pre];
   }
+  return 0;
+}
 
-  if (modes & FLUIDS_SOUNDSPEEDSQUARED) {
-    _nrhyd_cs2(S, &cs2);
-    a = sqrt(cs2);
-    C->soundspeedsquared = cs2;
-  }
-
+int _nrhyd_eigenval(fluids_state *S, long modes)
+{
+  fluids_cache *C = S->cache;
+  double *P = S->primitive;
+  double a = sqrt(C->soundspeedsquared);
   if (modes & FLUIDS_EVAL0) {
     C->eigenvalues[0][0] = P[vx] - a;
     C->eigenvalues[0][1] = P[vx];
@@ -530,40 +587,10 @@ int _nrhyd_update(fluids_state *S, long modes)
     C->eigenvalues[2][3] = P[vz];
     C->eigenvalues[2][4] = P[vz] + a;
   }
-
-  if (modes & (FLUIDS_LEVECS0 | FLUIDS_REVECS0)) {
-    _nrhyd_eigenvec(S, 0,
-                    modes & FLUIDS_LEVECS0,
-                    modes & FLUIDS_REVECS0);
-  }
-  if (modes & (FLUIDS_LEVECS1 | FLUIDS_REVECS1)) {
-    _nrhyd_eigenvec(S, 1,
-                    modes & FLUIDS_LEVECS1,
-                    modes & FLUIDS_REVECS1);
-  }
-  if (modes & (FLUIDS_LEVECS2 | FLUIDS_REVECS2)) {
-    _nrhyd_eigenvec(S, 2,
-                    modes & FLUIDS_LEVECS2,
-                    modes & FLUIDS_REVECS2);
-  }
-
-  if (modes & FLUIDS_JACOBIAN0) {
-    _nrhyd_jacobian(S, 0);
-  }
-  if (modes & FLUIDS_JACOBIAN1) {
-    _nrhyd_jacobian(S, 1);
-  }
-  if (modes & FLUIDS_JACOBIAN2) {
-    _nrhyd_jacobian(S, 2);
-  }
-
-  C->needsupdateflags &= BITWISENOT(modes);
   return 0;
 }
 
-
-
-void _nrhyd_eigenvec(fluids_state *S, int dim, int doleft, int dorght)
+int _nrhyd_eigenvec(fluids_state *S, int dim, int doleft, int dorght)
 {
   int v1=0, v2=0, v3=0;
   switch (dim) {
@@ -655,9 +682,10 @@ void _nrhyd_eigenvec(fluids_state *S, int dim, int doleft, int dorght)
   for (int i=0; i<25; ++i) {
     L[i] *= norm;
   }
+  return 0;
 }
 
-void _nrhyd_jacobian(fluids_state *S, int dim)
+int _nrhyd_jacobian(fluids_state *S, int dim)
 {
   double gm = S->descr->gammalawindex;
   double g1 = gm - 1.0;
@@ -700,4 +728,115 @@ void _nrhyd_jacobian(fluids_state *S, int dim)
                        h0*nz - g1*w*vn, gm*vn } };
 
   memcpy(S->cache->jacobian[dim], A[0], 25*sizeof(double));
+  return 0;
+}
+
+int _gravs_c2p(fluids_state *S, double *U)
+{
+  return _nrhyd_c2p(S, U);
+}
+int _gravs_p2c(fluids_state *S)
+{
+  return _nrhyd_p2c(S);
+}
+int _gravs_sources(fluids_state *S)
+{
+  double *P = S->primitive;
+  double *G = S->gravity;
+  double *T = S->cache->sourceterms;
+  double fx = -G[gph+0]; // grad_phi
+  double fy = -G[gph+1];
+  double fz = -G[gph+2];
+  T[rho] = 0.0;
+  T[tau] = 0.0;
+  T[Sx] = P[rho] * (fx*P[vx] + fy*P[vy] + fz*P[vz]);
+  T[Sy] = 0.0;
+  T[Sz] = 0.0;
+  return 0;
+}
+int _gravs_cs2(fluids_state *S, double *cs2)
+{
+  return _nrhyd_cs2(S, cs2);
+}
+int _gravs_flux(fluids_state *S, long modes)
+{
+  return _nrhyd_flux(S, modes);
+}
+int _gravs_eigenval(fluids_state *S, long modes)
+{
+  return _nrhyd_eigenval(S, modes);
+}
+int _gravs_eigenvec(fluids_state *S, int dim, int doleft, int dorght)
+{
+  return _nrhyd_eigenvec(S, dim, doleft, dorght);
+}
+int _gravs_jacobian(fluids_state *S, int dim)
+{
+  return _nrhyd_jacobian(S, dim);
+}
+
+
+int _c2p(fluids_state *S, double *U)
+{
+  switch (S->descr->fluid) {
+  case FLUIDS_NRHYD: return _nrhyd_c2p(S, U);
+  case FLUIDS_GRAVS: return _gravs_c2p(S, U);
+  default: return FLUIDS_ERROR_BADARG;
+  }
+}
+int _p2c(fluids_state *S)
+{
+  switch (S->descr->fluid) {
+  case FLUIDS_NRHYD: return _nrhyd_p2c(S);
+  case FLUIDS_GRAVS: return _gravs_p2c(S);
+  default: return FLUIDS_ERROR_BADARG;
+  }
+}
+int _sources(fluids_state *S)
+{
+  switch (S->descr->fluid) {
+  case FLUIDS_NRHYD: return _nrhyd_sources(S);
+  case FLUIDS_GRAVS: return _gravs_sources(S);
+  default: return FLUIDS_ERROR_BADARG;
+  }
+}
+int _cs2(fluids_state *S, double *cs2)
+{
+  switch (S->descr->fluid) {
+  case FLUIDS_NRHYD: return _nrhyd_cs2(S, cs2);
+  case FLUIDS_GRAVS: return _gravs_cs2(S, cs2);
+  default: return FLUIDS_ERROR_BADARG;
+  }
+}
+int _flux(fluids_state *S, long modes)
+{
+  switch (S->descr->fluid) {
+  case FLUIDS_NRHYD: return _nrhyd_flux(S, modes);
+  case FLUIDS_GRAVS: return _gravs_flux(S, modes);
+  default: return FLUIDS_ERROR_BADARG;
+  }
+}
+int _eigenval(fluids_state *S, long modes)
+{
+  switch (S->descr->fluid) {
+  case FLUIDS_NRHYD: return _nrhyd_eigenval(S, modes);
+  case FLUIDS_GRAVS: return _gravs_eigenval(S, modes);
+  default: return FLUIDS_ERROR_BADARG;
+  }
+}
+int _eigenvec(fluids_state *S, int dim, int doleft, int dorght)
+{
+  switch (S->descr->fluid) {
+  case FLUIDS_NRHYD: return _nrhyd_eigenvec(S, dim, doleft, dorght);
+  case FLUIDS_GRAVS: return _gravs_eigenvec(S, dim, doleft, dorght);
+  default: return FLUIDS_ERROR_BADARG;
+  }
+}
+int _jacobian(fluids_state *S, int dim)
+{
+  switch (S->descr->fluid) {
+  case FLUIDS_NRHYD: return _nrhyd_jacobian(S, dim);
+  case FLUIDS_GRAVS: return _gravs_jacobian(S, dim);
+  default: return FLUIDS_ERROR_BADARG;
+  }
 }
