@@ -2,74 +2,79 @@
 #ifndef FLUIDS_HEADER_INCLUDED
 #define FLUIDS_HEADER_INCLUDED
 
-#define FLUIDS_PRIMITIVE         (1<<1)
-#define FLUIDS_PASSIVE           (1<<2)
-#define FLUIDS_GRAVITY           (1<<3)
-#define FLUIDS_MAGNETIC          (1<<4)
-#define FLUIDS_LOCATION          (1<<5)
-#define FLUIDS_CONSERVED         (1<<6)
-#define FLUIDS_SOURCETERMS       (1<<7)
-#define FLUIDS_FOURVELOCITY      (1<<8)
-#define FLUIDS_FLUX0             (1<<9)
-#define FLUIDS_FLUX1             (1<<10)
-#define FLUIDS_FLUX2             (1<<11)
-#define FLUIDS_EVAL0             (1<<12)
-#define FLUIDS_EVAL1             (1<<13)
-#define FLUIDS_EVAL2             (1<<14)
-#define FLUIDS_LEVECS0           (1<<15)
-#define FLUIDS_LEVECS1           (1<<16)
-#define FLUIDS_LEVECS2           (1<<17)
-#define FLUIDS_REVECS0           (1<<18)
-#define FLUIDS_REVECS1           (1<<19)
-#define FLUIDS_REVECS2           (1<<20)
-#define FLUIDS_JACOBIAN0         (1<<21)
-#define FLUIDS_JACOBIAN1         (1<<22)
-#define FLUIDS_JACOBIAN2         (1<<23)
-#define FLUIDS_SOUNDSPEEDSQUARED (1<<24)
-#define FLUIDS_TEMPERATURE       (1<<25)
-#define FLUIDS_SPECIFICENTHALPY  (1<<26)
-#define FLUIDS_SPECIFICINTERNAL  (1<<27)
-#define FLUIDS_FLAGSALL          ((1<<30) - 1)
+enum {
+  FLUIDS_PRIMITIVE         =  1<<1,
+  FLUIDS_PASSIVE           =  1<<2,
+  FLUIDS_GRAVITY           =  1<<3,
+  FLUIDS_MAGNETIC          =  1<<4,
+  FLUIDS_LOCATION          =  1<<5,
+  FLUIDS_CONSERVED         =  1<<6,
+  FLUIDS_SOURCETERMS       =  1<<7,
+  FLUIDS_FOURVELOCITY      =  1<<8,
+  FLUIDS_FLUX0             =  1<<9,
+  FLUIDS_FLUX1             =  1<<10,
+  FLUIDS_FLUX2             =  1<<11,
+  FLUIDS_EVAL0             =  1<<12,
+  FLUIDS_EVAL1             =  1<<13,
+  FLUIDS_EVAL2             =  1<<14,
+  FLUIDS_LEVECS0           =  1<<15,
+  FLUIDS_LEVECS1           =  1<<16,
+  FLUIDS_LEVECS2           =  1<<17,
+  FLUIDS_REVECS0           =  1<<18,
+  FLUIDS_REVECS1           =  1<<19,
+  FLUIDS_REVECS2           =  1<<20,
+  FLUIDS_JACOBIAN0         =  1<<21,
+  FLUIDS_JACOBIAN1         =  1<<22,
+  FLUIDS_JACOBIAN2         =  1<<23,
+  FLUIDS_SOUNDSPEEDSQUARED =  1<<24,
+  FLUIDS_TEMPERATURE       =  1<<25,
+  FLUIDS_SPECIFICENTHALPY  =  1<<26,
+  FLUIDS_SPECIFICINTERNAL  =  1<<27,
+  FLUIDS_FLAGSALL          = (1<<30) - 1,
+  FLUIDS_FLUXALL           = FLUIDS_FLUX0|FLUIDS_FLUX1|FLUIDS_FLUX2,
+  FLUIDS_EVALSALL          = FLUIDS_EVAL0|FLUIDS_EVAL1|FLUIDS_EVAL2,
+  FLUIDS_LEVECSALL         = FLUIDS_LEVECS0|FLUIDS_LEVECS1|FLUIDS_LEVECS2,
+  FLUIDS_REVECSALL         = FLUIDS_REVECS0|FLUIDS_REVECS1|FLUIDS_REVECS2,
+  FLUIDS_JACOBIANALL       = FLUIDS_JACOBIAN0|FLUIDS_JACOBIAN1|FLUIDS_JACOBIAN2,
+} ;
 
-#define FLUIDS_FLUXALL           (FLUIDS_FLUX0|FLUIDS_FLUX1|FLUIDS_FLUX2)
-#define FLUIDS_EVALSALL          (FLUIDS_EVAL0|FLUIDS_EVAL1|FLUIDS_EVAL2)
-#define FLUIDS_LEVECSALL         (FLUIDS_LEVECS0|FLUIDS_LEVECS1|FLUIDS_LEVECS2)
-#define FLUIDS_REVECSALL         (FLUIDS_REVECS0|FLUIDS_REVECS1|FLUIDS_REVECS2)
-#define FLUIDS_JACOBIANALL       (FLUIDS_JACOBIAN0|FLUIDS_JACOBIAN1|FLUIDS_JACOBIAN2)
+enum {
+  FLUIDS_SUCCESS,
+  FLUIDS_ERROR_BADARG,
+  FLUIDS_ERROR_BADREQUEST,
+  FLUIDS_ERROR_RIEMANN,
+  FLUIDS_ERROR_INCOMPLETE,
 
-#define FLUIDS_SCADV             -41 // Scalar advection
-#define FLUIDS_SCBRG             -42 // Burgers equation
-#define FLUIDS_SHWAT             -43 // Shallow water equations
-#define FLUIDS_NRHYD             -44 // Euler equations
-#define FLUIDS_GRAVS             -45 // Gravitating Euler equation (with source terms)
-#define FLUIDS_SRHYD             -46 // Special relativistic
-#define FLUIDS_URHYD             -47 // Ultra relativistic
-#define FLUIDS_GRHYD             -48 // General relativistic
-#define FLUIDS_NRMHD             -49 // Magnetohydrodynamic (MHD)
-#define FLUIDS_SRMHD             -50 // Special relativistic MHD
-#define FLUIDS_GRMHD             -51 // General relativistic MHD
+  FLUIDS_COORD_CARTESIAN,
+  FLUIDS_COORD_SPHERICAL,
+  FLUIDS_COORD_CYLINDRICAL,
 
-#define FLUIDS_EOS_GAMMALAW      -52
-#define FLUIDS_EOS_TABULATED     -53
+  FLUIDS_SCADV, // Scalar advection
+  FLUIDS_SCBRG, // Burgers equation
+  FLUIDS_SHWAT, // Shallow water equations
+  FLUIDS_NRHYD, // Euler equations
+  FLUIDS_GRAVS, // Gravitating Euler equation (with source terms)
+  FLUIDS_SRHYD, // Special relativistic
+  FLUIDS_URHYD, // Ultra relativistic
+  FLUIDS_GRHYD, // General relativistic
+  FLUIDS_NRMHD, // Magnetohydrodynamic (MHD)
+  FLUIDS_SRMHD, // Special relativistic MHD
+  FLUIDS_GRMHD, // General relativistic MHD
 
-#define FLUIDS_COORD_CARTESIAN   -54
-#define FLUIDS_COORD_SPHERICAL   -55
-#define FLUIDS_COORD_CYLINDRICAL -56
-#define FLUIDS_ERROR_BADARG      -57
-#define FLUIDS_ERROR_BADREQUEST  -58
-#define FLUIDS_ERROR_RIEMANN     -59
-#define FLUIDS_ERROR_INCOMPLETE  -60
+  FLUIDS_EOS_GAMMALAW,
+  FLUIDS_EOS_TABULATED,
 
-#define FLUIDS_RIEMANN_HLL       -61
-#define FLUIDS_RIEMANN_HLLC      -62
-#define FLUIDS_RIEMANN_EXACT     -63
+  FLUIDS_RIEMANN_HLL,
+  FLUIDS_RIEMANN_HLLC,
+  FLUIDS_RIEMANN_EXACT,
 
-#define FLUIDS_CACHE_DEFAULT     -74
-#define FLUIDS_CACHE_NOTOUCH     -75
-#define FLUIDS_CACHE_CREATE      -76
-#define FLUIDS_CACHE_STEAL       -77
-#define FLUIDS_CACHE_RESET       -78
-#define FLUIDS_CACHE_ERASE       -79
+  FLUIDS_CACHE_DEFAULT,
+  FLUIDS_CACHE_NOTOUCH,
+  FLUIDS_CACHE_CREATE,
+  FLUIDS_CACHE_STEAL,
+  FLUIDS_CACHE_RESET,
+  FLUIDS_CACHE_ERASE,
+} ;
 
 #ifdef FLUIDS_INDEX_VARS
 enum { ddd, tau, Sx, Sy, Sz, Bx, By, Bz }; // Conserved
@@ -166,8 +171,6 @@ struct fluids_state {
   fluids_descr *descr;
 } ;
 
-/* http://en.wikipedia.org/wiki/Bitwise_operation#NOT */
-#define BITWISENOT(x) (-(x) - 1)
 #define MAPBUF 2
 #define ALLOC 1
 #define DEALLOC 0

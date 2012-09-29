@@ -230,9 +230,9 @@ int _hll_sample(fluids_riemn *R, fluids_state *S, double s)
   S->cache->eigenvalues[R->dim][0] = am;
   S->cache->eigenvalues[R->dim][nw-1] = ap;
 
-  C->needsupdateflags &= BITWISENOT(FLUIDS_CONSERVED |
-				    FLUIDS_EVAL[R->dim] |
-				    FLUIDS_FLUX[R->dim]);
+  C->needsupdateflags &= ~(FLUIDS_CONSERVED |
+			   FLUIDS_EVAL[R->dim] |
+			   FLUIDS_FLUX[R->dim]);
   // sets the primitive, if doing so makes any sense
   fluids_state_fromcons(S, C->conserved, FLUIDS_CACHE_NOTOUCH);
   return 0;
@@ -322,9 +322,9 @@ int _nrhyd_hllc_sample(fluids_riemn *R, fluids_state *S, double s)
   S->cache->eigenvalues[R->dim][3] = lc;
   S->cache->eigenvalues[R->dim][4] = ap;
 
-  C->needsupdateflags &= BITWISENOT(FLUIDS_CONSERVED |
-				    FLUIDS_EVAL[R->dim] |
-				    FLUIDS_FLUX[R->dim]);
+  C->needsupdateflags &= ~(FLUIDS_CONSERVED |
+			   FLUIDS_EVAL[R->dim] |
+			   FLUIDS_FLUX[R->dim]);
   // sets the primitive, if doing so makes any sense
   fluids_state_fromcons(S, C->conserved, FLUIDS_CACHE_NOTOUCH);
   return 0;
@@ -610,6 +610,6 @@ int _nrhyd_exact_sample(fluids_riemn *R, fluids_state *S, double s)
   S->cache->eigenvalues[R->dim][2] = u_;
   S->cache->eigenvalues[R->dim][3] = u_;
   S->cache->eigenvalues[R->dim][4] = SR;
-  S->cache->needsupdateflags &= BITWISENOT(FLUIDS_EVAL[R->dim]);
+  S->cache->needsupdateflags &= ~FLUIDS_EVAL[R->dim];
   return 0;
 }

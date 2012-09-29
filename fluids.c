@@ -318,7 +318,7 @@ int fluids_state_derive(fluids_state *S, double *x, long flags)
  *
  * needsupdateflags:         000010001
  * modes:                    000000001
- * needsupdateflags becomes: 000010000 (needsupdateflags &= !modes)
+ * needsupdateflags becomes: 000010000 (needsupdateflags &= ~modes)
  */
 {
   if (!S->ownscache) {
@@ -367,7 +367,7 @@ int fluids_state_derive(fluids_state *S, double *x, long flags)
     _sources(S);
   }
 
-  C->needsupdateflags &= BITWISENOT(modes);
+  C->needsupdateflags &= ~modes;
   /* only makes sense when flags contains a single bit */
   if (x != NULL) {
     _getsetcacheattr(S->cache, x, flags, 'g');
