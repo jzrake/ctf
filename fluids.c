@@ -520,6 +520,7 @@ int _alloc_cache(fluids_cache *C, int op, int np, long flags)
     }                                                           \
   } while (0)
   A(conserved, np, FLUIDS_CONSERVED);
+  A(sourceterms, np, FLUIDS_SOURCETERMS);
   A(fourvelocity, 4, FLUIDS_FOURVELOCITY);
   A(flux[0], np, FLUIDS_FLUX0);
   A(flux[1], np, FLUIDS_FLUX1);
@@ -562,15 +563,21 @@ int _nrhyd_p2c(fluids_state *S)
   double *U = S->cache->conserved;
   double *P = S->primitive;
   U[ddd] = P[rho];
+  U[tau] = P[rho] * 0.5*(P[vx]*P[vx] + P[vy]*P[vy] + P[vz]*P[vz]) + P[pre]/gm1;
   U[Sx]  = P[rho] * P[vx];
   U[Sy]  = P[rho] * P[vy];
   U[Sz]  = P[rho] * P[vz];
-  U[tau] = P[rho] * 0.5*(P[vx]*P[vx] + P[vy]*P[vy] + P[vz]*P[vz]) + P[pre]/gm1;
   return 0;
 }
 
 int _nrhyd_sources(fluids_state *S)
 {
+  double *T = S->cache->sourceterms;
+  T[ddd] = 0.0;
+  T[tau] = 0.0;
+  T[Sx] = 0.0;
+  T[Sy] = 0.0;
+  T[Sz] = 0.0;
   return 0;
 }
 
@@ -797,10 +804,10 @@ int _gravs_sources(fluids_state *S)
   double fy = -G[gph+1];
   double fz = -G[gph+2];
   T[rho] = 0.0;
-  T[tau] = 0.0;
-  T[Sx] = P[rho] * (fx*P[vx] + fy*P[vy] + fz*P[vz]);
-  T[Sy] = 0.0;
-  T[Sz] = 0.0;
+  T[tau] = P[rho] * (fx*P[vx] + fy*P[vy] + fz*P[vz]);
+  T[Sx]  = P[rho] * fx;
+  T[Sy]  = P[rho] * fy;
+  T[Sz]  = P[rho] * fz;
   return 0;
 }
 int _gravs_cs2(fluids_state *S, double *cs2)

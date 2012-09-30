@@ -79,7 +79,7 @@ enum {
 #ifdef FLUIDS_INDEX_VARS
 enum { ddd, tau, Sx, Sy, Sz, Bx, By, Bz }; // Conserved
 enum { rho, pre, vx, vy, vz };             // Primitive
-enum { phi=0, phd=1, gph=2, gpd=5 };       // Gravity
+enum { phi=0, gph=1, phd=4, gpd=5 };       // Gravity
 #endif // FLUIDS_INDEX_VARS
 
 
