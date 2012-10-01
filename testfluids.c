@@ -14,6 +14,7 @@ static long fluidtype = FLUIDS_NRHYD;
 int test1()
 {
   double P[5] = { 1.0, 1.0, 1.0, 1.0, 1.0 };
+  double G[4] = { 1.0, 1.0, 1.0, 1.0 };
   double Q[5];
   double R[5];
   double gam;
@@ -28,6 +29,9 @@ int test1()
   fluids_state_setdescr(S, D);
   fluids_state_setattr(S, P, FLUIDS_PRIMITIVE);
   fluids_state_getattr(S, Q, FLUIDS_PRIMITIVE);
+  if (fluidtype == FLUIDS_GRAVP) {
+    fluids_state_setattr(S, G, FLUIDS_GRAVITY);    
+  }
   fluids_descr_getgamma(D, &gam);
 
   asserteq(1.4, gam);
@@ -58,6 +62,7 @@ int test1()
 int test2()
 {
   double P[5] = { 1.0, 1.0, 1.0, 1.0, 1.0 };
+  double G[4] = { 1.0, 1.0, 1.0, 1.0 };
   double U[5], F[5];
 
   fluids_descr *D = fluids_descr_new();
@@ -69,6 +74,9 @@ int test2()
 
   fluids_state_setdescr(S, D);
   fluids_state_setattr(S, P, FLUIDS_PRIMITIVE);
+  if (fluidtype == FLUIDS_GRAVP) {
+    fluids_state_setattr(S, G, FLUIDS_GRAVITY);    
+  }
   fluids_state_derive(S, F, FLUIDS_FLUX0);
   fluids_state_derive(S, U, FLUIDS_CONSERVED);
 
@@ -80,10 +88,11 @@ int test2()
 
   asserteq(F[0], 1.0);
   asserteq(F[1], 5.0);
-  asserteq(F[2], 2.0);
-  asserteq(F[3], 1.0);
-  asserteq(F[4], 1.0);
-
+  if (fluidtype != FLUIDS_GRAVP) {
+    asserteq(F[2], 2.0);
+    asserteq(F[3], 1.0);
+    asserteq(F[4], 1.0);
+  }
   fluids_state_del(S);
   fluids_descr_del(D);
 
@@ -121,9 +130,7 @@ int test3()
   asserteq(F[2], 2.0);
   asserteq(F[3], 1.0);
   asserteq(F[4], 1.0);
-
   asserteq(fluids_descr_getncomp(D, FLUIDS_PRIMITIVE), 5);
-  asserteq(fluids_descr_getncomp(D, FLUIDS_GRAVITY), 0);
 
   fluids_state_del(S);
   fluids_descr_del(D);
@@ -288,9 +295,11 @@ int main()
   printf("sizeof(fluid_cache) = %ld\n", sizeof(fluids_cache));
   test1();
   test2();
-  test3();
-  test4();
-  test5();
-  test6();
+  if (fluidtype == FLUIDS_NRHYD) {
+    test3();
+    test4();
+    test5();
+    test6();
+  }
   return 0;
 }

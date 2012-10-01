@@ -53,7 +53,9 @@ enum {
   FLUIDS_SCBRG, // Burgers equation
   FLUIDS_SHWAT, // Shallow water equations
   FLUIDS_NRHYD, // Euler equations
-  FLUIDS_GRAVS, // Gravitating Euler equation (with source terms)
+  FLUIDS_GRAVS, // Gravitating Euler equations (with source terms on p and E)
+  FLUIDS_GRAVP, // " "                         (no source term on p)
+  FLUIDS_GRAVE, // " "                         (no source terms at all)
   FLUIDS_SRHYD, // Special relativistic
   FLUIDS_URHYD, // Ultra relativistic
   FLUIDS_GRHYD, // General relativistic

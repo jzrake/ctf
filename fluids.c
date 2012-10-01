@@ -10,36 +10,24 @@
 #include <math.h>
 
 
-static int _c2p(fluids_state *S, double *U);
-static int _p2c(fluids_state *S);
-static int _sources(fluids_state *S);
-static int _cs2(fluids_state *S, double *cs2);
-static int _flux(fluids_state *S, long modes);
-static int _eigenval(fluids_state *S, long modes);
-static int _eigenvec(fluids_state *S, int dim, int doleft, int dorght);
-static int _jacobian(fluids_state *S, int dim);
-
-static int _nrhyd_c2p(fluids_state *S, double *U);
-static int _nrhyd_p2c(fluids_state *S);
-static int _nrhyd_sources(fluids_state *S);
-static int _nrhyd_cs2(fluids_state *S, double *cs2);
-static int _nrhyd_flux(fluids_state *S, long modes);
-static int _nrhyd_eigenval(fluids_state *S, long modes);
-static int _nrhyd_eigenvec(fluids_state *S, int dim, int doleft, int dorght);
-static int _nrhyd_jacobian(fluids_state *S, int dim);
-
-static int _gravs_c2p(fluids_state *S, double *U);
-static int _gravs_p2c(fluids_state *S);
-static int _gravs_sources(fluids_state *S);
-static int _gravs_cs2(fluids_state *S, double *cs2);
-static int _gravs_flux(fluids_state *S, long modes);
-static int _gravs_eigenval(fluids_state *S, long modes);
-static int _gravs_eigenvec(fluids_state *S, int dim, int doleft, int dorght);
-static int _gravs_jacobian(fluids_state *S, int dim);
-
 static int _getsetcacheattr(fluids_cache *C, double *x, long flag, char op);
 static int _getsetstateattr(fluids_state *S, double *x, long flag, char op);
 static int _alloc_cache(fluids_cache *C, int op, int np, long flags);
+
+#define FLUID_PROTOTYPES(nm)						\
+  static int nm##_c2p(fluids_state *S, double *U);			\
+  static int nm##_p2c(fluids_state *S);					\
+  static int nm##_sources(fluids_state *S);				\
+  static int nm##_cs2(fluids_state *S, double *cs2);			\
+  static int nm##_flux(fluids_state *S, long modes);			\
+  static int nm##_eigenval(fluids_state *S, long modes);		\
+  static int nm##_eigenvec(fluids_state *S, int dim, int L, int R);	\
+  static int nm##_jacobian(fluids_state *S, int dim);			\
+  
+FLUID_PROTOTYPES()
+FLUID_PROTOTYPES(_nrhyd)
+FLUID_PROTOTYPES(_gravs)
+FLUID_PROTOTYPES(_gravp)
 
 
 fluids_cache *fluids_cache_new(void)
@@ -128,6 +116,11 @@ int fluids_descr_setfluid(fluids_descr *D, int fluid)
   case FLUIDS_GRAVS:
     D->nprimitive = 5;
     D->ngravity = 4;
+    break;
+  case FLUIDS_GRAVP:
+    D->nprimitive = 5;
+    D->ngravity = 4;
+    break;
   }
   D->cache = fluids_cache_new();
   _alloc_cache(D->cache, ALLOC, D->nprimitive, D->cacheflags);
@@ -646,7 +639,7 @@ int _nrhyd_eigenval(fluids_state *S, long modes)
   return 0;
 }
 
-int _nrhyd_eigenvec(fluids_state *S, int dim, int doleft, int dorght)
+int _nrhyd_eigenvec(fluids_state *S, int dim, int Lf, int Rt)
 {
   int v1=0, v2=0, v3=0;
   switch (dim) {
@@ -719,16 +712,16 @@ int _nrhyd_eigenvec(fluids_state *S, int dim, int doleft, int dorght)
 
   switch (dim) {
   case 0:
-    if (doleft) matrix_matrix_product(L_[0], P1[0], L, 5, 5, 5);
-    if (dorght) matrix_matrix_product(P1[0], R_[0], R, 5, 5, 5);
+    if (Lf) matrix_matrix_product(L_[0], P1[0], L, 5, 5, 5);
+    if (Rt) matrix_matrix_product(P1[0], R_[0], R, 5, 5, 5);
     break;
   case 1:
-    if (doleft) matrix_matrix_product(L_[0], P2[0], L, 5, 5, 5);
-    if (dorght) matrix_matrix_product(P3[0], R_[0], R, 5, 5, 5);
+    if (Lf) matrix_matrix_product(L_[0], P2[0], L, 5, 5, 5);
+    if (Rt) matrix_matrix_product(P3[0], R_[0], R, 5, 5, 5);
     break;
   case 2:
-    if (doleft) matrix_matrix_product(L_[0], P3[0], L, 5, 5, 5);
-    if (dorght) matrix_matrix_product(P2[0], R_[0], R, 5, 5, 5);
+    if (Lf) matrix_matrix_product(L_[0], P3[0], L, 5, 5, 5);
+    if (Rt) matrix_matrix_product(P2[0], R_[0], R, 5, 5, 5);
     break;
   }
 
@@ -822,11 +815,77 @@ int _gravs_eigenval(fluids_state *S, long modes)
 {
   return _nrhyd_eigenval(S, modes);
 }
-int _gravs_eigenvec(fluids_state *S, int dim, int doleft, int dorght)
+int _gravs_eigenvec(fluids_state *S, int dim, int L, int R)
 {
-  return _nrhyd_eigenvec(S, dim, doleft, dorght);
+  return _nrhyd_eigenvec(S, dim, L, L);
 }
 int _gravs_jacobian(fluids_state *S, int dim)
+{
+  return _nrhyd_jacobian(S, dim);
+}
+
+
+int _gravp_c2p(fluids_state *S, double *U)
+{
+  return _nrhyd_c2p(S, U);
+}
+int _gravp_p2c(fluids_state *S)
+{
+  return _nrhyd_p2c(S);
+}
+int _gravp_sources(fluids_state *S)
+{
+  double *P = S->primitive;
+  double *G = S->gravity;
+  double *T = S->cache->sourceterms;
+  double fx = -G[gph+0]; // grad_phi
+  double fy = -G[gph+1];
+  double fz = -G[gph+2];
+  T[rho] = 0.0;
+  T[tau] = P[rho] * (fx*P[vx] + fy*P[vy] + fz*P[vz]);
+  T[Sx]  = 0.0;
+  T[Sy]  = 0.0;
+  T[Sz]  = 0.0;
+  return 0;
+}
+int _gravp_cs2(fluids_state *S, double *cs2)
+{
+  return _nrhyd_cs2(S, cs2);
+}
+int _gravp_flux(fluids_state *S, long modes)
+{
+  fluids_cache *C = S->cache;
+  double *G = S->gravity;
+  double gph2 = G[gph+0] * G[gph+0] + G[gph+1] * G[gph+1] + G[gph+2] * G[gph+2];
+
+  _nrhyd_flux(S, modes);
+
+  if (modes & FLUIDS_FLUX0) {
+    C->flux[0][Sx] += G[gph+0] * G[gph+0] - 0.5 * gph2;
+    C->flux[0][Sy] += G[gph+0] * G[gph+1];
+    C->flux[0][Sz] += G[gph+0] * G[gph+2];
+  }
+  if (modes & FLUIDS_FLUX1) {
+    C->flux[1][Sx] += G[gph+1] * G[gph+0];
+    C->flux[1][Sy] += G[gph+1] * G[gph+1] - 0.5 * gph2;
+    C->flux[1][Sz] += G[gph+1] * G[gph+2];
+  }
+  if (modes & FLUIDS_FLUX2) {
+    C->flux[2][Sx] += G[gph+2] * G[gph+0];
+    C->flux[2][Sy] += G[gph+2] * G[gph+1];
+    C->flux[2][Sz] += G[gph+2] * G[gph+2] - 0.5 * gph2;
+  }
+  return 0;
+}
+int _gravp_eigenval(fluids_state *S, long modes)
+{
+  return _nrhyd_eigenval(S, modes);
+}
+int _gravp_eigenvec(fluids_state *S, int dim, int L, int R)
+{
+  return _nrhyd_eigenvec(S, dim, L, R);
+}
+int _gravp_jacobian(fluids_state *S, int dim)
 {
   return _nrhyd_jacobian(S, dim);
 }
@@ -837,6 +896,7 @@ int _c2p(fluids_state *S, double *U)
   switch (S->descr->fluid) {
   case FLUIDS_NRHYD: return _nrhyd_c2p(S, U);
   case FLUIDS_GRAVS: return _gravs_c2p(S, U);
+  case FLUIDS_GRAVP: return _gravp_c2p(S, U);
   default: return FLUIDS_ERROR_BADARG;
   }
 }
@@ -845,6 +905,7 @@ int _p2c(fluids_state *S)
   switch (S->descr->fluid) {
   case FLUIDS_NRHYD: return _nrhyd_p2c(S);
   case FLUIDS_GRAVS: return _gravs_p2c(S);
+  case FLUIDS_GRAVP: return _gravp_p2c(S);
   default: return FLUIDS_ERROR_BADARG;
   }
 }
@@ -853,6 +914,7 @@ int _sources(fluids_state *S)
   switch (S->descr->fluid) {
   case FLUIDS_NRHYD: return _nrhyd_sources(S);
   case FLUIDS_GRAVS: return _gravs_sources(S);
+  case FLUIDS_GRAVP: return _gravp_sources(S);
   default: return FLUIDS_ERROR_BADARG;
   }
 }
@@ -861,6 +923,7 @@ int _cs2(fluids_state *S, double *cs2)
   switch (S->descr->fluid) {
   case FLUIDS_NRHYD: return _nrhyd_cs2(S, cs2);
   case FLUIDS_GRAVS: return _gravs_cs2(S, cs2);
+  case FLUIDS_GRAVP: return _gravp_cs2(S, cs2);
   default: return FLUIDS_ERROR_BADARG;
   }
 }
@@ -869,6 +932,7 @@ int _flux(fluids_state *S, long modes)
   switch (S->descr->fluid) {
   case FLUIDS_NRHYD: return _nrhyd_flux(S, modes);
   case FLUIDS_GRAVS: return _gravs_flux(S, modes);
+  case FLUIDS_GRAVP: return _gravp_flux(S, modes);
   default: return FLUIDS_ERROR_BADARG;
   }
 }
@@ -877,14 +941,16 @@ int _eigenval(fluids_state *S, long modes)
   switch (S->descr->fluid) {
   case FLUIDS_NRHYD: return _nrhyd_eigenval(S, modes);
   case FLUIDS_GRAVS: return _gravs_eigenval(S, modes);
+  case FLUIDS_GRAVP: return _gravp_eigenval(S, modes);
   default: return FLUIDS_ERROR_BADARG;
   }
 }
-int _eigenvec(fluids_state *S, int dim, int doleft, int dorght)
+int _eigenvec(fluids_state *S, int dim, int L, int R)
 {
   switch (S->descr->fluid) {
-  case FLUIDS_NRHYD: return _nrhyd_eigenvec(S, dim, doleft, dorght);
-  case FLUIDS_GRAVS: return _gravs_eigenvec(S, dim, doleft, dorght);
+  case FLUIDS_NRHYD: return _nrhyd_eigenvec(S, dim, L, R);
+  case FLUIDS_GRAVS: return _gravs_eigenvec(S, dim, L, R);
+  case FLUIDS_GRAVP: return _gravp_eigenvec(S, dim, L, R);
   default: return FLUIDS_ERROR_BADARG;
   }
 }
@@ -893,6 +959,7 @@ int _jacobian(fluids_state *S, int dim)
   switch (S->descr->fluid) {
   case FLUIDS_NRHYD: return _nrhyd_jacobian(S, dim);
   case FLUIDS_GRAVS: return _gravs_jacobian(S, dim);
+  case FLUIDS_GRAVP: return _gravp_jacobian(S, dim);
   default: return FLUIDS_ERROR_BADARG;
   }
 }
