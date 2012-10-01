@@ -14,12 +14,13 @@ static double dt = 0.001;
 void init()
 {
   descr = fluids_descr_new();
-  fluids_descr_setfluid(descr, FLUIDS_NRHYD);
+  fluids_descr_setfluid(descr, FLUIDS_GRAVP);
   fluids_descr_setgamma(descr, 1.4);
   fluids_descr_seteos(descr, FLUIDS_EOS_GAMMALAW);
 
   for (int n=0; n<100; ++n) {
     double P[5] = {0, 0, 0, 0, 0};
+    double G[4] = {0, 0, 0, 0};
     if (n<50) {
       P[0] = 1.0;
       P[1] = 1.0;
@@ -31,6 +32,7 @@ void init()
     fluid[n] = fluids_state_new();
     fluids_state_setdescr(fluid[n], descr);
     fluids_state_setattr(fluid[n], P, FLUIDS_PRIMITIVE);
+    fluids_state_setattr(fluid[n], G, FLUIDS_GRAVITY);
   }
 }
 
@@ -45,8 +47,7 @@ void finish()
 int timederiv(double *L)
 {
   fish_state *S = fish_new();
-  fish_setfluid(S, FLUIDS_NRHYD);
-  fish_setriemannsolver(S, FLUIDS_RIEMANN_HLLC);
+  fish_setriemannsolver(S, FLUIDS_RIEMANN_HLL);
   fish_setreconstruction(S, FISH_PLM);
   fish_setplmtheta(S, 2.0);
 

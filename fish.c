@@ -141,16 +141,34 @@ int fish_intercellflux(fish_state *S, fluids_state **fluid, double *F, int N,
 void _pcm(fluids_state **src, fluids_state *L, fluids_state *R, int Q)
 {
   double Pl[MAXQ], Pr[MAXQ];
+  double Gl[MAXQ], Gr[MAXQ];
+  fluids_descr *D;
+  int fluid;
+  fluids_state_getdescr(src[0], &D);
+  fluids_descr_getfluid(D, &fluid);
   fluids_state_getattr(src[0], Pl, FLUIDS_PRIMITIVE);
   fluids_state_getattr(src[1], Pr, FLUIDS_PRIMITIVE);
   fluids_state_setattr(L, Pl, FLUIDS_PRIMITIVE);
   fluids_state_setattr(R, Pr, FLUIDS_PRIMITIVE);
+  if (fluid == FLUIDS_GRAVS ||
+      fluid == FLUIDS_GRAVP ||
+      fluid == FLUIDS_GRAVE) {
+    fluids_state_getattr(src[0], Gl, FLUIDS_GRAVITY);
+    fluids_state_getattr(src[1], Gr, FLUIDS_GRAVITY);
+    fluids_state_setattr(L, Gl, FLUIDS_GRAVITY);
+    fluids_state_setattr(R, Gr, FLUIDS_GRAVITY);
+  }
 }
 
 void _plm(fluids_state **src, fluids_state *L, fluids_state *R, int Q)
 {
   double P[4][MAXQ];
   double Pl[MAXQ], Pr[MAXQ];
+  double Gl[MAXQ], Gr[MAXQ];
+  fluids_descr *D;
+  int fluid;
+  fluids_state_getdescr(src[0], &D);
+  fluids_descr_getfluid(D, &fluid);
   for (int j=-1; j<3; ++j) {
     fluids_state_getattr(src[j], P[j+1], FLUIDS_PRIMITIVE);
   }
@@ -164,12 +182,25 @@ void _plm(fluids_state **src, fluids_state *L, fluids_state *R, int Q)
   }
   fluids_state_setattr(L, Pl, FLUIDS_PRIMITIVE);
   fluids_state_setattr(R, Pr, FLUIDS_PRIMITIVE);
+  if (fluid == FLUIDS_GRAVS ||
+      fluid == FLUIDS_GRAVP ||
+      fluid == FLUIDS_GRAVE) {
+    fluids_state_getattr(src[1], Gl, FLUIDS_GRAVITY);
+    fluids_state_getattr(src[2], Gr, FLUIDS_GRAVITY);
+    fluids_state_setattr(L, Gl, FLUIDS_GRAVITY);
+    fluids_state_setattr(R, Gr, FLUIDS_GRAVITY);
+  }
 }
 
 void _weno5(fluids_state **src, fluids_state *L, fluids_state *R, int Q)
 {
   double P[6][MAXQ];
   double Pl[MAXQ], Pr[MAXQ];
+  double Gl[MAXQ], Gr[MAXQ];
+  fluids_descr *D;
+  int fluid;
+  fluids_state_getdescr(src[0], &D);
+  fluids_descr_getfluid(D, &fluid);
   for (int j=-2; j<4; ++j) {
     fluids_state_getattr(src[j], P[j+2], FLUIDS_PRIMITIVE);
   }
@@ -183,4 +214,12 @@ void _weno5(fluids_state **src, fluids_state *L, fluids_state *R, int Q)
   }
   fluids_state_setattr(L, Pl, FLUIDS_PRIMITIVE);
   fluids_state_setattr(R, Pr, FLUIDS_PRIMITIVE);
+  if (fluid == FLUIDS_GRAVS ||
+      fluid == FLUIDS_GRAVP ||
+      fluid == FLUIDS_GRAVE) {
+    fluids_state_getattr(src[2], Gl, FLUIDS_GRAVITY);
+    fluids_state_getattr(src[3], Gr, FLUIDS_GRAVITY);
+    fluids_state_setattr(L, Gl, FLUIDS_GRAVITY);
+    fluids_state_setattr(R, Gr, FLUIDS_GRAVITY);
+  }
 }

@@ -14,16 +14,17 @@
 int test1()
 {
   fish_state *S = fish_new();
-  fish_setfluid(S, FLUIDS_NRHYD);
+  fish_setfluid(S, FLUIDS_GRAVP);
   fish_setreconstruction(S, FISH_PLM);
   fish_setriemannsolver(S, FLUIDS_RIEMANN_EXACT);
 
   fluids_descr *D = fluids_descr_new();
-  fluids_descr_setfluid(D, FLUIDS_NRHYD);
+  fluids_descr_setfluid(D, FLUIDS_GRAVP);
   fluids_descr_setgamma(D, 1.4);
   fluids_descr_seteos(D, FLUIDS_EOS_GAMMALAW);
 
   double P[5] = {1, 1, 1, 1, 1};
+  double G[4] = {0, 0, 0, 0};
   fluids_state *fluid[100];
 
   double Fiph[500];
@@ -31,6 +32,7 @@ int test1()
     fluid[n] = fluids_state_new();
     fluids_state_setdescr(fluid[n], D);
     fluids_state_setattr(fluid[n], P, FLUIDS_PRIMITIVE);
+    fluids_state_setattr(fluid[n], G, FLUIDS_GRAVITY);
   }
 
   fish_intercellflux(S, fluid, Fiph, 100, 0);
