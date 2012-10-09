@@ -177,6 +177,7 @@ fluids_state *fluids_state_new(void)
     .location = NULL,
     .passive = NULL,
     .ownscache = 0,
+    .ownsbufferflags = FLUIDS_FLAGSALL,
     .cache = NULL,
     .descr = NULL,
   } ;
@@ -257,11 +258,8 @@ int fluids_state_cache(fluids_state *S, int operation)
       S->cache->state = S;
       S->cache->needsupdateflags = FLUIDS_FLAGSALL;
     }
-  case FLUIDS_CACHE_RESET: /* has no effect if the state does not own its own
-			       cache */
-    if (S->ownscache) {
-      S->cache->needsupdateflags = FLUIDS_FLAGSALL;
-    }
+  case FLUIDS_CACHE_RESET: /* all fields go out-of-date */
+    S->cache->needsupdateflags = FLUIDS_FLAGSALL;
     break;
   case FLUIDS_CACHE_ERASE:
     if (S->ownscache) {
@@ -366,6 +364,10 @@ int fluids_state_derive(fluids_state *S, double *x, long flags)
   if (!S->ownscache) {
     fluids_state_cache(S, FLUIDS_CACHE_STEAL);
   }
+  if (!(S->ownsbufferflags & FLUIDS_FLAGSALL)) {
+    fluids_state_cache(S, FLUIDS_CACHE_RESET);
+  }
+
   fluids_cache *C = S->cache;
   long modes = flags;
 
