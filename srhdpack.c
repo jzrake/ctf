@@ -16,6 +16,7 @@ static void boost(double u[4], double x[4], double xp[4]);
 static double len3(double *x);
 static double gamm(double *x);
 static double dot3(double *u, double *v);
+static double dot4(double *u, double *v);
 static void project3(double *dx, double *u, double *ulat, double *ulon);
 
 void srhdpack_shelevequescaling(cow_dfield *vel,
@@ -138,6 +139,10 @@ void sl94(cow_dfield *vel, cow_histogram *hist,
     double g2 = gamm(v2);
     double umu1[4] = { g1, g1*v1[0], g1*v1[1], g1*v1[2] };
     double umu2[4] = { g2, g2*v2[0], g2*v2[1], g2*v2[2] };
+    double dumu[4] = { umu2[0] - umu1[0],
+		       umu2[1] - umu1[1],
+		       umu2[2] - umu1[2],
+		       umu2[3] - umu1[3] };
     double dxlab[4] = { 0.0, x2[0] - x1[0], x2[1] - x1[1], x2[2] - x1[2] };
     double dvlab[4] = { 0.0, v2[0] - v1[0], v2[1] - v1[1], v2[2] - v1[2] };
     double dxpro[4];
@@ -210,11 +215,17 @@ void sl94(cow_dfield *vel, cow_histogram *hist,
     case SRHDPACK_VELOCITY_GAMMABETA:
       yvalue = gammabetarel;
       break;
+    case SRHDPACK_VELOCITY_DUMUDXMU:
+      yvalue = dot4(dumu, dxlab) / sqrt(dot4(dxlab, dxlab));
+      break;
+    case SRHDPACK_VELOCITY_DUMUDUMU:
+      yvalue = dot4(dumu, dumu);
+      break;
     default:
       printf("[%s] Error! invalid argument: velmode\n", MODULE);
       return;
     }
-    cow_histogram_addsample1(hist, xvalue, pow(yvalue, exponent));
+    cow_histogram_addsample1(hist, xvalue, pow(fabs(yvalue), exponent));
   }
 }
 
@@ -300,6 +311,10 @@ void srhdpack_collectpairs(cow_dfield *vel,
     double g2 = gamm(v2);
     double umu1[4] = { g1, g1*v1[0], g1*v1[1], g1*v1[2] };
     double umu2[4] = { g2, g2*v2[0], g2*v2[1], g2*v2[2] };
+    double dumu[4] = { umu2[0] - umu1[0],
+		       umu2[1] - umu1[1],
+		       umu2[2] - umu1[2],
+		       umu2[3] - umu1[3] };
     double dxlab[4] = { 0.0, x2[0] - x1[0], x2[1] - x1[1], x2[2] - x1[2] };
     double dvlab[4] = { 0.0, v2[0] - v1[0], v2[1] - v1[1], v2[2] - v1[2] };
     double dxpro[4];
@@ -376,6 +391,12 @@ void srhdpack_collectpairs(cow_dfield *vel,
       case SRHDPACK_VELOCITY_GAMMABETA:
         yvalue = gammabetarel;
         break;
+      case SRHDPACK_VELOCITY_DUMUDXMU:
+	yvalue = dot4(dumu, dxlab) / sqrt(dot4(dxlab, dxlab));
+	break;
+      case SRHDPACK_VELOCITY_DUMUDUMU:
+	yvalue = dot4(dumu, dumu);
+	break;
       default:
         printf("[%s] Error! invalid argument: velmode %d\n", MODULE,
 	       modes[m].velmode);
@@ -383,7 +404,7 @@ void srhdpack_collectpairs(cow_dfield *vel,
       }
 
       outbufx[ntotmeas] = xvalue;
-      outbufy[ntotmeas] = pow(yvalue, modes[m].exponent);
+      outbufy[ntotmeas] = pow(fabs(yvalue), modes[m].exponent);
       ntotmeas += 1;
     }
   }
@@ -396,6 +417,10 @@ double len3(double *x)
 double dot3(double *u, double *v)
 {
   return u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
+}
+double dot4(double *u, double *v)
+{
+  return -u[0]*v[0] + u[1]*v[1] + u[2]*v[2] + u[3]*v[3];
 }
 double gamm(double *x)
 {

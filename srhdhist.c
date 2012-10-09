@@ -3,6 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include "cow.h"
+#include "srhdpack.h"
 #if (COW_MPI)
 #include <mpi.h>
 #endif
@@ -138,7 +139,7 @@ int main(int argc, char **argv)
   char *finp = argv[1];
   char *fout = argv[2];
   cow_domain *domain = cow_domain_new();
-  cow_domain_readsize(domain, finp, "prim/vx");
+  cow_domain_readsize(domain, finp, "prim/rho");
   cow_domain_setguard(domain, 2);
   cow_domain_commit(domain);
 
@@ -159,8 +160,24 @@ int main(int argc, char **argv)
   cow_dfield_read(vel, finp);
   cow_dfield_read(rho, finp);
 
+  int dosrhdpack = 1;
   int dohist = 0;
-  int dopair = 1;
+  int dopair = 0;
+
+  if (dosrhdpack) {
+    double samploc[300];
+    double outbufx[100];
+    double outbufy[100];
+    srhdpack_samplemode mode;
+    mode.exponent = 1.0;
+    mode.velmode = SRHDPACK_VELOCITY_DUMUDXMU;
+    mode.sepmode = SRHDPACK_SEPARATION_LAB;
+    mode.projmode = SRHDPACK_PROJECTION_NONE;
+    for (int n=0; n<300; ++n) {
+      samploc[n] = 1.0 * rand() / RAND_MAX;
+    }
+    srhdpack_collectpairs(vel, &mode, 1, 100, 100, samploc, outbufx, outbufy);
+  }
 
   if (dohist) {
     make_hist(vel, take_lorentzfactor, fout, "gamma");
