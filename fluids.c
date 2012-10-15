@@ -76,6 +76,7 @@ fluids_descr *fluids_descr_new(void)
     .nlocation = 0,
     .cacheflags = 0,
     .gammalawindex = 1.4,
+    .rhobar = 0.0,
     .cache = NULL,
   } ;
   *D = descr;
@@ -156,6 +157,17 @@ int fluids_descr_setgamma(fluids_descr *D, double gam)
   D->gammalawindex = gam;
   return 0;
 }
+int fluids_descr_getrhobar(fluids_descr *D, double *rhobar)
+{
+  *rhobar = D->rhobar;
+  return 0;
+}
+int fluids_descr_setrhobar(fluids_descr *D, double rhobar)
+{
+  D->rhobar = rhobar;
+  return 0;
+}
+
 int fluids_descr_getncomp(fluids_descr *D, long flag)
 {
   switch (flag) {
@@ -859,23 +871,24 @@ int _gravp_flux(fluids_state *S, long modes)
   fluids_cache *C = S->cache;
   double *G = S->gravity;
   double gph2 = G[gph+0] * G[gph+0] + G[gph+1] * G[gph+1] + G[gph+2] * G[gph+2];
+  double rhobar = S->descr->rhobar;
 
   _nrhyd_flux(S, modes);
 
   if (modes & FLUIDS_FLUX0) {
-    C->flux[0][Sx] += G[gph+0] * G[gph+0] - 0.5 * gph2;
-    C->flux[0][Sy] += G[gph+0] * G[gph+1];
-    C->flux[0][Sz] += G[gph+0] * G[gph+2];
+    C->flux[0][Sx] += G[gph+0] * G[gph+0] + rhobar*G[phi] - 0.5 * gph2;
+    C->flux[0][Sy] += G[gph+0] * G[gph+1] + rhobar*G[phi];
+    C->flux[0][Sz] += G[gph+0] * G[gph+2] + rhobar*G[phi];
   }
   if (modes & FLUIDS_FLUX1) {
-    C->flux[1][Sx] += G[gph+1] * G[gph+0];
-    C->flux[1][Sy] += G[gph+1] * G[gph+1] - 0.5 * gph2;
-    C->flux[1][Sz] += G[gph+1] * G[gph+2];
+    C->flux[1][Sx] += G[gph+1] * G[gph+0] + rhobar*G[phi];
+    C->flux[1][Sy] += G[gph+1] * G[gph+1] + rhobar*G[phi] - 0.5 * gph2;
+    C->flux[1][Sz] += G[gph+1] * G[gph+2] + rhobar*G[phi];
   }
   if (modes & FLUIDS_FLUX2) {
-    C->flux[2][Sx] += G[gph+2] * G[gph+0];
-    C->flux[2][Sy] += G[gph+2] * G[gph+1];
-    C->flux[2][Sz] += G[gph+2] * G[gph+2] - 0.5 * gph2;
+    C->flux[2][Sx] += G[gph+2] * G[gph+0] + rhobar*G[phi];
+    C->flux[2][Sy] += G[gph+2] * G[gph+1] + rhobar*G[phi];
+    C->flux[2][Sz] += G[gph+2] * G[gph+2] + rhobar*G[phi] - 0.5 * gph2;
   }
   return 0;
 }
