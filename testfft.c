@@ -81,9 +81,21 @@ int main(int argc, char **argv)
   cow_dfield_write(dil, fout);
   cow_dfield_write(sol, fout);
   cow_dfield_write(vel, fout);
-
   cow_dfield_del(dil);
   cow_dfield_del(sol);
+
+  cow_dfield *vre = cow_dfield_dup(vel);
+  cow_dfield *vim = cow_dfield_dup(vel);
+  cow_dfield_setname(vre, "vel_re");
+  cow_dfield_setname(vim, "vel_im");
+
+  cow_fft_forward(vel, vre, vim);
+  cow_dfield_write(vre, fout);
+  cow_dfield_write(vim, fout);
+
+  cow_dfield_del(vre);
+  cow_dfield_del(vim);
+
   cow_dfield_del(vel);
   cow_domain_del(domain);
 

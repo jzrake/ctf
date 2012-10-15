@@ -13,8 +13,10 @@
  * This code wraps the parallel FFT and remapping routines of Steve Plimpton at
  * Sandia National Labs.
  *
- * - The option to 'SCALED_YES' to divide by N is only regarded for forward
+ * - The option to 'SCALED_YES' to divide by N is only regarded for reverse
  *   transforms.
+ *
+ * - Power spectra do the normalization by hand after the forward FFT.
  *
  * - The order of indices provided to the FFT's is fast,mid,slow varying. For C
  *   arrays, this means it gets called with Nz, Ny, Nx.
@@ -60,9 +62,45 @@ static struct fft_plan_3d *call_fft_plan_3d(cow_domain *d, int *nbuf);
 static double k_at(cow_domain *d, int i, int j, int k, double *khat);
 static double khat_at(cow_domain *d, int i, int j, int k, double *khat);
 static double cnorm(FFT_DATA z);
-static FFT_DATA *_fwd(cow_dfield *f, double *fx, int start, int stride);
-static double *_rev(cow_dfield *f, FFT_DATA *Fk);
+static FFT_DATA *_fwd(cow_domain *d, double *fx, int start, int stride);
+static double *_rev(cow_domain *d, FFT_DATA *Fk);
 #endif // COW_FFTW
+
+void cow_fft_forward(cow_dfield *f, cow_dfield *fkre, cow_dfield *fkim)
+{
+  int nx = cow_domain_getnumlocalzonesinterior(f->domain, 0);
+  int ny = cow_domain_getnumlocalzonesinterior(f->domain, 1);
+  int nz = cow_domain_getnumlocalzonesinterior(f->domain, 2);
+  int ng = cow_domain_getguard(f->domain);
+  int ntot = nx * ny * nz;
+  int I0[3] = { ng, ng, ng };
+  int I1[3] = { nx + ng, ny + ng, nz + ng };
+
+  double *input = (double*) malloc(ntot * sizeof(double) * f->n_members);
+  double *outre = (double*) malloc(ntot * sizeof(double) * f->n_members);
+  double *outim = (double*) malloc(ntot * sizeof(double) * f->n_members);
+  cow_dfield_extract(f, I0, I1, input);
+
+  for (int m=0; m<f->n_members; ++m) {
+    FFT_DATA *g = _fwd(f->domain, input, m, f->n_members); // start, stride
+    for (int n=0; n<ntot; ++n) {
+      outre[f->n_members*n + m] = g[n][0];
+      outim[f->n_members*n + m] = g[n][1];
+    }
+    free(g);
+  }
+
+  cow_dfield_replace(fkre, I0, I1, outre);
+  cow_dfield_replace(fkim, I0, I1, outim);
+  free(outre);
+  free(outim);
+  free(input);
+}
+
+void cow_fft_reverse(cow_dfield *f, cow_dfield *fkre, cow_dfield *fkim)
+{
+  // implement me!
+}
 
 void cow_fft_pspecscafield(cow_dfield *f, cow_histogram *hist)
 // -----------------------------------------------------------------------------
@@ -70,8 +108,8 @@ void cow_fft_pspecscafield(cow_dfield *f, cow_histogram *hist)
 // scalar field represented in `f`. The user needs to supply a half-initialized
 // histogram, which has not yet been committed. This function will commit,
 // populate, and seal the histogram by doing the FFT's on the vector field
-// components. The supplies the fields like in the example below, all other will
-// be over-written.
+// components. Client code supplies the fields like in the example below, all
+// other will be over-written.
 //
 //  cow_histogram_setnbins(hist, 0, 256);
 //  cow_histogram_setspacing(hist, COW_HIST_SPACING_LINEAR); // or LOG
@@ -97,11 +135,11 @@ void cow_fft_pspecscafield(cow_dfield *f, cow_histogram *hist)
   int ntot = nx * ny * nz;
   int I0[3] = { ng, ng, ng };
   int I1[3] = { nx + ng, ny + ng, nz + ng };
-
+  double norm = pow(cow_domain_getnumglobalzones(f->domain, COW_ALL_DIMS), 2.0);
   double *input = (double*) malloc(ntot * sizeof(double));
   cow_dfield_extract(f, I0, I1, input);
 
-  FFT_DATA *gx = _fwd(f, input, 0, 1); // start, stride
+  FFT_DATA *gx = _fwd(f->domain, input, 0, 1); // start, stride
   free(input);
 
   cow_histogram_setlower(hist, 0, 1.0);
@@ -125,7 +163,7 @@ void cow_fft_pspecscafield(cow_dfield *f, cow_histogram *hist)
 	// ---------------------------------------------------------------------
 	double Kijk = k_at(f->domain, i, j, k, kvec);
 	double Pijk = cnorm(gx[m]);
-	cow_histogram_addsample1(hist, Kijk, Pijk);
+	cow_histogram_addsample1(hist, Kijk, Pijk/norm);
       }
     }
   }
@@ -170,13 +208,13 @@ void cow_fft_pspecvecfield(cow_dfield *f, cow_histogram *hist)
   int ntot = nx * ny * nz;
   int I0[3] = { ng, ng, ng };
   int I1[3] = { nx + ng, ny + ng, nz + ng };
-
+  double norm = pow(cow_domain_getnumglobalzones(f->domain, COW_ALL_DIMS), 2.0);
   double *input = (double*) malloc(3 * ntot * sizeof(double));
   cow_dfield_extract(f, I0, I1, input);
 
-  FFT_DATA *gx = _fwd(f, input, 0, 3); // start, stride
-  FFT_DATA *gy = _fwd(f, input, 1, 3);
-  FFT_DATA *gz = _fwd(f, input, 2, 3);
+  FFT_DATA *gx = _fwd(f->domain, input, 0, 3); // start, stride
+  FFT_DATA *gy = _fwd(f->domain, input, 1, 3);
+  FFT_DATA *gz = _fwd(f->domain, input, 2, 3);
   free(input);
 
   cow_histogram_setlower(hist, 0, 1.0);
@@ -200,7 +238,7 @@ void cow_fft_pspecvecfield(cow_dfield *f, cow_histogram *hist)
 	// ---------------------------------------------------------------------
 	double Kijk = k_at(f->domain, i, j, k, kvec);
 	double Pijk = cnorm(gx[m]) + cnorm(gy[m]) + cnorm(gz[m]);
-	cow_histogram_addsample1(hist, Kijk, Pijk);
+	cow_histogram_addsample1(hist, Kijk, Pijk/norm);
       }
     }
   }
@@ -233,9 +271,9 @@ void cow_fft_helmholtzdecomp(cow_dfield *f, int mode)
   double *input = (double*) malloc(3 * ntot * sizeof(double));
   cow_dfield_extract(f, I0, I1, input);
 
-  FFT_DATA *gx = _fwd(f, input, 0, 3); // start, stride
-  FFT_DATA *gy = _fwd(f, input, 1, 3);
-  FFT_DATA *gz = _fwd(f, input, 2, 3);
+  FFT_DATA *gx = _fwd(f->domain, input, 0, 3); // start, stride
+  FFT_DATA *gy = _fwd(f->domain, input, 1, 3);
+  FFT_DATA *gz = _fwd(f->domain, input, 2, 3);
   free(input);
 
   FFT_DATA *gx_p = (FFT_DATA*) malloc(ntot * sizeof(FFT_DATA));
@@ -275,9 +313,9 @@ void cow_fft_helmholtzdecomp(cow_dfield *f, int mode)
   free(gx);
   free(gy);
   free(gz);
-  double *fx_p = _rev(f, gx_p);
-  double *fy_p = _rev(f, gy_p);
-  double *fz_p = _rev(f, gz_p);
+  double *fx_p = _rev(f->domain, gx_p);
+  double *fy_p = _rev(f->domain, gy_p);
+  double *fz_p = _rev(f->domain, gz_p);
   free(gx_p);
   free(gy_p);
   free(gz_p);
@@ -321,19 +359,18 @@ struct fft_plan_3d *call_fft_plan_3d(cow_domain *d, int *nbuf)
 }
 #endif // COW_MPI
 
-FFT_DATA *_fwd(cow_dfield *f, double *fx, int start, int stride)
+FFT_DATA *_fwd(cow_domain *d, double *fx, int start, int stride)
 {
   FFT_DATA *Fk = NULL;
   FFT_DATA *Fx = NULL;
   if (cow_mpirunning()) {
 #if (COW_MPI)
     int nbuf;
-    long long ntot = cow_domain_getnumglobalzones(f->domain, COW_ALL_DIMS);
-    struct fft_plan_3d *plan = call_fft_plan_3d(f->domain, &nbuf);
+    struct fft_plan_3d *plan = call_fft_plan_3d(d, &nbuf);
     Fx = (FFT_DATA*) malloc(nbuf * sizeof(FFT_DATA));
     Fk = (FFT_DATA*) malloc(nbuf * sizeof(FFT_DATA));
     for (int n=0; n<nbuf; ++n) {
-      Fx[n][0] = fx[stride * n + start] / ntot;
+      Fx[n][0] = fx[stride * n + start];
       Fx[n][1] = 0.0;
     }
     fft_3d(Fx, Fk, FFT_FWD, plan);
@@ -342,15 +379,14 @@ FFT_DATA *_fwd(cow_dfield *f, double *fx, int start, int stride)
 #endif // COW_MPI
   }
   else {
-    int nbuf = cow_domain_getnumlocalzonesinterior(f->domain, COW_ALL_DIMS);
-    long long ntot = cow_domain_getnumglobalzones(f->domain, COW_ALL_DIMS);
+    int nbuf = cow_domain_getnumlocalzonesinterior(d, COW_ALL_DIMS);
     Fx = (FFT_DATA*) malloc(nbuf * sizeof(FFT_DATA));
     Fk = (FFT_DATA*) malloc(nbuf * sizeof(FFT_DATA));
     for (int n=0; n<nbuf; ++n) {
-      Fx[n][0] = fx[stride * n + start] / ntot;
+      Fx[n][0] = fx[stride * n + start];
       Fx[n][1] = 0.0;
     }
-    int *N = f->domain->L_nint;
+    int *N = d->L_nint;
     fftw_plan plan = fftw_plan_many_dft(3, N, 1,
 					Fx, NULL, 1, 0,
 					Fk, NULL, 1, 0,
@@ -361,36 +397,38 @@ FFT_DATA *_fwd(cow_dfield *f, double *fx, int start, int stride)
   }
   return Fk;
 }
-double *_rev(cow_dfield *f, FFT_DATA *Fk)
+double *_rev(cow_domain *d, FFT_DATA *Fk)
 {
   FFT_DATA *Fx = NULL;
   double *fx = NULL;
   if (cow_mpirunning()) {
 #if (COW_MPI)
   int nbuf;
-  struct fft_plan_3d *plan = call_fft_plan_3d(f->domain, &nbuf);
+  long long ntot = cow_domain_getnumglobalzones(d, COW_ALL_DIMS);
+  struct fft_plan_3d *plan = call_fft_plan_3d(d, &nbuf);
   fx = (double*) malloc(nbuf * sizeof(double));
   Fx = (FFT_DATA*) malloc(nbuf * sizeof(FFT_DATA));
   fft_3d(Fk, Fx, FFT_REV, plan);
   for (int n=0; n<nbuf; ++n) {
-    fx[n] = Fx[n][0];
+    fx[n] = Fx[n][0] / ntot;
   }
   free(Fx);
   fft_3d_destroy_plan(plan);
 #endif // COW_MPI
   }
   else {
-    int nbuf = cow_domain_getnumlocalzonesinterior(f->domain, COW_ALL_DIMS);
+    int nbuf = cow_domain_getnumlocalzonesinterior(d, COW_ALL_DIMS);
+    long long ntot = cow_domain_getnumglobalzones(d, COW_ALL_DIMS);
     fx = (double*) malloc(nbuf * sizeof(double));
     Fx = (FFT_DATA*) malloc(nbuf * sizeof(FFT_DATA));
-    int *N = f->domain->L_nint;
+    int *N = d->L_nint;
     fftw_plan plan = fftw_plan_many_dft(3, N, 1,
 					Fk, NULL, 1, 0,
 					Fx, NULL, 1, 0,
 					FFTW_BACKWARD, FFTW_ESTIMATE);
     fftw_execute(plan);
     for (int n=0; n<nbuf; ++n) {
-      fx[n] = Fx[n][0];
+      fx[n] = Fx[n][0] / ntot;
     }
     free(Fx);
     fftw_destroy_plan(plan);

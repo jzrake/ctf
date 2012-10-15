@@ -161,7 +161,7 @@ void fft_3d(FFT_DATA *in, FFT_DATA *out, int flag, struct fft_plan_3d *plan)
              plan->post_plan);
 
   /* scaling if required */
-  if (flag == 1 && plan->scaled) {
+  if (flag == -1 && plan->scaled) {
     norm = plan->norm;
     num = plan->normnum;
     for (i = 0; i < num; i++) {
