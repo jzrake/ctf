@@ -14,21 +14,21 @@ static int _getsetcacheattr(fluids_cache *C, double *x, long flag, char op);
 static int _getsetstateattr(fluids_state *S, double *x, long flag, char op);
 static int _alloc_cache(fluids_cache *C, int op, int np, long flags);
 
-#define FLUID_PROTOTYPES(nm)						\
-  static int nm##_c2p(fluids_state *S, double *U);			\
-  static int nm##_p2c(fluids_state *S);					\
-  static int nm##_sources(fluids_state *S);				\
-  static int nm##_cs2(fluids_state *S, double *cs2);			\
-  static int nm##_flux(fluids_state *S, long modes);			\
-  static int nm##_eigenval(fluids_state *S, long modes);		\
-  static int nm##_eigenvec(fluids_state *S, int dim, int L, int R);	\
-  static int nm##_jacobian(fluids_state *S, int dim);			\
-  
+#define FLUID_PROTOTYPES(nm)                                            \
+  static int nm##_c2p(fluids_state *S, double *U);                      \
+  static int nm##_p2c(fluids_state *S);                                 \
+  static int nm##_sources(fluids_state *S);                             \
+  static int nm##_cs2(fluids_state *S, double *cs2);                    \
+  static int nm##_flux(fluids_state *S, long modes);                    \
+  static int nm##_eigenval(fluids_state *S, long modes);                \
+  static int nm##_eigenvec(fluids_state *S, int dim, int L, int R);     \
+  static int nm##_jacobian(fluids_state *S, int dim);                   \
+
 FLUID_PROTOTYPES()
 FLUID_PROTOTYPES(_nrhyd)
 FLUID_PROTOTYPES(_gravs)
 FLUID_PROTOTYPES(_gravp)
-
+FLUID_PROTOTYPES(_srhyd)
 
 fluids_cache *fluids_cache_new(void)
 {
@@ -121,6 +121,9 @@ int fluids_descr_setfluid(fluids_descr *D, int fluid)
   case FLUIDS_GRAVP:
     D->nprimitive = 5;
     D->ngravity = 4;
+    break;
+  case FLUIDS_SRHYD:
+    D->nprimitive = 5;
     break;
   }
   D->cache = fluids_cache_new();
@@ -255,7 +258,7 @@ int fluids_state_cache(fluids_state *S, int operation)
   case FLUIDS_CACHE_NOTOUCH:
     break;
   case FLUIDS_CACHE_CREATE: /* has no effect if the state already has its own
-			       cache */
+                               cache */
     if (!S->ownscache) {
       S->cache = fluids_cache_new();
       S->cache->state = S;
@@ -263,8 +266,8 @@ int fluids_state_cache(fluids_state *S, int operation)
       _alloc_cache(S->cache, ALLOC, S->descr->nprimitive, S->descr->cacheflags);
     }
   case FLUIDS_CACHE_STEAL: /* has no effect if the state already has its own
-			      cache or the descriptor's cache is already
-			      pointing to it */
+                              cache or the descriptor's cache is already
+                              pointing to it */
     if (!S->ownscache && S->descr->cache->state != S) {
       S->cache = S->descr->cache;
       S->cache->state = S;
@@ -382,6 +385,7 @@ int fluids_state_derive(fluids_state *S, double *x, long flags)
 
   fluids_cache *C = S->cache;
   long modes = flags;
+  long err;
 
   if (modes & FLUIDS_FLAGSALL) {
     modes |= FLUIDS_CONSERVED; // conserved quantities are used for everything
@@ -392,35 +396,42 @@ int fluids_state_derive(fluids_state *S, double *x, long flags)
   modes &= C->needsupdateflags;
 
   if (modes & FLUIDS_CONSERVED) {
-    _p2c(S);
+    err = _p2c(S); if (err) return err;
   }
   if (modes & FLUIDS_SOUNDSPEEDSQUARED) {
-    _cs2(S, &C->soundspeedsquared);
+    err = _cs2(S, &C->soundspeedsquared); if (err) return err;
   }
 
-  _flux(S, modes);
-  _eigenval(S, modes);
+  err = _flux(S, modes); if (err) return err;
+  err = _eigenval(S, modes); if (err) return err;
 
   if (modes & (FLUIDS_LEVECS0 | FLUIDS_REVECS0)) {
-    _eigenvec(S, 0, modes & FLUIDS_LEVECS0, modes & FLUIDS_REVECS0);
+    err = _eigenvec(S, 0, modes & FLUIDS_LEVECS0, modes & FLUIDS_REVECS0);
+    if (err) return err;
   }
   if (modes & (FLUIDS_LEVECS1 | FLUIDS_REVECS1)) {
-    _eigenvec(S, 1, modes & FLUIDS_LEVECS1, modes & FLUIDS_REVECS1);
+    if (err) return err;
+    err = _eigenvec(S, 1, modes & FLUIDS_LEVECS1, modes & FLUIDS_REVECS1);
   }
   if (modes & (FLUIDS_LEVECS2 | FLUIDS_REVECS2)) {
-    _eigenvec(S, 2, modes & FLUIDS_LEVECS2, modes & FLUIDS_REVECS2);
+    err = _eigenvec(S, 2, modes & FLUIDS_LEVECS2, modes & FLUIDS_REVECS2);
+    if (err) return err;
   }
   if (modes & FLUIDS_JACOBIAN0) {
-    _jacobian(S, 0);
+    err = _jacobian(S, 0);
+    if (err) return err;
   }
   if (modes & FLUIDS_JACOBIAN1) {
-    _jacobian(S, 1);
+    err = _jacobian(S, 1);
+    if (err) return err;
   }
   if (modes & FLUIDS_JACOBIAN2) {
-    _jacobian(S, 2);
+    err = _jacobian(S, 2);
+    if (err) return err;
   }
   if (modes & FLUIDS_SOURCETERMS) {
-    _sources(S);
+    err = _sources(S);
+    if (err) return err;
   }
 
   C->needsupdateflags &= ~modes;
@@ -516,7 +527,7 @@ int _getsetstateattr(fluids_state *S, double *x, long flag, char op)
 int _alloc_cache(fluids_cache *C, int op, int np, long flags)
 {
 #define A(a,s,m) do {                                           \
-    if (flags & m) {						\
+    if (flags & m) {                                            \
       if (op == ALLOC) {                                        \
         C->a = (double*) realloc(C->a, (s)*sizeof(double));     \
       }                                                         \
@@ -601,21 +612,21 @@ int _nrhyd_flux(fluids_state *S, long modes)
   double *P = S->primitive;
   double *U = C->conserved;
   if (modes & FLUIDS_FLUX0) {
-    C->flux[0][rho] = U[rho] * P[vx];
+    C->flux[0][ddd] = U[ddd] * P[vx];
     C->flux[0][tau] = (U[tau] + P[pre]) * P[vx];
     C->flux[0][Sx] = U[Sx] * P[vx] + P[pre];
     C->flux[0][Sy] = U[Sy] * P[vx];
     C->flux[0][Sz] = U[Sz] * P[vx];
   }
   if (modes & FLUIDS_FLUX1) {
-    C->flux[1][rho] = U[rho] * P[vy];
+    C->flux[1][ddd] = U[ddd] * P[vy];
     C->flux[1][tau] = (U[tau] + P[pre]) * P[vy];
     C->flux[1][Sx] = U[Sx] * P[vy];
     C->flux[1][Sy] = U[Sy] * P[vy] + P[pre];
     C->flux[1][Sz] = U[Sz] * P[vy];
   }
   if (modes & FLUIDS_FLUX2) {
-    C->flux[2][rho] = U[rho] * P[vz];
+    C->flux[2][ddd] = U[ddd] * P[vz];
     C->flux[2][tau] = (U[tau] + P[pre]) * P[vz];
     C->flux[2][Sx] = U[Sx] * P[vz];
     C->flux[2][Sy] = U[Sy] * P[vz];
@@ -905,6 +916,318 @@ int _gravp_jacobian(fluids_state *S, int dim)
   return _nrhyd_jacobian(S, dim);
 }
 
+int _srhyd_c2p(fluids_state *S, double *U)
+{
+  static const double ERROR_TOLR = 1e-8;
+  static const double BIGW = 1e12;
+  static const int NEWTON_MAX_ITER = 50;
+
+  if (U[ddd] < 0.0) {
+    return FLUIDS_ERROR_NEGATIVE_DENSITY_CONS;
+  }
+  if (U[tau] < 0.0) {
+    return FLUIDS_ERROR_NEGATIVE_ENERGY;
+  }
+
+  double gm = S->descr->gammalawindex;
+  double *P = S->primitive;
+  double D = U[ddd];
+  double Tau = U[tau];
+  double S2 = U[Sx]*U[Sx] + U[Sy]*U[Sy] + U[Sz]*U[Sz];
+
+  int soln_found = 0;
+  int n_iter = 0;
+  double f,g,W_soln=1.0,p=P[pre];
+
+  while (!soln_found) {
+    double v2 = S2 / pow(Tau + D + p, 2);
+    double W2 = 1.0 / (1.0 - v2);
+    double W = sqrt(W2);
+    double e = (Tau + D*(1.0 - W) + p*(1.0 - W2)) / (D*W);
+    double Rho = D / W;
+    double h = 1.0 + e + p/Rho;
+    double cs2 = gm * p / (Rho * h);
+
+    f = Rho * e * (gm - 1.0) - p;
+    g = v2*cs2 - 1.0;
+    p -= f/g;
+
+    if (fabs(f) < ERROR_TOLR) {
+      W_soln = W;
+      soln_found = 1;
+    }
+    if (n_iter++ == NEWTON_MAX_ITER) {
+      return FLUIDS_ERROR_C2P_MAXITER;
+    }
+  }
+  P[rho] = D/W_soln;
+  P[pre] = p;
+  P[vx] = U[Sx] / (Tau + D + p);
+  P[vy] = U[Sy] / (Tau + D + p);
+  P[vz] = U[Sz] / (Tau + D + p);
+
+  if (P[pre] < 0.0) {
+    return FLUIDS_ERROR_NEGATIVE_PRESSURE;
+  }
+  if (P[rho] < 0.0) {
+    return FLUIDS_ERROR_NEGATIVE_DENSITY_PRIM;
+  }
+  if (W_soln != W_soln || W_soln > BIGW) {
+    return FLUIDS_ERROR_SUPERLUMINAL;
+  }
+  return 0;
+}
+
+int _srhyd_p2c(fluids_state *S)
+{
+  double gm = S->descr->gammalawindex;
+  double *P = S->primitive;
+  double *U = S->cache->conserved;
+  double V2 = P[vx]*P[vx] + P[vy]*P[vy] + P[vz]*P[vz];
+  double W2 = 1.0 / (1.0 - V2);
+  double W = sqrt(W2);
+  double e = P[pre] / (P[rho] * (gm - 1.0));
+  double h = 1.0 + e + P[pre]/P[rho];
+
+  if (P[pre] < 0.0) {
+    return FLUIDS_ERROR_NEGATIVE_PRESSURE;
+  }
+  if (P[rho] < 0.0) {
+    return FLUIDS_ERROR_NEGATIVE_DENSITY_PRIM;
+  }
+  if (V2 >= 1.0) {
+    return FLUIDS_ERROR_SUPERLUMINAL;
+  }
+
+  U[ddd] = P[rho]*W;
+  U[tau] = P[rho]*h*W2 - P[pre] - U[ddd];
+  U[Sx] = P[rho]*h*W2*P[vx];
+  U[Sy] = P[rho]*h*W2*P[vy];
+  U[Sz] = P[rho]*h*W2*P[vz];
+
+  if (U[tau] < 0.0) {
+    return FLUIDS_ERROR_NEGATIVE_ENERGY;
+  }
+  return 0;
+}
+
+int _srhyd_sources(fluids_state *S)
+{
+  double *T = S->cache->sourceterms;
+  T[ddd] = 0.0;
+  T[tau] = 0.0;
+  T[Sx] = 0.0;
+  T[Sy] = 0.0;
+  T[Sz] = 0.0;
+  return 0;
+}
+
+int _srhyd_cs2(fluids_state *S, double *cs2)
+{
+  double gm = S->descr->gammalawindex;
+  double *P = S->primitive;
+  double e = P[pre] / (P[rho] * (gm - 1.0));
+  *cs2 = gm * P[pre] / (P[pre] + P[rho] + P[rho]*e);
+  return 0;
+}
+
+int _srhyd_flux(fluids_state *S, long modes)
+{
+  return _nrhyd_flux(S, modes);
+}
+
+int _srhyd_eigenval(fluids_state *S, long modes)
+{
+  fluids_cache *C = S->cache;
+  double *P = S->primitive;
+  double cs2 = C->soundspeedsquared;
+  double vx2 = P[vx]*P[vx];
+  double vy2 = P[vy]*P[vy];
+  double vz2 = P[vz]*P[vz];
+  double v2 = vx2 + vy2 + vz2;
+  if (modes & FLUIDS_EVAL0) {
+    double x = sqrt(cs2*(1-v2)*(1-v2*cs2-vx2*(1-cs2)));
+    C->eigenvalues[0][0] = (P[vx]*(1-cs2) + x)/(1-v2*cs2);
+    C->eigenvalues[0][1] = 0.0;
+    C->eigenvalues[0][2] = 0.0;
+    C->eigenvalues[0][3] = 0.0;
+    C->eigenvalues[0][4] = (P[vx]*(1-cs2) - x)/(1-v2*cs2);
+  }
+  if (modes & FLUIDS_EVAL1) {
+    double x = sqrt(cs2*(1-v2)*(1-v2*cs2-vy2*(1-cs2)));
+    C->eigenvalues[1][0] = (P[vy]*(1-cs2) + x)/(1-v2*cs2);
+    C->eigenvalues[1][1] = 0.0;
+    C->eigenvalues[1][2] = 0.0;
+    C->eigenvalues[1][3] = 0.0;
+    C->eigenvalues[1][4] = (P[vy]*(1-cs2) - x)/(1-v2*cs2);
+  }
+  if (modes & FLUIDS_EVAL2) {
+    double x = sqrt(cs2*(1-v2)*(1-v2*cs2-vz2*(1-cs2)));
+    C->eigenvalues[2][0] = (P[vz]*(1-cs2) + x)/(1-v2*cs2);
+    C->eigenvalues[2][1] = 0.0;
+    C->eigenvalues[2][2] = 0.0;
+    C->eigenvalues[2][3] = 0.0;
+    C->eigenvalues[2][4] = (P[vz]*(1-cs2) - x)/(1-v2*cs2);
+  }
+  return 0;
+}
+
+int _srhyd_eigenvec(fluids_state *S, int dim, int Lf, int Rt)
+/* -----------------------------------------------------------------------------
+ *
+ * Authors: Jonathan Zrake, Bez Laderman: NYU CCPP
+ *
+ * Date: May 7th, 2012
+ *
+ * This piece of code implements the left and right eigenvectors of the ideal
+ * special relativistic hydrodynamics equations. The formulas are an exact
+ * translation of those given in the literature:
+ *
+ * R. Donat, J.A. Font, J.M. Ibanez, & A. Marquina
+ * JCP, 1998, 146, 58
+ *
+ * http:*www.sciencedirect.com/science/article/pii/S0021999198959551
+ *
+ *
+ * Having these eigenvectors in a hydrodynamics code is good. They can be used
+ * for any scheme which requires flux splitting with characteristic
+ * decomposition, such as high order ENO or WENO schemes.
+ *
+ * -----------------------------------------------------------------------------
+ */
+{
+  double gm = S->descr->gammalawindex;
+  double *P_ = S->primitive;
+  double *L = S->cache->leigenvectors[dim];
+  double *R = S->cache->reigenvectors[dim];
+
+  const double T[3][5][5] =
+  // Tx
+    {{{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 1, 0, 0},
+      {0, 0, 0, 1, 0},
+      {0, 0, 0, 0, 1}},
+  // Ty
+     {{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 0, 1, 0},
+      {0, 0,-1, 0, 0},
+      {0, 0, 0, 0, 1}},
+  // Tz
+     {{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 0, 0, 1},
+      {0, 0, 0, 1, 0},
+      {0, 0,-1, 0, 0}}};
+
+  const double V[3][5][5] = // T^{-1}
+  // Vx
+    {{{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 1, 0, 0},
+      {0, 0, 0, 1, 0},
+      {0, 0, 0, 0, 1}},
+  // Vy
+     {{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 0,-1, 0},
+      {0, 0, 1, 0, 0},
+      {0, 0, 0, 0, 1}},
+  // Vz
+     {{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 0, 0,-1},
+      {0, 0, 0, 1, 0},
+      {0, 0, 1, 0, 0}}};
+
+  double P[5];
+  matrix_vector_product(T[dim][0], P_, P, 5, 5);
+
+  const double D = P[ddd]; // rest mass density
+  const double p = P[pre]; // pressure
+  const double u = P[vx];  // vx (three velocity)
+  const double v = P[vy];  // vy
+  const double w = P[vz];  // vz
+
+  const double sie = (p/D) / (gm - 1); // specific internal energy
+  const double h = 1 + sie + p/D;                  // specific enthalpy
+  const double cs2 = gm * p / (D*h);   // sound speed squared
+  const double V2 = u*u + v*v + w*w;
+  const double W = 1.0 / sqrt(1 - V2);             // Lorentz factor
+  const double W2 = W*W;
+  const double K = h;                              // for gamma-law only, K = h
+  const double hW = h*W;
+
+  // equations (14) and (15)
+  const double lp = (u*(1-cs2) + sqrt(cs2*(1-V2)*(1-V2*cs2-u*u*(1-cs2))))/(1-V2*cs2);
+  const double lm = (u*(1-cs2) - sqrt(cs2*(1-V2)*(1-V2*cs2-u*u*(1-cs2))))/(1-V2*cs2);
+
+  const double Ap = (1 - u*u) / (1 - u*lp);
+  const double Am = (1 - u*u) / (1 - u*lm);
+
+  // NOTES
+  // ---------------------------------------------------------------------------
+  // (1) Donat describes the columns if the right eigenvector matrix
+  // horizontally, which is how they are written below. So we take the transpose
+  // at the end of the day.
+  //
+  // (2) Donat's notation is provided next to the formulas to make clear the
+  // permutation into to Mara's convention (vector components last).
+  // ---------------------------------------------------------------------------
+
+
+  // ---------------------------------------------------------------------------
+  // Right eigenvectors (transpose of), equations (17) through (20)
+  // ---------------------------------------------------------------------------
+  const double RT[5][5] =
+    {{1, hW*Am - 1, hW*Am*lm, hW*v, hW*w},                              // R_{-}
+     {1, hW*Ap - 1, hW*Ap*lp, hW*v, hW*w},                              // R_{+}
+     {K/hW, 1-K/hW, u, v, w},                                           // R_{1}
+     {W*v, 2*h*W2*v - W*v, 2*h*W2*u*v, h*(1+2*W2*v*v), 2*h*W2*v*w},     // R_{2}
+     {W*w, 2*h*W2*w - W*w, 2*h*W2*u*w, 2*h*W2*v*w, h*(1+2*W2*w*w)}};    // R_{3}
+
+  double RR[5][5]; // un-transpose them
+  for (int n=0; n<5; ++n) {
+    for (int m=0; m<5; ++m) {
+      RR[n][m] = RT[m][n];
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Left eigenvectors
+  // ---------------------------------------------------------------------------
+  const double Delta = h*h*h*W*(K-1)*(1-u*u)*(Ap*lp - Am*lm); // equation (21)
+  const double a = W / (K-1);
+  const double b = 1 / (h*(1 - u*u));
+  const double c = 1 / (h*(1 - u*u));
+  const double d = -h*h / Delta;
+  const double e = +h*h / Delta;
+
+  const double LL[5][5] =
+    {{e*(hW*Ap*(u-lp) - u - W2*(V2 - u*u)*(2*K - 1)*(u - Ap*lp) + K*Ap*lp),
+      e*(-u - W2*(V2 - u*u)*(2*K - 1)*(u - Ap*lp) + K*Ap*lp),
+      e*(1 + W2*(V2 - u*u)*(2*K - 1)*(1 - Ap) - K*Ap),
+      e*(W2*v*(2*K - 1)*Ap*(u - lp)),
+      e*(W2*w*(2*K - 1)*Ap*(u - lp))},            // L_{-} (negative eigenvalue)
+     {d*(hW*Am*(u-lm) - u - W2*(V2 - u*u)*(2*K - 1)*(u - Am*lm) + K*Am*lm),
+      d*(-u - W2*(V2 - u*u)*(2*K - 1)*(u - Am*lm) + K*Am*lm),
+      d*(1 + W2*(V2 - u*u)*(2*K - 1)*(1 - Am) - K*Am),
+      d*(W2*v*(2*K - 1)*Am*(u - lm)),
+      d*(W2*w*(2*K - 1)*Am*(u - lm))},            // L_{+} (positive eigenvalue)
+     {a*(h-W), -a*W, a*W*u, a*W*v, a*W*w},        // L_{1}
+     {-b*v, -b*v, b*u*v, b*(1-u*u), 0},           // L_{2}
+     {-c*w, -c*w, c*u*w, 0, c*(1-u*u)}};          // L_{3}
+
+  matrix_matrix_product(V[dim][0], RR[0], R, 5, 5, 5);
+  matrix_matrix_product(LL[0], T[dim][0], L, 5, 5, 5);
+  return 0;
+}
+
+int _srhyd_jacobian(fluids_state *S, int dim)
+{
+  return FLUIDS_ERROR_NOT_IMPLEMENTED;
+}
 
 int _c2p(fluids_state *S, double *U)
 {
@@ -912,6 +1235,7 @@ int _c2p(fluids_state *S, double *U)
   case FLUIDS_NRHYD: return _nrhyd_c2p(S, U);
   case FLUIDS_GRAVS: return _gravs_c2p(S, U);
   case FLUIDS_GRAVP: return _gravp_c2p(S, U);
+  case FLUIDS_SRHYD: return _srhyd_c2p(S, U);
   default: return FLUIDS_ERROR_BADARG;
   }
 }
@@ -921,6 +1245,7 @@ int _p2c(fluids_state *S)
   case FLUIDS_NRHYD: return _nrhyd_p2c(S);
   case FLUIDS_GRAVS: return _gravs_p2c(S);
   case FLUIDS_GRAVP: return _gravp_p2c(S);
+  case FLUIDS_SRHYD: return _srhyd_p2c(S);
   default: return FLUIDS_ERROR_BADARG;
   }
 }
@@ -930,6 +1255,7 @@ int _sources(fluids_state *S)
   case FLUIDS_NRHYD: return _nrhyd_sources(S);
   case FLUIDS_GRAVS: return _gravs_sources(S);
   case FLUIDS_GRAVP: return _gravp_sources(S);
+  case FLUIDS_SRHYD: return _srhyd_sources(S);
   default: return FLUIDS_ERROR_BADARG;
   }
 }
@@ -939,6 +1265,7 @@ int _cs2(fluids_state *S, double *cs2)
   case FLUIDS_NRHYD: return _nrhyd_cs2(S, cs2);
   case FLUIDS_GRAVS: return _gravs_cs2(S, cs2);
   case FLUIDS_GRAVP: return _gravp_cs2(S, cs2);
+  case FLUIDS_SRHYD: return _srhyd_cs2(S, cs2);
   default: return FLUIDS_ERROR_BADARG;
   }
 }
@@ -948,6 +1275,7 @@ int _flux(fluids_state *S, long modes)
   case FLUIDS_NRHYD: return _nrhyd_flux(S, modes);
   case FLUIDS_GRAVS: return _gravs_flux(S, modes);
   case FLUIDS_GRAVP: return _gravp_flux(S, modes);
+  case FLUIDS_SRHYD: return _srhyd_flux(S, modes);
   default: return FLUIDS_ERROR_BADARG;
   }
 }
@@ -957,6 +1285,7 @@ int _eigenval(fluids_state *S, long modes)
   case FLUIDS_NRHYD: return _nrhyd_eigenval(S, modes);
   case FLUIDS_GRAVS: return _gravs_eigenval(S, modes);
   case FLUIDS_GRAVP: return _gravp_eigenval(S, modes);
+  case FLUIDS_SRHYD: return _srhyd_eigenval(S, modes);
   default: return FLUIDS_ERROR_BADARG;
   }
 }
@@ -966,6 +1295,7 @@ int _eigenvec(fluids_state *S, int dim, int L, int R)
   case FLUIDS_NRHYD: return _nrhyd_eigenvec(S, dim, L, R);
   case FLUIDS_GRAVS: return _gravs_eigenvec(S, dim, L, R);
   case FLUIDS_GRAVP: return _gravp_eigenvec(S, dim, L, R);
+  case FLUIDS_SRHYD: return _srhyd_eigenvec(S, dim, L, R);
   default: return FLUIDS_ERROR_BADARG;
   }
 }
@@ -975,6 +1305,7 @@ int _jacobian(fluids_state *S, int dim)
   case FLUIDS_NRHYD: return _nrhyd_jacobian(S, dim);
   case FLUIDS_GRAVS: return _gravs_jacobian(S, dim);
   case FLUIDS_GRAVP: return _gravp_jacobian(S, dim);
+  case FLUIDS_SRHYD: return _srhyd_jacobian(S, dim);
   default: return FLUIDS_ERROR_BADARG;
   }
 }
