@@ -43,6 +43,8 @@ static int _hll_exec(fluids_riemn *R);
 static int _hll_sample(fluids_riemn *R, fluids_state *S, double s);
 static int _nrhyd_hllc_exec(fluids_riemn *R);
 static int _nrhyd_hllc_sample(fluids_riemn *R, fluids_state *S, double s);
+static int _srhyd_hllc_exec(fluids_riemn *R);
+static int _srhyd_hllc_sample(fluids_riemn *R, fluids_state *S, double s);
 static int _nrhyd_exact_exec(fluids_riemn *R);
 static int _nrhyd_exact_sample(fluids_riemn *R, fluids_state *S, double s);
 
@@ -157,9 +159,21 @@ int fluids_riemn_execute(fluids_riemn *R)
   case FLUIDS_RIEMANN_HLL:
     return _hll_exec(R);
   case FLUIDS_RIEMANN_HLLC:
-    return _nrhyd_hllc_exec(R);
+    switch (R->SL->descr->fluid) {
+    case FLUIDS_NRHYD:
+      return _nrhyd_hllc_exec(R);
+    case FLUIDS_SRHYD:
+      return _srhyd_hllc_exec(R);
+    default:
+      return FLUIDS_ERROR_NOT_IMPLEMENTED;
+    }
   case FLUIDS_RIEMANN_EXACT:
-    return _nrhyd_exact_exec(R);
+    switch (R->SL->descr->fluid) {
+    case FLUIDS_NRHYD:
+      return _nrhyd_exact_exec(R);
+    default:
+      return FLUIDS_ERROR_NOT_IMPLEMENTED;
+    }
   default:
     return FLUIDS_ERROR_BADREQUEST;
   }
@@ -171,13 +185,24 @@ int fluids_riemn_sample(fluids_riemn *R, fluids_state *S, double s)
   case FLUIDS_RIEMANN_HLL:
     return _hll_sample(R, S, s);
   case FLUIDS_RIEMANN_HLLC:
-    return _nrhyd_hllc_sample(R, S, s);
+    switch (R->SL->descr->fluid) {
+    case FLUIDS_NRHYD:
+      return _nrhyd_hllc_sample(R, S, s);
+    case FLUIDS_SRHYD:
+      return _srhyd_hllc_sample(R, S, s);
+    default:
+      return FLUIDS_ERROR_NOT_IMPLEMENTED;
+    }
   case FLUIDS_RIEMANN_EXACT:
-    return _nrhyd_exact_sample(R, S, s);
+    switch (R->SL->descr->fluid) {
+    case FLUIDS_NRHYD:
+      return _nrhyd_exact_sample(R, S, s);
+    default:
+      return FLUIDS_ERROR_NOT_IMPLEMENTED;
+    }
   default:
     return FLUIDS_ERROR_BADREQUEST;
   }
-  return 0;
 }
 
 int _hll_exec(fluids_riemn *R)
@@ -612,4 +637,60 @@ int _nrhyd_exact_sample(fluids_riemn *R, fluids_state *S, double s)
   S->cache->eigenvalues[R->dim][4] = SR;
   S->cache->needsupdateflags &= ~FLUIDS_EVAL[R->dim];
   return 0;
+}
+
+int _srhyd_hllc_exec(fluids_riemn *R)
+{
+  static const double SMALL_A  = 1e-10;
+
+  int nw = R->SL->descr->nprimitive;
+  double epl = R->SL->cache->eigenvalues[R->dim][nw - 1];
+  double epr = R->SR->cache->eigenvalues[R->dim][nw - 1];
+  double eml = R->SL->cache->eigenvalues[R->dim][0];
+  double emr = R->SR->cache->eigenvalues[R->dim][0];
+  double ap = R->ap = (epl>epr) ? epl : epr;
+  double am = R->am = (eml<emr) ? eml : emr;
+  double *Ul = R->SL->cache->conserved;
+  double *Ur = R->SR->cache->conserved;
+  double *Pl = R->SL->primitive;
+  double *Pr = R->SR->primitive;
+  int v1 = R->v1;
+  int p1 = R->p1;
+  int p2 = R->p2;
+  int p3 = R->p3;
+
+  _hll_exec(R);
+
+  R->Ul_ = (double*) realloc(R->Ul_, nw * sizeof(double));
+  R->Ur_ = (double*) realloc(R->Ur_, nw * sizeof(double));
+
+  const double a =  R->F_hll[tau];
+  const double b = -R->F_hll[p1] - R->U_hll[tau];
+  const double c =  R->U_hll[p1];
+
+  const double v1_ = (fabs(a) < SMALL_A) ? -c/b :
+    (-b - sqrt(b*b - 4*a*c)) / (2*a);
+  const double p_  = -R->F_hll[tau]*v1_ + R->F_hll[p1];
+
+  R->Ul_[ddd] = (am - Pl[v1]) / (am - v1_) * Ul[ddd];
+  R->Ur_[ddd] = (ap - Pr[v1]) / (ap - v1_) * Ur[ddd];
+
+  R->Ul_[tau] = (am*Ul[tau] - Ul[p1] + p_*v1_) / (am - v1_);
+  R->Ur_[tau] = (ap*Ur[tau] - Ur[p1] + p_*v1_) / (ap - v1_);
+
+  R->Ul_[p1] = (R->Ul_[tau] + p_) * v1_;
+  R->Ur_[p1] = (R->Ur_[tau] + p_) * v1_;
+
+  R->Ul_[p2] = (am - Pl[v1]) / (am - v1_) * Ul[p2];
+  R->Ur_[p2] = (ap - Pr[v1]) / (ap - v1_) * Ur[p2];
+
+  R->Ul_[p3] = (am - Pl[v1]) / (am - v1_) * Ul[p3];
+  R->Ur_[p3] = (ap - Pr[v1]) / (ap - v1_) * Ur[p3];
+
+  return 0;
+}
+
+int _srhyd_hllc_sample(fluids_riemn *R, fluids_state *S, double s)
+{
+  return _nrhyd_hllc_sample(R, S, s);
 }
