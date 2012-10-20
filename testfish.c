@@ -14,7 +14,6 @@
 int test1()
 {
   fish_state *S = fish_new();
-  fish_setfluid(S, FLUIDS_GRAVP);
   fish_setreconstruction(S, FISH_PLM);
   fish_setriemannsolver(S, FLUIDS_RIEMANN_EXACT);
 

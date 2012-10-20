@@ -19,13 +19,11 @@ EXE = $(BINDIR)/testfish $(BINDIR)/euler
 LIBS = $(LIBDIR)/libfish.so $(LIBDIR)/libfish.a
 HEADERS = $(INCDIR)/fish.h
 
-COWLIBDIR = $(HOME)/Work/cow/lib
-COWINCDIR = $(HOME)/Work/cow/include
 FLUIDSLIBDIR = $(HOME)/Work/fluids/lib
 FLUIDSINCDIR = $(HOME)/Work/fluids/include
 
-LIB = -L$(COWLIBDIR) -L$(FLUIDSLIBDIR) -lcow -lfluids
-INC = -I$(COWINCDIR) -I$(FLUIDSINCDIR)
+LIB = -L$(FLUIDSLIBDIR) -lfluids
+INC = -I$(FLUIDSINCDIR)
 
 default : all
 

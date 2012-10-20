@@ -12,7 +12,7 @@
 
 static void _pcm(fluids_state **src, fluids_state *L, fluids_state *R, long flag);
 static void _plm(fluids_state **src, fluids_state *L, fluids_state *R, long flag);
-static void _weno5(fluids_state **src, fluids_state *L, fluids_state *R, int Q);
+static void _weno5(fluids_state **src, fluids_state *L, fluids_state *R, long flag);
 static const long FLUIDS_FLUX[3] = {FLUIDS_FLUX0, FLUIDS_FLUX1, FLUIDS_FLUX2};
 static const long FLUIDS_EVAL[3] = {FLUIDS_EVAL0, FLUIDS_EVAL1, FLUIDS_EVAL2};
 
@@ -34,9 +34,9 @@ int fish_del(fish_state *S)
   return 0;
 }
 
-int fish_setfluid(fish_state *S, int fluid)
+int fish_getriemannsolver(fish_state *S, int *riemannsolver)
 {
-  S->fluid = fluid;
+  *riemannsolver = S->riemannsolver;
   return 0;
 }
 int fish_setriemannsolver(fish_state *S, int riemannsolver)
@@ -44,35 +44,24 @@ int fish_setriemannsolver(fish_state *S, int riemannsolver)
   S->riemannsolver = riemannsolver;
   return 0;
 }
-int fish_setreconstruction(fish_state *S, int reconstruction)
-{
-  S->reconstruction = reconstruction;
-  return 0;
-}
-
-int fish_setplmtheta(fish_state *S, double plmtheta)
-{
-  S->plmtheta = plmtheta;
-  return 0;
-}
-int fish_getfluid(fish_state *S, int *fluid)
-{
-  *fluid = S->fluid;
-  return 0;
-}
-int fish_getriemannsolver(fish_state *S, int *riemannsolver)
-{
-  *riemannsolver = S->riemannsolver;
-  return 0;
-}
 int fish_getreconstruction(fish_state *S, int *reconstruction)
 {
   *reconstruction = S->reconstruction;
   return 0;
 }
+int fish_setreconstruction(fish_state *S, int reconstruction)
+{
+  S->reconstruction = reconstruction;
+  return 0;
+}
 int fish_getplmtheta(fish_state *S, double *plmtheta)
 {
   *plmtheta = S->plmtheta;
+  return 0;
+}
+int fish_setplmtheta(fish_state *S, double plmtheta)
+{
+  S->plmtheta = plmtheta;
   return 0;
 }
 
@@ -124,12 +113,11 @@ int fish_intercellflux(fish_state *S, fluids_state **fluid, double *F, int N,
     break;
   case FISH_WENO5:
     for (int n=2; n<N-3; ++n) {
-      /*
-      _weno5(&fluid[n], SL, SR, Q);
+      _weno5(&fluid[n], SL, SR, FLUIDS_PRIMITIVE);
+      _weno5(&fluid[n], SL, SR, FLUIDS_GRAVITY);
       fluids_riemn_execute(R);
       fluids_riemn_sample(R, S_, 0.0);
       fluids_state_derive(S_, &F[Q*n], FLUIDS_FLUX[dim]);
-      */
     }
   default:
     break;
@@ -179,8 +167,30 @@ void _plm(fluids_state **src, fluids_state *L, fluids_state *R, long flag)
   fluids_state_setattr(R, Pr, flag);
 }
 
-void _weno5(fluids_state **src, fluids_state *L, fluids_state *R, int Q)
+void _weno5(fluids_state **src, fluids_state *L, fluids_state *R, long flag)
 {
+  double P[6][MAXQ];
+  double Pl[MAXQ], Pr[MAXQ];
+  fluids_descr *D;
+  int fluid;
+  fluids_state_getdescr(src[0], &D);
+  fluids_descr_getfluid(D, &fluid);
+  int Q = fluids_descr_getncomp(D, flag);
+  for (int j=-2; j<4; ++j) {
+    fluids_state_getattr(src[j], P[j+2], flag);
+  }
+  for (int q=0; q<Q; ++q) {
+    double v[6];
+    for (int j=0; j<6; ++j) {
+      v[j] = P[j][q];
+    }
+    Pl[q] = reconstruct(&v[2], WENO5_FD_C2R);
+    Pr[q] = reconstruct(&v[3], WENO5_FD_C2L);
+  }
+  fluids_state_setattr(L, Pl, flag);
+  fluids_state_setattr(R, Pr, flag);
+
+  /*
   double P[6][MAXQ];
   double Pl[MAXQ], Pr[MAXQ];
   double Gl[MAXQ], Gr[MAXQ];
@@ -209,4 +219,5 @@ void _weno5(fluids_state **src, fluids_state *L, fluids_state *R, int Q)
     fluids_state_setattr(L, Gl, FLUIDS_GRAVITY);
     fluids_state_setattr(R, Gr, FLUIDS_GRAVITY);
   }
+  */
 }
