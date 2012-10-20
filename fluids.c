@@ -1038,27 +1038,27 @@ int _srhyd_eigenval(fluids_state *S, long modes)
   double v2 = vx2 + vy2 + vz2;
   if (modes & FLUIDS_EVAL0) {
     double x = sqrt(cs2*(1-v2)*(1-v2*cs2-vx2*(1-cs2)));
-    C->eigenvalues[0][0] = (P[vx]*(1-cs2) + x)/(1-v2*cs2);
-    C->eigenvalues[0][1] = 0.0;
-    C->eigenvalues[0][2] = 0.0;
-    C->eigenvalues[0][3] = 0.0;
-    C->eigenvalues[0][4] = (P[vx]*(1-cs2) - x)/(1-v2*cs2);
+    C->eigenvalues[0][0] = (P[vx]*(1-cs2) - x)/(1-v2*cs2);
+    C->eigenvalues[0][1] = P[vx];
+    C->eigenvalues[0][2] = P[vx];
+    C->eigenvalues[0][3] = P[vx];
+    C->eigenvalues[0][4] = (P[vx]*(1-cs2) + x)/(1-v2*cs2);
   }
   if (modes & FLUIDS_EVAL1) {
     double x = sqrt(cs2*(1-v2)*(1-v2*cs2-vy2*(1-cs2)));
-    C->eigenvalues[1][0] = (P[vy]*(1-cs2) + x)/(1-v2*cs2);
-    C->eigenvalues[1][1] = 0.0;
-    C->eigenvalues[1][2] = 0.0;
-    C->eigenvalues[1][3] = 0.0;
-    C->eigenvalues[1][4] = (P[vy]*(1-cs2) - x)/(1-v2*cs2);
+    C->eigenvalues[1][0] = (P[vy]*(1-cs2) - x)/(1-v2*cs2);
+    C->eigenvalues[1][1] = P[vy];
+    C->eigenvalues[1][2] = P[vy];
+    C->eigenvalues[1][3] = P[vy];
+    C->eigenvalues[1][4] = (P[vy]*(1-cs2) + x)/(1-v2*cs2);
   }
   if (modes & FLUIDS_EVAL2) {
     double x = sqrt(cs2*(1-v2)*(1-v2*cs2-vz2*(1-cs2)));
-    C->eigenvalues[2][0] = (P[vz]*(1-cs2) + x)/(1-v2*cs2);
-    C->eigenvalues[2][1] = 0.0;
-    C->eigenvalues[2][2] = 0.0;
-    C->eigenvalues[2][3] = 0.0;
-    C->eigenvalues[2][4] = (P[vz]*(1-cs2) - x)/(1-v2*cs2);
+    C->eigenvalues[2][0] = (P[vz]*(1-cs2) - x)/(1-v2*cs2);
+    C->eigenvalues[2][1] = P[vz];
+    C->eigenvalues[2][2] = P[vz];
+    C->eigenvalues[2][3] = P[vz];
+    C->eigenvalues[2][4] = (P[vz]*(1-cs2) + x)/(1-v2*cs2);
   }
   return 0;
 }
