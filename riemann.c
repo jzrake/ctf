@@ -148,7 +148,6 @@ int fluids_riemn_execute(fluids_riemn *R)
   fluids_state_cache(R->SR, FLUIDS_CACHE_CREATE);
   fluids_state_derive(R->SL, NULL, FLUIDS_EVAL[R->dim] | FLUIDS_FLUX[R->dim]);
   fluids_state_derive(R->SR, NULL, FLUIDS_EVAL[R->dim] | FLUIDS_FLUX[R->dim]);
-
   switch (R->dim) {
   case 0: R->v1=vx; R->v2=vy; R->v3=vz; R->p1=Sx; R->p2=Sy; R->p3=Sz; break;
   case 1: R->v1=vy; R->v2=vz; R->v3=vx; R->p1=Sy; R->p2=Sz; R->p3=Sx; break;
@@ -156,52 +155,47 @@ int fluids_riemn_execute(fluids_riemn *R)
   default: return FLUIDS_ERROR_BADARG;
   }
   switch (R->solver) {
-  case FLUIDS_RIEMANN_HLL:
-    return _hll_exec(R);
+  case FLUIDS_RIEMANN_HLL: return _hll_exec(R);
   case FLUIDS_RIEMANN_HLLC:
     switch (R->SL->descr->fluid) {
-    case FLUIDS_NRHYD:
-      return _nrhyd_hllc_exec(R);
-    case FLUIDS_SRHYD:
-      return _srhyd_hllc_exec(R);
-    default:
-      return FLUIDS_ERROR_NOT_IMPLEMENTED;
+    case FLUIDS_NRHYD: return _nrhyd_hllc_exec(R);
+    case FLUIDS_GRAVS: return _nrhyd_hllc_exec(R);
+    case FLUIDS_GRAVP: return _nrhyd_hllc_exec(R);
+    case FLUIDS_GRAVE: return _nrhyd_hllc_exec(R);
+    case FLUIDS_SRHYD: return _srhyd_hllc_exec(R);
+    default: return FLUIDS_ERROR_NOT_IMPLEMENTED;
     }
   case FLUIDS_RIEMANN_EXACT:
     switch (R->SL->descr->fluid) {
-    case FLUIDS_NRHYD:
-      return _nrhyd_exact_exec(R);
-    default:
-      return FLUIDS_ERROR_NOT_IMPLEMENTED;
+    case FLUIDS_NRHYD: return _nrhyd_exact_exec(R);
+    case FLUIDS_GRAVS: return _nrhyd_exact_exec(R);
+    case FLUIDS_GRAVP: return _nrhyd_exact_exec(R);
+    case FLUIDS_GRAVE: return _nrhyd_exact_exec(R);
+    default: return FLUIDS_ERROR_NOT_IMPLEMENTED;
     }
-  default:
-    return FLUIDS_ERROR_BADREQUEST;
+  default: return FLUIDS_ERROR_BADREQUEST;
   }
 }
 
 int fluids_riemn_sample(fluids_riemn *R, fluids_state *S, double s)
 {
   switch (R->solver) {
-  case FLUIDS_RIEMANN_HLL:
-    return _hll_sample(R, S, s);
+  case FLUIDS_RIEMANN_HLL: return _hll_sample(R, S, s);
   case FLUIDS_RIEMANN_HLLC:
     switch (R->SL->descr->fluid) {
-    case FLUIDS_NRHYD:
-      return _nrhyd_hllc_sample(R, S, s);
-    case FLUIDS_SRHYD:
-      return _srhyd_hllc_sample(R, S, s);
-    default:
-      return FLUIDS_ERROR_NOT_IMPLEMENTED;
+    case FLUIDS_NRHYD: return _nrhyd_hllc_sample(R, S, s);
+    case FLUIDS_GRAVS: return _nrhyd_hllc_sample(R, S, s);
+    case FLUIDS_GRAVP: return _nrhyd_hllc_sample(R, S, s);
+    case FLUIDS_GRAVE: return _nrhyd_hllc_sample(R, S, s);
+    case FLUIDS_SRHYD: return _srhyd_hllc_sample(R, S, s);
+    default: return FLUIDS_ERROR_NOT_IMPLEMENTED;
     }
   case FLUIDS_RIEMANN_EXACT:
     switch (R->SL->descr->fluid) {
-    case FLUIDS_NRHYD:
-      return _nrhyd_exact_sample(R, S, s);
-    default:
-      return FLUIDS_ERROR_NOT_IMPLEMENTED;
+    case FLUIDS_NRHYD: return _nrhyd_exact_sample(R, S, s);
+    default: return FLUIDS_ERROR_NOT_IMPLEMENTED;
     }
-  default:
-    return FLUIDS_ERROR_BADREQUEST;
+  default: return FLUIDS_ERROR_BADREQUEST;
   }
 }
 
