@@ -328,15 +328,13 @@ int fluids_state_mapbuffer(fluids_state *S, double *buffer, long flag)
 
 int fluids_state_getattr(fluids_state *S, double *x, long flag)
 {
-  _getsetstateattr(S, x, flag, 'g');
-  return 0;
+  return _getsetstateattr(S, x, flag, 'g');
 }
 
 int fluids_state_setattr(fluids_state *S, double *x, long flag)
 {
   fluids_state_cache(S, FLUIDS_CACHE_RESET);
-  _getsetstateattr(S, x, flag, 's');
-  return 0;
+  return _getsetstateattr(S, x, flag, 's');
 }
 
 int fluids_state_fromcons(fluids_state *S, double *U, int cache)
@@ -344,8 +342,7 @@ int fluids_state_fromcons(fluids_state *S, double *U, int cache)
   if (cache != FLUIDS_CACHE_NOTOUCH) {
     fluids_state_cache(S, FLUIDS_CACHE_RESET);
   }
-  _c2p(S, U);
-  return 0;
+  return _c2p(S, U);
 }
 
 int fluids_state_derive(fluids_state *S, double *x, long flags)
@@ -1013,13 +1010,7 @@ int _srhyd_p2c(fluids_state *S)
 
 int _srhyd_sources(fluids_state *S)
 {
-  double *T = S->cache->sourceterms;
-  T[ddd] = 0.0;
-  T[tau] = 0.0;
-  T[Sx] = 0.0;
-  T[Sy] = 0.0;
-  T[Sz] = 0.0;
-  return 0;
+  return _nrhyd_sources(S);
 }
 
 int _srhyd_cs2(fluids_state *S, double *cs2)
