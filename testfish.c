@@ -14,8 +14,8 @@
 int test1()
 {
   fish_state *S = fish_new();
-  fish_setreconstruction(S, FISH_PLM);
-  fish_setriemannsolver(S, FLUIDS_RIEMANN_EXACT);
+  fish_setparami(S, FISH_PLM, FISH_RECONSTRUCTION);
+  fish_setparami(S, FLUIDS_RIEMANN_EXACT, FISH_RIEMANN_SOLVER);
 
   fluids_descr *D = fluids_descr_new();
   fluids_descr_setfluid(D, FLUIDS_GRAVP);
