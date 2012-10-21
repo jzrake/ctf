@@ -9,10 +9,30 @@ enum {
   FISH_GODUNOV, // conservative finite volume Riemann-solver intercell fluxes
   FISH_SPECTRAL, // conservative finite differencing of characteristic fields
 
-  FISH_SCHEME,
+  // ---------------------------------------------------------------------------
+  // smoothness indicators for WENO reconstruction
+  // ---------------------------------------------------------------------------
+  FISH_ISK_JIANGSHU96, // original smoothness indicator of Jiang & Shu (1996)
+  FISH_ISK_BORGES08, // improved by Borges (2008) NOTE: might be 4th order
+  FISH_ISK_SHENZHA10, // improved by Shen & Zha (2010)
+
+  // ---------------------------------------------------------------------------
+  // names of parameters for solver description
+  // ---------------------------------------------------------------------------
+
+  // ------------------
+  // integer parameters
+  // ------------------
+  FISH_SOLVER_TYPE,
   FISH_RIEMANN_SOLVER,
   FISH_RECONSTRUCTION,
-  FISH_PLM_THETA,
+  FISH_SMOOTHNESS_INDICATOR,
+
+  // -----------------
+  // double parameters
+  // -----------------
+  FISH_PLM_THETA, // [1 -> 2 (most aggressive)]
+  FISH_SHENZHA10_PARAM, // [0 -> ~100 (most aggressive)]
 
   FISH_ERROR_BADARG,
 } ;
@@ -32,11 +52,21 @@ int fish_getparamd(fish_state *S, double *param, long flag);
 int fish_setparamd(fish_state *S, double param, long flag);
 
 #ifdef FISH_PRIVATE_DEFS
+
+enum { PCM_C2L, PCM_C2R,
+       PLM_C2L, PLM_C2R,
+       WENO5_FD_C2R, WENO5_FD_C2L,
+       WENO5_FV_C2R, WENO5_FV_C2L,
+       WENO5_FV_C2A, WENO5_FV_A2C };
+double _reconstruct(fish_state *S, double *v, int type);
+
 struct fish_state {
-  int scheme;
+  int solver_type;
   int riemann_solver;
   int reconstruction;
+  int smoothness_indicator;
   double plm_theta;
+  double shenzha10_param;
 } ;
 
 #endif // FISH_PRIVATE_DEFS

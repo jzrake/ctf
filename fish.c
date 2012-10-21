@@ -6,13 +6,15 @@
 
 #define FISH_PRIVATE_DEFS
 #include "fish.h"
-#include "weno.h"
 
 #define MAXQ 8 // for small statically-declared arrays
 
-static void _pcm(fluids_state **src, fluids_state *L, fluids_state *R, long flag);
-static void _plm(fluids_state **src, fluids_state *L, fluids_state *R, long flag);
-static void _weno5(fluids_state **src, fluids_state *L, fluids_state *R, long flag);
+static void _pcm(fish_state *S, fluids_state **src, fluids_state *L,
+		 fluids_state *R, long flag);
+static void _plm(fish_state *S, fluids_state **src, fluids_state *L,
+		 fluids_state *R, long flag);
+static void _weno5(fish_state *S, fluids_state **src, fluids_state *L,
+		   fluids_state *R, long flag);
 static int _matrix_product(double *A, double *B, double *C, int ni, int nj, int nk);
 static int _intercell_godunov(fish_state *S, fluids_state **fluid, double *Fiph,
 			      int N, int dim);
@@ -27,10 +29,12 @@ fish_state *fish_new(void)
 {
   fish_state *S = (fish_state*) malloc(sizeof(fish_state));
   fish_state state = {
-    .scheme = FISH_GODUNOV,
+    .solver_type = FISH_GODUNOV,
     .riemann_solver = FLUIDS_RIEMANN_HLL,
     .reconstruction = FISH_PLM,
+    .smoothness_indicator = FISH_ISK_JIANGSHU96,
     .plm_theta = 2.0,
+    .shenzha10_param = 0.0,
   } ;
   *S = state;
   return S;
@@ -44,18 +48,20 @@ int fish_del(fish_state *S)
 int fish_getparami(fish_state *S, int *param, long flag)
 {
   switch (flag) {
-  case FISH_SCHEME: *param = S->scheme; return 0;
+  case FISH_SOLVER_TYPE: *param = S->solver_type; return 0;
   case FISH_RIEMANN_SOLVER: *param = S->riemann_solver; return 0;
   case FISH_RECONSTRUCTION: *param = S->reconstruction; return 0;
+  case FISH_SMOOTHNESS_INDICATOR: *param = S->smoothness_indicator; return 0;
   }
   return FISH_ERROR_BADARG;
 }
 int fish_setparami(fish_state *S, int param, long flag)
 {
   switch (flag) {
-  case FISH_SCHEME: S->scheme = param; return 0;
+  case FISH_SOLVER_TYPE: S->solver_type = param; return 0;
   case FISH_RIEMANN_SOLVER: S->riemann_solver = param; return 0;
   case FISH_RECONSTRUCTION: S->reconstruction = param; return 0;
+  case FISH_SMOOTHNESS_INDICATOR: S->smoothness_indicator = param; return 0;
   }
   return FISH_ERROR_BADARG;
 }
@@ -63,6 +69,7 @@ int fish_getparamd(fish_state *S, double *param, long flag)
 {
   switch (flag) {
   case FISH_PLM_THETA: *param = S->plm_theta; return 0;
+  case FISH_SHENZHA10_PARAM: *param = S->shenzha10_param; return 0;
   }
   return FISH_ERROR_BADARG;
 }
@@ -70,6 +77,7 @@ int fish_setparamd(fish_state *S, double param, long flag)
 {
   switch (flag) {
   case FISH_PLM_THETA: S->plm_theta = param; return 0;
+  case FISH_SHENZHA10_PARAM: S->shenzha10_param = param; return 0;
   }
   return FISH_ERROR_BADARG;
 }
@@ -78,7 +86,7 @@ int fish_setparamd(fish_state *S, double param, long flag)
 int fish_intercellflux(fish_state *S, fluids_state **fluid, double *F, int N,
                        int dim)
 {
-  switch (S->scheme) {
+  switch (S->solver_type) {
   case FISH_GODUNOV: return _intercell_godunov(S, fluid, F, N, dim);
   case FISH_SPECTRAL: return _intercell_spectral(S, fluid, F, N, dim);
   default: return FISH_ERROR_BADARG;
@@ -114,18 +122,17 @@ int _intercell_godunov(fish_state *S, fluids_state **fluid, double *F, int N,
   switch (S->reconstruction) {
   case FISH_PCM:
     for (int n=0; n<N-1; ++n) {
-      _pcm(&fluid[n], SL, SR, FLUIDS_PRIMITIVE);
-      _pcm(&fluid[n], SL, SR, FLUIDS_GRAVITY);
+      _pcm(S, &fluid[n], SL, SR, FLUIDS_PRIMITIVE);
+      _pcm(S, &fluid[n], SL, SR, FLUIDS_GRAVITY);
       fluids_riemn_execute(R);
       fluids_riemn_sample(R, S_, 0.0);
       fluids_state_derive(S_, &F[Q*n], FLUIDS_FLUX[dim]);
     }
     break;
   case FISH_PLM:
-    reconstruct_set_plm_theta(S->plm_theta);
     for (int n=1; n<N-2; ++n) {
-      _plm(&fluid[n], SL, SR, FLUIDS_PRIMITIVE);
-      _plm(&fluid[n], SL, SR, FLUIDS_GRAVITY);
+      _plm(S, &fluid[n], SL, SR, FLUIDS_PRIMITIVE);
+      _plm(S, &fluid[n], SL, SR, FLUIDS_GRAVITY);
       fluids_riemn_execute(R);
       fluids_riemn_sample(R, S_, 0.0);
       fluids_state_derive(S_, &F[Q*n], FLUIDS_FLUX[dim]);
@@ -133,8 +140,8 @@ int _intercell_godunov(fish_state *S, fluids_state **fluid, double *F, int N,
     break;
   case FISH_WENO5:
     for (int n=2; n<N-3; ++n) {
-      _weno5(&fluid[n], SL, SR, FLUIDS_PRIMITIVE);
-      _weno5(&fluid[n], SL, SR, FLUIDS_GRAVITY);
+      _weno5(S, &fluid[n], SL, SR, FLUIDS_PRIMITIVE);
+      _weno5(S, &fluid[n], SL, SR, FLUIDS_GRAVITY);
       fluids_riemn_execute(R);
       fluids_riemn_sample(R, S_, 0.0);
       fluids_state_derive(S_, &F[Q*n], FLUIDS_FLUX[dim]);
@@ -153,8 +160,16 @@ int _intercell_godunov(fish_state *S, fluids_state **fluid, double *F, int N,
 
 int _intercell_spectral(fish_state *S, fluids_state **fluid, double *Fiph,
 			int N, int dim)
-/*
- * -----------------------------------------------------------------------------
+/* -----------------------------------------------------------------------------
+ *
+ * This function uses characteristic decomposition to find the intercell
+ * fluxes. The fluid system given must provide the full set of left and right
+ * eigenvectors. PCM, PLM, and WENO5 reconstruction may be used. There's
+ * presently no support for fluid systems woth gravity, although adding it here
+ * is only a matter of choosing a reconstruction type for the gravitational
+ * field. Right now the function hard-codes Q=5 primitive variables, but that
+ * can easily be changed.
+ *
  *
  * (1) Compute max eigenvalue A, flux F, and conserved U in each zone
  *
@@ -165,9 +180,10 @@ int _intercell_spectral(fish_state *S, fluids_state **fluid, double *Fiph,
  *
  * (4) Create F+ and F- fluxes over each of those 6 zones
  *
- * (5) Decompose F+ and F- into f+ and f-, characteristic fluxes in each zone
+ * (5) Decompose F+ and F- into f+ and f-, characteristic right and left-going
+ *     fluxes in each zone
  *
- * (6) Use WENO reconstruction on the stencil to get a left and right going
+ * (6) Use reconstruction on the stencil to get a left and right going
  *     characteristic f
  *
  * (7) Rotate f into back into F
@@ -259,9 +275,25 @@ int _intercell_spectral(fish_state *S, fluids_state **fluid, double *Fiph,
     }
 
     /*--------------------------------- (6,7) ------------------------------- */
-    for (int q=0; q<Q; ++q) {
-      f[q] = (reconstruct(&fpT[q][2], WENO5_FD_C2R) +
-	      reconstruct(&fmT[q][3], WENO5_FD_C2L));
+    switch (S->reconstruction) {
+    case FISH_PCM:
+      for (int q=0; q<Q; ++q) {
+	f[q] = (_reconstruct(S, &fpT[q][2], PCM_C2R) +
+		_reconstruct(S, &fmT[q][3], PCM_C2L));
+      }
+      break;
+    case FISH_PLM:
+      for (int q=0; q<Q; ++q) {
+	f[q] = (_reconstruct(S, &fpT[q][2], PLM_C2R) +
+		_reconstruct(S, &fmT[q][3], PLM_C2L));
+      }
+      break;
+    case FISH_WENO5:
+      for (int q=0; q<Q; ++q) {
+	f[q] = (_reconstruct(S, &fpT[q][2], WENO5_FD_C2R) +
+		_reconstruct(S, &fmT[q][3], WENO5_FD_C2L));
+      }
+      break;
     }
     _matrix_product(Riph[0], f, &Fiph[n*Q], Q, 1, Q);
   }
@@ -273,7 +305,8 @@ int _intercell_spectral(fish_state *S, fluids_state **fluid, double *Fiph,
   return 0;
 }
 
-void _pcm(fluids_state **src, fluids_state *L, fluids_state *R, long flag)
+void _pcm(fish_state *S, fluids_state **src, fluids_state *L,
+	  fluids_state *R, long flag)
 {
   double Pl[MAXQ], Pr[MAXQ];
   fluids_descr *D;
@@ -286,7 +319,8 @@ void _pcm(fluids_state **src, fluids_state *L, fluids_state *R, long flag)
   fluids_state_setattr(R, Pr, flag);
 }
 
-void _plm(fluids_state **src, fluids_state *L, fluids_state *R, long flag)
+void _plm(fish_state *S, fluids_state **src, fluids_state *L,
+	  fluids_state *R, long flag)
 {
   double P[4][MAXQ];
   double Pl[MAXQ], Pr[MAXQ];
@@ -303,14 +337,15 @@ void _plm(fluids_state **src, fluids_state *L, fluids_state *R, long flag)
     for (int j=0; j<4; ++j) {
       v[j] = P[j][q];
     }
-    Pl[q] = reconstruct(&v[1], PLM_C2R);
-    Pr[q] = reconstruct(&v[2], PLM_C2L);
+    Pl[q] = _reconstruct(S, &v[1], PLM_C2R);
+    Pr[q] = _reconstruct(S, &v[2], PLM_C2L);
   }
   fluids_state_setattr(L, Pl, flag);
   fluids_state_setattr(R, Pr, flag);
 }
 
-void _weno5(fluids_state **src, fluids_state *L, fluids_state *R, long flag)
+void _weno5(fish_state *S, fluids_state **src, fluids_state *L,
+	    fluids_state *R, long flag)
 {
   double P[6][MAXQ];
   double Pl[MAXQ], Pr[MAXQ];
@@ -327,8 +362,8 @@ void _weno5(fluids_state **src, fluids_state *L, fluids_state *R, long flag)
     for (int j=0; j<6; ++j) {
       v[j] = P[j][q];
     }
-    Pl[q] = reconstruct(&v[2], WENO5_FD_C2R);
-    Pr[q] = reconstruct(&v[3], WENO5_FD_C2L);
+    Pl[q] = _reconstruct(S, &v[2], WENO5_FD_C2R);
+    Pr[q] = _reconstruct(S, &v[3], WENO5_FD_C2L);
   }
   fluids_state_setattr(L, Pl, flag);
   fluids_state_setattr(R, Pr, flag);

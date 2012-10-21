@@ -13,7 +13,7 @@ ARSTATIC     ?= $(AR) rcu
 FPIC         ?= -fPIC
 CFLAGS       ?= -Wall -O3
 
-OBJ = fish.o weno.o
+OBJ = fish.o reconstruct.o
 EXE = $(BINDIR)/testfish $(BINDIR)/euler
 
 LIBS = $(LIBDIR)/libfish.so $(LIBDIR)/libfish.a
