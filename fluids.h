@@ -123,8 +123,9 @@ int fluids_state_getattr(fluids_state *S, double *x, long flag);
 int fluids_state_setattr(fluids_state *S, double *x, long flag);
 int fluids_state_fromcons(fluids_state *S, double *U, int cache);
 int fluids_state_derive(fluids_state *S, double *x, long flags);
-int fluids_state_cache(fluids_state *S, int operation);
+int fluids_state_getcached(fluids_state *S, double *x, long flag);
 int fluids_state_mapbuffer(fluids_state *S, double *buffer, long flag);
+int fluids_state_cache(fluids_state *S, int operation);
 
 
 /* fluids_riemn member functions */

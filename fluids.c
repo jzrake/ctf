@@ -434,12 +434,17 @@ int fluids_state_derive(fluids_state *S, double *x, long flags)
   C->needsupdateflags &= ~modes;
   /* only makes sense when flags contains a single bit */
   if (x != NULL) {
-    _getsetcacheattr(S->cache, x, flags, 'g');
+    return _getsetcacheattr(S->cache, x, flags, 'g');
   }
-  return 0;
+  else {
+    return 0;
+  }
 }
 
-
+int fluids_state_getcached(fluids_state *S, double *x, long flag)
+{
+  return _getsetcacheattr(S->cache, x, flag, 'g');
+}
 
 
 
@@ -663,93 +668,92 @@ int _nrhyd_eigenval(fluids_state *S, long modes)
 
 int _nrhyd_eigenvec(fluids_state *S, int dim, int Lf, int Rt)
 {
-  int v1=0, v2=0, v3=0;
-  switch (dim) {
-  case 0:
-    v1=vx; v2=vy; v3=vz;
-    break;
-  case 1:
-    v1=vy; v2=vz; v3=vx;
-    break;
-  case 2:
-    v1=vz; v2=vx; v3=vy;
-    break;
-  }
-  double *P = S->primitive;
+  double gm = S->descr->gammalawindex;
+  double *P_ = S->primitive;
   double *U = S->cache->conserved;
   double *L = S->cache->leigenvectors[dim];
   double *R = S->cache->reigenvectors[dim];
-  double gm = S->descr->gammalawindex;
-  double gm1 = gm - 1.0;
-  double u = P[v1];
-  double v = P[v2];
-  double w = P[v3];
-  double V2 = u*u + v*v + w*w;
-  double a = sqrt(gm * P[pre] / P[rho]);
-  double H = (U[tau] + P[pre]) / P[rho];
 
-  // Toro Equation 3.82
-  // ---------------------------------------------------------------------------
-  double R_[5][5] =
-    { {       1,      1,      0,      0,     1   },
-      {     u-a,      u,      0,      0,     u+a },
-      {       v,      v,      1,      0,     v   },
-      {       w,      w,      0,      1,     w   },
-      { H - u*a, 0.5*V2,      v,      w, H + u*a } };
+  const double T[3][5][5] =
+  // Tx
+    {{{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 1, 0, 0},
+      {0, 0, 0, 1, 0},
+      {0, 0, 0, 0, 1}},
+  // Ty
+     {{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 0, 1, 0},
+      {0, 0,-1, 0, 0},
+      {0, 0, 0, 0, 1}},
+  // Tz
+     {{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 0, 0, 1},
+      {0, 0, 0, 1, 0},
+      {0, 0,-1, 0, 0}}};
 
+  const double V[3][5][5] = // T^{-1}
+  // Vx
+    {{{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 1, 0, 0},
+      {0, 0, 0, 1, 0},
+      {0, 0, 0, 0, 1}},
+  // Vy
+     {{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 0,-1, 0},
+      {0, 0, 1, 0, 0},
+      {0, 0, 0, 0, 1}},
+  // Vz
+     {{1, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0},
+      {0, 0, 0, 0,-1},
+      {0, 0, 0, 1, 0},
+      {0, 0, 1, 0, 0}}};
+
+  double P[5];
+  matrix_vector_product(T[dim][0], P_, P, 5, 5);
+
+  const double gm1 = gm - 1.0;
+  const double u = P[vx];
+  const double v = P[vy];
+  const double w = P[vz];
+  const double V2 = u*u + v*v + w*w;
+  const double a = sqrt(gm * P[pre] / P[rho]);
+  const double H = (U[tau] + P[pre]) / P[rho];
+
+  // --------------------------------------------------------------------------
+  // Toro Equation 3.82 (rows are permuted to deal with Mara's convention on
+  // the conserved quantities)
+  // --------------------------------------------------------------------------
+  const double RR[5][5] =
+    {{       1,       1,      1,      0,      0 },  // rho
+     { H - u*a, H + u*a, 0.5*V2,      v,      w },  // nrg
+     {     u-a,     u+a,      u,      0,      0 },  // px
+     {       v,       v,      v,      1,      0 },  // py
+     {       w,       w,      w,      0,      1 }}; // pz
+  // --------------------------------------------------------------------------
   // Toro Equation 3.83 up to (gam - 1) / (2*a^2)
-  // ---------------------------------------------------------------------------
-  double L_[5][5] =
-    { {    H + (a/gm1)*(u-a),  -(u+a/gm1),        -v,        -w,  1 },
-      { -2*H + (4/gm1)*(a*a),         2*u,       2*v,       2*w, -2 },
-      {         -2*v*a*a/gm1,           0, 2*a*a/gm1,         0,  0 },
-      {         -2*w*a*a/gm1,           0,         0, 2*a*a/gm1,  0 },
-      {    H - (a/gm1)*(u+a),  -(u-a/gm1),        -v,        -w,  1 } };
+  // --------------------------------------------------------------------------
+  const double LL[5][5] =
+    {{    H + (a/gm1)*(u-a),   1, -(u+a/gm1),        -v,        -w },
+     {    H - (a/gm1)*(u+a),   1, -(u-a/gm1),        -v,        -w },
+     { -2*H + (4/gm1)*(a*a),  -2,        2*u,       2*v,       2*w },
+     {         -2*v*a*a/gm1,   0,          0, 2*a*a/gm1,         0 },
+     {         -2*w*a*a/gm1,   0,          0,         0, 2*a*a/gm1 }};
+  // --------------------------------------------------------------------------
+  //                    rho, nrg,         px,        py,        pz
+  // --------------------------------------------------------------------------
 
-  // Permute the eigenvectors according to the direction:
-  // ---------------------------------------------------------------------------
-  // L' = L P
-  // R' = P^{-1} R
-  // ---------------------------------------------------------------------------
-  double P1[5][5] =
-    { { 1, 0, 0, 0, 0 },
-      { 0, 1, 0, 0, 0 },
-      { 0, 0, 1, 0, 0 },
-      { 0, 0, 0, 1, 0 },
-      { 0, 0, 0, 0, 1 } };
-
-  double P2[5][5] =
-    { { 1, 0, 0, 0, 0 },
-      { 0, 0, 1, 0, 0 },
-      { 0, 0, 0, 1, 0 },
-      { 0, 1, 0, 0, 0 },
-      { 0, 0, 0, 0, 1 } };
-
-  double P3[5][5] =
-    { { 1, 0, 0, 0, 0 },
-      { 0, 0, 0, 1, 0 },
-      { 0, 1, 0, 0, 0 },
-      { 0, 0, 1, 0, 0 },
-      { 0, 0, 0, 0, 1 } };
-
-  switch (dim) {
-  case 0:
-    if (Lf) matrix_matrix_product(L_[0], P1[0], L, 5, 5, 5);
-    if (Rt) matrix_matrix_product(P1[0], R_[0], R, 5, 5, 5);
-    break;
-  case 1:
-    if (Lf) matrix_matrix_product(L_[0], P2[0], L, 5, 5, 5);
-    if (Rt) matrix_matrix_product(P3[0], R_[0], R, 5, 5, 5);
-    break;
-  case 2:
-    if (Lf) matrix_matrix_product(L_[0], P3[0], L, 5, 5, 5);
-    if (Rt) matrix_matrix_product(P2[0], R_[0], R, 5, 5, 5);
-    break;
-  }
+  matrix_matrix_product(V[dim][0], RR[0], R, 5, 5, 5);
+  matrix_matrix_product(LL[0], T[dim][0], L, 5, 5, 5);
 
   // Replace the term in eqn 3.83 : (gam - 1) / (2*a^2)
   // ---------------------------------------------------------------------------
-  double norm = gm1 / (2*a*a);
+  const double norm = gm1 / (2*a*a);
   for (int i=0; i<25; ++i) {
     L[i] *= norm;
   }
