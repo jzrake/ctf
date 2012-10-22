@@ -14,13 +14,13 @@ static double dt = 0.001;
 void init()
 {
   descr = fluids_descr_new();
-  fluids_descr_setfluid(descr, FLUIDS_GRAVP);
+  fluids_descr_setfluid(descr, FLUIDS_SRHYD);
   fluids_descr_setgamma(descr, 1.4);
   fluids_descr_seteos(descr, FLUIDS_EOS_GAMMALAW);
 
   for (int n=0; n<100; ++n) {
     double P[5] = {0, 0, 0, 0, 0};
-    double G[4] = {0, 0, 0, 0};
+    //    double G[4] = {0, 0, 0, 0};
     if (n<50) {
       P[0] = 1.0;
       P[1] = 1.0;
@@ -32,7 +32,7 @@ void init()
     fluid[n] = fluids_state_new();
     fluids_state_setdescr(fluid[n], descr);
     fluids_state_setattr(fluid[n], P, FLUIDS_PRIMITIVE);
-    fluids_state_setattr(fluid[n], G, FLUIDS_GRAVITY);
+    //    fluids_state_setattr(fluid[n], G, FLUIDS_GRAVITY);
   }
 }
 
@@ -47,8 +47,9 @@ void finish()
 int timederiv(double *L)
 {
   fish_state *S = fish_new();
-  fish_setparami(S, FISH_PLM, FISH_RECONSTRUCTION);
+  fish_setparami(S, FISH_WENO5, FISH_RECONSTRUCTION);
   fish_setparami(S, FLUIDS_RIEMANN_EXACT, FISH_RIEMANN_SOLVER);
+  fish_setparami(S, FISH_SPECTRAL, FISH_SOLVER_TYPE);
   fish_setparamd(S, 2.0, FISH_PLM_THETA);
 
   double Fiph[500];
@@ -103,18 +104,20 @@ int advance()
 
 int main()
 {
+  double t = 0.0;
   init();
-  for (int n=0; n<100; ++n) {
+  for (int n=0; n<200; ++n) {
     clock_t start = clock();
     advance();
+    t += dt;
     clock_t del = clock() - start;
-    printf("running at %f kz/s\n", 100.0 / (1e3*del / CLOCKS_PER_SEC));
+    printf("n=%d t=%3.2f %f kz/s\n", n, t, 100.0 / (1e3*del / CLOCKS_PER_SEC));
   }
   FILE *outf = fopen("euler.dat", "w");
   for (int n=0; n<100; ++n) {
     double P[5];
     fluids_state_getattr(fluid[n], P, FLUIDS_PRIMITIVE);
-    fprintf(outf, "%d %f %f %f\n", n, P[0], P[1], P[2]);
+    fprintf(outf, "%d %f %f %f %f %f\n", n, P[0], P[1], P[2], P[3], P[4]);
   }
   fclose(outf);
   finish();

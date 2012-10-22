@@ -209,8 +209,8 @@ int _intercell_spectral(fish_state *S, fluids_state **fluid, double *Fiph,
 
   int Q = fluids_descr_getncomp(D, FLUIDS_PRIMITIVE);
   double *A = (double*) malloc(N*1*sizeof(double)); // array of max eigenvalues
-  double *U = (double*) malloc(N*Q*sizeof(double)); // array of conserved
   double *F = (double*) malloc(N*Q*sizeof(double)); // array of fluxes
+  double *U = (double*) malloc(N*Q*sizeof(double)); // array of conserved
 
   for (int n=0; n<N; ++n) {
     /*--------------------------------- (1) --------------------------------- */
@@ -219,13 +219,13 @@ int _intercell_spectral(fish_state *S, fluids_state **fluid, double *Fiph,
 
     fluids_state_derive(fluid[n], NULL, flags);
     fluids_state_getcached(fluid[n], lam, FLUIDS_EVAL[dim]);
-    fluids_state_getcached(fluid[n], &F[5*n], FLUIDS_FLUX[dim]);
-    fluids_state_getcached(fluid[n], &U[5*n], FLUIDS_CONSERVED);
+    fluids_state_getcached(fluid[n], &F[Q*n], FLUIDS_FLUX[dim]);
+    fluids_state_getcached(fluid[n], &U[Q*n], FLUIDS_CONSERVED);
 
     A[n] = 0.0;
-    for (int q=0; q<5; ++q) {
+    for (int q=0; q<Q; ++q) {
       if (fabs(lam[q]) > A[n]) {
-	A[n] = fabs(lam[q]);
+       	A[n] = fabs(lam[q]);
       }
     }
   }
@@ -235,7 +235,7 @@ int _intercell_spectral(fish_state *S, fluids_state **fluid, double *Fiph,
     /*--------------------------------- (2) --------------------------------- */
     fluids_state_getattr(fluid[n+0], Pl, FLUIDS_PRIMITIVE);
     fluids_state_getattr(fluid[n+1], Pr, FLUIDS_PRIMITIVE);
-    for (int q=0; q<5; ++q) {
+    for (int q=0; q<Q; ++q) {
       Pface[q] = 0.5*(Pl[q] + Pr[q]);
     }
     fluids_state_setattr(face, Pface, FLUIDS_PRIMITIVE);
@@ -246,11 +246,8 @@ int _intercell_spectral(fish_state *S, fluids_state **fluid, double *Fiph,
     /*--------------------------------- (3) --------------------------------- */
     double ml = 0.0;
     for (int j=0; j<6; ++j) {
-      /* 
-       * find maximum eigenvalue on stencil surrounding the face between j=2,3
-      */
-      if (fabs(A[n + j]) > ml) {
-	ml = fabs(A[n + j]);
+      if (fabs(A[n+j-2]) > ml) {
+	ml = fabs(A[n+j-2]);
       }
     }
 
@@ -260,7 +257,7 @@ int _intercell_spectral(fish_state *S, fluids_state **fluid, double *Fiph,
 	/*
 	 * local Lax-Friedrichs flux splitting
 	 */
-	const int m = (n+j-2)*Q + q;
+	int m = (n+j-2)*Q + q;
 	Fp[q] = 0.5*(F[m] + ml*U[m]);
 	Fm[q] = 0.5*(F[m] - ml*U[m]);
       }
@@ -296,12 +293,13 @@ int _intercell_spectral(fish_state *S, fluids_state **fluid, double *Fiph,
       break;
     }
     _matrix_product(Riph[0], f, &Fiph[n*Q], Q, 1, Q);
+    double P_[5];
+    fluids_state_getattr(face, P_, FLUIDS_PRIMITIVE);
   }
-
   fluids_state_del(face);
   free(A);
-  free(U);
   free(F);
+  free(U);
   return 0;
 }
 
