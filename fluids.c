@@ -784,6 +784,7 @@ int _nrhyd_jacobian(fluids_state *S, int dim)
   double h0 = a2 / g1 + ek;
 
   // output is A := dF{D,px,py,pz,E}/d{D,px,py,pz,E}, Toro's convention
+  /*
   double A[5][5] = { { 0, nx, ny, nz, 0 },
                      { g1*ek*nx - u*vn,
                        1*vn - g2*u*nx,
@@ -801,6 +802,25 @@ int _nrhyd_jacobian(fluids_state *S, int dim)
                        h0*nx - g1*u*vn,
                        h0*ny - g1*v*vn,
                        h0*nz - g1*w*vn, gm*vn } };
+  */
+  // output is A := dF{D,E,px,py,pz}/d{D,E,px,py,pz}, Mara's convention
+  double A[5][5] = { { 0, 0, nx, ny, nz },
+                     { (g1*ek-h0)*vn, gm*vn,
+                       h0*nx - g1*u*vn,
+                       h0*ny - g1*v*vn,
+                       h0*nz - g1*w*vn },
+                     { g1*ek*nx - u*vn, g1*nx,
+                       1*vn - g2*u*nx,
+                       u*ny - g1*v*nx,
+                       u*nz - g1*w*nx },
+                     { g1*ek*ny - v*vn, g1*ny,
+                       v*nx - g1*u*ny,
+                       1*vn - g2*v*ny,
+                       v*nz - g1*w*ny },
+                     { g1*ek*nz - w*vn, g1*nz,
+                       w*nx - g1*u*nz,
+                       w*ny - g1*v*nz,
+                       1*vn - g2*w*nz } };
 
   memcpy(S->cache->jacobian[dim], A[0], 25*sizeof(double));
   return 0;
