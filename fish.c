@@ -15,15 +15,20 @@ static void _plm(fish_state *S, fluids_state **src, fluids_state *L,
 		 fluids_state *R, long flag);
 static void _weno5(fish_state *S, fluids_state **src, fluids_state *L,
 		   fluids_state *R, long flag);
-static int _matrix_product(double *A, double *B, double *C, int ni, int nj, int nk);
+static int _matrix_product(double *A, double *B, double *C,
+			   int ni, int nj, int nk);
 static int _intercell_godunov(fish_state *S, fluids_state **fluid, double *Fiph,
 			      int N, int dim);
-static int _intercell_spectral(fish_state *S, fluids_state **fluid, double *Fiph,
-			       int N, int dim);
+static int _intercell_spectral(fish_state *S, fluids_state **fluid,
+			       double *Fiph, int N, int dim);
 static const long FLUIDS_FLUX[3] = {FLUIDS_FLUX0, FLUIDS_FLUX1, FLUIDS_FLUX2};
 static const long FLUIDS_EVAL[3] = {FLUIDS_EVAL0, FLUIDS_EVAL1, FLUIDS_EVAL2};
-static const long FLUIDS_LEVECS[3] = {FLUIDS_LEVECS0, FLUIDS_LEVECS1, FLUIDS_LEVECS2};
-static const long FLUIDS_REVECS[3] = {FLUIDS_REVECS0, FLUIDS_REVECS1, FLUIDS_REVECS2};
+static const long FLUIDS_LEVECS[3] = {FLUIDS_LEVECS0,
+				      FLUIDS_LEVECS1,
+				      FLUIDS_LEVECS2};
+static const long FLUIDS_REVECS[3] = {FLUIDS_REVECS0,
+				      FLUIDS_REVECS1,
+				      FLUIDS_REVECS2};
 
 fish_state *fish_new(void)
 {
@@ -82,7 +87,6 @@ int fish_setparamd(fish_state *S, double param, long flag)
   return FISH_ERROR_BADARG;
 }
 
-
 int fish_intercellflux(fish_state *S, fluids_state **fluid, double *F, int N,
                        int dim)
 {
@@ -92,6 +96,34 @@ int fish_intercellflux(fish_state *S, fluids_state **fluid, double *F, int N,
   default: return FISH_ERROR_BADARG;
   }
 }
+
+int fish_timederivative(fish_state *S, fluids_state **fluid,
+			int ndim, int *shape, double *dx,
+			double *U, double *L)
+{
+  fluids_descr *D;
+  fluids_state_getdescr(fluid[0], &D);
+  int Q = fluids_descr_getncomp(D, FLUIDS_PRIMITIVE);
+  int numerr = 0;
+  double *Fiph = (double*) malloc(shape[0]*Q*sizeof(double));
+
+  switch (ndim) {
+  case 1:
+    for (int n=0; n<shape[0]; ++n) {
+      int e = fluids_state_fromcons(fluid[n], &U[Q*n], FLUIDS_CACHE_DEFAULT);
+      numerr += (e != 0);
+    }
+    fish_intercellflux(S, fluid, Fiph, shape[0], 0);
+    for (int n=Q; n<shape[0]*Q; ++n) {
+      L[n] = -(Fiph[n] - Fiph[n-Q]) / dx[0];
+    }
+    break;
+  }
+
+  free(Fiph);
+  return 0;
+}
+
 
 int _intercell_godunov(fish_state *S, fluids_state **fluid, double *F, int N,
                        int dim)
@@ -103,6 +135,11 @@ int _intercell_godunov(fish_state *S, fluids_state **fluid, double *F, int N,
   fluids_state *S_ = fluids_state_new();
   fluids_state *SL = fluids_state_new();
   fluids_state *SR = fluids_state_new();
+
+  /* prevent the use of uninitialized bytes */
+  for (int n=0; n<N*Q; ++n) {
+    F[n] = 0.0;
+  }
 
   /* Assumes all states have the same descriptor, after all what sense does this
      make otherwise? */
@@ -211,6 +248,11 @@ int _intercell_spectral(fish_state *S, fluids_state **fluid, double *Fiph,
   double *A = (double*) malloc(N*1*sizeof(double)); // array of max eigenvalues
   double *F = (double*) malloc(N*Q*sizeof(double)); // array of fluxes
   double *U = (double*) malloc(N*Q*sizeof(double)); // array of conserved
+
+  /* prevent the use of uninitialized bytes */
+  for (int n=0; n<N*Q; ++n) {
+    F[n] = 0.0;
+  }
 
   for (int n=0; n<N; ++n) {
     /*--------------------------------- (1) --------------------------------- */
