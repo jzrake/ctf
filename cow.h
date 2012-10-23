@@ -90,7 +90,6 @@ void cow_dfield_pusharg(cow_dfield *f, cow_dfield *arg);
 void cow_dfield_setuserdata(cow_dfield *f, void *userdata);
 void cow_dfield_setiparam(cow_dfield *f, int p);
 void cow_dfield_setfparam(cow_dfield *f, double p);
-void cow_dfield_setflag(cow_dfield *f, int index, int flag);
 void cow_dfield_transformexecute(cow_dfield *f);
 char *cow_dfield_iteratemembers(cow_dfield *f);
 char *cow_dfield_nextmember(cow_dfield *f);
@@ -98,11 +97,8 @@ char *cow_dfield_getname(cow_dfield *f);
 cow_domain *cow_dfield_getdomain(cow_dfield *f);
 int cow_dfield_getstride(cow_dfield *f, int dim);
 int cow_dfield_getnmembers(cow_dfield *f);
-int cow_dfield_getflag(cow_dfield *f, int index);
 size_t cow_dfield_getdatabytes(cow_dfield *f);
 void cow_dfield_setdatabuffer(cow_dfield *f, void *buffer);
-void cow_dfield_setflagbuffer(cow_dfield *f, int *buffer);
-void cow_dfield_updateflaginfnan(cow_dfield *f);
 void cow_dfield_sampleglobalind(cow_dfield *f, int i, int j, int k, double **x,
 				int *n0);
 int cow_dfield_setsamplecoords(cow_dfield *f, double *x, int n0, int n1);
@@ -112,8 +108,6 @@ void cow_dfield_setsamplemode(cow_dfield *f, int mode);
 void cow_dfield_sampleexecute(cow_dfield *f);
 int cow_dfield_getownsdata(cow_dfield *f);
 void *cow_dfield_getdatabuffer(cow_dfield *f);
-int cow_dfield_getownsflag(cow_dfield *f);
-int *cow_dfield_getflagbuffer(cow_dfield *f);
 void cow_dfield_syncguard(cow_dfield *f);
 void cow_dfield_reduce(cow_dfield *f, double x[3]);
 void cow_dfield_write(cow_dfield *f, char *fname);
@@ -213,11 +207,9 @@ struct cow_dfield
   int member_iter; // maintains an index into the last dimension
   int n_members; // size of last dimension
   void *data; // data buffer
-  int *flag; // container for mapping integer flags to grid zones
   int stride[3]; // strides describing memory layout: C ordering
   int committed; // true after cow_dfield_commit called, locks out most changes
   int ownsdata; // client code can own the data: see setdatabuffer function
-  int ownsflag; // client code can own the flag: see setflagbuffer function
   cow_domain *domain; // pointer to an associated domain
   cow_transform transform; // used only by internal code
   cow_dfield **transargs; // list of arguments for transform, used internally

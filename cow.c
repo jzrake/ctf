@@ -388,7 +388,6 @@ cow_dfield *cow_dfield_new(void)
     .n_members = 0,
     .member_iter = 0,
     .data = NULL,
-    .flag = NULL,
     .stride = { 0, 0, 0 },
     .committed = 0,
     .ownsdata = 0,
@@ -417,9 +416,6 @@ void cow_dfield_del(cow_dfield *f)
   free(f->name);
   if (f->ownsdata) {
     free(f->data);
-  }
-  if (f->ownsflag) {
-    free(f->flag);
   }
   free(f->transargs);
   free(f->samplecoords);
@@ -512,32 +508,6 @@ void cow_dfield_setdatabuffer(cow_dfield *f, void *buffer)
   }
 }
 
-void cow_dfield_setflagbuffer(cow_dfield *f, int *buffer)
-// -----------------------------------------------------------------------------
-// Same logic as in setdatabuffer
-// -----------------------------------------------------------------------------
-{
-  if (f->ownsflag) {
-    if (buffer == NULL || (buffer != NULL && buffer == f->flag)) {
-    }
-    else {
-      free(f->flag);
-      f->flag = buffer;
-      f->ownsflag = 0;
-    }
-  }
-  else {
-    if (buffer == NULL) {
-      int nz = cow_domain_getnumlocalzonesincguard(f->domain, COW_ALL_DIMS);
-      f->flag = malloc(nz * sizeof(int));
-      f->ownsflag = 1;
-    }
-    else {
-      f->flag = buffer;
-    }
-  }
-}
-
 int cow_dfield_getownsdata(cow_dfield *f)
 {
   return f->ownsdata;
@@ -545,26 +515,6 @@ int cow_dfield_getownsdata(cow_dfield *f)
 void *cow_dfield_getdatabuffer(cow_dfield *f)
 {
   return f->data;
-}
-
-int cow_dfield_getownsflag(cow_dfield *f)
-{
-  return f->ownsflag;
-}
-int *cow_dfield_getflagbuffer(cow_dfield *f)
-{
-  return f->flag;
-}
-void cow_dfield_updateflaginfnan(cow_dfield *f)
-{
-  int nz = cow_domain_getnumlocalzonesincguard(f->domain, COW_ALL_DIMS);
-  for (int n=0; n<nz; ++n) {
-    double *x = (double*)f->data + n * f->n_members;
-    for (int m=0; m<f->n_members; ++m) {
-      f->flag[n] |= isnan(x[m]) ? COW_HASNAN : 0;
-      f->flag[n] |= isinf(x[m]) ? COW_HASINF : 0;
-    }
-  }
 }
 
 void cow_dfield_addmember(cow_dfield *f, char *name)
@@ -608,7 +558,6 @@ void cow_dfield_commit(cow_dfield *f)
   // below trigger case (A) and have no effect.
   // ---------------------------------------------------------------------------
   cow_dfield_setdatabuffer(f, f->data);
-  cow_dfield_setflagbuffer(f, f->flag);
   int *N = f->domain->L_ntot;
   switch (f->domain->n_dims) {
   case 1:
@@ -919,17 +868,6 @@ void cow_dfield_transformexecute(cow_dfield *f)
   free(S);
   free(x);
   cow_dfield_syncguard(result);
-}
-
-void cow_dfield_setflag(cow_dfield *f, int index, int flag)
-{
-  if (!f->committed) return;
-  f->flag[index] = flag;
-}
-int cow_dfield_getflag(cow_dfield *f, int index)
-{
-  if (!f->committed) return 0;
-  return f->flag[index];
 }
 
 #if (COW_MPI)
