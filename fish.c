@@ -114,17 +114,20 @@ int fish_timederivative(fish_state *S, fluids_state **fluid,
   switch (ndim) {
     /* ---------------------------------- (1d) -------------------------------*/
   case 1:
+    si = 1;
     for (int n=0; n<shape[0]; ++n) {
       int e = fluids_state_fromcons(fluid[n], &U[Q*n], FLUIDS_CACHE_DEFAULT);
       numerr += (e != 0);
     }
-    if (numerr == 0) {
+    if (numerr != 0) {
       return numerr;
     }
     Fiph = (double*) malloc(shape[0] * Q * sizeof(double));
     fish_intercellflux(S, fluid, Fiph, shape[0], 0);
-    for (int n=Q; n<shape[0]*Q; ++n) {
-      L[n] -= (Fiph[n] - Fiph[n-Q]) / dx[0];
+    for (int i=0; i<shape[0]; ++i) {
+      for (int q=0; q<Q; ++q) {
+	L[(i*si)*Q + q] -= (Fiph[i*Q+q] - Fiph[(i-1)*Q+q]) / dx[0];
+      }
     }
     free(Fiph);
     break;
@@ -135,6 +138,9 @@ int fish_timederivative(fish_state *S, fluids_state **fluid,
     for (int n=0; n<shape[0]*shape[1]; ++n) {
       int e = fluids_state_fromcons(fluid[n], &U[Q*n], FLUIDS_CACHE_DEFAULT);
       numerr += (e != 0);
+    }
+    if (numerr != 0) {
+      return numerr;
     }
 
     // ----------------------------
@@ -149,7 +155,8 @@ int fish_timederivative(fish_state *S, fluids_state **fluid,
       fish_intercellflux(S, slice, Fiph, shape[0], 0);
       for (int i=0; i<shape[0]; ++i) {
 	for (int q=0; q<Q; ++q) {
-	  L[(i*si + j*sj)*Q + q] -= (Fiph[i*Q+q] - Fiph[(i-1)*Q+q]) / dx[0];
+	  int m = (i*si + j*sj)*Q + q;
+	  L[m] -= (Fiph[i*Q+q] - Fiph[(i-1)*Q+q]) / dx[0];
 	}
       }
     }
@@ -168,22 +175,95 @@ int fish_timederivative(fish_state *S, fluids_state **fluid,
       fish_intercellflux(S, slice, Fiph, shape[1], 1);
       for (int j=0; j<shape[1]; ++j) {
 	for (int q=0; q<Q; ++q) {
-	  L[(i*si + j*sj)*Q + q] -= (Fiph[j*Q+q] - Fiph[(j-1)*Q+q]) / dx[1];
+	  int m = (i*si + j*sj)*Q + q;
+	  L[m] -= (Fiph[j*Q+q] - Fiph[(j-1)*Q+q]) / dx[1];
 	}
       }
     }
     free(Fiph);
     free(slice);
     break;
-
   case 3:
     /* ---------------------------------- (3d) -------------------------------*/
     si = shape[2] * shape[1];
     sj = shape[2];
     sk = 1;
+    for (int n=0; n<shape[0]*shape[1]*shape[2]; ++n) {
+      int e = fluids_state_fromcons(fluid[n], &U[Q*n], FLUIDS_CACHE_DEFAULT);
+      numerr += (e != 0);
+    }
+    if (numerr != 0) {
+      printf("c2p error=%d\n", numerr);
+      return numerr;
+    }
+
+    // ----------------------------
+    // sweeps along the x-direction
+    // ----------------------------
+    slice = (fluids_state **) malloc(shape[0] * sizeof(fluids_state*));
+    Fiph = (double*) malloc(shape[0] * Q *sizeof(double));
+    for (int k=0; k<shape[2]; ++k) {
+      for (int j=0; j<shape[1]; ++j) {
+	for (int i=0; i<shape[0]; ++i) {
+	  slice[i] = fluid[i*si + j*sj + k*sk];
+	}
+	fish_intercellflux(S, slice, Fiph, shape[0], 0);
+	for (int i=0; i<shape[0]; ++i) {
+	  for (int q=0; q<Q; ++q) {
+	    int m = (i*si + j*sj + k*sk)*Q + q;
+	    L[m] -= (Fiph[i*Q+q] - Fiph[(i-1)*Q+q]) / dx[0];
+	  }
+	}
+      }
+    }
+    free(Fiph);
+    free(slice);
+
+    // ----------------------------
+    // sweeps along the y-direction
+    // ----------------------------
+    slice = (fluids_state **) malloc(shape[1] * sizeof(fluids_state*));
+    Fiph = (double*) malloc(shape[1] * Q *sizeof(double));
+    for (int i=0; i<shape[0]; ++i) {
+      for (int k=0; k<shape[2]; ++k) {
+	for (int j=0; j<shape[1]; ++j) {
+	  slice[j] = fluid[i*si + j*sj + k*sk];
+	}
+	fish_intercellflux(S, slice, Fiph, shape[1], 1);
+	for (int j=0; j<shape[1]; ++j) {
+	  for (int q=0; q<Q; ++q) {
+	    int m = (i*si + j*sj + k*sk)*Q + q;
+	    L[m] -= (Fiph[j*Q+q] - Fiph[(j-1)*Q+q]) / dx[1];
+	  }
+	}
+      }
+    }
+    free(Fiph);
+    free(slice);
+
+    // ----------------------------
+    // sweeps along the z-direction
+    // ----------------------------
+    slice = (fluids_state **) malloc(shape[2] * sizeof(fluids_state*));
+    Fiph = (double*) malloc(shape[2] * Q *sizeof(double));
+    for (int j=0; j<shape[1]; ++j) {
+      for (int i=0; i<shape[0]; ++i) {
+	for (int k=0; k<shape[2]; ++k) {
+	  slice[k] = fluid[i*si + j*sj + k*sk];
+	}
+	fish_intercellflux(S, slice, Fiph, shape[2], 2);
+	for (int k=0; k<shape[2]; ++k) {
+	  for (int q=0; q<Q; ++q) {
+	    int m = (i*si + j*sj + k*sk)*Q + q;
+	    L[m] -= (Fiph[k*Q+q] - Fiph[(k-1)*Q+q]) / dx[2];
+	  }
+	}
+      }
+    }
+    free(Fiph);
+    free(slice);
     break;
   }
-
   return 0;
 }
 
