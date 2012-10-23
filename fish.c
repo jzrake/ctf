@@ -98,13 +98,18 @@ int fish_intercellflux(fish_state *S, fluids_state **fluid, double *F, int N,
 }
 
 int fish_timederivative(fish_state *S, fluids_state **fluid,
-			int ndim, int *shape, double *dx,
-			double *U, double *L)
-/*
- * NOTE: L is assumed to already be initialized to zero's.
+			int ndim, int *shape, double *dx, double *L)
+/* -----------------------------------------------------------------------------
+ * NOTES:
+ *
+ * (1) There is no cons to prim in this function, fluid states are assumed to be
+ *     up-to-date.
+ *
+ * (2) L is assumed to already be initialized to zero's.
+ * -----------------------------------------------------------------------------
 */
 {
-  int si, sj, sk, Q, numerr = 0;
+  int si, sj, sk, Q;
   double *Fiph;
   fluids_state **slice;
   fluids_descr *D;
@@ -115,13 +120,10 @@ int fish_timederivative(fish_state *S, fluids_state **fluid,
     /* ---------------------------------- (1d) -------------------------------*/
   case 1:
     si = 1;
-    for (int n=0; n<shape[0]; ++n) {
-      int e = fluids_state_fromcons(fluid[n], &U[Q*n], FLUIDS_CACHE_DEFAULT);
-      numerr += (e != 0);
-    }
-    if (numerr != 0) {
-      return numerr;
-    }
+
+    // ----------------------------
+    // sweeps along the x-direction
+    // ----------------------------
     Fiph = (double*) malloc(shape[0] * Q * sizeof(double));
     fish_intercellflux(S, fluid, Fiph, shape[0], 0);
     for (int i=0; i<shape[0]; ++i) {
@@ -135,13 +137,6 @@ int fish_timederivative(fish_state *S, fluids_state **fluid,
   case 2:
     si = shape[1];
     sj = 1;
-    for (int n=0; n<shape[0]*shape[1]; ++n) {
-      int e = fluids_state_fromcons(fluid[n], &U[Q*n], FLUIDS_CACHE_DEFAULT);
-      numerr += (e != 0);
-    }
-    if (numerr != 0) {
-      return numerr;
-    }
 
     // ----------------------------
     // sweeps along the x-direction
@@ -188,14 +183,6 @@ int fish_timederivative(fish_state *S, fluids_state **fluid,
     si = shape[2] * shape[1];
     sj = shape[2];
     sk = 1;
-    for (int n=0; n<shape[0]*shape[1]*shape[2]; ++n) {
-      int e = fluids_state_fromcons(fluid[n], &U[Q*n], FLUIDS_CACHE_DEFAULT);
-      numerr += (e != 0);
-    }
-    if (numerr != 0) {
-      printf("c2p error=%d\n", numerr);
-      return numerr;
-    }
 
     // ----------------------------
     // sweeps along the x-direction
