@@ -567,6 +567,13 @@ int _alloc_cache(fluids_cache *C, int op, int np, long flags)
 
 int _nrhyd_c2p(fluids_state *S, double *U)
 {
+  if (U[ddd] < 0.0) {
+    return FLUIDS_ERROR_NEGATIVE_DENSITY_CONS;
+  }
+  if (U[tau] < 0.0) {
+    return FLUIDS_ERROR_NEGATIVE_ENERGY;
+  }
+
   double gm1 = S->descr->gammalawindex - 1.0;
   double *P = S->primitive;
   P[rho] =  U[ddd];
@@ -574,6 +581,13 @@ int _nrhyd_c2p(fluids_state *S, double *U)
   P[vx]  =  U[Sx] / U[ddd];
   P[vy]  =  U[Sy] / U[ddd];
   P[vz]  =  U[Sz] / U[ddd];
+
+  if (P[pre] < 0.0) {
+    return FLUIDS_ERROR_NEGATIVE_PRESSURE;
+  }
+  if (P[rho] < 0.0) {
+    return FLUIDS_ERROR_NEGATIVE_DENSITY_PRIM;
+  }
   return 0;
 }
 
@@ -582,6 +596,14 @@ int _nrhyd_p2c(fluids_state *S)
   double gm1 = S->descr->gammalawindex - 1.0;
   double *U = S->cache->conserved;
   double *P = S->primitive;
+
+  if (P[pre] < 0.0) {
+    return FLUIDS_ERROR_NEGATIVE_PRESSURE;
+  }
+  if (P[rho] < 0.0) {
+    return FLUIDS_ERROR_NEGATIVE_DENSITY_PRIM;
+  }
+
   U[ddd] = P[rho];
   U[tau] = P[rho] * 0.5*(P[vx]*P[vx] + P[vy]*P[vy] + P[vz]*P[vz]) + P[pre]/gm1;
   U[Sx]  = P[rho] * P[vx];
