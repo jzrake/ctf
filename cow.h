@@ -73,6 +73,11 @@ int cow_domain_subgridatposition(cow_domain *d, double x, double y, double z);
 int cow_domain_indexatposition(cow_domain *d, int dim, double x);
 double cow_domain_positionatindex(cow_domain *d, int dim, int index);
 void cow_domain_barrier(cow_domain *d);
+int cow_domain_intprod(cow_domain *d, int myval);
+int cow_domain_intsum(cow_domain *d, int myval);
+double cow_domain_dblmin(cow_domain *d, double myval);
+double cow_domain_dblmax(cow_domain *d, double myval);
+double cow_domain_dblsum(cow_domain *d, double myval);
 
 cow_dfield *cow_dfield_new(void);
 cow_dfield *cow_dfield_dup(cow_dfield *f);

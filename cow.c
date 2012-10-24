@@ -206,7 +206,7 @@ void cow_domain_commit(cow_domain *d)
     case 2: _domain_maketags2d(d); break;
     case 3: _domain_maketags3d(d); break;
     }
-    printf("[cow] subgrid layout is (%d %d %d)\n",
+    printf("[cow] subgrid layout is [%d, %d, %d]\n",
            d->proc_sizes[0], d->proc_sizes[1], d->proc_sizes[2]);
 #endif
   }
@@ -1038,6 +1038,96 @@ void _dfield_freetype(cow_dfield *f)
   free(f->recv_type);
 }
 #endif
+
+
+int cow_domain_intprod(cow_domain *d, int myval)
+{
+#if (COW_MPI)
+  int val, mpi_started;
+  MPI_Initialized(&mpi_started);
+  if (mpi_started) {
+    MPI_Allreduce(&myval, &val, 1, MPI_INTEGER, MPI_PROD, d->mpi_cart);
+  }
+  else {
+    val = myval;
+  }
+  return val;
+#else
+  return myval;
+#endif // COW_MPI
+}
+
+int cow_domain_intsum(cow_domain *d, int myval)
+{
+#if (COW_MPI)
+  int val, mpi_started;
+  MPI_Initialized(&mpi_started);
+  if (mpi_started) {
+    MPI_Allreduce(&myval, &val, 1, MPI_INTEGER, MPI_SUM, d->mpi_cart);
+  }
+  else {
+    val = myval;
+  }
+  return val;
+#else
+  return myval;
+#endif // COW_MPI
+}
+
+double cow_domain_dblmin(cow_domain *d, double myval)
+{
+#if (COW_MPI)
+  double val;
+  int mpi_started;
+  MPI_Initialized(&mpi_started);
+  if (mpi_started) {
+    MPI_Allreduce(&myval, &val, 1, MPI_DOUBLE, MPI_MIN, d->mpi_cart);
+  }
+  else {
+    val = myval;
+  }
+  return val;
+#else
+  return myval;
+#endif // COW_MPI
+}
+
+double cow_domain_dblmax(cow_domain *d, double myval)
+{
+#if (COW_MPI)
+  double val;
+  int mpi_started;
+  MPI_Initialized(&mpi_started);
+  if (mpi_started) {
+    MPI_Allreduce(&myval, &val, 1, MPI_DOUBLE, MPI_MAX, d->mpi_cart);
+  }
+  else {
+    val = myval;
+  }
+  return val;
+#else
+  return myval;
+#endif // COW_MPI
+}
+
+double cow_domain_dblsum(cow_domain *d, double myval)
+{
+#if (COW_MPI)
+  double val;
+  int mpi_started;
+  MPI_Initialized(&mpi_started);
+  if (mpi_started) {
+    MPI_Allreduce(&myval, &val, 1, MPI_DOUBLE, MPI_SUM, d->mpi_cart);
+  }
+  else {
+    val = myval;
+  }
+  return val;
+#else
+  return myval;
+#endif // COW_MPI
+}
+
 
 
 // -----------------------------------------------------------------------------
