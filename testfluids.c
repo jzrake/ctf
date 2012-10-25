@@ -192,7 +192,7 @@ int test4()
 int test5()
 {
   double P[5] = { 1.0, 1.0, 1.0, 1.0, 1.0 };
-  double V[5];
+  double V[5], V_[5];
   double L[25];
   double R[25];
   double A[25];
@@ -221,10 +221,16 @@ int test5()
   matrix_matrix_product(L, A, LA, 5, 5, 5);
   matrix_matrix_product(LA, R, LAR, 5, 5, 5);
 
+  V_[0] = V[0]; // permute eigenvalues to agree with Jacobian
+  V_[1] = V[4];
+  V_[2] = V[1];
+  V_[3] = V[2];
+  V_[4] = V[3];
+
   for (int m=0; m<5; ++m) {
     for (int n=0; n<5; ++n) {
       asserteq(I[m*5 + n], (m==n));
-      asserteq(LAR[m*5 + n], (m==n) * V[m]);
+      asserteq(LAR[m*5 + n], (m==n) * V_[m]);
     }
   }
 

@@ -2,13 +2,12 @@
 
 #define FLUIDS_PRIVATE_DEFS
 #define FLUIDS_INDEX_VARS
-#include "fluids.h"
-#include "matrix.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-
+#include "fluids.h"
+#include "matrix.h"
 
 static int _getsetcacheattr(fluids_cache *C, double *x, long flag, char op);
 static int _getsetstateattr(fluids_state *S, double *x, long flag, char op);
