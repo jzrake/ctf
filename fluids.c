@@ -192,6 +192,7 @@ fluids_state *fluids_state_new(void)
     .passive = NULL,
     .ownscache = 0,
     .ownsbufferflags = FLUIDS_FLAGSALL,
+    .userflag = NULL,
     .cache = NULL,
     .descr = NULL,
   } ;
@@ -220,6 +221,9 @@ int fluids_state_del(fluids_state *S)
     if (S->ownsbufferflags & FLUIDS_LOCATION) {
       free(S->location);
     }
+    if (S->ownsbufferflags & FLUIDS_USERFLAG) {
+      free(S->userflag);
+    }
     free(S);
   }
   return 0;
@@ -243,6 +247,7 @@ int fluids_state_setdescr(fluids_state *S, fluids_descr *D)
   S->gravity = (double*) realloc(S->gravity, ng * sizeof(double));
   S->magnetic = (double*) realloc(S->magnetic, nm * sizeof(double));
   S->location = (double*) realloc(S->location, nl * sizeof(double));
+  S->userflag = (int*) realloc(S->userflag, 1 * sizeof(int));
   S->descr = D;
   S->ownsbufferflags = FLUIDS_FLAGSALL;
   S->ownscache = 0;
@@ -324,16 +329,34 @@ int fluids_state_mapbuffer(fluids_state *S, double *buffer, long flag)
   S->ownsbufferflags &= ~flag;
   return 0;
 }
-
+int fluids_state_mapbufferuserflag(fluids_state *S, int *buffer)
+{
+  if (S->ownsbufferflags & FLUIDS_USERFLAG) {
+    free(S->userflag);
+  }
+  S->userflag = buffer;
+  S->ownsbufferflags &= ~FLUIDS_USERFLAG;
+  return 0;
+}
+			   
 int fluids_state_getattr(fluids_state *S, double *x, long flag)
 {
   return _getsetstateattr(S, x, flag, 'g');
 }
-
 int fluids_state_setattr(fluids_state *S, double *x, long flag)
 {
   fluids_state_cache(S, FLUIDS_CACHE_RESET);
   return _getsetstateattr(S, x, flag, 's');
+}
+int fluids_state_getuserflag(fluids_state *S, int *x)
+{
+  *x = *S->userflag;
+  return 0;
+}
+int fluids_state_setuserflag(fluids_state *S, int *x)
+{
+  *S->userflag = *x;
+  return 0;
 }
 
 int fluids_state_fromcons(fluids_state *S, double *U, int cache)
