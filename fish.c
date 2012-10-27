@@ -17,10 +17,12 @@ static void _weno5(fish_state *S, fluids_state **src, fluids_state *L,
 		   fluids_state *R, long flag);
 static int _matrix_product(double *A, double *B, double *C,
 			   int ni, int nj, int nk);
-static int _intercell_godunov(fish_state *S, fluids_state **fluid, double *Fiph,
-			      int N, int dim);
+static int _intercell_godunov(fish_state *S, fluids_state **fluid,
+			      double *Fiph, int N, int dim);
 static int _intercell_spectral(fish_state *S, fluids_state **fluid,
 			       double *Fiph, int N, int dim);
+static int _intercell_diffusion(fish_state *S, fluids_state **fluid,
+				double *Fiph, int N, int dim);
 static const long FLUIDS_FLUX[3] = {FLUIDS_FLUX0, FLUIDS_FLUX1, FLUIDS_FLUX2};
 static const long FLUIDS_EVAL[3] = {FLUIDS_EVAL0, FLUIDS_EVAL1, FLUIDS_EVAL2};
 static const long FLUIDS_LEVECS[3] = {FLUIDS_LEVECS0,
@@ -93,6 +95,7 @@ int fish_intercellflux(fish_state *S, fluids_state **fluid, double *F, int N,
   switch (S->solver_type) {
   case FISH_GODUNOV: return _intercell_godunov(S, fluid, F, N, dim);
   case FISH_SPECTRAL: return _intercell_spectral(S, fluid, F, N, dim);
+  case FISH_DIFFUSION: return _intercell_diffusion(S, fluid, F, N, dim);
   default: return FISH_ERROR_BADARG;
   }
 }
@@ -254,17 +257,45 @@ int fish_timederivative(fish_state *S, fluids_state **fluid,
   return 0;
 }
 
+int _intercell_diffusion(fish_state *S, fluids_state **fluid, double *F, int N,
+			 int dim)
+{
+  double U0[MAXQ];
+  double U1[MAXQ];
+  int Q, flag0, flag1;
+  fluids_descr *D;
+  fluids_state_getdescr(fluid[0], &D);
+  Q = fluids_descr_getncomp(D, FLUIDS_PRIMITIVE);
+
+  for (int n=0; n<N-1; ++n) {
+    fluids_state_derive(fluid[n+0], U0, FLUIDS_CONSERVED);
+    fluids_state_derive(fluid[n+1], U1, FLUIDS_CONSERVED);
+    fluids_state_getuserflag(fluid[n+0], &flag0);
+    fluids_state_getuserflag(fluid[n+1], &flag1);
+    if (flag0 || flag1) {
+      for (int q=0; q<Q; ++q) {
+	F[n*Q + q] = -(U1[q] - U0[q]);
+      }
+    }
+    else {
+      for (int q=0; q<Q; ++q) {
+	F[n*Q + q] = 0.0;
+      }
+    }
+  }
+  return 0;
+}
 
 int _intercell_godunov(fish_state *S, fluids_state **fluid, double *F, int N,
                        int dim)
 {
+  int Q;
   fluids_descr *D;
-  fluids_state_getdescr(fluid[0], &D);
-
-  int Q = fluids_descr_getncomp(D, FLUIDS_PRIMITIVE);
   fluids_state *S_ = fluids_state_new();
   fluids_state *SL = fluids_state_new();
   fluids_state *SR = fluids_state_new();
+  fluids_state_getdescr(fluid[0], &D);
+  Q = fluids_descr_getncomp(D, FLUIDS_PRIMITIVE);
 
   /* prevent the use of uninitialized bytes */
   for (int n=0; n<N*Q; ++n) {
