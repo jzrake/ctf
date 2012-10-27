@@ -1,69 +1,25 @@
 
-INSTALL      ?= ..
-
 TSTDIR       ?= ../tests
-LIBDIR       ?= $(INSTALL)/lib
-BINDIR       ?= $(INSTALL)/bin
-INCDIR       ?= $(INSTALL)/include
-
+EXMDIR       ?= ../examples
 CC           ?= cc
-AR           ?= ar
-LDSHARED     ?= $(CC) -arch i386 -dynamiclib -undefined suppress -flat_namespace
-ARSTATIC     ?= $(AR) rcu
-FPIC         ?= -fPIC
 CFLAGS       ?= -Wall -O3
 
-OBJ = fish.o reconstruct.o
-EXE = $(BINDIR)/testfish $(BINDIR)/euler
+OBJ = fish.o reconstruct.o fluids.o riemann.o matrix.o
+EXE = $(TSTDIR)/testfish $(TSTDIR)/testfluids $(EXMDIR)/euler
 
-LIBS = $(LIBDIR)/libfish.so $(LIBDIR)/libfish.a
-HEADERS = $(INCDIR)/fish.h
-
-FLUIDSLIBDIR = $(HOME)/Work/fluids/lib
-FLUIDSINCDIR = $(HOME)/Work/fluids/include
-
-LIB = -L$(FLUIDSLIBDIR) -lfluids
-INC = -I$(FLUIDSINCDIR)
-
-default : all
-
-exe : $(BINDIR) $(EXE)
-
-lib : $(LIBDIR) $(LIBS)
-
-headers : $(INCDIR) $(HEADERS)
-
-all : exe lib headers
+default : $(EXE)
 
 %.o : %.c
-	$(CC) $(CFLAGS) -o $@ $< $(DEFINES) $(INC) $(FPIC) -c -std=c99
+	$(CC) $(CFLAGS) -o $@ $< -c -std=c99
 
-$(INCDIR)/%.h : %.h $(INCDIR)
-	cp $< $@
+$(EXMDIR)/euler : euler.o $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
 
-$(TSTDIR) :
-	@mkdir -p $@
+$(TSTDIR)/testfish : testfish.o $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
 
-$(LIBDIR) :
-	@mkdir -p $@
-
-$(BINDIR) :
-	@mkdir -p $@
-
-$(INCDIR) :
-	@mkdir -p $@
-
-$(LIBDIR)/libfish.so : $(OBJ)
-	$(LDSHARED) -o $@ $? $(LIB)
-
-$(LIBDIR)/libfish.a : $(OBJ)
-	$(ARSTATIC) $@ $?
-
-$(BINDIR)/testfish : testfish.o $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ $(LIB)
-
-$(BINDIR)/euler : euler.o $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ $(LIB)
+$(TSTDIR)/testfluids : testfluids.o $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
 
 clean :
 	@rm -rf $(EXE) *.o
