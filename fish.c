@@ -294,6 +294,9 @@ int _intercell_godunov(fish_state *S, fluids_state **fluid, double *F, int N,
   fluids_state *S_ = fluids_state_new();
   fluids_state *SL = fluids_state_new();
   fluids_state *SR = fluids_state_new();
+
+  /* Assumes all states share the same descriptor, after all what sense does
+     this make otherwise? */
   fluids_state_getdescr(fluid[0], &D);
   Q = fluids_descr_getncomp(D, FLUIDS_PRIMITIVE);
 
@@ -302,8 +305,6 @@ int _intercell_godunov(fish_state *S, fluids_state **fluid, double *F, int N,
     F[n] = 0.0;
   }
 
-  /* Assumes all states have the same descriptor, after all what sense does this
-     make otherwise? */
   fluids_state_setdescr(S_, D);
   fluids_state_setdescr(SL, D);
   fluids_state_setdescr(SR, D);
