@@ -99,7 +99,38 @@ void cow_fft_forward(cow_dfield *f, cow_dfield *fkre, cow_dfield *fkim)
 
 void cow_fft_reverse(cow_dfield *f, cow_dfield *fkre, cow_dfield *fkim)
 {
-  // implement me!
+  int nx = cow_domain_getnumlocalzonesinterior(f->domain, 0);
+  int ny = cow_domain_getnumlocalzonesinterior(f->domain, 1);
+  int nz = cow_domain_getnumlocalzonesinterior(f->domain, 2);
+  int ng = cow_domain_getguard(f->domain);
+  int ntot = nx * ny * nz;
+  int I0[3] = { ng, ng, ng };
+  int I1[3] = { nx + ng, ny + ng, nz + ng };
+
+  double *out = (double*) malloc(ntot * sizeof(double) * f->n_members);
+  double *inr = (double*) malloc(ntot * sizeof(double) * f->n_members);
+  double *ini = (double*) malloc(ntot * sizeof(double) * f->n_members);
+  cow_dfield_extract(fkre, I0, I1, inr);
+  cow_dfield_extract(fkim, I0, I1, ini);
+
+  for (int m=0; m<f->n_members; ++m) {
+    FFT_DATA *fk = (FFT_DATA*) malloc(ntot * sizeof(FFT_DATA));
+    for (int n=0; n<ntot; ++n) {
+      fk[n][0] = inr[f->n_members*n + m];
+      fk[n][1] = ini[f->n_members*n + m];
+    }
+    double *fx = _rev(f->domain, fk);
+    for (int n=0; n<ntot; ++n) {
+      out[f->n_members*n + m] = fx[n];
+    }
+    free(fx);
+    free(fk);
+  }
+
+  cow_dfield_replace(f, I0, I1, out);
+  free(out);
+  free(inr);
+  free(ini);
 }
 
 void cow_fft_pspecscafield(cow_dfield *f, cow_histogram *hist)
