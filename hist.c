@@ -378,7 +378,7 @@ void cow_histogram_dumpascii(cow_histogram *h, char *fn)
 void cow_histogram_dumphdf5(cow_histogram *h, char *fn, char *gn)
 // -----------------------------------------------------------------------------
 // Dumps the histogram to the HDF5 file named `fn`, under the group
-// `gn`/h->fullname. The function uses rank 0 to do the write.
+// `gn`/h->nickname. The function uses rank 0 to do the write.
 // -----------------------------------------------------------------------------
 {
 #if (COW_HDF5)
