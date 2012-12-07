@@ -234,17 +234,26 @@ void _io_write(cow_dfield *f, char *fname)
   // COW_HDF5_MPI is not. If either COW_MPI is disabled, or COW_HDF5_MPI is
   // enabled, then the write calls occur without the loop.
   // ---------------------------------------------------------------------------
+  int sequential = 0;
+  int rank = 0;
 #if (!COW_HDF5_MPI && COW_MPI)
-  for (int rank=0; rank<d->cart_size; ++rank) {
+  sequential = 1;
+  for (rank=0; rank<d->cart_size; ++rank) {
     if (rank == d->cart_rank) {
 #endif
       hid_t file = H5Fopen(fname, H5F_ACC_RDWR, d->fapl);
       hid_t memb = H5Gopen(file, gname, H5P_DEFAULT);
       hid_t mspc = H5Screate_simple(ndp1, l_ntot, NULL);
       hid_t fspc = H5Screate_simple(n_dims, G_ntot, NULL);
+      hid_t dset;
       for (int n=0; n<n_memb; ++n) {
-	int dset = H5Dcreate(memb, pnames[n], H5T_NATIVE_DOUBLE, fspc,
-			     H5P_DEFAULT, d->dcpl, H5P_DEFAULT);
+	if (sequential && rank != 0) {
+	  dset = H5Dopen(memb, pnames[n], H5P_DEFAULT);
+	}
+	else {
+	  dset = H5Dcreate(memb, pnames[n], H5T_NATIVE_DOUBLE, fspc,
+			   H5P_DEFAULT, d->dcpl, H5P_DEFAULT);
+	}
 	l_strt[ndp1 - 1] = n;
 	H5Sselect_hyperslab(mspc, H5S_SELECT_SET, l_strt, stride, l_nint, NULL);
 	H5Sselect_hyperslab(fspc, H5S_SELECT_SET, G_strt, NULL, L_nint, NULL);
