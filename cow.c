@@ -138,6 +138,10 @@ int cow_domain_getndim(cow_domain *d)
 {
   return d->n_dims;
 }
+int cow_domain_getsize(cow_domain *d, int dim)
+{
+  return d->G_ntot[dim];
+}
 void cow_domain_setndim(cow_domain *d, int ndim)
 {
   if (ndim > 3 || d->committed) return;
