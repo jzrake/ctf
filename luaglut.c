@@ -28,6 +28,9 @@
 
 #include "menus.h"
 
+#define luaL_getn lua_rawlen
+#define lua_strlen lua_rawlen
+
 #define MYNAME "luaglut"
 #define VERSION "0.5"
 
@@ -85,8 +88,9 @@ static void alloc_wintable(lua_State *L, int id, int parent)
 {
    if (id > 0) {
       /* get global 'luaglut' */
-      lua_pushstring(L, "luaglut");
-      lua_gettable(L, LUA_GLOBALSINDEX);
+     //      lua_pushstring(L, "luaglut");
+     //      lua_gettable(L, LUA_GLOBALSINDEX);
+     lua_getglobal(L, "luaglut");
 
       /* get luaglut.window */
       lua_pushstring(L, "window");
@@ -149,8 +153,9 @@ static void dealloc_wintable(lua_State *L, int id)
 
    if (id > 0) {
       /* get global 'luaglut' */
-      lua_pushstring(L, "luaglut");
-      lua_gettable(L, LUA_GLOBALSINDEX);
+     //      lua_pushstring(L, "luaglut");
+     //      lua_gettable(L, LUA_GLOBALSINDEX);
+      lua_getglobal(L, "luaglut");
 
       /* get luaglut.window */
       lua_pushstring(L, "window");
@@ -222,8 +227,10 @@ static void get_wintable(lua_State *L)
    int id = glutGetWindow();
 
    if (id > 0) {
-      lua_pushstring(L, "luaglut");
-      lua_gettable(L, LUA_GLOBALSINDEX);
+     //      lua_pushstring(L, "luaglut");
+     //      lua_gettable(L, LUA_GLOBALSINDEX);
+     lua_getglobal(L, "luaglut");
+
       lua_pushstring(L, "window");
       lua_gettable(L, -2);
       lua_pushnumber(L, id);
@@ -396,8 +403,10 @@ IMPLEMENT_SETWINCALLBACK ( PassiveMotion,    passivemotion     )
 
 void idle_func(void)
 {
-   lua_pushstring(ref_L, "luaglut");
-   lua_gettable(ref_L, LUA_GLOBALSINDEX);
+  //   lua_pushstring(ref_L, "luaglut");
+  //   lua_gettable(ref_L, LUA_GLOBALSINDEX);
+  lua_getglobal(ref_L, "luaglut");
+
    lua_pushstring(ref_L, "idle_func");
    lua_gettable(ref_L, -2);
    lua_call(ref_L, 0, 0);
@@ -407,8 +416,11 @@ void idle_func(void)
 LUA_API int LglutIdleFunc(lua_State *L)
 {
    assert(L == ref_L);
-   lua_pushstring(L, "luaglut");
-   lua_gettable(L, LUA_GLOBALSINDEX);
+   //   lua_pushstring(L, "luaglut");
+   //   lua_gettable(L, LUA_GLOBALSINDEX);
+
+   lua_getglobal(L, "luaglut");
+
    lua_pushstring(L, "idle_func");
    lua_pushvalue(L, -3);
    lua_settable(L, -3);
@@ -424,8 +436,9 @@ LUA_API int LglutIdleFunc(lua_State *L)
 void timer_func(int index)
 {
    /* get luaglut */
-   lua_pushstring(ref_L, "luaglut");
-   lua_gettable(ref_L, LUA_GLOBALSINDEX);
+  //   lua_pushstring(ref_L, "luaglut");
+  //   lua_gettable(ref_L, LUA_GLOBALSINDEX);
+   lua_getglobal(ref_L, "luaglut");
 
    /* get luaglut.timer */
    lua_pushstring(ref_L, "timer");
@@ -470,8 +483,9 @@ LUA_API int LglutTimerFunc(lua_State *L)
    value = check_int(L, -1);
 
    /* get luaglut */
-   lua_pushstring(L, "luaglut");
-   lua_gettable(L, LUA_GLOBALSINDEX);
+   //   lua_pushstring(L, "luaglut");
+   //   lua_gettable(L, LUA_GLOBALSINDEX);
+   lua_getglobal(L, "luaglut");
 
    /* get luaglut.timer */
    lua_pushstring(L, "timer");
@@ -538,9 +552,10 @@ LUA_API int LglutTimerFunc(lua_State *L)
 
 void menu_func(int value)
 {
-   lua_pushstring(ref_L, "luaglut");
-   lua_gettable(ref_L, LUA_GLOBALSINDEX);
-
+  //   lua_pushstring(ref_L, "luaglut");
+  //   lua_gettable(ref_L, LUA_GLOBALSINDEX);
+  lua_getglobal(ref_L, "luaglut");
+ 
    lua_pushstring(ref_L, "menu");
    lua_gettable(ref_L, -2);
 
@@ -1156,9 +1171,11 @@ LUALIB_API int luaopen_luaglut(lua_State * L)
    lua_settable(L, -3);
 
    /* _G.luaglut = luaglut */
-   lua_pushstring(L, MYNAME);
-   lua_pushvalue(L, -2);
-   lua_settable(L, LUA_GLOBALSINDEX);
+   //   lua_pushstring(L, MYNAME);
+   //   lua_pushvalue(L, -2);
+   //   lua_settable(L, LUA_GLOBALSINDEX);
+   lua_pushvalue(L, -1);
+   lua_setglobal(L, "luaglut");
 
    /* keep the lua context */
    ref_L = L;

@@ -17,6 +17,9 @@
 #include <lauxlib.h>
 #include "macros.h"
 
+#define luaL_getn lua_rawlen
+#define lua_strlen lua_rawlen
+
 #define MYNAME "luagl"
 #define VERSION "0.5"
 
@@ -1412,9 +1415,10 @@ LUALIB_API int luaopen_luagl(lua_State * L)
    lua_pushstring(L, VERSION);
    lua_settable(L, -3);
 
-   lua_pushstring(L, MYNAME);
-   lua_pushvalue(L, -2);
-   lua_settable(L, LUA_GLOBALSINDEX);
+   //   lua_pushstring(L, MYNAME);
+   lua_pushvalue(L, -1);
+   lua_setglobal(L, MYNAME);
+   //   lua_settable(L, LUA_GLOBALSINDEX);
 
    return 1;
 }

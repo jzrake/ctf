@@ -173,6 +173,7 @@ ppm, width, height = load_texture('lua.ppm')
 
 glutInit(arg)
 glutInitDisplayMode(GLUT_RGB + GLUT_DOUBLE + GLUT_DEPTH)
+glutInitWindowSize(1024, 1024)
 if arg then title = arg[0] else title = "glut" end
 window = glutCreateWindow(title)
 glutDisplayFunc(display_func)
