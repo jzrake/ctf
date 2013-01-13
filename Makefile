@@ -1,105 +1,40 @@
 
-INSTALL      ?= ..
+MAKEFILE_IN = Makefile.in
+include $(MAKEFILE_IN)
 
-TSTDIR       ?= ../tests
-LIBDIR       ?= $(INSTALL)/lib
-BINDIR       ?= $(INSTALL)/bin
-INCDIR       ?= $(INSTALL)/include
+RM ?= rm -f
+AR ?= ar
+ARSTATIC ?= $(AR) rcu
+CFLAGS ?= -Wall
+CFLAGS += -std=c99
 
-CC           ?= cc
-AR           ?= ar
-LDSHARED     ?= $(CC) -arch i386 -dynamiclib -undefined suppress -flat_namespace
-ARSTATIC     ?= $(AR) rcu
-FPIC         ?= -fPIC
-COW_HDF5     ?= 0
-COW_MPI      ?= 0
-COW_HDF5_MPI ?= 0
-COW_FFTW     ?= 0
-CFLAGS       ?= -Wall -g -O0
-FFTW_INC     ?= 
-FFTW_LIB     ?= 
-HDF5_INC     ?= 
-HDF5_LIB     ?= 
+COW_A = libcow.a
+LUA_I ?= -I$(LUA_HOME)/include
+HDF_I ?= -I$(HDF_HOME)/include
+FFT_I ?= -I$(FFT_HOME)/include
 
-DEFINES = \
+INC = $(HDF_I) $(FFT_I)
+OPT = \
 	-DCOW_MPI=$(COW_MPI) \
 	-DCOW_HDF5=$(COW_HDF5) \
 	-DCOW_HDF5_MPI=$(COW_HDF5_MPI) \
 	-DCOW_FFTW=$(COW_FFTW)
 
-LIB = $(HDF5_LIB) $(FFTW_LIB)
-INC = $(HDF5_INC) $(FFTW_INC)
+OBJ = cow.o samp.o hist.o io.o fft.o fft_3d.o pack_3d.o remap_3d.o
 
-OBJ = cow.o hist.o io.o samp.o srhdpack.o fft.o fft_3d.o pack_3d.o remap_3d.o
-EXE = 	$(BINDIR)/mhdstats \
-	$(BINDIR)/srhdhist \
-	$(TSTDIR)/testcow \
-	$(TSTDIR)/testhist \
-	$(TSTDIR)/testfft \
-	$(TSTDIR)/testsamp \
-	$(TSTDIR)/testsrhd \
-	$(TSTDIR)/testio
-
-LIBS = $(LIBDIR)/libcow.so $(LIBDIR)/libcow.a
-HEADERS = $(INCDIR)/cow.h $(INCDIR)/srhdpack.h
-
-default : all
-
-exe : $(BINDIR) $(EXE)
-
-lib : $(LIBDIR) $(LIBS)
-
-headers : $(INCDIR) $(HEADERS)
-
-all : exe lib headers
+default : $(COW_A) lua-cow.o
 
 %.o : %.c
-	$(CC) $(CFLAGS) -o $@ $< $(DEFINES) $(INC) $(FPIC) -c -std=c99
+	$(CC) $(CFLAGS) -c $^ $(INC) $(OPT)
 
-$(INCDIR)/%.h : %.h $(INCDIR)
-	cp $< $@
-
-$(TSTDIR) :
-	@mkdir -p $@
-
-$(LIBDIR) :
-	@mkdir -p $@
-
-$(BINDIR) :
-	@mkdir -p $@
-
-$(INCDIR) :
-	@mkdir -p $@
-
-$(LIBDIR)/libcow.so : $(OBJ)
-	$(LDSHARED) -o $@ $? $(LIB)
-
-$(LIBDIR)/libcow.a : $(OBJ)
+$(COW_A) : $(OBJ)
 	$(ARSTATIC) $@ $?
 
-$(BINDIR)/mhdstats : mhdstats.o $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ $(LIB)
+cowfuncs.c : cow.h parse.py
+	python parse.py
 
-$(BINDIR)/srhdhist : srhdhist.o $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ $(LIB)
-
-$(TSTDIR)/testcow : testcow.o $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ $(LIB)
-
-$(TSTDIR)/testhist : testhist.o $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ $(LIB)
-
-$(TSTDIR)/testfft : testfft.o $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ $(LIB)
-
-$(TSTDIR)/testsamp : testsamp.o $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ $(LIB)
-
-$(TSTDIR)/testsrhd : testsrhd.o $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ $(LIB)
-
-$(TSTDIR)/testio : testio.o $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ $(LIB)
+lua-cow.o : lua-cow.c cowfuncs.c
+	$(CC) $(CFLAGS) -c $< $(LUA_I)
 
 clean :
-	@rm -rf $(EXE) *.o
+	$(RM) $(COW_A) $(OBJ) cowfuncs.c lua-cow.o

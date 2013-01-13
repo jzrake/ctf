@@ -36,6 +36,9 @@ void cow_init(int argc, char **argv, int modes)
   MPI_Initialized(&mpi_started);
   if (!mpi_started && !(modes & COW_DISABLE_MPI)) {
     MPI_Init(&argc, &argv);
+    mpi_started = 1;
+  }
+  if (mpi_started) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
   }
@@ -717,7 +720,7 @@ static void _reduce(double *result, double **args, int **strides, void *udata)
   if (y < *min) *min = y;
   *sum += y;
 }
-void cow_dfield_reduce(cow_dfield *f, double x[3])
+void cow_dfield_reduce(cow_dfield *f, double *x) // x[3]
 {
   void *udata[2] = { f, x };
   x[0] = 1e10; // min
@@ -1132,6 +1135,12 @@ double cow_domain_dblsum(cow_domain *d, double myval)
 #endif // COW_MPI
 }
 
+void cow_domain_getcomm(cow_domain *d, void *comm)
+{
+#if (COW_MPI)
+  *((MPI_Comm*)comm) = d->mpi_cart;
+#endif // COW_MPI
+}
 
 
 // -----------------------------------------------------------------------------

@@ -79,6 +79,7 @@ int cow_domain_intsum(cow_domain *d, int myval);
 double cow_domain_dblmin(cow_domain *d, double myval);
 double cow_domain_dblmax(cow_domain *d, double myval);
 double cow_domain_dblsum(cow_domain *d, double myval);
+void cow_domain_getcomm(cow_domain *d, void *comm);
 
 cow_dfield *cow_dfield_new(void);
 cow_dfield *cow_dfield_dup(cow_dfield *f);
@@ -105,8 +106,7 @@ int cow_dfield_getstride(cow_dfield *f, int dim);
 int cow_dfield_getnmembers(cow_dfield *f);
 size_t cow_dfield_getdatabytes(cow_dfield *f);
 void cow_dfield_setdatabuffer(cow_dfield *f, void *buffer);
-void cow_dfield_sampleglobalind(cow_dfield *f, int i, int j, int k, double **x,
-				int *n0);
+void cow_dfield_sampleglobalind(cow_dfield *f, int i, int j, int k, double **x, int *n0);
 int cow_dfield_setsamplecoords(cow_dfield *f, double *x, int n0, int n1);
 void cow_dfield_getsamplecoords(cow_dfield *f, double **x, int *n0, int *n1);
 void cow_dfield_getsampleresult(cow_dfield *f, double **x, int *n0, int *n1);
@@ -115,7 +115,7 @@ void cow_dfield_sampleexecute(cow_dfield *f);
 int cow_dfield_getownsdata(cow_dfield *f);
 void *cow_dfield_getdatabuffer(cow_dfield *f);
 void cow_dfield_syncguard(cow_dfield *f);
-void cow_dfield_reduce(cow_dfield *f, double x[3]);
+void cow_dfield_reduce(cow_dfield *f, double *x);
 void cow_dfield_write(cow_dfield *f, char *fname);
 void cow_dfield_read(cow_dfield *f, char *fname);
 
@@ -138,10 +138,9 @@ void cow_histogram_seal(cow_histogram *h);
 int cow_histogram_getsealed(cow_histogram *h);
 long cow_histogram_gettotalcounts(cow_histogram *h);
 void cow_histogram_populate(cow_histogram *h, cow_dfield *f, cow_transform op);
-void cow_histogram_getbinlocx(cow_histogram *h, double **x, int *n0);
-void cow_histogram_getbinlocy(cow_histogram *h, double **x, int *n0);
-void cow_histogram_getbinval1(cow_histogram *h, double **x, int *n0);
-void cow_histogram_getbinval2(cow_histogram *h, double **x, int *n0, int *n1);
+void cow_histogram_getbinlocx(cow_histogram *h, double *x);
+void cow_histogram_getbinlocy(cow_histogram *h, double *x);
+void cow_histogram_getbinvalv(cow_histogram *h, double *x);
 double cow_histogram_getbinval(cow_histogram *h, int i, int j);
 char *cow_histogram_getname(cow_histogram *h);
 

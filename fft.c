@@ -68,6 +68,7 @@ static double *_rev(cow_domain *d, FFT_DATA *Fk);
 
 void cow_fft_forward(cow_dfield *f, cow_dfield *fkre, cow_dfield *fkim)
 {
+#if (COW_FFTW)
   int nx = cow_domain_getnumlocalzonesinterior(f->domain, 0);
   int ny = cow_domain_getnumlocalzonesinterior(f->domain, 1);
   int nz = cow_domain_getnumlocalzonesinterior(f->domain, 2);
@@ -95,10 +96,12 @@ void cow_fft_forward(cow_dfield *f, cow_dfield *fkre, cow_dfield *fkim)
   free(outre);
   free(outim);
   free(input);
+#endif // COW_FFTW
 }
 
 void cow_fft_reverse(cow_dfield *f, cow_dfield *fkre, cow_dfield *fkim)
 {
+#if (COW_FFTW)
   int nx = cow_domain_getnumlocalzonesinterior(f->domain, 0);
   int ny = cow_domain_getnumlocalzonesinterior(f->domain, 1);
   int nz = cow_domain_getnumlocalzonesinterior(f->domain, 2);
@@ -131,6 +134,7 @@ void cow_fft_reverse(cow_dfield *f, cow_dfield *fkre, cow_dfield *fkim)
   free(out);
   free(inr);
   free(ini);
+#endif // COW_FFTW
 }
 
 void cow_fft_pspecscafield(cow_dfield *f, cow_histogram *hist)

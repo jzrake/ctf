@@ -267,45 +267,24 @@ long cow_histogram_gettotalcounts(cow_histogram *h)
 {
   return h->totcounts;
 }
-void cow_histogram_getbinlocx(cow_histogram *h, double **x, int *n0)
+void cow_histogram_getbinlocx(cow_histogram *h, double *x)
 {
-  if (!(h->committed && h->sealed)) {
-    *x = NULL;
-    *n0 = 0;
+  if (h->committed && h->sealed) {
+    memcpy(x, h->binlocx,  h->nbinsx * sizeof(double));
   }
-  if (n0) *n0 = h->nbinsx;
-  if (x) *x = h->binlocx;
 }
-void cow_histogram_getbinlocy(cow_histogram *h, double **x, int *n0)
+void cow_histogram_getbinlocy(cow_histogram *h, double *x)
 {
-  if (!(h->committed && h->sealed)) {
-    *x = NULL;
-    *n0 = 0;
+  if (h->committed && h->sealed) {
+    memcpy(x, h->binlocy,  h->nbinsy * sizeof(double));
   }
-  if (n0) *n0 = h->nbinsy;
-  if (x) *x = h->binlocy;
 }
-void cow_histogram_getbinval1(cow_histogram *h, double **x, int *n0)
+void cow_histogram_getbinvalv(cow_histogram *h, double *x)
 {
-  if (!(h->committed && h->sealed)) {
-    *x = NULL;
-    *n0 = 0;
+  if (h->committed && h->sealed) {
+    memcpy(x, h->binvalv, h->nbinsx * h->nbinsy * sizeof(double));
   }
-  if (n0) *n0 = h->nbinsx;
-  if (x) *x = h->binvalv;
 }
-void cow_histogram_getbinval2(cow_histogram *h, double **x, int *n0, int *n1)
-{
-  if (!(h->committed && h->sealed)) {
-    *x = NULL;
-    *n0 = 0;
-    *n1 = 0;
-  }
-  if (n0) *n0 = h->nbinsx;
-  if (n1) *n1 = h->nbinsy;
-  if (x) *x = h->binvalv;
-}
-
 double cow_histogram_getbinval(cow_histogram *h, int i, int j)
 {
   if (!(h->committed && h->sealed)) {
