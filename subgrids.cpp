@@ -8,11 +8,9 @@
 typedef DecomposedCartesianDomain Domain;
 
 Domain::DecomposedCartesianDomain(const double *x0, const double *x1, const int *N,
-				  int Nd, int Nq, int Ng)
+				  int Nd, int Nq, int Ng, void *cart_comm)
   : Ng(Ng), Nq(Nq), num_dims(Nd)
 {
-  const int *dims_request = NULL; // not used presently
-
   for (int d=0; d<3; ++d) {
     glb_shape[d] = (Nd >= d+1) ? N [d] : 1;
     glb_x0   [d] = (Nd >= d+1) ? x0[d] : 0.0;
@@ -25,42 +23,41 @@ Domain::DecomposedCartesianDomain(const double *x0, const double *x1, const int 
     if (dx[i] < min_dx) min_dx = dx[i];
   }
 
-  // ---------------------------------------------------------------------------
-  // ---------------------------------------------------------------------------
-  MPI_Comm_rank(MPI_COMM_WORLD, &old_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
   MPI_Type_contiguous(Nq, MPI_DOUBLE, &mpi_type);
 
-  int dims[3] = { 0,0,0 };
-  int wrap[3] = { 1,1,1 };
-  int reorder = 0; // Change this to 1 soon!
+  if (cart_comm == NULL) {
+    int dims[3] = { 0, 0, 0 };
+    int wrap[3] = { 1, 1, 1 };
+    int reorder = 0; // Change this to 1 soon!
 
-  if (dims_request == NULL) {
+    own_mpi_cart = 1;
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     MPI_Dims_create(mpi_size, num_dims, dims);
+
+    if (Nd < 2) dims[1] = 1;
+    if (Nd < 3) dims[2] = 1;    
+    memcpy(mpi_sizes, dims, 3 * sizeof(int));
+
+    MPI_Cart_create(MPI_COMM_WORLD, num_dims, dims, wrap, reorder, &mpi_cart);
+    MPI_Comm_rank(mpi_cart, &crt_rank);
+    MPI_Cart_coords(mpi_cart, crt_rank, num_dims, mpi_index);
+
+    if (mpi_size > 1) {
+      printf("[Mara] subgrid layout is [%d, %d, %d]\n", dims[0], dims[1], dims[2]);
+    }
   }
   else {
-    dims[0] = dims_request[0];
-    dims[1] = dims_request[1];
-    dims[2] = dims_request[2];
-  }
-  if (Nd < 2) dims[1] = 1;
-  if (Nd < 3) dims[2] = 1;
+    int wrap[3];
+    mpi_cart = *((MPI_Comm*) cart_comm);
+    own_mpi_cart = 0;
 
-  std::copy(dims, dims + num_dims, mpi_sizes);
+    MPI_Comm_rank(mpi_cart, &crt_rank);
+    MPI_Comm_size(mpi_cart, &mpi_size);
 
-  if (dims[0]*dims[1]*dims[2] != mpi_size) {
-    printf("[subgrids] warning: requested subgrid dimensions not equal to mpi size.\n");
+    MPI_Cartdim_get(mpi_cart, &num_dims);
+    MPI_Cart_get(mpi_cart, num_dims, mpi_sizes, wrap, mpi_index);
   }
 
-  MPI_Cart_create(MPI_COMM_WORLD, num_dims, dims, wrap, reorder, &mpi_cart);
-  MPI_Comm_rank(mpi_cart, &crt_rank);
-  MPI_Cart_coords(mpi_cart, crt_rank, num_dims, mpi_index);
-
-  if (mpi_size > 1) {
-    printf("[subgrids] layout is (%d %d %d)\n", dims[0], dims[1], dims[2]);
-  }
-
-  // ---------------------------------------------------------------------------
 
   for (int i=0; i < num_dims; ++i) {
     const int R = glb_shape[i] % mpi_sizes[i];
@@ -120,7 +117,10 @@ Domain::~DecomposedCartesianDomain()
   for (size_t i=0; i<send_type.size(); ++i) MPI_Type_free(&send_type[i]);
   for (size_t i=0; i<recv_type.size(); ++i) MPI_Type_free(&recv_type[i]);
   MPI_Type_free(&mpi_type);
-  MPI_Comm_free(&mpi_cart);
+
+  if (own_mpi_cart) {
+    MPI_Comm_free(&mpi_cart);
+  }
 
   free(Specs.A_nint);
   free(Specs.L_ntot);

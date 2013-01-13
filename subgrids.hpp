@@ -22,8 +22,9 @@ protected:
   std::vector<MPI_Datatype> send_type;
   std::vector<MPI_Datatype> recv_type;
 
-  int mpi_size, old_rank, crt_rank;
+  int mpi_size, crt_rank;
   int mpi_index[3], mpi_sizes[3];
+  int own_mpi_cart;
 
   double glb_x0[3], glb_x1[3]; // glb upper & lower domain limits
   double loc_x0[3], loc_x1[3]; // loc upper & lower domain limits
@@ -37,7 +38,7 @@ protected:
 
 public:
   DecomposedCartesianDomain(const double *x0, const double *x1, const int *N,
-			    int Nd, int Nq, int Ng);
+			    int Nd, int Nq, int Ng, void *cart_comm=NULL);
   ~DecomposedCartesianDomain();
   void Synchronize(std::valarray<double> &A) const;
   int SubgridRank() const;

@@ -42,7 +42,7 @@
 #include "config.h"
 #include "image.h"
 #include "mara_mpi.h"
-#include "mara_io.h"
+//#include "mara_io.h"
 #include "rmhd-c2p.h"
 #include "weno.h"
 

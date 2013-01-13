@@ -3,13 +3,13 @@
 #include <stdlib.h>
 #include "config.h"
 #include "mara_mpi.h"
-#include "luaU.h"
+//#include "luaU.h"
 
 #if (__MARA_USE_MPI)
 #include <mpi.h>
 #endif //__MARA_USE_MPI
 
-
+/*
 static int luaC_mpi_dims_create(lua_State *L);
 static int luaC_mpi_get_rank(lua_State *L);
 static int luaC_mpi_get_size(lua_State *L);
@@ -23,6 +23,7 @@ void lua_mpi_load(lua_State *L)
   lua_register(L, "mpi_get_size", luaC_mpi_get_size);
   lua_register(L, "mpi_barrier", luaC_mpi_barrier);
 }
+*/
 
 int Mara_mpi_get_rank()
 {
@@ -57,13 +58,13 @@ int Mara_mpi_get_size()
   return 1;
 #endif //__MARA_USE_MPI
 }
-
+/*
 int luaC_mpi_barrier(lua_State *L)
 {
   Mara_mpi_barrier();
   return 0;
 }
-
+*/
 void Mara_mpi_barrier()
 {
 #if (__MARA_USE_MPI)
@@ -173,7 +174,7 @@ int Mara_mpi_active()
   return 0;
 #endif
 }
-
+/*
 int luaC_mpi_dims_create(lua_State *L)
 {
   int i;
@@ -225,3 +226,6 @@ int luaC_mpi_get_size(lua_State *L)
   lua_pushnumber(L, Mara_mpi_get_size());
   return 1;
 }
+*/
+
+
