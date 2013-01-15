@@ -54,6 +54,8 @@ function MaraDataManager:__init__(domain, dataset_names, opts)
    self.ndim = cow.domain_getndim(domain)
    self.domain = domain
    self.dataset_names = dataset_names
+   self.Ng = Ng
+
    if self.ndim == 1 then
       self.array_shape = {Ni+2*Ng, #dataset_names}
       self.ggrid_shape = {Nx} -- global grid shape

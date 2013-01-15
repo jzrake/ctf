@@ -44,22 +44,22 @@ GenericTabulatedEos::GenericTabulatedEos(std::vector<double> &D_values,
     EOS_u(u),
     EOS_c(c)
 {
-  printf("[eos] building new GenericTabulatedEos\n");
-  printf("[eos] density points: %ld\n", D_values.size());
-  printf("[eos] temperature points: %ld\n", T_values.size());
+  printf("[Mara.eos] building new GenericTabulatedEos\n");
+  printf("[Mara.eos] density points: %ld\n", D_values.size());
+  printf("[Mara.eos] temperature points: %ld\n", T_values.size());
 
   size_t npts = D_values.size() * T_values.size();
 
   if (npts != EOS_p.size()) {
-    printf("[eos] warning: pressure array has %ld points, expected %ld\n",
+    printf("[Mara.eos] warning: pressure array has %ld points, expected %ld\n",
 	   EOS_p.size(), npts);
   }
   if (npts != EOS_u.size()) {
-    printf("[eos] warning: internal energy array has %ld points, expected %ld\n",
+    printf("[Mara.eos] warning: internal energy array has %ld points, expected %ld\n",
 	   EOS_u.size(), npts);
   }
   if (npts != EOS_c.size()) {
-    printf("[eos] warning: sound speed array has %ld points, expected %ld\n",
+    printf("[Mara.eos] warning: sound speed array has %ld points, expected %ld\n",
 	   EOS_c.size(), npts);
   }
 }
@@ -99,11 +99,11 @@ double GenericTabulatedEos::sample_EOS(const std::vector<double> &EOS,
     return this->tabled_EOS(EOS, D, T, J);
   }
   catch (const SampledOutOfRangeDensity &e) {
-    if (verbose) printf("[eos] warning: density out, using approximate. D=%e\n", D);
+    if (verbose) printf("[Mara.eos] warning: density out, using approximate. D=%e\n", D);
     return this->approx_EOS(EOS, D, T, J);
   }
   catch (const SampledOutOfRangeTemperature &e) {
-    if (verbose) printf("[eos] warning: temperature out, using approximate T=%e\n", T);
+    if (verbose) printf("[Mara.eos] warning: temperature out, using approximate T=%e\n", T);
     return this->approx_EOS(EOS, D, T, J);
   }
 }
@@ -217,7 +217,7 @@ double GenericTabulatedEos::inverse_lookup_T(const std::vector<double> &EOS,
   T -= f/g;
 
   if (off_table && verbose) {
-    printf("[eos] warning: inverse lookup on (D,F) = (%f,%f) used approximate. "
+    printf("[Mara.eos] warning: inverse lookup on (D,F) = (%f,%f) used approximate. "
     	   "T=%e\n", D, F, T);
   }
 

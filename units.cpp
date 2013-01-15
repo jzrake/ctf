@@ -11,7 +11,6 @@ PhysicalUnits::PhysicalUnits(double c, double g, double s)
 }
 void PhysicalUnits::PrintUnits()
 {
-  printf("\n");
   printf("%24s = %-14.3e %s\n", "[Length]", Length, "cm");
   printf("%24s = %-14.3e %s\n", "[Mass]", Mass, "gm");
   printf("%24s = %-14.3e %s\n", "[Time]", Time, "s");

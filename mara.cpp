@@ -62,15 +62,13 @@ extern "C"
 {
   static int luaC_Mara_start(lua_State *L);
   static int luaC_Mara_close(lua_State *L);
-
-  static int luaC_mara_version(lua_State *L);
-  static int luaC_print_mara(lua_State *L);
-
-  static int luaC_advance(lua_State *L);
-  static int luaC_diffuse(lua_State *L);
-  static int luaC_init_prim(lua_State *L);
-  static int luaC_prim_at_point(lua_State *L);
-  static int luaC_get_timestep(lua_State *L);
+  static int luaC_Mara_version(lua_State *L);
+  static int luaC_Mara_show(lua_State *L);
+  static int luaC_Mara_advance(lua_State *L);
+  static int luaC_Mara_diffuse(lua_State *L);
+  static int luaC_Mara_init_prim(lua_State *L);
+  static int luaC_Mara_prim_at_point(lua_State *L);
+  static int luaC_Mara_get_timestep(lua_State *L);
 
   static int luaC_set_domain(lua_State *L);
   static int luaC_set_boundary(lua_State *L);
@@ -98,7 +96,7 @@ extern "C"
   static int luaC_fluid_FluxFunction(lua_State *L);
   static int luaC_fluid_GetPrimNames(lua_State *L);
 
-  static int luaC_boundary_ApplyBoundaries(lua_State *L);
+  //  static int luaC_boundary_ApplyBoundaries(lua_State *L);
 
   static int luaC_driving_Advance(lua_State *L);
   static int luaC_driving_Resample(lua_State *L);
@@ -135,16 +133,15 @@ static MaraApplication *Mara = NULL;
 int luaopen_Mara(lua_State *L)
 {
   luaL_Reg Mara_module[] = {
-    {"start", luaC_Mara_start},
-    {"close", luaC_Mara_close},
-    {"mara_version", luaC_mara_version},
-    {"print_mara", luaC_print_mara},
-    {"advance", luaC_advance},
-    {"diffuse", luaC_diffuse},
-
-    {"init_prim"    , luaC_init_prim},
-    {"prim_at_point", luaC_prim_at_point},
-    {"get_timestep" , luaC_get_timestep},
+    {"start"        , luaC_Mara_start},
+    {"close"        , luaC_Mara_close},
+    {"version"      , luaC_Mara_version},
+    {"show"         , luaC_Mara_show},
+    {"advance"      , luaC_Mara_advance},
+    {"diffuse"      , luaC_Mara_diffuse},
+    {"init_prim"    , luaC_Mara_init_prim},
+    {"prim_at_point", luaC_Mara_prim_at_point},
+    {"get_timestep" , luaC_Mara_get_timestep},
 
     {"set_domain"   , luaC_set_domain},
     {"set_boundary" , luaC_set_boundary},
@@ -189,7 +186,7 @@ int luaopen_Mara(lua_State *L)
     {NULL, NULL}};
 
   luaL_Reg Mara_boundary[] = {
-    {"ApplyBoundaries", luaC_boundary_ApplyBoundaries},
+    //    {"ApplyBoundaries", luaC_boundary_ApplyBoundaries},
     {NULL, NULL}};
 
   luaL_Reg Mara_eos[] = {
@@ -290,7 +287,7 @@ int luaC_Mara_close(lua_State *L)
 }
 
 
-int luaC_advance(lua_State *L)
+int luaC_Mara_advance(lua_State *L)
 {
   if (Mara->domain == NULL) {
     luaL_error(L, "[Mara] need a domain to run this, use set_domain");
@@ -306,8 +303,8 @@ int luaC_advance(lua_State *L)
     luaL_error(L, "[Mara] primitive has the wrong size for the domain");
   }
 
-  std::valarray<double> P(N); // = Mara->PrimitiveArray;
-  std::valarray<double> U(N); //P.size());
+  std::valarray<double> P(N);
+  std::valarray<double> U(N);
   int errors;
 
   memcpy(&P[0], UserPrim, N * sizeof(double));
@@ -316,7 +313,6 @@ int luaC_advance(lua_State *L)
   Mara->FailureMask.resize(Mara->domain->GetNumberOfZones());
   Mara->PrimitiveArray.resize(P.size());
   Mara->godunov->PrimToCons(P, U);
-
   try {
     Mara->advance->AdvanceState(U, dt);
     errors = Mara->godunov->ConsToPrim(U, P);
@@ -324,28 +320,33 @@ int luaC_advance(lua_State *L)
   catch (const GodunovOperator::IntermediateFailure &e) {
     errors = Mara_mpi_int_sum(Mara->FailureMask.sum());
   }
-
   if (errors == 0) {
     if (Mara->driving) Mara->driving->Drive(P, dt);
     if (Mara->cooling) Mara->cooling->Cool(P, dt);
-    //    Mara->PrimitiveArray = P;
     memcpy(UserPrim, &P[0], N * sizeof(double));
   }
 
   const double sec = (double) (clock() - start) / CLOCKS_PER_SEC;
-
   lua_pushnumber(L, 1e-3*Mara->domain->GetNumberOfZones()/sec);
   lua_pushnumber(L, errors);
 
   return 2;
 }
 
-int luaC_diffuse(lua_State *L)
+int luaC_Mara_diffuse(lua_State *L)
 {
-  const double r = luaL_checknumber(L, 1);
+  double *UserPrim = (double*) lua_touserdata(L, 1);
+  double r = luaL_checknumber(L, 2);
+  unsigned N = lua_rawlen(L, 1) / sizeof(double); // total number of zones
+  unsigned N_needed = Mara->domain->GetNumberOfZones() * Mara->domain->get_Nq();
 
-  std::valarray<double> &P = Mara->PrimitiveArray;
-  std::valarray<double> U(P.size());
+  if (N != N_needed) {
+    luaL_error(L, "[Mara] primitive has the wrong size for the domain");
+  }
+
+  std::valarray<double> P(N);
+  std::valarray<double> U(N);
+  memcpy(&P[0], UserPrim, N * sizeof(double));
 
   Mara->godunov->PrimToCons(P, U);
   U += Mara->godunov->LaxDiffusion(U, r);
@@ -354,17 +355,16 @@ int luaC_diffuse(lua_State *L)
   return 0;
 }
 
-int luaC_get_timestep(lua_State *L)
+int luaC_Mara_get_timestep(lua_State *L)
 {
   const double CFL = luaL_checknumber(L, 1);
-  const double dt = Mara_mpi_dbl_min(CFL*Mara->domain->get_min_dx() /
+  const double dt = Mara_mpi_dbl_min(CFL * Mara->domain->get_min_dx() /
                                      RiemannSolver::GetMaxLambda());
   lua_pushnumber(L, dt);
-
   return 1;
 }
 
-int luaC_mara_version(lua_State *L)
+int luaC_Mara_version(lua_State *L)
 {
   char str[256];
   sprintf(str, "%s", __MARA_BASE_VERSION);
@@ -373,37 +373,37 @@ int luaC_mara_version(lua_State *L)
 }
 
 std::string Demangle(const std::string &mname);
-int luaC_print_mara(lua_State *L)
+int luaC_Mara_show(lua_State *L)
 {
   std::cout << std::endl;
-  std::cout << "units: "
+  std::cout << "\tunits: "
             << (Mara->units ? Demangle(typeid(*Mara->units).name()) : "NULL")
             << std::endl;
-  std::cout << "domain: "
+  std::cout << "\tdomain: "
             << (Mara->domain ? Demangle(typeid(*Mara->domain).name()) : "NULL")
             << std::endl;
-  std::cout << "boundary: "
+  std::cout << "\tboundary: "
             << (Mara->boundary ? Demangle(typeid(*Mara->boundary).name()) : "NULL")
             << std::endl;
-  std::cout << "fluid: "
+  std::cout << "\tfluid: "
             << (Mara->fluid ? Demangle(typeid(*Mara->fluid).name()) : "NULL")
             << std::endl;
-  std::cout << "eos: "
+  std::cout << "\teos: "
             << (Mara->eos ? Demangle(typeid(*Mara->eos).name()) : "NULL")
             << std::endl;
-  std::cout << "godunov: "
+  std::cout << "\tgodunov: "
             << (Mara->godunov ? Demangle(typeid(*Mara->godunov).name()) : "NULL")
             << std::endl;
-  std::cout << "riemann: "
+  std::cout << "\triemann: "
             << (Mara->riemann ? Demangle(typeid(*Mara->riemann).name()) : "NULL")
             << std::endl;
-  std::cout << "advance: "
+  std::cout << "\tadvance: "
             << (Mara->advance ? Demangle(typeid(*Mara->advance).name()) : "NULL")
             << std::endl;
-  std::cout << "driving: "
+  std::cout << "\tdriving: "
             << (Mara->driving ? Demangle(typeid(*Mara->driving).name()) : "NULL")
             << std::endl;
-  std::cout << "cooling: "
+  std::cout << "\tcooling: "
             << (Mara->cooling ? Demangle(typeid(*Mara->cooling).name()) : "NULL")
             << std::endl;
   std::cout << std::endl;
@@ -508,7 +508,7 @@ EquationOfState *BuildGenericTabulatedEos(lua_State *L)
 }
 
 
-int luaC_init_prim(lua_State *L)
+int luaC_Mara_init_prim(lua_State *L)
 {
   const PhysicalDomain *domain = Mara->domain;
 
@@ -611,7 +611,7 @@ int luaC_init_prim(lua_State *L)
   return 0;
 }
 
-int luaC_prim_at_point(lua_State *L)
+int luaC_Mara_prim_at_point(lua_State *L)
 {
   double *r1 = luaU_checkarray(L, 1);
   int Nq = Mara->domain->get_Nq();
@@ -1059,13 +1059,13 @@ int luaC_set_advance(lua_State *L)
 
 int luaC_set_driving(lua_State *L)
 {
-  size_t len;
-  DrivingModule *new_f = NULL;
-  const char *buf = luaL_checklstring(L, 1, &len);
-
   if (Mara->domain == NULL) {
     luaL_error(L, "[Mara] need a domain to run this, use set_domain");
   }
+
+  size_t len;
+  DrivingModule *new_f = NULL;
+  const char *buf = luaL_checklstring(L, 1, &len);
 
   std::stringstream stream;
   stream.write(buf, sizeof(char)*len);
@@ -1335,7 +1335,7 @@ int luaC_fluid_GetPrimNames(lua_State *L)
   }
   return 1;
 }
-
+/*
 int luaC_boundary_ApplyBoundaries(lua_State *L)
 {
   if (Mara->boundary == NULL) {
@@ -1346,7 +1346,7 @@ int luaC_boundary_ApplyBoundaries(lua_State *L)
   }
   return 0;
 }
-
+*/
 int luaC_eos_TemperatureMeV(lua_State *L)
 {
   const double D = luaL_checknumber(L, 1);
