@@ -213,6 +213,8 @@ void cow_domain_commit(cow_domain *d)
     case 2: _domain_maketags2d(d); break;
     case 3: _domain_maketags3d(d); break;
     }
+    printf("[cow] global domain is [%d, %d, %d]\n",
+           d->G_ntot[0], d->G_ntot[1], d->G_ntot[2]);
     printf("[cow] subgrid layout is [%d, %d, %d]\n",
            d->proc_sizes[0], d->proc_sizes[1], d->proc_sizes[2]);
 #endif
