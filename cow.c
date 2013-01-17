@@ -1191,6 +1191,13 @@ void cow_trans_rot5(double *result, double **args, int **s, void *u)
   result[2] = diff5(f1, s[0][0]) - diff5(f0, s[0][1]);
 #undef diff5
 }
+void cow_trans_laplacian(double *result, double **args, int **s, void *u)
+{
+#define diff2(s) (f[s] - 2*f[0] + f[-s])
+  double *f = &args[0][0];
+  result[0] = diff2(s[0][0]) + diff2(s[0][1]) + diff2(s[0][2]);
+#undef diff2
+}
 void cow_trans_component(double *result, double **args, int **s, void *u)
 {
   cow_dfield *f = (cow_dfield*) u;

@@ -152,9 +152,10 @@ void cow_fft_pspecvecfield(cow_dfield *f, cow_histogram *h);
 void cow_fft_helmholtzdecomp(cow_dfield *f, int mode);
 void cow_fft_solvepoisson(cow_dfield *rho, cow_dfield *phi);
 
-void cow_trans_divcorner(double *result, double **args, int **s, void *u);
-void cow_trans_div5(double *result, double **args, int **s, void *u);
 void cow_trans_rot5(double *result, double **args, int **s, void *u);
+void cow_trans_div5(double *result, double **args, int **s, void *u);
+void cow_trans_divcorner(double *result, double **args, int **s, void *u);
+void cow_trans_laplacian(double *result, double **args, int **s, void *u);
 void cow_trans_component(double *result, double **args, int **s, void *u);
 void cow_trans_magnitude(double *result, double **args, int **s, void *u);
 void cow_trans_cross(double *result, double **args, int **s, void *u);

@@ -76,6 +76,9 @@ for line in cowh:
             ga = """double **%s = (double**) lua_touserdata(L, %d);""" % (argname, narg)
         elif argtype == "void *":
             ga = """void *%s = lua_touserdata(L, %d);""" % (argname, narg)
+        elif argtype == "cow_transform":
+            ga = """cow_transform %s = *((cow_transform*) """\
+                """luaL_checkudata(L, %d, "cow::transform"));""" % (argname, narg)
         else:
             ga = """void *%s = lua_touserdata(L, %d);""" % (argname, narg)
 

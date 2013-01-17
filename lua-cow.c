@@ -19,10 +19,24 @@
       luacow_push_cow_##s(L, a);					\
 	return 1;							\
   }                                                                     \
+  static int _cow_##s##_light(lua_State *L)				\
+  {                                                                     \
+    cow_##s **ud = (cow_##s**) luaL_checkudata(L, 1, "cow::"#s);	\
+      lua_pushlightuserdata(L, *ud);					\
+      return 1;								\
+  }
 
 COW_STRUCT_TYPE(domain)
 COW_STRUCT_TYPE(dfield)
 COW_STRUCT_TYPE(histogram)
+
+
+static void luacow_push_cow_transform(lua_State *L, cow_transform ini)
+{
+  cow_transform *op = (cow_transform*) lua_newuserdata(L, sizeof(cow_transform*));
+  *op = ini;
+  luaL_setmetatable(L, "cow::transform");
+}
 
 static int _cow_init(lua_State *L)
 {
@@ -40,16 +54,32 @@ int luaopen_cow(lua_State *L)
     {"domain_new", _cow_domain_new},
     {"dfield_new", _cow_dfield_new},
     {"histogram_new", _cow_histogram_new},
+    {"domain_light", _cow_domain_light},
+    {"dfield_light", _cow_dfield_light},
+    {"histogram_light", _cow_histogram_light},
     {NULL, NULL}};
 
   luaL_newmetatable(L, "cow::domain"); lua_pop(L, 1);
   luaL_newmetatable(L, "cow::dfield"); lua_pop(L, 1);
   luaL_newmetatable(L, "cow::histogram"); lua_pop(L, 1);
+  luaL_newmetatable(L, "cow::transform"); lua_pop(L, 1);
 
   lua_newtable(L);
   luaL_setfuncs(L, cow_aux, 0);
   luaL_setfuncs(L, cow_module_funcs, 0);
   register_constants(L);
+
+  lua_newtable(L);
+  luacow_push_cow_transform(L, cow_trans_rot5); lua_setfield(L, -2, "rot5");
+  luacow_push_cow_transform(L, cow_trans_div5); lua_setfield(L, -2, "div5");
+  luacow_push_cow_transform(L, cow_trans_divcorner); lua_setfield(L, -2, "divcorner");
+  luacow_push_cow_transform(L, cow_trans_laplacian); lua_setfield(L, -2, "laplacian");
+  luacow_push_cow_transform(L, cow_trans_component); lua_setfield(L, -2, "component");
+  luacow_push_cow_transform(L, cow_trans_magnitude); lua_setfield(L, -2, "magnitude");
+  luacow_push_cow_transform(L, cow_trans_cross); lua_setfield(L, -2, "cross");
+  luacow_push_cow_transform(L, cow_trans_dot3); lua_setfield(L, -2, "dot3");
+  lua_setfield(L, -2, "transform");
+
   return 1;
 }
 
