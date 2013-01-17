@@ -280,7 +280,7 @@ int cow_domain_getglobalstartindex(cow_domain *d, int dim)
   default: return 0;
   }
 }
-int cow_domain_getgridspacing(cow_domain *d, int dim)
+double cow_domain_getgridspacing(cow_domain *d, int dim)
 {
   switch (dim) {
   case 0: return d->dx[0];

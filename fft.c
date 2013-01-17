@@ -41,8 +41,7 @@
 #endif // COW_MPI
 #endif // COW_FFTW
 #define MODULE "fft"
-#define NBINS 128
-
+#define EFFECTIVELY_ZERO 1e-14
 
 
 
@@ -60,6 +59,7 @@
 static struct fft_plan_3d *call_fft_plan_3d(cow_domain *d, int *nbuf);
 #endif // COW_MPI
 static double k_at(cow_domain *d, int i, int j, int k, double *khat);
+static double k_at_wspc(cow_domain *d, int i, int j, int k, double *khat);
 static double khat_at(cow_domain *d, int i, int j, int k, double *khat);
 static double cnorm(FFT_DATA z);
 static FFT_DATA *_fwd(cow_domain *d, double *fx, int start, int stride);
@@ -373,6 +373,70 @@ void cow_fft_helmholtzdecomp(cow_dfield *f, int mode)
 #endif // COW_FFTW
 }
 
+
+void cow_fft_solvepoisson(cow_dfield *rho, cow_dfield *phi)
+{
+#if (COW_FFTW)
+  if (!rho->committed) return;
+  if (!phi->committed) return;
+
+  if (rho->n_members != 1) {
+    printf("[%s] error: rho must have 1-component in %s", MODULE, __FUNCTION__);
+    return;
+  }
+  if (phi->n_members != 1) {
+    printf("[%s] error: phi must have 1-component in %s", MODULE, __FUNCTION__);
+    return;
+  }
+  if (rho->domain != phi->domain) {
+    printf("[%s] error: rho and phi must have the same domain", MODULE);
+    return;
+  }
+
+  cow_domain *domain = phi->domain;
+  int nx = cow_domain_getnumlocalzonesinterior(domain, 0);
+  int ny = cow_domain_getnumlocalzonesinterior(domain, 1);
+  int nz = cow_domain_getnumlocalzonesinterior(domain, 2);
+  int ng = cow_domain_getguard(domain);
+  int ntot = nx * ny * nz;
+  int I0[3] = { ng, ng, ng };
+  int I1[3] = { nx + ng, ny + ng, nz + ng };
+
+  double *rhox = (double*) malloc(ntot * sizeof(double));
+  cow_dfield_extract(rho, I0, I1, rhox);
+
+  FFT_DATA *rhok = _fwd(domain, rhox, 0, 1); // start, stride
+  FFT_DATA *phik = (FFT_DATA*) malloc(ntot * sizeof(FFT_DATA));
+
+  for (int i=0; i<nx; ++i) {
+    for (int j=0; j<ny; ++j) {
+      for (int k=0; k<nz; ++k) {
+	int m = i*ny*nz + j*nz + k;
+        double khat[3];
+        double k2 = pow(k_at_wspc(domain, i, j, k, khat), 2.0);
+	if (k2 > EFFECTIVELY_ZERO) {
+	  phik[m][0] = -rhok[m][0] / k2;
+	  phik[m][1] = -rhok[m][1] / k2;
+	}
+	else {
+	  phik[m][0] = 0.0;
+	  phik[m][1] = 0.0;
+	}
+      }
+    }
+  }
+
+  double *phix = _rev(domain, phik);
+  cow_dfield_replace(phi, I0, I1, phix);
+
+  free(rhox);
+  free(rhok);
+  free(phix);
+  free(phik);
+
+#endif // COW_FFTW
+}
+
 #if (COW_FFTW)
 #if (COW_MPI)
 struct fft_plan_3d *call_fft_plan_3d(cow_domain *d, int *nbuf)
@@ -498,10 +562,21 @@ double k_at(cow_domain *d, int i, int j, int k, double *kvec)
     ((k<=(Nz-1)/2) ? k : k-Nz);
   return sqrt(kvec[0]*kvec[0] + kvec[1]*kvec[1] + kvec[2]*kvec[2]);
 }
+double k_at_wspc(cow_domain *d, int i, int j, int k, double *kvec)
+// -----------------------------------------------------------------------------
+// Uses the physical domain lengths to scale the wave-numbers.
+// -----------------------------------------------------------------------------
+{
+  k_at(d, i, j, k, kvec);
+  kvec[0] *= 2 * M_PI / (d->glb_upper[0] - d->glb_lower[0]);
+  kvec[1] *= 2 * M_PI / (d->glb_upper[1] - d->glb_lower[1]);
+  kvec[2] *= 2 * M_PI / (d->glb_upper[2] - d->glb_lower[2]);
+  return sqrt(kvec[0]*kvec[0] + kvec[1]*kvec[1] + kvec[2]*kvec[2]);
+}
 double khat_at(cow_domain *d, int i, int j, int k, double *khat)
 {
   const double k0 = k_at(d, i, j, k, khat);
-  if (fabs(k0) > 1e-12) { // don't divide by zero
+  if (fabs(k0) > EFFECTIVELY_ZERO) { // don't divide by zero
     khat[0] /= k0;
     khat[1] /= k0;
     khat[2] /= k0;

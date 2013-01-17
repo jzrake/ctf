@@ -67,7 +67,7 @@ long long cow_domain_getnumlocalzonesincguard(cow_domain *d, int dim);
 long long cow_domain_getnumlocalzonesinterior(cow_domain *d, int dim);
 long long cow_domain_getnumglobalzones(cow_domain *d, int dim);
 int cow_domain_getglobalstartindex(cow_domain *d, int dim);
-int cow_domain_getgridspacing(cow_domain *d, int dim);
+double cow_domain_getgridspacing(cow_domain *d, int dim);
 int cow_domain_getcartrank(cow_domain *d);
 int cow_domain_getcartsize(cow_domain *d);
 int cow_domain_subgridatposition(cow_domain *d, double x, double y, double z);
@@ -119,6 +119,7 @@ void cow_dfield_reduce(cow_dfield *f, double *x);
 void cow_dfield_write(cow_dfield *f, char *fname);
 void cow_dfield_read(cow_dfield *f, char *fname);
 
+
 cow_histogram *cow_histogram_new(void);
 void cow_histogram_commit(cow_histogram *h);
 void cow_histogram_del(cow_histogram *h);
@@ -149,6 +150,7 @@ void cow_fft_reverse(cow_dfield *f, cow_dfield *fkre, cow_dfield *fkim);
 void cow_fft_pspecscafield(cow_dfield *f, cow_histogram *h);
 void cow_fft_pspecvecfield(cow_dfield *f, cow_histogram *h);
 void cow_fft_helmholtzdecomp(cow_dfield *f, int mode);
+void cow_fft_solvepoisson(cow_dfield *rho, cow_dfield *phi);
 
 void cow_trans_divcorner(double *result, double **args, int **s, void *u);
 void cow_trans_div5(double *result, double **args, int **s, void *u);
