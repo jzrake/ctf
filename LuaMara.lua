@@ -1,10 +1,9 @@
 
 local MPI    = require 'MPI'
-local hdf5   = require 'LuaHDF5'
-local buffer = require 'buffer'
 local array  = require 'array'
 local oo     = require 'class'
 local cow    = require 'cow'
+local hdf5   = require 'lua-hdf5.LuaHDF5'
 
 local function pretty_print(t, indent)
    local names = { }
