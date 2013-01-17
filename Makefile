@@ -19,12 +19,8 @@ GCC_OPT_SHARED = -shared
 LDSO = gcc $(LFLAGS) $(GCC_OPT_SHARED)
 
 ifeq ($(OS),Darwin)
-	LUAGL = luagl.bundle
-	LUAGLUT = luaglut.bundle
-	MEMARRAY = memarray.bundle
 	GCC_OPT_SHARED = -bundle -undefined dynamic_lookup
 	GL_LIBS = -framework OpenGL
-	# Default to Apple GLUT on Mac OS X (you can still use the others)
 	GLUT_LIBS = -framework GLUT
 endif
 
