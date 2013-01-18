@@ -1,6 +1,6 @@
 
-TSTDIR       ?= ../tests
-EXMDIR       ?= ../examples
+TSTDIR       ?= .
+EXMDIR       ?= .
 CC           ?= cc
 CFLAGS       ?= -Wall -O3
 
