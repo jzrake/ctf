@@ -15,10 +15,10 @@ FFT_I ?= -I$(FFT_HOME)/include
 
 INC = $(HDF_I) $(FFT_I)
 OPT = \
-	-DCOW_MPI=$(COW_MPI) \
-	-DCOW_HDF5=$(COW_HDF5) \
-	-DCOW_HDF5_MPI=$(COW_HDF5_MPI) \
-	-DCOW_FFTW=$(COW_FFTW)
+	-DCOW_MPI=$(USE_MPI) \
+	-DCOW_HDF5=$(USE_HDF5) \
+	-DCOW_HDF5_MPI=$(USE_MPIO) \
+	-DCOW_FFTW=$(USE_FFTW)
 
 OBJ = cow.o samp.o hist.o io.o fft.o fft_3d.o pack_3d.o remap_3d.o
 

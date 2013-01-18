@@ -32,9 +32,11 @@
 #define KILOBYTES (1<<10)
 #define MODULE "hdf5"
 
+#if (COW_HDF5)
 static void _io_write(cow_dfield *f, char *fname);
 static void _io_read(cow_dfield *f, char *fname);
 static int _io_check_file_exists(char *fname);
+#endif
 
 void _io_domain_commit(cow_domain *d)
 {
@@ -184,7 +186,7 @@ void cow_dfield_read(cow_dfield *f, char *fname)
 #endif
 }
 
-
+#if (COW_HDF5)
 void _io_write(cow_dfield *f, char *fname)
 // -----------------------------------------------------------------------------
 // This function uses a collective MPI-IO procedure to write the contents of
@@ -203,7 +205,6 @@ void _io_write(cow_dfield *f, char *fname)
 // running on a strange number of cores, and subdomain sizes are non-uniform.
 // -----------------------------------------------------------------------------
 {
-#if (COW_HDF5)
   cow_domain *d = f->domain;
   char **pnames = f->members;
   void *data = f->data;
@@ -271,12 +272,12 @@ void _io_write(cow_dfield *f, char *fname)
     }
   }
 #endif // !COW_HDF5_MPI && COW_MPI
-#endif
 }
+#endif
 
+#if (COW_HDF5)
 void _io_read(cow_dfield *f, char *fname)
 {
-#if (COW_HDF5)
   cow_domain *d = f->domain;
   char **pnames = f->members;
   void *data = f->data;
@@ -334,8 +335,9 @@ void _io_read(cow_dfield *f, char *fname)
     }
   }
 #endif // !COW_HDF5_MPI && COW_MPI
-#endif
 }
+#endif
+
 int _io_check_file_exists(char *fname)
 {
   FILE *testf = fopen(fname, "r");
