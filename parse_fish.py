@@ -62,7 +62,6 @@ for line in fishh:
             ga = """fish_riemn *%s = *((fish_riemn**) """\
                 """luaL_checkudata(L, %d, "fish::riemn"));""" % (argname, narg)
         elif argtype == "fluids_state **":
-            print argname
             ga = """fluids_state **%s = (fluids_state**) lua_touserdata(L, %d);"""\
                 % (argname, narg)
         elif argtype == "long":
@@ -114,7 +113,7 @@ for fbody in fbodies:
 
 wrap.write("\nstatic luaL_Reg fish_module_funcs[] = {\n")
 for f in wrapped:
-    wrap.write("""    {"%s", _%s},\n""" % (f[7:], f))
+    wrap.write("""    {"%s", _%s},\n""" % (f[5:], f))
 wrap.write("    {NULL, NULL}};\n")
 
 wrap.write("static void register_constants(lua_State *L)\n{\n")
