@@ -5,7 +5,21 @@
 #include "lualib.h"
 #include "lauxlib.h"
 
-
+/*
+ * -----------------------------------------------------------------------------
+ * The [descr|state|riemn]_light function serve two purposes:
+ *
+ * 1. If no argument is given, they return a NULL pointer having the type of the
+ *    corresponding struct. That instance may be used as an alias to an
+ *    initialized instance, for example through fluids_getdescr(real_descr,
+ *    light_descr). Only the real one should be free'd.
+ *
+ * 2. If the argument is an instance of the corresponding struct, then a
+ *    lightuserdata representing the address of the struct itself (rather than
+ *    Lua's full user data containing it) is returned.
+ *
+ * -----------------------------------------------------------------------------
+ */
 #define FLUIDS_STRUCT_TYPE(s)						\
   static void luafluids_push_fluids_##s(lua_State *L, fluids_##s *ini)	\
   {                                                                     \
@@ -21,9 +35,15 @@
   }                                                                     \
   static int _fluids_##s##_light(lua_State *L)				\
   {                                                                     \
-    fluids_##s **ud = (fluids_##s**) luaL_checkudata(L, 1, "fluids::"#s); \
-      lua_pushlightuserdata(L, *ud);					\
-      return 1;								\
+    if (lua_isnoneornil(L, 1)) {					\
+      luafluids_push_fluids_##s(L, NULL);				\
+	return 1;							\
+    }									\
+    else {								\
+      fluids_##s **ud = (fluids_##s**) luaL_checkudata(L, 1, "fluids::"#s); \
+	lua_pushlightuserdata(L, *ud);					\
+	return 1;							\
+    }									\
   }
 
 FLUIDS_STRUCT_TYPE(descr)
