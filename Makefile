@@ -1,25 +1,41 @@
 
-TSTDIR       ?= .
-EXMDIR       ?= .
-CC           ?= cc
-CFLAGS       ?= -Wall -O3
+MAKEFILE_IN = Makefile.in
+include $(MAKEFILE_IN)
+
+RM ?= rm -f
+AR ?= ar
+ARSTATIC ?= $(AR) rcu
+CFLAGS ?= -Wall
+CFLAGS += -std=c99
+
+FLUIDS_A = libfluids.a
+FISH_A = libfish.a
+LUA_I ?= -I$(LUA_HOME)/include
 
 OBJ = fish.o reconstruct.o fluids.o riemann.o matrix.o
-EXE = $(TSTDIR)/testfish $(TSTDIR)/testfluids $(EXMDIR)/euler
 
-default : $(EXE)
+default : $(FLUIDS_A) lua-fluids.o $(FISH_A) lua-fish.o
 
 %.o : %.c
-	$(CC) $(CFLAGS) -o $@ $< -c -std=c99
+	$(CC) $(CFLAGS) -c $^ $(INC)
 
-$(EXMDIR)/euler : euler.o $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^
+$(FLUIDS_A) : $(OBJ)
+	$(ARSTATIC) $@ $?
 
-$(TSTDIR)/testfish : testfish.o $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^
+$(FISH_A) : $(OBJ)
+	$(ARSTATIC) $@ $?
 
-$(TSTDIR)/testfluids : testfluids.o $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^
+fluidsfuncs.c : fluids.h parse_fluids.py
+	python parse_fluids.py
+
+fishfuncs.c : fish.h parse_fish.py
+	python parse_fish.py
+
+lua-fluids.o : lua-fluids.c fluidsfuncs.c
+	$(CC) $(CFLAGS) -c $< $(LUA_I)
+
+lua-fish.o : lua-fish.c fishfuncs.c
+	$(CC) $(CFLAGS) -c $< $(LUA_I)
 
 clean :
-	@rm -rf $(EXE) *.o
+	$(RM) $(FLUIDS_A) $(OBJ) fluidsfuncs.c lua-fluids.o fishfuncs.c lua-fish.o
