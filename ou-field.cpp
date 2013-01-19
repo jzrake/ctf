@@ -39,9 +39,9 @@ StochasticVectorField2d::StochasticVectorField2d(double P0, double zeta, int k1,
       Ky[m] = 2*M_PI*j;
 
       const double K[2] = { Kx[m].real(), Ky[m].real() };
-      const double k = sqrt(K[0]*K[0] + K[1]*K[1]);
+      const double k0 = sqrt(K[0]*K[0] + K[1]*K[1]);
 
-      totpower += PS ? PS(k) : 1.0;
+      totpower += PS ? PS(k0) : 1.0;
     }
   }
 
@@ -77,9 +77,9 @@ StochasticVectorField3d::StochasticVectorField3d(double P0, double zeta, int k1,
         Kz[m] = 2*M_PI*k;
 
         const double K[3] = { Kx[m].real(), Ky[m].real(), Kz[m].real() };
-        const double k = sqrt(K[0]*K[0] + K[1]*K[1] + K[2]*K[2]);
+        const double k0 = sqrt(K[0]*K[0] + K[1]*K[1] + K[2]*K[2]);
 
-        totpower += PS ? PS(k) : 1.0;
+        totpower += PS ? PS(k0) : 1.0;
       }
     }
   }
