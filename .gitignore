@@ -1,0 +1,16 @@
+/Makefile.in
+*.o
+*.a
+*funcs.c
+/lua-5.2.1/bin/lua
+/lua-5.2.1/bin/luac
+/lua-5.2.1/include/lauxlib.h
+/lua-5.2.1/include/lua.h
+/lua-5.2.1/include/lua.hpp
+/lua-5.2.1/include/luaconf.h
+/lua-5.2.1/include/lualib.h
+/lua-5.2.1/man/man1/lua.1
+/lua-5.2.1/man/man1/luac.1
+/lua-5.2.1/src/lua
+/lua-5.2.1/src/luac
+/main
