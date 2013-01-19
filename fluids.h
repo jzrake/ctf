@@ -96,6 +96,7 @@ enum { phi=0, gph=1, phd=4, gpd=5 };       // Gravity
 typedef struct fluids_descr fluids_descr;
 typedef struct fluids_cache fluids_cache;
 typedef struct fluids_state fluids_state;
+typedef struct fluids_svect fluids_svect;
 typedef struct fluids_riemn fluids_riemn;
 
 
@@ -142,7 +143,6 @@ int fluids_riemn_execute(fluids_riemn *R);
 int fluids_riemn_sample(fluids_riemn *R, fluids_state *S, double s);
 int fluids_riemn_getsolver(fluids_riemn *R, int *solver);
 int fluids_riemn_setsolver(fluids_riemn *R, int solver);
-
 
 #ifdef FLUIDS_PRIVATE_DEFS
 
@@ -196,5 +196,4 @@ struct fluids_state {
 #define DEALLOC 0
 
 #endif // FLUIDS_PRIVATE_DEFS
-
 #endif // FLUIDS_HEADER_INCLUDED

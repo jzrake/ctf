@@ -35,11 +35,10 @@ for line in fishh:
     retval, funcname, argstr = m.groups()
 
     args = argstr[1:-1].split(',')
-    if not args[0].startswith('fish'):
-        continue
     getargs = [ ]
     argnames = [ ]
     narg = 1
+
     for arg in args:
         argtype, argname = arg.split()[:-1], arg.split()[-1]
         argtype = ''.join(argtype)

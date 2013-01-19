@@ -11,7 +11,7 @@ CFLAGS += -std=c99
 FISH_A = libfish.a
 LUA_I ?= -I$(LUA_HOME)/include
 
-OBJ = fish.o reconstruct.o fluids.o riemann.o matrix.o
+OBJ = fish.o reconstruct.o fluids.o riemann.o matrix.o euler.o
 
 default : $(FISH_A) lua-fluids.o lua-fish.o
 
