@@ -80,6 +80,7 @@ extern "C"
   static int luaC_set_advance(lua_State *L);
   static int luaC_set_driving(lua_State *L);
   static int luaC_set_cooling(lua_State *L);
+  static int luaC_set_primitive(lua_State *L);
   static int luaC_cooling_rate(lua_State *L);
   static int luaC_config_solver(lua_State *L);
 
@@ -153,6 +154,7 @@ int luaopen_Mara(lua_State *L)
     {"set_advance"  , luaC_set_advance},
     {"set_driving"  , luaC_set_driving},
     {"set_cooling"  , luaC_set_cooling},
+    {"set_primitive", luaC_set_primitive},
     {"config_solver", luaC_config_solver},
 
     {"cooling_rate" , luaC_cooling_rate},
@@ -351,6 +353,7 @@ int luaC_Mara_diffuse(lua_State *L)
   Mara->godunov->PrimToCons(P, U);
   U += Mara->godunov->LaxDiffusion(U, r);
   Mara->godunov->ConsToPrim(U, P);
+  memcpy(UserPrim, &P[0], N * sizeof(double));
 
   return 0;
 }
@@ -1105,6 +1108,19 @@ int luaC_set_cooling(lua_State *L)
     if (Mara->cooling) delete Mara->cooling;
     Mara->cooling = new_f;
   }
+  return 0;
+}
+
+int luaC_set_primitive(lua_State *L)
+{
+  double *UserPrim = (double*) lua_touserdata(L, 1);
+  unsigned N = lua_rawlen(L, 1) / sizeof(double); // total number of zones
+  unsigned N_needed = Mara->domain->GetNumberOfZones() * Mara->domain->get_Nq();
+  if (N != N_needed) {
+    luaL_error(L, "[Mara] primitive has the wrong size for the domain");
+  }
+  Mara->PrimitiveArray.resize(N);
+  memcpy(&Mara->PrimitiveArray[0], UserPrim, N * sizeof(double));
   return 0;
 }
 
