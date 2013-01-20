@@ -31,6 +31,8 @@ local RunArgs = {
    drive   = true,     -- set to false to disable driving
 }
 
+local PowerSpectrumFile = "power_spectrum.h5"
+
 -- *****************************************************************************
 -- Process command line options
 -- .............................................................................
@@ -51,6 +53,73 @@ local function process_cmdline()
 	 end
       end
    end
+end
+
+
+-- *****************************************************************************
+-- Take power spectrum
+-- .............................................................................
+local function PowerSpectrum(primitive, which, gname)
+   local start = os.clock()
+   local binloc, binval
+   local fname = PowerSpectrumFile
+   if which == 'velocity' then
+      local velocity = LuaMara.MaraDataManager(primitive.domain, {'vx','vy','vz'})
+      local P = primitive.array
+      local V = velocity.array
+      V[{nil,nil,nil,{0,1}}] = P[{nil,nil,nil,{2,3}}]
+      V[{nil,nil,nil,{1,2}}] = P[{nil,nil,nil,{3,4}}]
+      V[{nil,nil,nil,{2,3}}] = P[{nil,nil,nil,{4,5}}]
+      binloc, binval = velocity:power_spectrum(128)
+   elseif which == 'magnetic' then
+      local magnetic = LuaMara.MaraDataManager(primitive.domain, {'Bx','By','Bz'})
+      local P = primitive.array
+      local B = magnetic.array
+      B[{nil,nil,nil,{0,1}}] = P[{nil,nil,nil,{5,6}}]
+      B[{nil,nil,nil,{1,2}}] = P[{nil,nil,nil,{6,7}}]
+      B[{nil,nil,nil,{2,3}}] = P[{nil,nil,nil,{7,8}}]
+      binloc, binval = magnetic:power_spectrum(128)
+   elseif which == 'kinetic' then
+      local kinetic = LuaMara.MaraDataManager(primitive.domain, {'Kx','Ky','Kz'})
+      local P = primitive.array
+      local K = kinetic.array
+      local S = K:shape()
+      local vx = array.array{S[1], S[2], S[3]}
+      local vy = array.array{S[1], S[2], S[3]}
+      local vz = array.array{S[1], S[2], S[3]}
+      local D0 = array.array{S[1], S[2], S[3]}
+      -- ****** EXPOSES MEMORY ERRORS IN BUFFER.COPY ****** [BEGIN] --
+      if false then
+	 D0[nil] = P[{nil,nil,nil,{0,1}}]
+	 vx[nil] = P[{nil,nil,nil,{2,3}}]
+	 vy[nil] = P[{nil,nil,nil,{3,4}}]
+	 vz[nil] = P[{nil,nil,nil,{4,5}}]
+	 local D0_vec = D0:vector()
+	 local vx_vec = vx:vector()
+	 local vy_vec = vy:vector()
+	 local vz_vec = vz:vector()
+	 for i=0,#D0_vec-1 do
+	    vx_vec[i] = vx_vec[i] * (0.5 * D0_vec[i])^0.5
+	    vy_vec[i] = vy_vec[i] * (0.5 * D0_vec[i])^0.5
+	    vz_vec[i] = vz_vec[i] * (0.5 * D0_vec[i])^0.5
+	 end
+	 K[{nil,nil,nil,{0,1}}] = vx
+	 K[{nil,nil,nil,{1,2}}] = vy
+	 K[{nil,nil,nil,{2,3}}] = vz
+      end
+      -- ****** EXPOSES MEMORY ERRORS IN BUFFER.COPY ****** [END] --
+      return
+   end
+   if cow.domain_getcartrank(primitive.domain) == 0 then
+      local h5f = hdf5.File(fname, 'r+')
+      local grp = hdf5.Group(h5f, gname)
+      local sgr = hdf5.Group(grp, which)
+      sgr['binloc'] = binloc
+      sgr['binval'] = binval
+      h5f:close()
+   end
+   print(string.format("[Mara] PowerSpectrum took %f seconds",
+		       os.clock() - start))
 end
 
 
@@ -240,12 +309,13 @@ local function RunSimulation(Primitive, Status, MeasureLog, Howlong)
 	 Status.LastMeasurementTime = Status.CurrentTime
       end
 
-      -- if Status.Iteration % RunArgs.pspec == 0 and RunArgs.pspec ~= 0 then
-      -- 	 local fname = string.format("data/%s/power_spectrum.h5", RunArgs.id)
-      -- 	 pspec.velocity(fname, Status, "w")
-      -- 	 pspec.magnetic(fname, Status, "r+")
-      -- 	 pspec.kinetic(fname, Status, "r+")
-      -- end
+      if Status.Iteration % RunArgs.pspec == 0 and RunArgs.pspec ~= 0 then
+       	 local fname = string.format("data/%s/power_spectrum.h5", RunArgs.id)
+	 local gname = string.format("pspec-%05d", Status.Iteration)
+       	 PowerSpectrum(Primitive, 'magnetic', gname)
+       	 PowerSpectrum(Primitive, 'velocity', gname)
+       	 PowerSpectrum(Primitive, 'kinetic', gname)
+      end
 
       -- 'attempt' == 0 when the previous iteration completed without errors
       -- .......................................................................
@@ -463,12 +533,21 @@ local function main()
       Status, MeasureLog = CheckpointRead(RunArgs.restart, primitive)
    end
 
-   local pvec = primitive.array[{{},{},{},{0,1}}]:vector()
+   PowerSpectrumFile = string.format("data/%s/power_spectrum.h5", RunArgs.id)
    local datadir = string.format("data/%s", RunArgs.id)
+
    if cow.domain_getcartrank(domain) == 0 then
       os.execute(string.format("mkdir -p %s", datadir))
+      if RunArgs.pspec ~= 0 then
+	 local testf = io.open(PowerSpectrumFile, "r")
+	 if not testf then
+	    local h5f = hdf5.File(PowerSpectrumFile, "w")
+	    h5f:close()
+	 else
+	    testf:close()
+	 end
+      end
    end
-
 
    Mara.show()
    Mara.units.Print()
@@ -500,20 +579,3 @@ end
 
 main()
 
-
-
---   primitive:write('chkpt.0001.h5', {group='prim'})
---   velocity:write('velocity.h5')
---   local binloc, binval = velocity:power_spectrum(64)
-
---   V[{nil,nil,nil,{0,1}}] = P[{nil,nil,nil,{2,3}}]
---   V[{nil,nil,nil,{1,2}}] = P[{nil,nil,nil,{3,4}}]
---   V[{nil,nil,nil,{2,3}}] = P[{nil,nil,nil,{4,5}}]
-
---   if cow.domain_getcartrank(domain) == 0 then
---      local h5f = hdf5.File('power_spectrum.h5', 'w')
---      local grp = hdf5.Group(h5f, '0000')
---      grp['binloc'] = binloc
---      grp['binval'] = binval
---      h5f:close()
---   end
