@@ -6,6 +6,7 @@ local Mara    = require 'Mara'
 local LuaMara = require 'Mara.LuaMara'
 local array   = require 'array'
 local json    = require 'json'
+local util    = require 'util'
 
 local RunArgs = {
    N       = 16,
@@ -25,7 +26,6 @@ local RunArgs = {
    shen    = false,
    eosfile = "none",   -- i.e. nseos.h5
    fluid   = "rmhd",   -- euler, srhd, rmhd
-   samps   = 0,        -- samps > 0 indicates logging `samps` points per timestep
    pspec   = 0,        -- pspec > 0 take power spectra every that many iterations
    problem = "drvtrb", -- or KH
    drive   = true,     -- set to false to disable driving
@@ -53,37 +53,6 @@ local function process_cmdline()
    end
 end
 
--- *****************************************************************************
--- Utility to print tables
--- .............................................................................
-function pretty_print(t, indent)
-   local names = { }
-   if not indent then indent = "" end
-   for n,g in pairs(t) do
-      table.insert(names,n)
-   end
-   table.sort(names)
-   for i,n in pairs(names) do
-      local v = t[n]
-      if type(v) == "table" then
-	 if(v==t) then
-	    print(indent..tostring(n)..": <-")
-	 else
-	    print(indent..tostring(n)..":")
-	    pretty_print(v,indent.."   ")
-	 end
-      else
-	 if type(v) == "function" then
-	    print(indent..tostring(n).."()")
-	 elseif type(v) == 'number' and (math.log10(v) > 2 or
-					 math.log10(v) < -2) then
-	    print(indent..tostring(n)..": "..string.format("%3.2e", v))
-	 else
-	    print(indent..tostring(n)..": "..tostring(v))
-	 end
-      end
-   end
-end
 
 -- *****************************************************************************
 -- Function to collect all available measurements from Mara
@@ -92,18 +61,18 @@ local function Measurements(Status)
    local meas = { }
    local dtmeas = Status.CurrentTime - Status.LastMeasurementTime
 
-   meas.U                    = measure_mean_cons():astable()
-   meas.P                    = measure_mean_prim():astable()
+   meas.U                    = Mara.measure.mean_cons()
+   meas.P                    = Mara.measure.mean_prim()
 
-   meas.energies             = measure_mean_energies()
-   meas.mean_velocity        = measure_mean_velocity():astable()
+   meas.energies             = Mara.measure.mean_energies()
+   meas.mean_velocity        = Mara.measure.mean_velocity()
 
-   meas.mean_T, meas.max_T   = measure_mean_max_temperature()
-   meas.mean_B, meas.max_B   = measure_mean_max_magnetic_field()
-   meas.mean_Ms, meas.max_Ms = measure_mean_max_sonic_mach()
-   meas.mean_Ma, meas.min_Ma = measure_mean_min_alfvenic_mach()
-   meas.max_lorentz_factor   = measure_max_lorentz_factor()
-   meas.cooling_rate         = cooling_rate(dtmeas)
+   meas.mean_T, meas.max_T   = Mara.measure.mean_max_temperature()
+   meas.mean_B, meas.max_B   = Mara.measure.mean_max_magnetic_field()
+   meas.mean_Ms, meas.max_Ms = Mara.measure.mean_max_sonic_mach()
+   meas.mean_Ma, meas.min_Ma = Mara.measure.mean_min_alfvenic_mach()
+   meas.max_lorentz_factor   = Mara.measure.max_lorentz_factor()
+   meas.cooling_rate         = Mara.cooling_rate(dtmeas)
 
    meas.Status = util.deepcopy(Status)
    return meas
@@ -113,7 +82,7 @@ end
 -- *****************************************************************************
 -- Error handlers for different fluids
 -- .............................................................................
-local function HandleErrorsEuler(Status, attempt)
+local function HandleErrorsEuler(P, Status, attempt)
    set_advance("rk4")
    if attempt == 0 then -- healthy time-step
       set_riemann("hllc")
@@ -125,7 +94,7 @@ local function HandleErrorsEuler(Status, attempt)
    end
 end
 
-local function HandleErrorsSrhd(Status, attempt)
+local function HandleErrorsSrhd(P, Status, attempt)
    if attempt == 0 then -- healthy time-step
       set_advance("rk3")
       set_godunov("weno-split")
@@ -133,28 +102,28 @@ local function HandleErrorsSrhd(Status, attempt)
       return 0
    elseif attempt == 1 then
       Status.Timestep = 0.5 * Status.Timestep
-      diffuse(0.2)
+      diffuse(P:buffer(), 0.2)
       return 0
    elseif attempt == 2 then
       Status.Timestep = 0.5 * Status.Timestep
-      diffuse(0.2)
+      diffuse(P:buffer(), 0.2)
       return 0
    elseif attempt == 3 then
       set_godunov("plm-split")
       set_riemann("hll")
       Status.Timestep = 0.5 * Status.Timestep
-      diffuse(0.2)
+      diffuse(P:buffer(), 0.2)
       return 0
    elseif attempt == 4 then
       Status.Timestep = 0.5 * Status.Timestep
-      diffuse(0.2)
+      diffuse(P:buffer(), 0.2)
       return 0
    else
       return 1
    end
 end
 
-local function HandleErrorsRmhd(Status, attempt)
+local function HandleErrorsRmhd(P, Status, attempt)
    Mara.set_advance("single")
    if attempt == 0 then -- healthy time-step
       Mara.set_godunov("plm-muscl")
@@ -163,31 +132,30 @@ local function HandleErrorsRmhd(Status, attempt)
       Status.Timestep = 1.0 * Status.Timestep
       return 0
    elseif attempt == 1 then
-      return 1
---      Mara.set_godunov("plm-muscl")
---      Mara.config_solver({theta=1.5}, true)
---      Mara.diffuse(0.2)
---      Status.Timestep = 0.5 * Status.Timestep
---      return 0
+      Mara.set_godunov("plm-muscl")
+      Mara.config_solver({theta=1.5}, true)
+      Mara.diffuse(P:buffer(), 0.2)
+      Status.Timestep = 0.5 * Status.Timestep
+      return 0
    elseif attempt == 2 then
       Mara.set_godunov("plm-muscl")
       Mara.config_solver({theta=1.0}, true)
-      Mara.diffuse(0.2)
+      Mara.diffuse(P:buffer(), 0.2)
       Status.Timestep = 0.5 * Status.Timestep
       return 0
    elseif attempt == 3 then
       Mara.set_godunov("plm-muscl")
       Mara.config_solver({theta=0.0}, true)
       Mara.set_riemann("hll")
-      Mara.diffuse(0.2)
+      Mara.diffuse(P:buffer(), 0.2)
       Status.Timestep = 0.5 * Status.Timestep
       return 0
    elseif attempt == 4 then
-      Mara.diffuse(0.2)
+      Mara.diffuse(P:buffer(), 0.2)
       Status.Timestep = 0.5 * Status.Timestep
       return 0
    elseif attempt == 5 then
-      Mara.diffuse(0.2)
+      Mara.diffuse(P:buffer(), 0.2)
       Status.Timestep = 0.5 * Status.Timestep
       return 0
    else
@@ -239,7 +207,7 @@ end
 -- *****************************************************************************
 -- Main driver, operates between checkpoints and then returns
 -- .............................................................................
-local function RunSimulation(Primitive, Status, Howlong)
+local function RunSimulation(Primitive, Status, MeasureLog, Howlong)
 
    local t0 = Status.CurrentTime
    local attempt = 0
@@ -251,6 +219,7 @@ local function RunSimulation(Primitive, Status, Howlong)
    while Status.CurrentTime - t0 < Howlong do
       collectgarbage()
 
+      local P = Primitive.array:buffer()
       local stopfname = string.format("data/%s/MARA_STOP", RunArgs.id)
       local stopfile = io.open(stopfname, "r")
       if stopfile then
@@ -265,10 +234,11 @@ local function RunSimulation(Primitive, Status, Howlong)
 
       -- Measurements are made at the beginning of the timestep
       -- .......................................................................
-
-      -- if Status.Iteration % 10 == 0 then
-      -- 	 MeasureLog[Status.Iteration] = Measurements(Status)
-      -- end
+      if Status.Iteration % 10 == 0 then
+	 Mara.set_primitive(P)
+       	 MeasureLog[Status.Iteration] = Measurements(Status)
+	 Status.LastMeasurementTime = Status.CurrentTime
+      end
 
       -- if Status.Iteration % RunArgs.pspec == 0 and RunArgs.pspec ~= 0 then
       -- 	 local fname = string.format("data/%s/power_spectrum.h5", RunArgs.id)
@@ -277,21 +247,13 @@ local function RunSimulation(Primitive, Status, Howlong)
       -- 	 pspec.kinetic(fname, Status, "r+")
       -- end
 
-      -- if RunArgs.samps > 0 then
-      -- 	 PointsSampler:append_new_samples(Status)
-      -- 	 if #PointsSampler.points > PointsSampler.cache_size then
-      -- 	    PointsSampler:purge(Status)
-      -- 	 end
-      -- end
-
       -- 'attempt' == 0 when the previous iteration completed without errors
       -- .......................................................................
-      if ErrorHandlers[RunArgs.fluid](Status, attempt) ~= 0 then
+      if ErrorHandlers[RunArgs.fluid](P, Status, attempt) ~= 0 then
 	 return 1
       end
       attempt = attempt + 1
 
-      local P = Primitive.array:buffer()
       local dt = Status.Timestep
       local kzps, errors = Mara.advance(P, dt)
 
@@ -513,12 +475,12 @@ local function main()
    print('\n\t***************************')
    print('\tRuntime arguments:')
    print('\t***************************')
-   pretty_print(RunArgs, '\t')
+   util.pretty_print(RunArgs, '\t')
    print('\t***************************\n')
 
 
    while Status.CurrentTime < RunArgs.tmax do
-      local error = RunSimulation(primitive, Status, RunArgs.cpi)
+      local error = RunSimulation(primitive, Status, MeasureLog, RunArgs.cpi)
       if error == "STOP" then
 	 print("exiting upon request\n")
 	 CheckpointWrite(primitive, Status, MeasureLog, "stop")
