@@ -71,6 +71,11 @@ local function PowerSpectrum(primitive, which, gname)
       V[{nil,nil,nil,{1,2}}] = P[{nil,nil,nil,{3,4}}]
       V[{nil,nil,nil,{2,3}}] = P[{nil,nil,nil,{4,5}}]
       binloc, binval = velocity:power_spectrum(128)
+
+      local c = 1.0 / Mara.units.Velocity()
+      for i=0,#binval-1 do
+	 binval[i] = binval[i] * (c^2)
+      end
    elseif which == 'magnetic' then
       local magnetic = LuaMara.MaraDataManager(primitive.domain, {'Bx','By','Bz'})
       local P = primitive.array
@@ -79,6 +84,11 @@ local function PowerSpectrum(primitive, which, gname)
       B[{nil,nil,nil,{1,2}}] = P[{nil,nil,nil,{6,7}}]
       B[{nil,nil,nil,{2,3}}] = P[{nil,nil,nil,{7,8}}]
       binloc, binval = magnetic:power_spectrum(128)
+
+      local f = 1.0 / Mara.units.Gauss() / (8*math.pi)^0.5
+      for i=0,#binval-1 do
+	 binval[i] = binval[i] * (f^2)
+      end
    elseif which == 'kinetic' then
       local kinetic = LuaMara.MaraDataManager(primitive.domain, {'Kx','Ky','Kz'})
       local P = primitive.array
@@ -88,27 +98,30 @@ local function PowerSpectrum(primitive, which, gname)
       local vy = array.array{S[1], S[2], S[3]}
       local vz = array.array{S[1], S[2], S[3]}
       local D0 = array.array{S[1], S[2], S[3]}
-      -- ****** EXPOSES MEMORY ERRORS IN BUFFER.COPY ****** [BEGIN] --
-      if false then
-	 D0[nil] = P[{nil,nil,nil,{0,1}}]
-	 vx[nil] = P[{nil,nil,nil,{2,3}}]
-	 vy[nil] = P[{nil,nil,nil,{3,4}}]
-	 vz[nil] = P[{nil,nil,nil,{4,5}}]
-	 local D0_vec = D0:vector()
-	 local vx_vec = vx:vector()
-	 local vy_vec = vy:vector()
-	 local vz_vec = vz:vector()
-	 for i=0,#D0_vec-1 do
-	    vx_vec[i] = vx_vec[i] * (0.5 * D0_vec[i])^0.5
-	    vy_vec[i] = vy_vec[i] * (0.5 * D0_vec[i])^0.5
-	    vz_vec[i] = vz_vec[i] * (0.5 * D0_vec[i])^0.5
-	 end
-	 K[{nil,nil,nil,{0,1}}] = vx
-	 K[{nil,nil,nil,{1,2}}] = vy
-	 K[{nil,nil,nil,{2,3}}] = vz
+      D0[nil] = P[{nil,nil,nil,{0,1}}]
+      vx[nil] = P[{nil,nil,nil,{2,3}}]
+      vy[nil] = P[{nil,nil,nil,{3,4}}]
+      vz[nil] = P[{nil,nil,nil,{4,5}}]
+      local D0_vec = D0:vector()
+      local vx_vec = vx:vector()
+      local vy_vec = vy:vector()
+      local vz_vec = vz:vector()
+      for i=0,#D0_vec-1 do
+	 local a = (0.5 * D0_vec[i])^0.5
+	 vx_vec[i] = vx_vec[i] * a
+	 vy_vec[i] = vy_vec[i] * a
+	 vz_vec[i] = vz_vec[i] * a
       end
-      -- ****** EXPOSES MEMORY ERRORS IN BUFFER.COPY ****** [END] --
-      return
+      K[{nil,nil,nil,{0,1}}] = vx
+      K[{nil,nil,nil,{1,2}}] = vy
+      K[{nil,nil,nil,{2,3}}] = vz
+      binloc, binval = kinetic:power_spectrum(128)
+
+      local c = 1.0 / Mara.units.Velocity()
+      local d = 1.0 / Mara.units.GramsPerCubicCentimeter()
+      for i=0,#binval-1 do
+	 binval[i] = binval[i] * (c * d^2)
+      end
    end
    if cow.domain_getcartrank(primitive.domain) == 0 then
       local h5f = hdf5.File(fname, 'r+')
