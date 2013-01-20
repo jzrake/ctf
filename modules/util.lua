@@ -29,13 +29,13 @@ end
 -- *****************************************************************************
 -- Utility to print tables
 -- .............................................................................
-function util.pretty_print(t, indent)
+function util.pretty_print(t, indent, compare)
    local names = { }
    if not indent then indent = "" end
    for n,g in pairs(t) do
       table.insert(names,n)
    end
-   table.sort(names)
+   table.sort(names, compare)
    for i,n in pairs(names) do
       local v = t[n]
       if type(v) == "table" then
