@@ -224,7 +224,7 @@ int advance()
   return 0;
 }
 
-int fish_run_euler(double *prim, double *grav)
+int fish_run_grav1d(double *prim, double *grav)
 {
   double t = 0.0;
   init();

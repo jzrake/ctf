@@ -15,14 +15,14 @@ ifeq ($(strip $(USE_FFTW)), 1)
 INC += -I$(FFT_HOME)/include
 endif
 
-OBJ = fish.o reconstruct.o fluids.o riemann.o matrix.o euler.o
+OBJ = fish.o reconstruct.o fluids.o riemann.o matrix.o grav1d.o
 
 default : $(FISH_A) lua-fluids.o lua-fish.o
 
 %.o : %.c
 	$(CC) $(CFLAGS) -c $^ $(LUA_I)
 
-euler.o : euler.c
+grav1d.o : grav1d.c
 	$(CC) $(CFLAGS) -c $^ $(LUA_I) $(INC)
 
 $(FISH_A) : $(OBJ)
