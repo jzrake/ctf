@@ -15,14 +15,15 @@ static double dt = 0.001;
 void init()
 {
   descr = fluids_descr_new();
-  fluids_descr_setfluid(descr, FLUIDS_NRHYD);
+  fluids_descr_setfluid(descr, FLUIDS_GRAVS);
   fluids_descr_setgamma(descr, 1.4);
   fluids_descr_seteos(descr, FLUIDS_EOS_GAMMALAW);
+  fluids_descr_setrhobar(descr, 1.0);
 
   for (int n=0; n<100; ++n) {
     double P[5] = {0, 0, 0, 0, 0};
-    //    double G[4] = {0, 0, 0, 0};
-    if (n<50) {
+    double G[4] = {0, 0, 0, 0};
+    if (n<100) {
       P[0] = 1.0;
       P[1] = 1.0;
     }
@@ -30,10 +31,17 @@ void init()
       P[0] = 0.125;
       P[1] = 0.1;
     }
+
+    double A = 0.1;
+    double sig = 0.01;
+    double x = n * dx - 0.5;
+    G[0] = A * exp(-x*x / sig);
+    G[1] = A * exp(-x*x / sig) * (-2.0 * x / sig);
+
     fluid[n] = fluids_state_new();
     fluids_state_setdescr(fluid[n], descr);
     fluids_state_setattr(fluid[n], P, FLUIDS_PRIMITIVE);
-    //    fluids_state_setattr(fluid[n], G, FLUIDS_GRAVITY);
+    fluids_state_setattr(fluid[n], G, FLUIDS_GRAVITY);
   }
 }
 
@@ -48,8 +56,8 @@ void finish()
 int timederiv(double *L)
 {
   fish_state *S = fish_new();
-  fish_setparami(S, FISH_WENO5, FISH_RECONSTRUCTION);
-  fish_setparami(S, FLUIDS_RIEMANN_EXACT, FISH_RIEMANN_SOLVER);
+  fish_setparami(S, FISH_PLM, FISH_RECONSTRUCTION);
+  fish_setparami(S, FLUIDS_RIEMANN_HLLC, FISH_RIEMANN_SOLVER);
   fish_setparami(S, FISH_SPECTRAL, FISH_SOLVER_TYPE);
   fish_setparamd(S, 2.0, FISH_PLM_THETA);
 
@@ -59,17 +67,24 @@ int timederiv(double *L)
   int nzone = 100;
   fish_timederivative(S, fluid, 1, &nzone, &dx, L);
 
-  /*
-  double Fiph[500];
-  fish_intercellflux(S, fluid, Fiph, 100, 0);
-
-  for (int n=3; n<100-3; ++n) {
+  double source[5];
+  for (int i=0; i<100; ++i) {
+    fluids_state_derive(fluid[i], source, FLUIDS_SOURCETERMS);
     for (int q=0; q<5; ++q) {
-      L[5*n + q] = -(Fiph[5*n + q] - Fiph[5*(n-1) + q]) / dx;
+      L[5*i + q] += source[q];
     }
   }
+  // periodic BC's
+  /*
+  for (int q=0; q<5; ++q) {
+    L[5* 0 + q] = L[5*94 + q];
+    L[5* 1 + q] = L[5*95 + q];
+    L[5* 2 + q] = L[5*96 + q];
+    L[5*97 + q] = L[5* 3 + q];
+    L[5*98 + q] = L[5* 4 + q];
+    L[5*99 + q] = L[5* 5 + q];
+  }
   */
-
   for (int q=0; q<5; ++q) {
     L[5* 0 + q] = 0.0;
     L[5* 1 + q] = 0.0;
@@ -78,6 +93,7 @@ int timederiv(double *L)
     L[5*98 + q] = 0.0;
     L[5*99 + q] = 0.0;
   }
+
   fish_del(S);
   return 0;
 }
@@ -117,7 +133,7 @@ int fish_run_euler(double *result)
 {
   double t = 0.0;
   init();
-  for (int n=0; n<80; ++n) {
+  for (int n=0; n<1000; ++n) {
     clock_t start = clock();
     advance();
     t += dt;

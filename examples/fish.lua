@@ -10,3 +10,5 @@ fish.run_euler(P:buffer())
 local outfile = hdf5.File('euler.h5', 'w')
 outfile['prim'] = P
 outfile:close()
+
+os.execute("python plot.py")
