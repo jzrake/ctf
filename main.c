@@ -14,6 +14,8 @@ int luaopen_hdf5(lua_State *L);
 int luaopen_mpi(lua_State *L);
 int luaopen_cow(lua_State *L);
 int luaopen_Mara(lua_State *L);
+int luaopen_fish(lua_State *L);
+int luaopen_fluids(lua_State *L);
 
 #ifndef USE_MPI
 int luaopen_mpi(lua_State *L){lua_newtable(L);return 1;}
@@ -27,6 +29,11 @@ int luaopen_Mara(lua_State *L){lua_newtable(L);return 1;}
 #ifndef USE_COW
 int luaopen_cow(lua_State *L){lua_newtable(L);return 1;}
 #endif
+#ifndef USE_FISH
+int luaopen_fish(lua_State *L){lua_newtable(L);return 1;}
+int luaopen_fluids(lua_State *L){lua_newtable(L);return 1;}
+#endif
+
 
 int main(int argc, char **argv)
 {
@@ -38,7 +45,8 @@ int main(int argc, char **argv)
   luaL_requiref(L, "MPI", luaopen_mpi, 0); lua_pop(L, 1);
   luaL_requiref(L, "cow", luaopen_cow, 0); lua_pop(L, 1);
   luaL_requiref(L, "Mara", luaopen_Mara, 0); lua_pop(L, 1);
-
+  luaL_requiref(L, "fish", luaopen_fish, 0); lua_pop(L, 1);
+  luaL_requiref(L, "fluids", luaopen_fluids, 0); lua_pop(L, 1);
 
   // Create the global `arg` table
   // ---------------------------------------------------------------------------

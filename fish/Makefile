@@ -16,7 +16,7 @@ OBJ = fish.o reconstruct.o fluids.o riemann.o matrix.o euler.o
 default : $(FISH_A) lua-fluids.o lua-fish.o
 
 %.o : %.c
-	$(CC) $(CFLAGS) -c $^ $(INC)
+	$(CC) $(CFLAGS) -c $^ $(LUA_I)
 
 $(FISH_A) : $(OBJ)
 	$(ARSTATIC) $@ $?

@@ -29,6 +29,8 @@ LUA_A = $(LUA_HOME)/lib/liblua.a
 
 LUA_COW    = cow/lua-cow.o
 LUA_MARA   = Mara/mara.o
+LUA_FISH   = fish/lua-fish.o
+LUA_FLUIDS = fish/lua-fluids.o
 LUA_MPI    = lua-mpi/lua-mpi.o
 LUA_HDF5   = lua-hdf5/lua-hdf5.o
 LUA_BUFFER = lua-buffer/lua-buffer.o
@@ -48,16 +50,22 @@ DEFINES += -DUSE_HDF5
 LIBS += -L$(HDF_HOME)/lib -lz -lhdf5
 endif
 
+ifeq ($(strip $(USE_COW)), 1)
+MODULES += $(LUA_COW)
+DEFINES += -DUSE_COW
+LOCLIBS += cow/libcow.a
+endif
+
 ifeq ($(strip $(USE_MARA)), 1)
 MODULES += $(LUA_MARA)
 DEFINES += -DUSE_MARA
 LOCLIBS += Mara/libmara.a
 endif
 
-ifeq ($(strip $(USE_COW)), 1)
-MODULES += $(LUA_COW)
-DEFINES += -DUSE_COW
-LOCLIBS += cow/libcow.a
+ifeq ($(strip $(USE_FISH)), 1)
+MODULES += $(LUA_FISH) $(LUA_FLUIDS)
+DEFINES += -DUSE_FISH -DUSE_FLUIDS
+LOCLIBS += fish/libfish.a
 endif
 
 ifeq ($(strip $(USE_FFTW)), 1)
@@ -81,6 +89,15 @@ Mara/libmara.a : $(LUA_A) .FORCE
 
 $(LUA_MARA) : $(LUA_A) .FORCE
 	$(MAKE) -C Mara mara.o MAKEFILE_IN=$(MAKEFILE_IN)
+
+fish/libfish.a : $(LUA_A) .FORCE
+	$(MAKE) -C fish libfish.a MAKEFILE_IN=$(MAKEFILE_IN)
+
+$(LUA_FISH) : $(LUA_A) .FORCE
+	$(MAKE) -C fish lua-fish.o MAKEFILE_IN=$(MAKEFILE_IN)
+
+$(LUA_FLUIDS) : $(LUA_A) .FORCE
+	$(MAKE) -C fish lua-fluids.o MAKEFILE_IN=$(MAKEFILE_IN)
 
 $(LUA_MPI) : $(LUA_A) .FORCE
 	$(MAKE) -C lua-mpi lua-mpi.o MAKEFILE_IN=$(MAKEFILE_IN)
