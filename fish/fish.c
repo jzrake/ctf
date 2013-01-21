@@ -129,7 +129,7 @@ int fish_timederivative(fish_state *S, fluids_state **fluid,
     // ----------------------------
     Fiph = (double*) malloc(shape[0] * Q * sizeof(double));
     fish_intercellflux(S, fluid, Fiph, shape[0], 0);
-    for (int i=0; i<shape[0]; ++i) {
+    for (int i=1; i<shape[0]; ++i) {
       for (int q=0; q<Q; ++q) {
 	L[(i*si)*Q + q] -= (Fiph[i*Q+q] - Fiph[(i-1)*Q+q]) / dx[0];
       }
@@ -151,7 +151,7 @@ int fish_timederivative(fish_state *S, fluids_state **fluid,
 	slice[i] = fluid[i*si + j*sj];
       }
       fish_intercellflux(S, slice, Fiph, shape[0], 0);
-      for (int i=0; i<shape[0]; ++i) {
+      for (int i=1; i<shape[0]; ++i) {
 	for (int q=0; q<Q; ++q) {
 	  int m = (i*si + j*sj)*Q + q;
 	  L[m] -= (Fiph[i*Q+q] - Fiph[(i-1)*Q+q]) / dx[0];
@@ -171,7 +171,7 @@ int fish_timederivative(fish_state *S, fluids_state **fluid,
 	slice[j] = fluid[i*si + j*sj];
       }
       fish_intercellflux(S, slice, Fiph, shape[1], 1);
-      for (int j=0; j<shape[1]; ++j) {
+      for (int j=1; j<shape[1]; ++j) {
 	for (int q=0; q<Q; ++q) {
 	  int m = (i*si + j*sj)*Q + q;
 	  L[m] -= (Fiph[j*Q+q] - Fiph[(j-1)*Q+q]) / dx[1];
@@ -198,7 +198,7 @@ int fish_timederivative(fish_state *S, fluids_state **fluid,
 	  slice[i] = fluid[i*si + j*sj + k*sk];
 	}
 	fish_intercellflux(S, slice, Fiph, shape[0], 0);
-	for (int i=0; i<shape[0]; ++i) {
+	for (int i=1; i<shape[0]; ++i) {
 	  for (int q=0; q<Q; ++q) {
 	    int m = (i*si + j*sj + k*sk)*Q + q;
 	    L[m] -= (Fiph[i*Q+q] - Fiph[(i-1)*Q+q]) / dx[0];
@@ -220,7 +220,7 @@ int fish_timederivative(fish_state *S, fluids_state **fluid,
 	  slice[j] = fluid[i*si + j*sj + k*sk];
 	}
 	fish_intercellflux(S, slice, Fiph, shape[1], 1);
-	for (int j=0; j<shape[1]; ++j) {
+	for (int j=1; j<shape[1]; ++j) {
 	  for (int q=0; q<Q; ++q) {
 	    int m = (i*si + j*sj + k*sk)*Q + q;
 	    L[m] -= (Fiph[j*Q+q] - Fiph[(j-1)*Q+q]) / dx[1];
@@ -242,7 +242,7 @@ int fish_timederivative(fish_state *S, fluids_state **fluid,
 	  slice[k] = fluid[i*si + j*sj + k*sk];
 	}
 	fish_intercellflux(S, slice, Fiph, shape[2], 2);
-	for (int k=0; k<shape[2]; ++k) {
+	for (int k=1; k<shape[2]; ++k) {
 	  for (int q=0; q<Q; ++q) {
 	    int m = (i*si + j*sj + k*sk)*Q + q;
 	    L[m] -= (Fiph[k*Q+q] - Fiph[(k-1)*Q+q]) / dx[2];

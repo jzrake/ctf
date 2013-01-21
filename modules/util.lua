@@ -62,7 +62,7 @@ end
 -- *****************************************************************************
 -- Function to call Gnuplot from Lua using popen
 -- .............................................................................
-function util.plot(series, tpause, opts)
+function util.plot(series, opts)
    local gp = io.popen("gnuplot", 'w')
 
    if opts.pdf then
@@ -84,7 +84,7 @@ function util.plot(series, tpause, opts)
       gp:write("e\n")
    end
    if not opts.pdf then
-      gp:write(string.format("pause %f\n", tpause or 100.0))
+      gp:write(string.format("pause %f\n", opts.tpause or 100.0))
    end
    gp:close()
 end

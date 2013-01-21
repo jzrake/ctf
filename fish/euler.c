@@ -53,6 +53,13 @@ int timederiv(double *L)
   fish_setparami(S, FISH_SPECTRAL, FISH_SOLVER_TYPE);
   fish_setparamd(S, 2.0, FISH_PLM_THETA);
 
+  for (int m=0; m < 5 * 100; ++m) {
+    L[m] = 0.0;
+  }
+  int nzone = 100;
+  fish_timederivative(S, fluid, 1, &nzone, &dx, L);
+
+  /*
   double Fiph[500];
   fish_intercellflux(S, fluid, Fiph, 100, 0);
 
@@ -61,6 +68,7 @@ int timederiv(double *L)
       L[5*n + q] = -(Fiph[5*n + q] - Fiph[5*(n-1) + q]) / dx;
     }
   }
+  */
 
   for (int q=0; q<5; ++q) {
     L[5* 0 + q] = 0.0;
@@ -77,6 +85,8 @@ int timederiv(double *L)
 int advance()
 {
   double L[500], U0[500];
+
+  for (int m=0; m < 5 * 100; ++m) { U0[m] = 0.0; }
   for (int n=0; n<100; ++n) {
     fluids_state_derive(fluid[n], &U0[5*n], FLUIDS_CONSERVED);
   }
@@ -107,7 +117,7 @@ int fish_run_euler(double *result)
 {
   double t = 0.0;
   init();
-  for (int n=0; n<200; ++n) {
+  for (int n=0; n<80; ++n) {
     clock_t start = clock();
     advance();
     t += dt;
