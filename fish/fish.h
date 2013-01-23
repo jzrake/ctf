@@ -53,10 +53,11 @@ int fish_setparamd(fish_state *S, double param, long flag);
 
 void fish_grav1d_init();
 void fish_grav1d_finalize();
-void fish_grav1d_advance();
+void fish_grav1d_advance(double dt);
 void fish_grav1d_getprim(double *prim, double *grav);
 void fish_grav1d_setprim(double *prim);
 void fish_grav1d_mapbuffer(double *x, long flag);
+double fish_grav1d_maxwavespeed();
 
 #ifdef FISH_PRIVATE_DEFS
 

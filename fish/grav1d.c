@@ -9,21 +9,31 @@
 #include <fftw3.h>
 #include "fish.h"
 
-static struct fluids_state *fluid[100];
+static struct fluids_state **fluid;
 static fluids_descr *descr;
-static double dx = 1.0 / 94;
-static double dt = 0.001;
+static int TotalZones;
+static int NumGhostZones;
+static double DomainLength = 1.0;
+static double dx;
+
 
 static void solve_poisson(double *Rho, double *Phi, double *Gph, double *rhobar);
 static void timederiv(double *L);
 
 void fish_grav1d_init()
 {
+  TotalZones = 100;
+  NumGhostZones = 3;
+
   descr = fluids_descr_new();
   fluids_descr_setfluid(descr, FLUIDS_NRHYD);
   fluids_descr_setgamma(descr, 1.4);
   fluids_descr_seteos(descr, FLUIDS_EOS_GAMMALAW);
-  for (int n=0; n<100; ++n) {
+
+  fluid = (fluids_state**) malloc(TotalZones * sizeof(fluids_state*));
+  dx = DomainLength / (TotalZones - NumGhostZones);
+
+  for (int n=0; n<TotalZones; ++n) {
     fluid[n] = fluids_state_new();
     fluids_state_setdescr(fluid[n], descr);
   }
@@ -31,23 +41,24 @@ void fish_grav1d_init()
 
 void fish_grav1d_finalize()
 {
-  for (int n=0; n<100; ++n) {
+  for (int n=0; n<TotalZones; ++n) {
     fluids_state_del(fluid[n]);
   }
   fluids_descr_del(descr);
+  free(fluid);
 }
 
-void fish_grav1d_advance()
+void fish_grav1d_advance(double dt)
 {
   double L[500], U0[500];
 
-  for (int m=0; m < 5 * 100; ++m) { U0[m] = 0.0; }
-  for (int n=0; n<100; ++n) {
+  for (int m=0; m < 5 * TotalZones; ++m) { U0[m] = 0.0; }
+  for (int n=0; n<TotalZones; ++n) {
     fluids_state_derive(fluid[n], &U0[5*n], FLUIDS_CONSERVED);
   }
 
   timederiv(L);
-  for (int n=0; n<100; ++n) {
+  for (int n=0; n<TotalZones; ++n) {
     double U[5];
     fluids_state_derive(fluid[n], U, FLUIDS_CONSERVED);
     for (int q=0; q<5; ++q) {
@@ -57,7 +68,7 @@ void fish_grav1d_advance()
   }
 
   timederiv(L);
-  for (int n=0; n<100; ++n) {
+  for (int n=0; n<TotalZones; ++n) {
     double U[5];
     fluids_state_derive(fluid[n], U, FLUIDS_CONSERVED);
     for (int q=0; q<5; ++q) {
@@ -67,9 +78,22 @@ void fish_grav1d_advance()
   }
 }
 
+double fish_grav1d_maxwavespeed()
+{
+  double a = 0.0;
+  for (int n=0; n<TotalZones; ++n) {
+    double A[5];
+    fluids_state_derive(fluid[n], A, FLUIDS_EVAL0);
+    for (int q=0; q<5; ++q) {
+      a = fabs(A[q]) > a ? fabs(A[q]) : a;
+    }
+  }
+  return a;
+}
+
 void fish_grav1d_getprim(double *prim, double *grav)
 {
-  for (int n=0; n<100; ++n) {
+  for (int n=0; n<TotalZones; ++n) {
     double P[5];
     double G[4];
     fluids_state_getattr(fluid[n], P, FLUIDS_PRIMITIVE);
@@ -81,14 +105,14 @@ void fish_grav1d_getprim(double *prim, double *grav)
 
 void fish_grav1d_setprim(double *prim)
 {
-  for (int n=0; n<100; ++n) {
+  for (int n=0; n<TotalZones; ++n) {
     fluids_state_setattr(fluid[n], &prim[5*n], FLUIDS_PRIMITIVE);
   }
 }
 
 void fish_grav1d_mapbuffer(double *x, long flag)
 {
-  for (int n=0; n<100; ++n) {
+  for (int n=0; n<TotalZones; ++n) {
     fluids_state_mapbuffer(fluid[n], &x[5*n], flag);
   }
 }
@@ -152,7 +176,7 @@ void solve_poisson(double *Rho, double *Phi, double *Gph, double *rhobar)
 
 void timederiv(double *L)
 {
-  int N = 100;
+  int N = TotalZones;
   fish_state *S = fish_new();
   fish_setparami(S, FISH_WENO5, FISH_RECONSTRUCTION);
   fish_setparami(S, FLUIDS_RIEMANN_HLLC, FISH_RIEMANN_SOLVER);
@@ -198,13 +222,13 @@ void timederiv(double *L)
   free(Phi);
   free(Gph);
 
-  for (int m=0; m < 5 * 100; ++m) {
+  for (int m=0; m < 5 * TotalZones; ++m) {
     L[m] = 0.0;
   }
   fish_timederivative(S, fluid, 1, &N, &dx, L);
 
   double source[5];
-  for (int i=0; i<100; ++i) {
+  for (int i=0; i<TotalZones; ++i) {
     fluids_state_derive(fluid[i], source, FLUIDS_SOURCETERMS);
     for (int q=0; q<5; ++q) {
       L[5*i + q] += source[q];
