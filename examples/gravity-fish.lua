@@ -8,13 +8,13 @@ local util   = require 'util'
 local DomainLength = 1.0
 local BackgroundDensity = 1.0
 local FourPiG = 1.0
-local SoundSpeed  = 0.1
+local SoundSpeed  = 0.05
 local JeansLength = 2 * SoundSpeed * math.pi / (FourPiG * BackgroundDensity)^0.5
-local WaveNumber = 4 * math.pi
+local WaveNumber = 8 * math.pi
 local WaveLength = 2 * math.pi / WaveNumber
 local SoundCrossingTime = DomainLength / SoundSpeed
 
-local N = 100
+local N = 512
 local Ng = 3
 local CFL = 0.5
 local dx  = 1.0 / N
@@ -23,6 +23,7 @@ util.pretty_print{JeansLength=JeansLength, WaveLength=WaveLength}
 
 local function gravitywave(t)
    local P = array.array{N + 2*Ng, 5}
+   local G = array.array{N + 2*Ng, 4}
    local Pvec = P:vector()
 
    local cs = SoundSpeed
@@ -33,7 +34,7 @@ local function gravitywave(t)
    local u0 = 0.0
    local u1 = cs * D1 / D0
    local k0 = WaveNumber
-   local w0 = cs * k0
+   local w0 = cs * k0 --((cs * k0)^2 - FourPiG * D0)^0.5
 
    for n=0,#Pvec/5-1 do
       local x  = (n - Ng) * dx
@@ -44,19 +45,20 @@ local function gravitywave(t)
       Pvec[5*n + 3] = 0.0
       Pvec[5*n + 4] = 0.0
    end
-   return P
+   return P, G
 end
 
 
-local P = gravitywave(0.0)
+local P, G = gravitywave(0.0)
 
 fish.grav1d_init(N)
 fish.grav1d_mapbuffer(P:buffer(), fluids.PRIMITIVE)
+fish.grav1d_mapbuffer(G:buffer(), fluids.GRAVITY)
 
 local t = 0.0
 local n = 0
 
-while t < 0.1 * SoundCrossingTime do
+while t < 0.05 * SoundCrossingTime do
 
    local Amax = fish.grav1d_maxwavespeed()
    local dt = CFL * dx / Amax
