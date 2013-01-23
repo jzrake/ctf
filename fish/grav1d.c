@@ -26,7 +26,7 @@ void fish_grav1d_init(int N)
   TotalZones = N + 2*NumGhostZones;
 
   descr = fluids_descr_new();
-  fluids_descr_setfluid(descr, FLUIDS_NRHYD);
+  fluids_descr_setfluid(descr, FLUIDS_GRAVS);
   fluids_descr_setgamma(descr, 1.4);
   fluids_descr_seteos(descr, FLUIDS_EOS_GAMMALAW);
 
@@ -183,9 +183,9 @@ void timederiv(double *L)
   int N = TotalZones;
 
   fish_state *S = fish_new();
-  fish_setparami(S, FISH_WENO5, FISH_RECONSTRUCTION);
+  fish_setparami(S, FISH_PLM, FISH_RECONSTRUCTION);
   fish_setparami(S, FLUIDS_RIEMANN_HLLC, FISH_RIEMANN_SOLVER);
-  fish_setparami(S, FISH_SPECTRAL, FISH_SOLVER_TYPE);
+  fish_setparami(S, FISH_GODUNOV, FISH_SOLVER_TYPE);
   fish_setparamd(S, 2.0, FISH_PLM_THETA);
 
   double *Rho = (double*) malloc(N * sizeof(double));
