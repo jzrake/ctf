@@ -115,8 +115,9 @@ void fish_grav1d_setprim(double *prim)
 
 void fish_grav1d_mapbuffer(double *x, long flag)
 {
+  int nq = fluids_descr_getncomp(descr, flag);
   for (int n=0; n<TotalZones; ++n) {
-    fluids_state_mapbuffer(fluid[n], &x[5*n], flag);
+    fluids_state_mapbuffer(fluid[n], &x[nq*n], flag);
   }
 }
 
