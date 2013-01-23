@@ -1,16 +1,43 @@
+import glob
+import numpy as np
 import h5py
 import matplotlib.pyplot as plt
 
-fig = plt.figure()
-ax1 = fig.add_subplot('411')
-ax2 = fig.add_subplot('412')
-ax3 = fig.add_subplot('413')
-ax4 = fig.add_subplot('414')
+def gravity():
+    fig = plt.figure()
+    ax1 = fig.add_subplot('411')
+    ax2 = fig.add_subplot('412')
+    ax3 = fig.add_subplot('413')
+    ax4 = fig.add_subplot('414')
 
-h5f = h5py.File("euler.h5")
-ax1.plot(h5f["prim"][:,0])
-ax2.plot(h5f["prim"][:,1])
-ax3.plot(h5f["grav"][:,0])
-ax4.plot(h5f["grav"][:,1])
+    dx = 1.0 / 94.0
+    h5f = h5py.File("euler.h5")
+    rho = h5f["prim"][:,0]
+    phi = h5f["grav"][:,0]
+    gph = (np.roll(phi, -1) - np.roll(phi, +1)) / (2*dx)
+    lph = (np.roll(gph, -1) - np.roll(gph, +1)) / (2*dx)
 
-plt.show()
+    ax1.plot(h5f["prim"][:,0], label='rho')
+    ax1.plot(lph+rho.mean(), label='laplacian phi + rhobar')
+    ax1.legend()
+    ax2.plot(h5f["prim"][:,1])
+    ax3.plot(h5f["grav"][:,0], label='')
+    ax4.plot(h5f["grav"][:,1], label='spectral')
+    ax4.plot(gph, label='differenced')
+    ax4.legend()
+    plt.show()
+
+def hydro():
+    fig = plt.figure()
+    ax1 = fig.add_subplot('311')
+    ax2 = fig.add_subplot('312')
+    ax3 = fig.add_subplot('313')
+
+    for fname in glob.glob('data/*.h5'):
+        h5f = h5py.File(fname)
+        ax1.plot(h5f["prim"][:,0], label='rho')
+        ax2.plot(h5f["prim"][:,1], label='pre')
+        ax3.plot(h5f["prim"][:,2], label='vx')
+    plt.show()
+
+hydro()

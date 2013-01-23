@@ -40,6 +40,7 @@ for line in fishh:
     narg = 1
 
     for arg in args:
+        if not arg: continue
         argtype, argname = arg.split()[:-1], arg.split()[-1]
         argtype = ''.join(argtype)
         if argname.startswith('**'):

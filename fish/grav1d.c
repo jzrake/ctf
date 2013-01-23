@@ -14,38 +14,22 @@ static fluids_descr *descr;
 static double dx = 1.0 / 94;
 static double dt = 0.001;
 
+static void solve_poisson(double *Rho, double *Phi, double *Gph, double *rhobar);
+static void timederiv(double *L);
 
-void init()
+void fish_grav1d_init()
 {
   descr = fluids_descr_new();
-  fluids_descr_setfluid(descr, FLUIDS_GRAVS);
+  fluids_descr_setfluid(descr, FLUIDS_NRHYD);
   fluids_descr_setgamma(descr, 1.4);
   fluids_descr_seteos(descr, FLUIDS_EOS_GAMMALAW);
-  fluids_descr_setrhobar(descr, 1.0);
-
-  double A = 0.1;
-  double sig = 0.0025;
-
   for (int n=0; n<100; ++n) {
-    double P[5] = {0, 0, 0, 0, 0};
-    double x = (n - 50) * dx;
-
-    if (n<100) {
-      P[0] = (1.0 + A * exp(-x*x / sig)) * 100.0;
-      P[1] = 1.0;
-    }
-    else {
-      P[0] = 0.125;
-      P[1] = 0.1;
-    }
-
     fluid[n] = fluids_state_new();
     fluids_state_setdescr(fluid[n], descr);
-    fluids_state_setattr(fluid[n], P, FLUIDS_PRIMITIVE);
   }
 }
 
-void finish()
+void fish_grav1d_finalize()
 {
   for (int n=0; n<100; ++n) {
     fluids_state_del(fluid[n]);
@@ -53,9 +37,63 @@ void finish()
   fluids_descr_del(descr);
 }
 
+void fish_grav1d_advance()
+{
+  double L[500], U0[500];
 
+  for (int m=0; m < 5 * 100; ++m) { U0[m] = 0.0; }
+  for (int n=0; n<100; ++n) {
+    fluids_state_derive(fluid[n], &U0[5*n], FLUIDS_CONSERVED);
+  }
 
-void solve_poisson(double *Rho, double *Phi, double *Gph)
+  timederiv(L);
+  for (int n=0; n<100; ++n) {
+    double U[5];
+    fluids_state_derive(fluid[n], U, FLUIDS_CONSERVED);
+    for (int q=0; q<5; ++q) {
+      U[q] += L[5*n + q] * dt * 0.5;
+    }
+    fluids_state_fromcons(fluid[n], U, FLUIDS_CACHE_DEFAULT);
+  }
+
+  timederiv(L);
+  for (int n=0; n<100; ++n) {
+    double U[5];
+    fluids_state_derive(fluid[n], U, FLUIDS_CONSERVED);
+    for (int q=0; q<5; ++q) {
+      U[q] = U0[5*n + q] + L[5*n + q] * dt;
+    }
+    fluids_state_fromcons(fluid[n], U, FLUIDS_CACHE_DEFAULT);
+  }
+}
+
+void fish_grav1d_getprim(double *prim, double *grav)
+{
+  for (int n=0; n<100; ++n) {
+    double P[5];
+    double G[4];
+    fluids_state_getattr(fluid[n], P, FLUIDS_PRIMITIVE);
+    fluids_state_getattr(fluid[n], G, FLUIDS_GRAVITY);
+    memcpy(&prim[5*n], P, 5 * sizeof(double));
+    memcpy(&grav[4*n], G, 4 * sizeof(double));
+  }
+}
+
+void fish_grav1d_setprim(double *prim)
+{
+  for (int n=0; n<100; ++n) {
+    fluids_state_setattr(fluid[n], &prim[5*n], FLUIDS_PRIMITIVE);
+  }
+}
+
+void fish_grav1d_mapbuffer(double *x, long flag)
+{
+  for (int n=0; n<100; ++n) {
+    fluids_state_mapbuffer(fluid[n], &x[5*n], flag);
+  }
+}
+
+void solve_poisson(double *Rho, double *Phi, double *Gph, double *rhobar)
 {
   int N = 94;
   fftw_complex *Rhox = fftw_alloc_complex(N);
@@ -75,10 +113,16 @@ void solve_poisson(double *Rho, double *Phi, double *Gph)
   }
   fftw_execute(fwd);
 
+  *rhobar = Rhok[0][0] / N;
   Phik[0][0] = 0.0;
   Phik[0][1] = 0.0;
   Gphk[0][0] = 0.0;
   Gphk[0][1] = 0.0;
+
+  // gph[k] = I * k * (phi[k].re + I * phi[k].im) =>
+  //
+  // gph[k].re = -k * phi[k].im
+  // gph[k].im = +k * phi[k].re
 
   for (int i=1; i<N; ++i) {
     double k = 2*M_PI * (i < N/2 ? i : i-N);
@@ -91,8 +135,8 @@ void solve_poisson(double *Rho, double *Phi, double *Gph)
   fftw_execute(revgph);
 
   for (int i=0; i<N; ++i) {
-    Phi[i+3] = Phix[i][0] / (N*N);
-    Gph[i+3] = Gphx[i][0] / (N*N);
+    Phi[i+3] = Phix[i][0] / N;
+    Gph[i+3] = Gphx[i][0] / N;
   }
 
   fftw_destroy_plan(fwd);
@@ -106,27 +150,26 @@ void solve_poisson(double *Rho, double *Phi, double *Gph)
   fftw_free(Gphk);
 }
 
-int timederiv(double *L)
+void timederiv(double *L)
 {
   int N = 100;
   fish_state *S = fish_new();
-  fish_setparami(S, FISH_PLM, FISH_RECONSTRUCTION);
+  fish_setparami(S, FISH_WENO5, FISH_RECONSTRUCTION);
   fish_setparami(S, FLUIDS_RIEMANN_HLLC, FISH_RIEMANN_SOLVER);
   fish_setparami(S, FISH_SPECTRAL, FISH_SOLVER_TYPE);
   fish_setparamd(S, 2.0, FISH_PLM_THETA);
-
 
   double *Rho = (double*) malloc(N * sizeof(double));
   double *Phi = (double*) malloc(N * sizeof(double));
   double *Gph = (double*) malloc(N * sizeof(double));
   double P[5];
+  double rhobar;
 
   for (int i=0; i<N; ++i) {
     fluids_state_getattr(fluid[i], P, FLUIDS_PRIMITIVE);
     Rho[i] = P[0];
   }
-
-  solve_poisson(Rho, Phi, Gph);
+  solve_poisson(Rho, Phi, Gph, &rhobar);
 
   Phi[ 0] = Phi[94]; // set periodic BC's on Phi
   Phi[ 1] = Phi[95];
@@ -150,16 +193,15 @@ int timederiv(double *L)
     G[3] = 0.0;
     fluids_state_setattr(fluid[i], G, FLUIDS_GRAVITY);
   }
+  fluids_descr_setrhobar(descr, rhobar);
   free(Rho);
   free(Phi);
   free(Gph);
 
-
   for (int m=0; m < 5 * 100; ++m) {
     L[m] = 0.0;
   }
-  int nzone = 100;
-  fish_timederivative(S, fluid, 1, &nzone, &dx, L);
+  fish_timederivative(S, fluid, 1, &N, &dx, L);
 
   double source[5];
   for (int i=0; i<100; ++i) {
@@ -190,61 +232,4 @@ int timederiv(double *L)
   }
   */
   fish_del(S);
-  return 0;
-}
-
-int advance()
-{
-  double L[500], U0[500];
-
-  for (int m=0; m < 5 * 100; ++m) { U0[m] = 0.0; }
-  for (int n=0; n<100; ++n) {
-    fluids_state_derive(fluid[n], &U0[5*n], FLUIDS_CONSERVED);
-  }
-
-  timederiv(L);
-  for (int n=0; n<100; ++n) {
-    double U[5];
-    fluids_state_derive(fluid[n], U, FLUIDS_CONSERVED);
-    for (int q=0; q<5; ++q) {
-      U[q] += L[5*n + q] * dt * 0.5;
-    }
-    fluids_state_fromcons(fluid[n], U, FLUIDS_CACHE_DEFAULT);
-  }
-
-  timederiv(L);
-  for (int n=0; n<100; ++n) {
-    double U[5];
-    fluids_state_derive(fluid[n], U, FLUIDS_CONSERVED);
-    for (int q=0; q<5; ++q) {
-      U[q] = U0[5*n + q] + L[5*n + q] * dt;
-    }
-    fluids_state_fromcons(fluid[n], U, FLUIDS_CACHE_DEFAULT);
-  }
-  return 0;
-}
-
-int fish_run_grav1d(double *prim, double *grav)
-{
-  double t = 0.0;
-  init();
-  for (int n=0; n<10000; ++n) {
-    clock_t start = clock();
-    advance();
-    t += dt;
-    clock_t del = clock() - start;
-    if (n % 200 == 0) {
-      printf("n=%d t=%3.2f %f kz/s\n", n, t, 100.0 / (1e3*del / CLOCKS_PER_SEC));
-    }
-  }
-  for (int n=0; n<100; ++n) {
-    double P[5];
-    double G[4];
-    fluids_state_getattr(fluid[n], P, FLUIDS_PRIMITIVE);
-    fluids_state_getattr(fluid[n], G, FLUIDS_GRAVITY);
-    memcpy(&prim[5*n], P, 5 * sizeof(double));
-    memcpy(&grav[4*n], G, 4 * sizeof(double));
-  }
-  finish();
-  return 0;
 }

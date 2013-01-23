@@ -51,7 +51,12 @@ int fish_setparami(fish_state *S, int param, long flag);
 int fish_getparamd(fish_state *S, double *param, long flag);
 int fish_setparamd(fish_state *S, double param, long flag);
 
-int fish_run_grav1d(double *prim, double *grav);
+void fish_grav1d_init();
+void fish_grav1d_finalize();
+void fish_grav1d_advance();
+void fish_grav1d_getprim(double *prim, double *grav);
+void fish_grav1d_setprim(double *prim);
+void fish_grav1d_mapbuffer(double *x, long flag);
 
 #ifdef FISH_PRIVATE_DEFS
 
