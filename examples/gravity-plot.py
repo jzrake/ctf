@@ -33,11 +33,18 @@ def hydro():
     ax2 = fig.add_subplot('312')
     ax3 = fig.add_subplot('313')
 
-    for fname in glob.glob('data/*.h5'):
+    for fname in glob.glob('data/*.h5')[-1:]:
         h5f = h5py.File(fname)
-        ax1.plot(h5f["prim"][:,0], label='rho')
-        ax2.plot(h5f["prim"][:,1], label='pre')
-        ax3.plot(h5f["prim"][:,2], label='vx')
+        ax1.plot(h5f["prim" ][:,0], label='code')
+        ax1.plot(h5f["exact"][:,0], label='exact')
+        ax2.plot(h5f["prim" ][:,1], label='code')
+        ax2.plot(h5f["exact"][:,1], label='exact')
+        ax3.plot(h5f["prim" ][:,2], label='code')
+        ax3.plot(h5f["exact"][:,2], label='exact')
+
+    ax1.legend()
+    ax2.legend()
+    ax3.legend()
     plt.show()
 
 hydro()

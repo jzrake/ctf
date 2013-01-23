@@ -148,11 +148,9 @@ void solve_poisson(double *Rho, double *Phi, double *Gph, double *rhobar)
   Gphk[0][0] = 0.0;
   Gphk[0][1] = 0.0;
 
-  // gph[k] = I * k * (phi[k].re + I * phi[k].im) =>
-  //
-  // gph[k].re = -k * phi[k].im
-  // gph[k].im = +k * phi[k].re
-
+  /*
+   * gph[k] = I * k * (phi[k].re + I * phi[k].im)
+   */
   for (int i=1; i<N; ++i) {
     double k = 2*M_PI * (i < N/2 ? i : i-N);
     Phik[i][0] = -Rhok[i][0] / (k*k);
@@ -208,21 +206,7 @@ void timederiv(double *L)
     Gph[    i    ] = Gph[ N - 2*Ng + i];
     Gph[N - i - 1] = Gph[-1 + 2*Ng - i];
   }
-  /*
-  Phi[ 0] = Phi[94]; // set periodic BC's on Phi
-  Phi[ 1] = Phi[95];
-  Phi[ 2] = Phi[96];
-  Phi[97] = Phi[ 3];
-  Phi[98] = Phi[ 4];
-  Phi[99] = Phi[ 5];
 
-  Gph[ 0] = Gph[94]; // set periodic BC's on Gph
-  Gph[ 1] = Gph[95];
-  Gph[ 2] = Gph[96];
-  Gph[97] = Gph[ 3];
-  Gph[98] = Gph[ 4];
-  Gph[99] = Gph[ 5];
-  */
   for (int i=0; i<N; ++i) {
     double G[4];
     G[0] = Phi[i];
@@ -255,27 +239,5 @@ void timederiv(double *L)
       L[(N - i - 1)*5 + q] = L[(-1 + 2*Ng - i)*5 + q];
     }
   }
-  // periodic BC's
-  /*
-  for (int q=0; q<5; ++q) {
-    L[5* 0 + q] = L[5*94 + q];
-    L[5* 1 + q] = L[5*95 + q];
-    L[5* 2 + q] = L[5*96 + q];
-    L[5*97 + q] = L[5* 3 + q];
-    L[5*98 + q] = L[5* 4 + q];
-    L[5*99 + q] = L[5* 5 + q];
-  }
-  */
-  // outflow BC's
-  /*
-  for (int q=0; q<5; ++q) {
-    L[5* 0 + q] = 0.0;
-    L[5* 1 + q] = 0.0;
-    L[5* 2 + q] = 0.0;
-    L[5*97 + q] = 0.0;
-    L[5*98 + q] = 0.0;
-    L[5*99 + q] = 0.0;
-  }
-  */
   fish_del(S);
 }
