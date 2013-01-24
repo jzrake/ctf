@@ -9,8 +9,15 @@
 #include <fftw3.h>
 #include "fish.h"
 
+enum {
+  MidpointMethod,
+  RungeKuttaShuOsherRk3
+} ;
+
+static int TimeUpdateMethod = RungeKuttaShuOsherRk3;
 static struct fluids_state **fluid;
 static fluids_descr *descr;
+static fish_state *scheme;
 static int TotalZones;
 static int NumGhostZones;
 static double DomainLength = 1.0;
@@ -18,25 +25,33 @@ static double dx;
 
 
 static void solve_poisson(double *Rho, double *Phi, double *Gph, double *rhobar);
-static void timederiv(double *L);
+//static void timederiv(double *L);
+static void set_bc_cons(double *U);
+
 
 void fish_grav1d_init(int N)
 {
   NumGhostZones = 3;
-  TotalZones = N + 2*NumGhostZones;
+  TotalZones = N + 2 * NumGhostZones;
 
   descr = fluids_descr_new();
-  fluids_descr_setfluid(descr, FLUIDS_GRAVS);
+  fluids_descr_setfluid(descr, FLUIDS_NRHYD);
   fluids_descr_setgamma(descr, 1.4);
   fluids_descr_seteos(descr, FLUIDS_EOS_GAMMALAW);
 
   fluid = (fluids_state**) malloc(TotalZones * sizeof(fluids_state*));
-  dx = DomainLength / (TotalZones - NumGhostZones);
+  dx = DomainLength / N;
 
   for (int n=0; n<TotalZones; ++n) {
     fluid[n] = fluids_state_new();
     fluids_state_setdescr(fluid[n], descr);
   }
+
+  scheme = fish_new();
+  fish_setparami(scheme, FISH_PLM, FISH_RECONSTRUCTION);
+  fish_setparami(scheme, FLUIDS_RIEMANN_HLLC, FISH_RIEMANN_SOLVER);
+  fish_setparami(scheme, FISH_GODUNOV, FISH_SOLVER_TYPE);
+  fish_setparamd(scheme, 2.0, FISH_PLM_THETA);
 }
 
 void fish_grav1d_finalize()
@@ -45,6 +60,7 @@ void fish_grav1d_finalize()
     fluids_state_del(fluid[n]);
   }
   fluids_descr_del(descr);
+  fish_del(scheme);
   free(fluid);
 }
 
@@ -52,31 +68,83 @@ void fish_grav1d_advance(double dt)
 {
   double *L  = (double*) malloc(TotalZones * 5 * sizeof(double));
   double *U0 = (double*) malloc(TotalZones * 5 * sizeof(double));
+  double U1[5];
 
   for (int m=0; m < 5 * TotalZones; ++m) { U0[m] = 0.0; }
   for (int n=0; n<TotalZones; ++n) {
     fluids_state_derive(fluid[n], &U0[5*n], FLUIDS_CONSERVED);
   }
 
-  timederiv(L);
-  for (int n=0; n<TotalZones; ++n) {
-    double U[5];
-    fluids_state_derive(fluid[n], U, FLUIDS_CONSERVED);
-    for (int q=0; q<5; ++q) {
-      U[q] += L[5*n + q] * dt * 0.5;
+  if (TimeUpdateMethod == MidpointMethod) {
+    for (int m=0; m < 5 * TotalZones; ++m) { L[m] = 0.0; }
+    fish_timederivative(scheme, fluid, 1, &TotalZones, &dx, L);
+    set_bc_cons(L);
+
+    for (int n=0; n<TotalZones; ++n) {
+      fluids_state_derive(fluid[n], U1, FLUIDS_CONSERVED);
+      for (int q=0; q<5; ++q) {
+	U1[q] = U0[5*n + q] + L[5*n + q] * dt * 0.5;
+      }
+      fluids_state_fromcons(fluid[n], U1, FLUIDS_CACHE_DEFAULT);
     }
-    fluids_state_fromcons(fluid[n], U, FLUIDS_CACHE_DEFAULT);
+
+    for (int m=0; m < 5 * TotalZones; ++m) { L[m] = 0.0; }
+    fish_timederivative(scheme, fluid, 1, &TotalZones, &dx, L);
+    set_bc_cons(L);
+
+    for (int n=0; n<TotalZones; ++n) {
+      fluids_state_derive(fluid[n], U1, FLUIDS_CONSERVED);
+      for (int q=0; q<5; ++q) {
+        U1[q] = U0[5*n + q] + L[5*n + q] * dt;
+      }
+      fluids_state_fromcons(fluid[n], U1, FLUIDS_CACHE_DEFAULT);
+    }
+  }
+  else if (TimeUpdateMethod == RungeKuttaShuOsherRk3) {
+
+    /* ******************************* Step 1 ******************************* */
+    for (int m=0; m < 5 * TotalZones; ++m) { L[m] = 0.0; }
+    fish_timederivative(scheme, fluid, 1, &TotalZones, &dx, L);
+    set_bc_cons(L);
+
+    for (int n=0; n<TotalZones; ++n) {
+      fluids_state_derive(fluid[n], U1, FLUIDS_CONSERVED);
+      for (int q=0; q<5; ++q) {
+	int m = 5*n + q;
+	U1[q] = U0[m] + L[m] * dt;
+      }
+      fluids_state_fromcons(fluid[n], U1, FLUIDS_CACHE_DEFAULT);
+    }
+
+    /* ******************************* Step 2 ******************************* */
+    for (int m=0; m < 5 * TotalZones; ++m) { L[m] = 0.0; }
+    fish_timederivative(scheme, fluid, 1, &TotalZones, &dx, L);
+    set_bc_cons(L);
+
+    for (int n=0; n<TotalZones; ++n) {
+      fluids_state_derive(fluid[n], U1, FLUIDS_CONSERVED);
+      for (int q=0; q<5; ++q) {
+	int m = 5*n + q;
+	U1[q] = 3./4*U0[m] + 1./4*U1[q] + 1./4 * dt * L[m];
+      }
+      fluids_state_fromcons(fluid[n], U1, FLUIDS_CACHE_DEFAULT);
+    }
+
+    /* ******************************* Step 3 ******************************* */
+    for (int m=0; m < 5 * TotalZones; ++m) { L[m] = 0.0; }
+    fish_timederivative(scheme, fluid, 1, &TotalZones, &dx, L);
+    set_bc_cons(L);
+
+    for (int n=0; n<TotalZones; ++n) {
+      fluids_state_derive(fluid[n], U1, FLUIDS_CONSERVED);
+      for (int q=0; q<5; ++q) {
+	int m = 5*n + q;
+	U1[q] = 1./3*U0[m] + 2./3*U1[q] + 2./3 * dt * L[m];
+      }
+      fluids_state_fromcons(fluid[n], U1, FLUIDS_CACHE_DEFAULT);
+    }
   }
 
-  timederiv(L);
-  for (int n=0; n<TotalZones; ++n) {
-    double U[5];
-    fluids_state_derive(fluid[n], U, FLUIDS_CONSERVED);
-    for (int q=0; q<5; ++q) {
-      U[q] = U0[5*n + q] + L[5*n + q] * dt;
-    }
-    fluids_state_fromcons(fluid[n], U, FLUIDS_CACHE_DEFAULT);
-  }
   free(L);
   free(U0);
 }
@@ -183,12 +251,6 @@ void timederiv(double *L)
   int Ng = NumGhostZones;
   int N = TotalZones;
 
-  fish_state *S = fish_new();
-  fish_setparami(S, FISH_PLM, FISH_RECONSTRUCTION);
-  fish_setparami(S, FLUIDS_RIEMANN_HLLC, FISH_RIEMANN_SOLVER);
-  fish_setparami(S, FISH_GODUNOV, FISH_SOLVER_TYPE);
-  fish_setparamd(S, 2.0, FISH_PLM_THETA);
-
   double *Rho = (double*) malloc(N * sizeof(double));
   double *Phi = (double*) malloc(N * sizeof(double));
   double *Gph = (double*) malloc(N * sizeof(double));
@@ -224,7 +286,7 @@ void timederiv(double *L)
   for (int m=0; m < 5 * TotalZones; ++m) {
     L[m] = 0.0;
   }
-  fish_timederivative(S, fluid, 1, &N, &dx, L);
+  fish_timederivative(scheme, fluid, 1, &N, &dx, L);
 
   double source[5];
   for (int i=0; i<TotalZones; ++i) {
@@ -240,5 +302,17 @@ void timederiv(double *L)
       L[(N - i - 1)*5 + q] = L[(-1 + 2*Ng - i)*5 + q];
     }
   }
-  fish_del(S);
+}
+
+void set_bc_cons(double *U)
+{
+  int N = TotalZones;
+  int Ng = NumGhostZones;
+
+  for (int i=0; i<Ng; ++i) {
+    for (int q=0; q<5; ++q) {
+      U[(    i    )*5 + q] = U[( N - 2*Ng + i)*5 + q];
+      U[(N - i - 1)*5 + q] = U[(-1 + 2*Ng - i)*5 + q];
+    }
+  }
 }
