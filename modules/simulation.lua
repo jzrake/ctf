@@ -11,6 +11,7 @@ end
 function SimulationBase:initialize_behavior() end
 function SimulationBase:initialize_solver() self:_notimplemented() end
 function SimulationBase:initialize_physics() self:_notimplemented() end
+function SimulationBase:finalize_solver() self:_notimplemented() end
 function SimulationBase:advance_physics() self:_notimplemented() end
 function SimulationBase:set_time_increment() self:_notimplemented() end
 function SimulationBase:checkpoint_condition()

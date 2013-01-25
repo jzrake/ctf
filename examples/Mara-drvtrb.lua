@@ -3,7 +3,7 @@ local MPI     = require 'MPI'
 local cow     = require 'cow'
 local hdf5    = require 'lua-hdf5.LuaHDF5'
 local Mara    = require 'Mara'
-local LuaMara = require 'Mara.LuaMara'
+local unigrid = require 'unigrid'
 local array   = require 'array'
 local json    = require 'json'
 local util    = require 'util'
@@ -64,7 +64,7 @@ local function PowerSpectrum(primitive, which, gname)
    local binloc, binval
    local fname = PowerSpectrumFile
    if which == 'velocity' then
-      local velocity = LuaMara.MaraDataManager(primitive.domain, {'vx','vy','vz'})
+      local velocity = unigrid.DataManagerHDF5(primitive.domain, {'vx','vy','vz'})
       local P = primitive.array
       local V = velocity.array
       V[{nil,nil,nil,{0,1}}] = P[{nil,nil,nil,{2,3}}]
@@ -77,7 +77,7 @@ local function PowerSpectrum(primitive, which, gname)
 	 binval[i] = binval[i] * (c^2)
       end
    elseif which == 'magnetic' then
-      local magnetic = LuaMara.MaraDataManager(primitive.domain, {'Bx','By','Bz'})
+      local magnetic = unigrid.DataManagerHDF5(primitive.domain, {'Bx','By','Bz'})
       local P = primitive.array
       local B = magnetic.array
       B[{nil,nil,nil,{0,1}}] = P[{nil,nil,nil,{5,6}}]
@@ -90,7 +90,7 @@ local function PowerSpectrum(primitive, which, gname)
 	 binval[i] = binval[i] * (f^2)
       end
    elseif which == 'kinetic' then
-      local kinetic = LuaMara.MaraDataManager(primitive.domain, {'Kx','Ky','Kz'})
+      local kinetic = unigrid.DataManagerHDF5(primitive.domain, {'Kx','Ky','Kz'})
       local P = primitive.array
       local K = kinetic.array
       local S = K:shape()
@@ -511,7 +511,7 @@ local function main()
    cow.domain_commit(domain)
    cow.domain_getcomm(domain, domain_comm)
 
-   local primitive = LuaMara.MaraDataManager(domain, prim_names)
+   local primitive = unigrid.DataManagerHDF5(domain, prim_names)
    local P = primitive.array
 
    math.randomseed(cow.domain_getcartrank(domain))
@@ -521,7 +521,7 @@ local function main()
    local Status = { }
 
    if RunArgs.restart == "none" then
-      Mara.init_prim(P:buffer(), pinit)  -- start a new model from scratch
+      Mara.init_prim(P:buffer(), pinit) -- start a new model from scratch
       Status.CurrentTime = 0.0
       Status.Iteration   = 0
       Status.Checkpoint  = 0

@@ -4,35 +4,10 @@ local array  = require 'array'
 local oo     = require 'class'
 local cow    = require 'cow'
 local hdf5   = require 'lua-hdf5.LuaHDF5'
+local util   = require 'util'
 
-local function pretty_print(t, indent)
-   local names = { }
-   if not indent then indent = "" end
-   for n,g in pairs(t) do
-      table.insert(names,n)
-   end
-   table.sort(names)
-   for i,n in pairs(names) do
-      local v = t[n]
-      if type(v) == "table" then
-	 if(v==t) then
-	    print(indent..tostring(n)..": <-")
-	 else
-	    print(indent..tostring(n)..":")
-	    pretty_print(v,indent.."   ")
-	 end
-      else
-	 if type(v) == "function" then
-	    print(indent..tostring(n).."()")
-	 else
-	    print(indent..tostring(n)..": "..tostring(v))
-	 end
-      end
-   end
-end
-
-local MaraDataManager = oo.class('MaraDataManager')
-function MaraDataManager:__init__(domain, dataset_names, opts)
+local DataManagerHDF5 = oo.class('DataManagerHDF5')
+function DataManagerHDF5:__init__(domain, dataset_names, opts)
 
    local opts = opts or { }
    local Nx = cow.domain_getsize(domain, 0)
@@ -92,7 +67,7 @@ function MaraDataManager:__init__(domain, dataset_names, opts)
    self.dset_opts.mpio = opts.mpio or 'COLLECTIVE'
 end
 
-function MaraDataManager:write(filename, opts)
+function DataManagerHDF5:write(filename, opts)
    local opts = opts or { }
    local start = os.clock()
    local file = hdf5.File(filename, opts.file_mode or 'w', self.file_opts)
@@ -115,7 +90,7 @@ function MaraDataManager:write(filename, opts)
 
       if i == #self.dataset_names  then
 	 print("[Mara] write stats:")
-	 pretty_print(dset:get_mpio(), '\t# ')
+	 util.pretty_print(dset:get_mpio(), '\t# ')
       end
       dset:close()
    end
@@ -126,7 +101,7 @@ function MaraDataManager:write(filename, opts)
    return dt
 end
 
-function MaraDataManager:read(filename, opts)
+function DataManagerHDF5:read(filename, opts)
    local opts = opts or { }
    local start = os.clock()
    local file = hdf5.File(filename, 'r', self.file_opts)
@@ -144,7 +119,7 @@ function MaraDataManager:read(filename, opts)
 
       if i == #self.dataset_names then
 	 print("[Mara] read stats:")
-	 pretty_print(dset:get_mpio(), '\t# ')
+	 util.pretty_print(dset:get_mpio(), '\t# ')
       end
       dset:close()
    end
@@ -155,7 +130,7 @@ function MaraDataManager:read(filename, opts)
    return dt
 end
 
-function MaraDataManager:power_spectrum(nbins)
+function DataManagerHDF5:power_spectrum(nbins)
    if #self.dataset_names ~= 3 then
       error("[Mara] need a three-dimensional field to get a power spectrum")
    end
@@ -184,7 +159,7 @@ function MaraDataManager:power_spectrum(nbins)
    return binloc, binval
 end
 
-function MaraDataManager:_setup_spaces(mspace, fspace, member)
+function DataManagerHDF5:_setup_spaces(mspace, fspace, member)
    local Ng = self.Ng
    local S = self.sgrid_shape
    local T = self.sgrid_start
@@ -226,4 +201,4 @@ function MaraDataManager:_setup_spaces(mspace, fspace, member)
       fspace:select_hyperslab(fstart, fstrid, fcount, fblock)
    end
 end
-return {MaraDataManager=MaraDataManager}
+return {DataManagerHDF5=DataManagerHDF5}

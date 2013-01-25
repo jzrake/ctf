@@ -3,7 +3,7 @@ local array   = require 'array'
 local MPI     = require 'MPI'
 local cow     = require 'cow'
 local Mara    = require 'Mara'
-local LuaMara = require 'Mara.LuaMara'
+local unigrid = require 'unigrid'
 local hdf5    = require 'lua-hdf5.LuaHDF5'
 
 MPI.Init()
@@ -38,8 +38,8 @@ local function pinit(x,y,z)
    return {1, 1, math.sin(x), math.cos(y), 0}
 end
 
-local primitive = LuaMara.MaraDataManager(domain, prim_names)
-local velocity = LuaMara.MaraDataManager(domain, {'vx', 'vy', 'vz'})
+local primitive = unigrid.DataManagerHDF5(domain, prim_names)
+local velocity = unigrid.DataManagerHDF5(domain, {'vx', 'vy', 'vz'})
 local P = primitive.array
 local V = velocity.array
 
