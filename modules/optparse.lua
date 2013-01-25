@@ -190,7 +190,7 @@ local function OptionParser(t)
       end
    end
    if t.add_help_option == nil or t.add_help_option == true then
-      o.add_option{"--help", action="store_true", dest="help",
+      o.add_option{"-h", "--help", action="store_true", dest="help",
                    help="show this help message and exit"}
    end
    if t.version then
