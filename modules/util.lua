@@ -63,6 +63,7 @@ end
 -- Function to call Gnuplot from Lua using popen
 -- .............................................................................
 function util.plot(series, opts)
+   local opts = opts or { }
    local gp = io.popen("gnuplot", 'w')
 
    if opts.pdf then
@@ -73,19 +74,33 @@ function util.plot(series, opts)
 
    local lines = { }
    for k,v in pairs(series) do
-      table.insert(lines, string.format(" '-' u 1:2 title '%s'", k))
+      table.insert(lines, string.format(" '-' u 1:2 w lp title '%s'", k))
    end
 
    gp:write("plot" .. table.concat(lines, ",") .. "\n")
    for k,v in pairs(series) do
-      for i=0,#v-1 do
-         gp:write(string.format("%f %f\n", i, v[i]))
+      for x,y in ipairs(v) do
+         gp:write(string.format("%12.10e %12.10e\n", x, y))
       end
       gp:write("e\n")
    end
    if not opts.pdf then
-      gp:write(string.format("pause %f\n", opts.tpause or 100.0))
+      gp:write(string.format(" pause %f\n", opts.tpause or 100.0))
    end
+   gp:close()
+end
+
+function util.plot2(data, cmds)
+   local gp = io.popen("gnuplot", 'w')
+   for _,cmd in ipairs(cmds or { }) do
+      gp:write(cmd..'\n')
+   end
+   gp:write("plot '-' u 1:2 w linespoints title 'data'\n")
+   for k,v in pairs(data) do
+      gp:write(string.format("%e %e\n", k, v))
+   end
+   gp:write("e\n")
+   gp:write("pause 100\n")
    gp:close()
 end
 

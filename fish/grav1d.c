@@ -25,17 +25,24 @@ static double dx;
 
 
 static void solve_poisson(double *Rho, double *Phi, double *Gph, double *rhobar);
-//static void timederiv(double *L);
-static void set_bc_cons(double *U);
+static void timederiv_nogrv(double *L);
+static void timederiv_selfg(double *L);
+static void set_bc(double *U, int nq);
+static void (*timederiv)(double *L);
 
+void fish_grav1d_setscheme(fish_state *S)
+{
+  scheme = S;
+}
 
 void fish_grav1d_init(int N)
 {
   NumGhostZones = 3;
   TotalZones = N + 2 * NumGhostZones;
 
+  timederiv = 0 ? timederiv_nogrv : timederiv_selfg;
   descr = fluids_descr_new();
-  fluids_descr_setfluid(descr, FLUIDS_NRHYD);
+  fluids_descr_setfluid(descr, FLUIDS_GRAVS);
   fluids_descr_setgamma(descr, 1.4);
   fluids_descr_seteos(descr, FLUIDS_EOS_GAMMALAW);
 
@@ -46,12 +53,12 @@ void fish_grav1d_init(int N)
     fluid[n] = fluids_state_new();
     fluids_state_setdescr(fluid[n], descr);
   }
-
+  /*
   scheme = fish_new();
   fish_setparami(scheme, FISH_PLM, FISH_RECONSTRUCTION);
   fish_setparami(scheme, FLUIDS_RIEMANN_HLLC, FISH_RIEMANN_SOLVER);
   fish_setparami(scheme, FISH_GODUNOV, FISH_SOLVER_TYPE);
-  fish_setparamd(scheme, 2.0, FISH_PLM_THETA);
+  fish_setparamd(scheme, 2.0, FISH_PLM_THETA);*/
 }
 
 void fish_grav1d_finalize()
@@ -60,7 +67,7 @@ void fish_grav1d_finalize()
     fluids_state_del(fluid[n]);
   }
   fluids_descr_del(descr);
-  fish_del(scheme);
+  //  fish_del(scheme);
   free(fluid);
 }
 
@@ -76,10 +83,8 @@ void fish_grav1d_advance(double dt)
   }
 
   if (TimeUpdateMethod == MidpointMethod) {
-    for (int m=0; m < 5 * TotalZones; ++m) { L[m] = 0.0; }
-    fish_timederivative(scheme, fluid, 1, &TotalZones, &dx, L);
-    set_bc_cons(L);
 
+    timederiv(L);
     for (int n=0; n<TotalZones; ++n) {
       fluids_state_derive(fluid[n], U1, FLUIDS_CONSERVED);
       for (int q=0; q<5; ++q) {
@@ -88,10 +93,7 @@ void fish_grav1d_advance(double dt)
       fluids_state_fromcons(fluid[n], U1, FLUIDS_CACHE_DEFAULT);
     }
 
-    for (int m=0; m < 5 * TotalZones; ++m) { L[m] = 0.0; }
-    fish_timederivative(scheme, fluid, 1, &TotalZones, &dx, L);
-    set_bc_cons(L);
-
+    timederiv(L);
     for (int n=0; n<TotalZones; ++n) {
       fluids_state_derive(fluid[n], U1, FLUIDS_CONSERVED);
       for (int q=0; q<5; ++q) {
@@ -103,10 +105,7 @@ void fish_grav1d_advance(double dt)
   else if (TimeUpdateMethod == RungeKuttaShuOsherRk3) {
 
     /* ******************************* Step 1 ******************************* */
-    for (int m=0; m < 5 * TotalZones; ++m) { L[m] = 0.0; }
-    fish_timederivative(scheme, fluid, 1, &TotalZones, &dx, L);
-    set_bc_cons(L);
-
+    timederiv(L);
     for (int n=0; n<TotalZones; ++n) {
       fluids_state_derive(fluid[n], U1, FLUIDS_CONSERVED);
       for (int q=0; q<5; ++q) {
@@ -117,10 +116,7 @@ void fish_grav1d_advance(double dt)
     }
 
     /* ******************************* Step 2 ******************************* */
-    for (int m=0; m < 5 * TotalZones; ++m) { L[m] = 0.0; }
-    fish_timederivative(scheme, fluid, 1, &TotalZones, &dx, L);
-    set_bc_cons(L);
-
+    timederiv(L);
     for (int n=0; n<TotalZones; ++n) {
       fluids_state_derive(fluid[n], U1, FLUIDS_CONSERVED);
       for (int q=0; q<5; ++q) {
@@ -131,10 +127,7 @@ void fish_grav1d_advance(double dt)
     }
 
     /* ******************************* Step 3 ******************************* */
-    for (int m=0; m < 5 * TotalZones; ++m) { L[m] = 0.0; }
-    fish_timederivative(scheme, fluid, 1, &TotalZones, &dx, L);
-    set_bc_cons(L);
-
+    timederiv(L);
     for (int n=0; n<TotalZones; ++n) {
       fluids_state_derive(fluid[n], U1, FLUIDS_CONSERVED);
       for (int q=0; q<5; ++q) {
@@ -246,9 +239,16 @@ void solve_poisson(double *Rho, double *Phi, double *Gph, double *rhobar)
   fftw_free(Gphk);
 }
 
-void timederiv(double *L)
+void timederiv_nogrv(double *L)
 {
-  int Ng = NumGhostZones;
+  for (int m=0; m < 5 * TotalZones; ++m) {
+    L[m] = 0.0;
+  }
+  fish_timederivative(scheme, fluid, 1, &TotalZones, &dx, L);
+  set_bc(L, 5);
+}
+void timederiv_selfg(double *L)
+{
   int N = TotalZones;
 
   double *Rho = (double*) malloc(N * sizeof(double));
@@ -262,13 +262,8 @@ void timederiv(double *L)
     Rho[i] = P[0];
   }
   solve_poisson(Rho, Phi, Gph, &rhobar);
-
-  for (int i=0; i<Ng; ++i) {
-    Phi[    i    ] = Phi[ N - 2*Ng + i];
-    Phi[N - i - 1] = Phi[-1 + 2*Ng - i];
-    Gph[    i    ] = Gph[ N - 2*Ng + i];
-    Gph[N - i - 1] = Gph[-1 + 2*Ng - i];
-  }
+  set_bc(Phi, 1);
+  set_bc(Gph, 1);
 
   for (int i=0; i<N; ++i) {
     double G[4];
@@ -295,24 +290,18 @@ void timederiv(double *L)
       L[5*i + q] += source[q];
     }
   }
-
-  for (int i=0; i<Ng; ++i) {
-    for (int q=0; q<5; ++q) {
-      L[(    i    )*5 + q] = L[( N - 2*Ng + i)*5 + q];
-      L[(N - i - 1)*5 + q] = L[(-1 + 2*Ng - i)*5 + q];
-    }
-  }
+  set_bc(L, 5);
 }
 
-void set_bc_cons(double *U)
+void set_bc(double *U, int nq)
 {
   int N = TotalZones;
   int Ng = NumGhostZones;
 
   for (int i=0; i<Ng; ++i) {
-    for (int q=0; q<5; ++q) {
-      U[(    i    )*5 + q] = U[( N - 2*Ng + i)*5 + q];
-      U[(N - i - 1)*5 + q] = U[(-1 + 2*Ng - i)*5 + q];
+    for (int q=0; q<nq; ++q) {
+      U[(    i    )*nq + q] = U[( N - 2*Ng + i)*nq + q];
+      U[(N - i - 1)*nq + q] = U[(-1 + 2*Ng - i)*nq + q];
     }
   }
 }
