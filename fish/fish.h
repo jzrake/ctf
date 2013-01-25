@@ -51,7 +51,7 @@ int fish_setparami(fish_state *S, int param, long flag);
 int fish_getparamd(fish_state *S, double *param, long flag);
 int fish_setparamd(fish_state *S, double param, long flag);
 
-void fish_grav1d_init(int N);
+void fish_grav1d_init(fluids_descr *descr, int N);
 void fish_grav1d_finalize();
 void fish_grav1d_setscheme(fish_state *S);
 void fish_grav1d_advance(double dt);

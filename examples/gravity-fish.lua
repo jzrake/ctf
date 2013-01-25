@@ -82,13 +82,18 @@ local function run(NumZones)
    local n = 0
    local P, G = solution(0.0)
 
+   local descr = fluids.descr_new()
+   fluids.descr_setfluid(descr, fluids.GRAVS)
+   fluids.descr_setgamma(descr, 1.4)
+   fluids.descr_seteos(descr, fluids.EOS_GAMMALAW)
+
    local scheme = fish.state_new()
-   fish.setparami(scheme, fish.PLM, fish.RECONSTRUCTION);
-   fish.setparami(scheme, fluids.RIEMANN_HLLC, fish.RIEMANN_SOLVER);
-   fish.setparami(scheme, fish.GODUNOV, fish.SOLVER_TYPE);
+   fish.setparami(scheme, fish.PLM, fish.RECONSTRUCTION)
+   fish.setparami(scheme, fluids.RIEMANN_HLLC, fish.RIEMANN_SOLVER)
+   fish.setparami(scheme, fish.GODUNOV, fish.SOLVER_TYPE)
    fish.setparamd(scheme, 2.0, fish.PLM_THETA)
 
-   fish.grav1d_init(N)
+   fish.grav1d_init(descr, N)
    fish.grav1d_setscheme(scheme)
    fish.grav1d_mapbuffer(P:buffer(), fluids.PRIMITIVE)
    fish.grav1d_mapbuffer(G:buffer(), fluids.GRAVITY)
@@ -101,7 +106,7 @@ local function run(NumZones)
       if OutputCadence ~= 0 and n % OutputCadence == 0 then
          local fname = string.format('data/gravity-wave-%04d.h5', n)
          local outfile = hdf5.File(fname, 'w')
-         outfile['prim'] = P[{{Ng,-Ng},nil}]
+         outfile['prim' ] = P          [{{Ng,-Ng},nil}]
          outfile['exact'] = solution(t)[{{Ng,-Ng},nil}]
          outfile:close()
       end
@@ -116,8 +121,10 @@ local function run(NumZones)
          print(string.format("%05d: t=%3.2f dt=%2.1e %4.3fkz/s", n, t, dt, kzps))
       end
    end
+
    fish.grav1d_finalize()
    fish.del(scheme)
+   fluids.descr_del(descr)
 
    local P0 = solution(t)[{{Ng,-Ng},nil}]:vector()
    local P1 = P          [{{Ng,-Ng},nil}]:vector()

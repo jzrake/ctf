@@ -35,16 +35,13 @@ void fish_grav1d_setscheme(fish_state *S)
   scheme = S;
 }
 
-void fish_grav1d_init(int N)
+void fish_grav1d_init(fluids_descr *descr_, int N)
 {
   NumGhostZones = 3;
   TotalZones = N + 2 * NumGhostZones;
 
   timederiv = 0 ? timederiv_nogrv : timederiv_selfg;
-  descr = fluids_descr_new();
-  fluids_descr_setfluid(descr, FLUIDS_GRAVS);
-  fluids_descr_setgamma(descr, 1.4);
-  fluids_descr_seteos(descr, FLUIDS_EOS_GAMMALAW);
+  descr = descr_;
 
   fluid = (fluids_state**) malloc(TotalZones * sizeof(fluids_state*));
   dx = DomainLength / N;
@@ -53,12 +50,6 @@ void fish_grav1d_init(int N)
     fluid[n] = fluids_state_new();
     fluids_state_setdescr(fluid[n], descr);
   }
-  /*
-  scheme = fish_new();
-  fish_setparami(scheme, FISH_PLM, FISH_RECONSTRUCTION);
-  fish_setparami(scheme, FLUIDS_RIEMANN_HLLC, FISH_RIEMANN_SOLVER);
-  fish_setparami(scheme, FISH_GODUNOV, FISH_SOLVER_TYPE);
-  fish_setparamd(scheme, 2.0, FISH_PLM_THETA);*/
 }
 
 void fish_grav1d_finalize()
@@ -66,8 +57,6 @@ void fish_grav1d_finalize()
   for (int n=0; n<TotalZones; ++n) {
     fluids_state_del(fluid[n]);
   }
-  fluids_descr_del(descr);
-  //  fish_del(scheme);
   free(fluid);
 }
 
