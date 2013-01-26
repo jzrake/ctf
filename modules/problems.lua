@@ -4,6 +4,8 @@ local array = require 'array'
 
 local TestProblem = oo.class('TestProblem')
 function TestProblem:dynamical_time() return 1.0 end
+function TestProblem:user_work_iteration() end
+function TestProblem:user_work_finish() end
 
 local problems = { soundwave   = oo.class('soundwave', TestProblem),
 		   densitywave = oo.class('densitywave', TestProblem),
@@ -83,6 +85,27 @@ function problems.densitywave:solution(t)
    return P, G
 end
 
+function problems.collapse1d:user_work_iteration()
+   local sim = self.simulation
+   local D = sim.Primitive[{nil,{0,1}}]:vector()
+   local Dmax = 0.0
+
+   if not self.max_density then self.max_density = { } end
+
+   for i=0,#D-1 do
+      if D[i] > Dmax then Dmax = D[i] end
+   end
+   self.max_density[sim.status.simulation_time] = Dmax
+end
+
+function problems.collapse1d:user_work_iteration()
+   local f = io.open('stuff.dat', 'w')
+   for k,v in pairs(self.max_density) do
+      f:write(k..' '..v,'\n')
+   end
+   f:close()
+end
+
 function problems.collapse1d:solution(t)
    local sim = self.simulation
    local N = sim.N
@@ -104,4 +127,5 @@ function problems.collapse1d:solution(t)
    end
    return P, G
 end
+
 return problems
