@@ -1,5 +1,5 @@
 
-
+local oo   = require 'class'
 local json = require 'json'
 local util = { }
 
@@ -38,7 +38,9 @@ function util.pretty_print(t, indent, compare)
    table.sort(names, compare)
    for i,n in pairs(names) do
       local v = t[n]
-      if type(v) == "table" then
+      if oo.isclass(v) then
+	 print(indent..oo.classname(v))
+      elseif type(v) == "table" then
 	 if(v==t) then
 	    print(indent..tostring(n)..": <-")
 	 else
@@ -62,7 +64,7 @@ end
 -- *****************************************************************************
 -- Function to call Gnuplot from Lua using popen
 -- .............................................................................
-function util.plot(series, opts)
+function util.plot(series, cmds, opts)
    local opts = opts or { }
    local gp = io.popen("gnuplot", 'w')
 
@@ -72,15 +74,28 @@ function util.plot(series, opts)
       gp:write(string.format("set title '%s'\n", opts.id))
    end
 
+   for _,cmd in pairs(cmds or { }) do
+      gp:write(cmd..'\n')
+   end
    local lines = { }
    for k,v in pairs(series) do
       table.insert(lines, string.format(" '-' u 1:2 w lp title '%s'", k))
    end
-
    gp:write("plot" .. table.concat(lines, ",") .. "\n")
    for k,v in pairs(series) do
-      for x,y in ipairs(v) do
-         gp:write(string.format("%12.10e %12.10e\n", x, y))
+      if #v == 0 then
+	 local xy_vec = { }
+	 for x,y in pairs(v) do
+	    table.insert(xy_vec, {x,y})
+	 end
+	 table.sort(xy_vec, function(a,b) return a[1] < b[1] end)
+	 for _,pnt in pairs(xy_vec) do
+	    gp:write(string.format("%12.10e %12.10e\n", pnt[1], pnt[2]))
+	 end
+      else
+	 for x,y in pairs(v) do
+	    gp:write(string.format("%12.10e %12.10e\n", x, y))
+	 end
       end
       gp:write("e\n")
    end

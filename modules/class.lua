@@ -164,6 +164,9 @@ end
 function object:__pairs__()
    error('object does not support iteration')
 end
+function object:__call__()
+   error('object does not support call')
+end
 function object:__gc__()
    -- warning! __gc__ is only triggered for the first resolved __gc__ method in
    -- the hierarchy.

@@ -186,7 +186,7 @@ local function OptionParser(t)
       end
       for _,optdesc in ipairs(option_descriptions) do
          io.stdout:write("  " .. ('%-'..maxwidth..'s  '):format(flags_str(optdesc))
-                         .. optdesc.help .. "\n")
+                         ..(optdesc.help or '').."\n")
       end
    end
    if t.add_help_option == nil or t.add_help_option == true then
