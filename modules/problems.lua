@@ -2,8 +2,12 @@
 local oo    = require 'class'
 local array = require 'array'
 
-local problems = { soundwave   = oo.class('soundwave'),
-		   densitywave = oo.class('densitywave') }
+local TestProblem = oo.class('TestProblem')
+function TestProblem:dynamical_time() return 1.0 end
+
+local problems = { soundwave   = oo.class('soundwave', TestProblem),
+		   densitywave = oo.class('densitywave', TestProblem),
+		   collapse1d  = oo.class('collapse1d', TestProblem) } 
 
 local DomainLength = 1.0
 local BackgroundDensity = 1.0
@@ -79,4 +83,25 @@ function problems.densitywave:solution(t)
    return P, G
 end
 
+function problems.collapse1d:solution(t)
+   local sim = self.simulation
+   local N = sim.N
+   local Ng = sim.Ng
+   local dx = sim.dx
+   local p0 = 1e-6
+
+   local P = array.array{N + 2*Ng, 5}
+   local G = array.array{N + 2*Ng, 4}
+   local Pvec = P:vector()
+
+   for n=0,#Pvec/5-1 do
+      local x  = (n - Ng) * dx
+      Pvec[5*n + 0] = math.abs(x - 0.5) < 0.25 and 1.0 or 1e-6
+      Pvec[5*n + 1] = p0
+      Pvec[5*n + 2] = 0.0
+      Pvec[5*n + 3] = 0.0
+      Pvec[5*n + 4] = 0.0
+   end
+   return P, G
+end
 return problems

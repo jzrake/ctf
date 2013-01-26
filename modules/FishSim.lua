@@ -84,6 +84,16 @@ function FishSimulation:checkpoint_write()
    outfile:close()
 end
 
+function FishSimulation:user_work_iteration()
+   if not self.max_density then self.max_density = { } end
+   local D = self.Primitive[{nil,{0,1}}]:vector()
+   local Dmax = 0.0
+   for i=0,#D-1 do
+      if D[i] > Dmax then Dmax = D[i] end
+   end
+   self.max_density[self.status.simulation_time] = Dmax
+end
+
 function FishSimulation:user_work_finish()
    local t = self.status.simulation_time
    local Ng = self.Ng
@@ -101,6 +111,11 @@ function FishSimulation:user_work_finish()
       util.plot{['code' ]=P     [{{Ng,-Ng},{0,1}}]:table(),
 		['exact']=Pexact[{{Ng,-Ng},{0,1}}]:table()}
    end
+   local f = io.open('stuff.dat', 'w')
+   for k,v in pairs(self.max_density) do
+      f:write(k..' '..v,'\n')
+   end
+   f:close()
 end
 
 return {FishSimulation=FishSimulation}

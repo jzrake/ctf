@@ -7,7 +7,6 @@ local util     = require 'util'
 local cmds = { }
 
 function cmds.runandplot(problem, opts)
-   opts.plot = true
    local sim = FishSim.FishSimulation(opts)
    sim:run(problem)
 end
