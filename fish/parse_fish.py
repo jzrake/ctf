@@ -40,6 +40,7 @@ for line in fishh:
     narg = 1
 
     for arg in args:
+        if not arg: continue
         argtype, argname = arg.split()[:-1], arg.split()[-1]
         argtype = ''.join(argtype)
         if argname.startswith('**'):
@@ -51,9 +52,9 @@ for line in fishh:
 
         ga = None
 
-        if argtype == "fish_descr *":
-            ga = """fish_descr *%s = *((fish_descr**) """\
-                """luaL_checkudata(L, %d, "fish::descr"));""" % (argname, narg)
+        if argtype == "fluids_descr *":
+            ga = """fluids_descr *%s = *((fluids_descr**) """\
+                """luaL_checkudata(L, %d, "fluids::descr"));""" % (argname, narg)
         elif argtype == "fish_state *":
             ga = """fish_state *%s = *((fish_state**) """\
                 """luaL_checkudata(L, %d, "fish::state"));""" % (argname, narg)

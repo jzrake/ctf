@@ -11,12 +11,19 @@ CFLAGS += -std=c99
 FISH_A = libfish.a
 LUA_I ?= -I$(LUA_HOME)/include
 
-OBJ = fish.o reconstruct.o fluids.o riemann.o matrix.o euler.o
+ifeq ($(strip $(USE_FFTW)), 1)
+INC += -I$(FFT_HOME)/include
+endif
+
+OBJ = fish.o reconstruct.o fluids.o riemann.o matrix.o grav1d.o
 
 default : $(FISH_A) lua-fluids.o lua-fish.o
 
 %.o : %.c
 	$(CC) $(CFLAGS) -c $^ $(LUA_I)
+
+grav1d.o : grav1d.c
+	$(CC) $(CFLAGS) -c $^ $(LUA_I) $(INC)
 
 $(FISH_A) : $(OBJ)
 	$(ARSTATIC) $@ $?
