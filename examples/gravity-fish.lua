@@ -145,7 +145,7 @@ local function resolution_study()
    util.pretty_print(ErrorTable)
    print("estimated convergence rate is",
 	 math.log10(ErrorTable[1024]/ErrorTable[64]) / math.log10(1024/64))
-   util.plot(ErrorTable, {'set logscale'})
+   util.plot({['L1 error']=ErrorTable}, {'set logscale'})
 end
 
 local function runandplot()
@@ -155,3 +155,4 @@ local function runandplot()
 end
 
 runandplot()
+--resolution_study()
