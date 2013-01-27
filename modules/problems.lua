@@ -3,13 +3,34 @@ local oo    = require 'class'
 local array = require 'array'
 
 local TestProblem = oo.class('TestProblem')
+local TwoStateProblem = oo.class('TwoStateProblem', TestProblem)
+
+local problems = {
+   soundwave   = oo.class('soundwave'  , TestProblem),
+   densitywave = oo.class('densitywave', TestProblem),
+   collapse1d  = oo.class('collapse1d' , TestProblem),
+
+   Shocktube1  = oo.class('Shocktube1' , TwoStateProblem),
+   Shocktube2  = oo.class('Shocktube2' , TwoStateProblem),
+   Shocktube3  = oo.class('Shocktube3' , TwoStateProblem),
+   Shocktube4  = oo.class('Shocktube4' , TwoStateProblem),
+   Shocktube5  = oo.class('Shocktube5' , TwoStateProblem),
+   ContactWave = oo.class('ContactWave', TwoStateProblem),
+
+   SrhdCase1DFIM98       = oo.class('SrhdCase1DFIM98'      , TwoStateProblem),
+   SrhdCase2DFIM98       = oo.class('SrhdCase2DFIM98'      , TwoStateProblem),
+   SrhdHardTransverseRAM = oo.class('SrhdHardTransverseRAM', TwoStateProblem),
+}
+
+function TestProblem:__init__(user_opts)
+   self.user_opts = user_opts
+end
 function TestProblem:dynamical_time() return 1.0 end
 function TestProblem:user_work_iteration() end
 function TestProblem:user_work_finish() end
-
-local problems = { soundwave   = oo.class('soundwave', TestProblem),
-		   densitywave = oo.class('densitywave', TestProblem),
-		   collapse1d  = oo.class('collapse1d', TestProblem) } 
+function TestProblem:boundary_conditions()
+   return 'periodic'
+end
 
 local DomainLength = 1.0
 local BackgroundDensity = 1.0
@@ -127,5 +148,55 @@ function problems.collapse1d:solution(t)
    end
    return P, G
 end
+
+
+
+function TwoStateProblem:boundary_conditions() 
+   return 'outflow'
+end
+function TwoStateProblem:solution(t)
+   local sim = self.simulation
+   local N = sim.N
+   local Ng = sim.Ng
+   local dx = sim.dx
+   local p0 = 1e-6
+
+   local L = self.state1
+   local R = self.state2
+
+   local P = array.array{N + 2*Ng, 5}
+   local G = array.array{N + 2*Ng, 4}
+   local Pvec = P:vector()
+
+   for n=0,#Pvec/5-1 do
+      local x  = (n - Ng) * dx
+      Pvec[5*n + 0] = x < 0.5 and L[1] or R[1]
+      Pvec[5*n + 1] = x < 0.5 and L[2] or R[2]
+      Pvec[5*n + 2] = x < 0.5 and L[3] or R[3]
+      Pvec[5*n + 3] = x < 0.5 and L[3] or R[4]
+      Pvec[5*n + 4] = x < 0.5 and L[4] or R[5]
+   end
+   return P, G
+end
+
+problems.Shocktube1.state1 = {1.000, 1.000, 0.000, 0.0, 0.0}
+problems.Shocktube1.state2 = {0.125, 0.100, 0.000, 0.0, 0.0}
+problems.Shocktube2.state1 = {1.000, 0.400,-2.000, 0.0, 0.0}
+problems.Shocktube2.state2 = {1.000, 0.400, 2.000, 0.0, 0.0}
+problems.Shocktube3.state1 = {1.0, 1e+3, 0.0, 0.0, 0.0}
+problems.Shocktube3.state2 = {1.0, 1e-2, 0.0, 0.0, 0.0}
+problems.Shocktube4.state1 = {1.0, 1e-2, 0.0, 0.0, 0.0}
+problems.Shocktube4.state2 = {1.0, 1e+2, 0.0, 0.0, 0.0}
+problems.Shocktube5.state1 = {5.99924, 460.894, 19.59750, 0.0, 0.0}
+problems.Shocktube5.state2 = {5.99924,  46.095, -6.19633, 0.0, 0.0}
+problems.ContactWave.state1 = {1.0, 1.0, 0.0, 0.7, 0.2}
+problems.ContactWave.state2 = {0.1, 1.0, 0.0, 0.7, 0.2}
+
+problems.SrhdCase1DFIM98.state1 = {10.0, 13.30, 0.0, 0.0, 0.0}
+problems.SrhdCase1DFIM98.state2 = { 1.0,  1e-6, 0.0, 0.0, 0.0}
+problems.SrhdCase2DFIM98.state1 = {1, 1e+3, 0.0, 0.0, 0.0}
+problems.SrhdCase2DFIM98.state2 = {1, 1e-2, 0.0, 0.0, 0.0}
+problems.SrhdHardTransverseRAM.state1 = {1, 1e+3, 0.0, 0.9, 0.0}
+problems.SrhdHardTransverseRAM.state2 = {1, 1e-2, 0.0, 0.9, 0.0}
 
 return problems

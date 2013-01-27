@@ -47,7 +47,7 @@ local function main()
       print("valid sub commands are:")
       util.pretty_print(cmds, '\t')
    else
-      cmds[args[2]](problem_class(), opts)
+      cmds[args[2]](problem_class(opts), opts)
    end
 end
 
