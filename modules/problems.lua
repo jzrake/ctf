@@ -24,27 +24,35 @@ local problems = {
 
 function TestProblem:__init__(user_opts)
    self.user_opts = user_opts
+   self:initialize_problem()
 end
+function TestProblem:initialize_problem() end
 function TestProblem:dynamical_time() return 1.0 end
 function TestProblem:user_work_iteration() end
 function TestProblem:user_work_finish() end
-function TestProblem:boundary_conditions()
-   return 'periodic'
+function TestProblem:boundary_conditions() return 'periodic' end
+function TestProblem:fluid() return 'nrhyd' end
+
+function problems.soundwave:initialize_problem()
+   self.DomainLength = 1.0
+   self.BackgroundDensity = 1.0
+   self.FourPiG = 1.0
+   self.SoundSpeed  = 0.2
+   self.WaveNumber = 8 * math.pi
+   self.WaveLength = 2 * math.pi / WaveNumber
+   self.SoundCrossingTime = DomainLength / SoundSpeed
+   self.JeansLength = 2 * self.SoundSpeed * math.pi / (
+      self.FourPiG * self.BackgroundDensity)^0.5
+   print("problems.soundwave: the Jeans length is"..self.JeansLength)
 end
-
-local DomainLength = 1.0
-local BackgroundDensity = 1.0
-local FourPiG = 1.0
-local SoundSpeed  = 0.2
-local JeansLength = 2 * SoundSpeed * math.pi / (FourPiG * BackgroundDensity)^0.5
-local WaveNumber = 8 * math.pi
-local WaveLength = 2 * math.pi / WaveNumber
-local SoundCrossingTime = DomainLength / SoundSpeed
-
 function problems.soundwave:dynamical_time()
-   return SoundCrossingTime
+   return self.SoundCrossingTime
+end
+function problems.soundwave:initial_condition()
+   return self:solution(0.0)
 end
 function problems.soundwave:solution(t)
+
    local sim = self.simulation
    local N = sim.N
    local Ng = sim.Ng
@@ -54,15 +62,15 @@ function problems.soundwave:solution(t)
    local G = array.array{N + 2*Ng, 4}
    local Pvec = P:vector()
 
-   local cs = SoundSpeed
-   local D0 = BackgroundDensity
+   local cs = self.SoundSpeed
+   local D0 = self.BackgroundDensity
    local D1 = D0 * 1e-6
    local p0 = D0 * cs^2 / 1.4
    local p1 = D1 * cs^2
    local u0 = 0.0
    local u1 = cs * D1 / D0
-   local k0 = WaveNumber
-   local w0 = ((cs * k0)^2 - FourPiG * D0)^0.5
+   local k0 = self.WaveNumber
+   local w0 = ((cs * k0)^2 - self.FourPiG * D0)^0.5
 
    for n=0,#Pvec/5-1 do
       local x = (n - sim.Ng) * dx
@@ -76,7 +84,7 @@ function problems.soundwave:solution(t)
 end
 
 function problems.densitywave:dynamical_time()
-   return SoundCrossingTime
+   return 1.0
 end
 function problems.densitywave:solution(t)
    local sim = self.simulation
@@ -88,18 +96,42 @@ function problems.densitywave:solution(t)
    local G = array.array{N + 2*Ng, 4}
    local Pvec = P:vector()
 
-   local cs = SoundSpeed
+   local cs = 1.0
    local u0 = cs -- Mach 1 density wave
-   local D0 = BackgroundDensity
+   local D0 = 1.0
    local D1 = D0 * 1e-1
    local p0 = D0 * cs^2 / 1.4
-   local k0 = WaveNumber
+   local k0 = 8 * math.pi
 
    for n=0,#Pvec/5-1 do
       local x  = (n - Ng) * dx
       Pvec[5*n + 0] = D0 + D1 * math.cos(k0 * (x - u0 * t))
       Pvec[5*n + 1] = p0
       Pvec[5*n + 2] = u0
+      Pvec[5*n + 3] = 0.0
+      Pvec[5*n + 4] = 0.0
+   end
+   return P, G
+end
+
+function problems.collapse1d:fluid() return 'gravs' end
+function problems.collapse1d:initialize_problem() self.max_density = { } end
+function problems.collapse1d:solution(t)
+   local sim = self.simulation
+   local N = sim.N
+   local Ng = sim.Ng
+   local dx = sim.dx
+   local p0 = 1e-6
+
+   local P = array.array{N + 2*Ng, 5}
+   local G = array.array{N + 2*Ng, 4}
+   local Pvec = P:vector()
+
+   for n=0,#Pvec/5-1 do
+      local x  = (n - Ng) * dx
+      Pvec[5*n + 0] = math.abs(x - 0.5) < 0.25 and 1.0 or 1e-6
+      Pvec[5*n + 1] = p0
+      Pvec[5*n + 2] = 0.0
       Pvec[5*n + 3] = 0.0
       Pvec[5*n + 4] = 0.0
    end
@@ -125,28 +157,6 @@ function problems.collapse1d:user_work_iteration()
       f:write(k..' '..v,'\n')
    end
    f:close()
-end
-
-function problems.collapse1d:solution(t)
-   local sim = self.simulation
-   local N = sim.N
-   local Ng = sim.Ng
-   local dx = sim.dx
-   local p0 = 1e-6
-
-   local P = array.array{N + 2*Ng, 5}
-   local G = array.array{N + 2*Ng, 4}
-   local Pvec = P:vector()
-
-   for n=0,#Pvec/5-1 do
-      local x  = (n - Ng) * dx
-      Pvec[5*n + 0] = math.abs(x - 0.5) < 0.25 and 1.0 or 1e-6
-      Pvec[5*n + 1] = p0
-      Pvec[5*n + 2] = 0.0
-      Pvec[5*n + 3] = 0.0
-      Pvec[5*n + 4] = 0.0
-   end
-   return P, G
 end
 
 

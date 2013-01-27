@@ -50,8 +50,8 @@ function util.pretty_print(t, indent, compare)
       else
 	 if type(v) == "function" then
 	    print(indent..tostring(n).."()")
-	 elseif type(v) == 'number' and (math.log10(v) > 2 or
-					 math.log10(v) < -2) then
+	 elseif type(v) == 'number' and (math.log10(v) > 4 or
+					 math.log10(v) < -4) then
 	    print(indent..tostring(n)..": "..string.format("%3.2e", v))
 	 else
 	    print(indent..tostring(n)..": "..tostring(v))

@@ -28,11 +28,15 @@ end
 local function main()
    local parser = optparse.OptionParser{usage="%prog [options] [input_args]",
 					version="CTF version 1.0"}
-   parser.add_option{"-s", "--solver", dest="solver", help="solver type"}
+
    parser.add_option{"--cpi", dest="cpi", help="checkpoint interval"}
    parser.add_option{"--tmax", dest="tmax", help="end simulation time"}
    parser.add_option{"--plot", dest="plot", action="store_true"}
    parser.add_option{"--problem", dest="problem", help="problem name to run"}
+   parser.add_option{"--reconstruction", dest="reconstruction"}
+   parser.add_option{"--riemann", dest="riemann"}
+   parser.add_option{"--advance", dest="advance"}
+   parser.add_option{"--solver", dest="solver"}
    parser.add_option{"-N", dest="N", help="resolution"}
 
    local opts, args = parser.parse_args()

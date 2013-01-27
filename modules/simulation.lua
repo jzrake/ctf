@@ -21,6 +21,7 @@ function SimulationBase:checkpoint_write() end
 function SimulationBase:checkpoint_read() end
 function SimulationBase:user_work_iteration() end
 function SimulationBase:user_work_finish() end
+function SimulationBase:report_configuration() end
 function SimulationBase:advance_status()
    local status = self.status
    status.iteration_number = status.iteration_number + 1
@@ -61,6 +62,7 @@ function SimulationBase:run(problem)
    self:initialize_behavior()
    self:initialize_solver()
    self:initialize_physics()
+   self:report_configuration()
    self:main_loop()
    self:user_work_finish()
    self:finalize_solver()
