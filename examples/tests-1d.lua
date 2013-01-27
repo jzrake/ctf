@@ -1,21 +1,22 @@
 
 local optparse = require 'optparse'
 local FishSim  = require 'FishSim'
+local MaraSim  = require 'MaraSim'
 local problems = require 'problems'
 local util     = require 'util'
 
 local cmds = { }
 
-function cmds.runandplot(problem, opts)
-   local sim = FishSim.FishSimulation(opts)
+function cmds.single(sim_class, problem, opts)
+   local sim = sim_class(opts)
    sim:run(problem)
 end
 
-function cmds.convergence(problem, opts)
+function cmds.convergence(sim_class, problem, opts)
    local ErrorTable = { }
    for _,res in pairs{8,16,32,64,128,256,512,1024} do
       opts.N = res
-      local sim = FishSim.FishSimulation(opts)
+      local sim = sim_class(opts)
       sim:run(problem)
       ErrorTable[sim.N] = sim.L1error
    end
@@ -37,21 +38,31 @@ local function main()
    parser.add_option{"--riemann", dest="riemann"}
    parser.add_option{"--advance", dest="advance"}
    parser.add_option{"--solver", dest="solver"}
+   parser.add_option{"--code", dest="code"}
    parser.add_option{"-N", dest="N", help="resolution"}
 
    local opts, args = parser.parse_args()
 
    local problem_class = problems[opts.problem or 'densitywave']
+   local sim_class =
+      ({mara=MaraSim.MaraSimulation,
+	fish=FishSim.FishSimulation})[(opts.code or 'mara'):lower()]
+      
    if not problem_class then
       print("valid problem names are:")
       util.pretty_print(problems, '\t')
       return
    end
+   if not sim_class then
+      print("valid codes are:")
+      util.pretty_print({'mara', 'fish'}, '\t')
+      return
+   end
    if not cmds[args[2]] then
-      print("valid sub commands are:")
+      print("valid sub-commands are:")
       util.pretty_print(cmds, '\t')
    else
-      cmds[args[2]](problem_class(opts), opts)
+      cmds[args[2]](sim_class, problem_class(opts), opts)
    end
 end
 
