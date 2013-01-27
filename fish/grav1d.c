@@ -1,20 +1,11 @@
 
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
-#include <assert.h>
 #include <math.h>
 #include <string.h>
 #include <fftw3.h>
 #include "fish.h"
 
-enum {
-  MidpointMethod,
-  RungeKuttaShuOsherRk3
-} ;
-
-static int TimeUpdateMethod = RungeKuttaShuOsherRk3;
 static struct fluids_state **fluid;
 static fluids_descr *descr;
 static fish_state *scheme;
@@ -65,14 +56,16 @@ void fish_grav1d_advance(double dt)
   double *L  = (double*) malloc(TotalZones * 5 * sizeof(double));
   double *U0 = (double*) malloc(TotalZones * 5 * sizeof(double));
   double U1[5];
+  int method;
+  fish_getparami(scheme, &method, FISH_TIME_UPDATE);
 
   for (int m=0; m < 5 * TotalZones; ++m) { U0[m] = 0.0; }
   for (int n=0; n<TotalZones; ++n) {
     fluids_state_derive(fluid[n], &U0[5*n], FLUIDS_CONSERVED);
   }
 
-  if (TimeUpdateMethod == MidpointMethod) {
-
+  switch (method) {
+  case FISH_MIDPOINT:
     timederiv(L);
     for (int n=0; n<TotalZones; ++n) {
       fluids_state_derive(fluid[n], U1, FLUIDS_CONSERVED);
@@ -90,9 +83,9 @@ void fish_grav1d_advance(double dt)
       }
       fluids_state_fromcons(fluid[n], U1, FLUIDS_CACHE_DEFAULT);
     }
-  }
-  else if (TimeUpdateMethod == RungeKuttaShuOsherRk3) {
+  break;
 
+  case FISH_SHUOSHER_RK3:
     /* ******************************* Step 1 ******************************* */
     timederiv(L);
     for (int n=0; n<TotalZones; ++n) {
@@ -125,6 +118,7 @@ void fish_grav1d_advance(double dt)
       }
       fluids_state_fromcons(fluid[n], U1, FLUIDS_CACHE_DEFAULT);
     }
+    break;
   }
 
   free(L);
@@ -286,11 +280,28 @@ void set_bc(double *U, int nq)
 {
   int N = TotalZones;
   int Ng = NumGhostZones;
+  int BC;
 
-  for (int i=0; i<Ng; ++i) {
-    for (int q=0; q<nq; ++q) {
-      U[(    i    )*nq + q] = U[( N - 2*Ng + i)*nq + q];
-      U[(N - i - 1)*nq + q] = U[(-1 + 2*Ng - i)*nq + q];
+  fish_getparami(scheme, &BC, FISH_BOUNDARY_CONDITIONS);
+
+  switch (BC) {
+  case FISH_PERIODIC:
+    for (int i=0; i<Ng; ++i) {
+      for (int q=0; q<nq; ++q) {
+	U[(    i    )*nq + q] = U[( N - 2*Ng + i)*nq + q];
+	U[(N - i - 1)*nq + q] = U[(-1 + 2*Ng - i)*nq + q];
+      }
     }
+    break;
+  case FISH_OUTFLOW:
+    for (int i=0; i<Ng; ++i) {
+      for (int q=0; q<nq; ++q) {
+	U[(    i    )*nq + q] = U[(    Ng    )*nq + q];
+	U[(N - i - 1)*nq + q] = U[(N - Ng - 1)*nq + q];
+      }
+    }
+    break;
+  default:
+    break; // warning!
   }
 }

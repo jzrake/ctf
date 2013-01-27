@@ -40,6 +40,8 @@ fish_state *fish_new(void)
     .riemann_solver = FLUIDS_RIEMANN_HLL,
     .reconstruction = FISH_PLM,
     .smoothness_indicator = FISH_ISK_JIANGSHU96,
+    .boundary_conditions = FISH_PERIODIC,
+    .time_update = FISH_MIDPOINT,
     .plm_theta = 2.0,
     .shenzha10_param = 0.0,
   } ;
@@ -59,6 +61,8 @@ int fish_getparami(fish_state *S, int *param, long flag)
   case FISH_RIEMANN_SOLVER: *param = S->riemann_solver; return 0;
   case FISH_RECONSTRUCTION: *param = S->reconstruction; return 0;
   case FISH_SMOOTHNESS_INDICATOR: *param = S->smoothness_indicator; return 0;
+  case FISH_BOUNDARY_CONDITIONS: *param = S->boundary_conditions; return 0;
+  case FISH_TIME_UPDATE: *param = S->time_update; return 0;
   }
   return FISH_ERROR_BADARG;
 }
@@ -69,6 +73,8 @@ int fish_setparami(fish_state *S, int param, long flag)
   case FISH_RIEMANN_SOLVER: S->riemann_solver = param; return 0;
   case FISH_RECONSTRUCTION: S->reconstruction = param; return 0;
   case FISH_SMOOTHNESS_INDICATOR: S->smoothness_indicator = param; return 0;
+  case FISH_BOUNDARY_CONDITIONS: S->boundary_conditions = param; return 0;
+  case FISH_TIME_UPDATE: S->time_update = param; return 0;
   }
   return FISH_ERROR_BADARG;
 }

@@ -12,7 +12,7 @@ local FishSimulation = oo.class('FishSimulation', sim.SimulationBase)
 
 function FishSimulation:initialize_behavior()
    local opts = self.user_opts
-   local cpi = opts.cpi or 0.1
+   local cpi = opts.cpi or 1.0
    local tmax = opts.tmax or 1.0
    local dynamical_time = self.problem:dynamical_time()
    self.behavior.message_cadence = 100
@@ -22,13 +22,13 @@ end
 
 function FishSimulation:initialize_solver()
    local opts = self.user_opts
-   self.CFL = 0.8
+   self.CFL = opts.CFL or 0.8
    self.Ng = 3
    self.N = opts.N or 128
    self.dx = 1.0 / self.N
 
    local descr = fluids.descr_new()
-   fluids.descr_setfluid(descr, fluids.GRAVS)
+   fluids.descr_setfluid(descr, fluids.NRHYD)
    fluids.descr_setgamma(descr, 1.4)
    fluids.descr_seteos(descr, fluids.EOS_GAMMALAW)
 
@@ -36,6 +36,8 @@ function FishSimulation:initialize_solver()
    fish.setparami(scheme, fish.PLM, fish.RECONSTRUCTION)
    fish.setparami(scheme, fluids.RIEMANN_HLLC, fish.RIEMANN_SOLVER)
    fish.setparami(scheme, fish.GODUNOV, fish.SOLVER_TYPE)
+   fish.setparami(scheme, fish.PERIODIC, fish.BOUNDARY_CONDITIONS)
+   fish.setparami(scheme, fish.SHUOSHER_RK3, fish.TIME_UPDATE)
    fish.setparamd(scheme, 2.0, fish.PLM_THETA)
 
    fish.grav1d_init(descr, self.N)

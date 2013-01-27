@@ -10,6 +10,18 @@ enum {
   FISH_SPECTRAL, // conservative finite differencing of characteristic fields
   FISH_DIFFUSION, // apply Lax-Friedrichs diffusion (for when things get dicey)
 
+  // -------------------
+  // boundary conditions
+  // -------------------
+  FISH_PERIODIC,
+  FISH_OUTFLOW,
+
+  // -------------------
+  // time update methods
+  // -------------------
+  FISH_MIDPOINT,
+  FISH_SHUOSHER_RK3,
+
   // ---------------------------------------------------------------------------
   // smoothness indicators for WENO reconstruction
   // ---------------------------------------------------------------------------
@@ -28,6 +40,8 @@ enum {
   FISH_RIEMANN_SOLVER,
   FISH_RECONSTRUCTION,
   FISH_SMOOTHNESS_INDICATOR,
+  FISH_BOUNDARY_CONDITIONS,
+  FISH_TIME_UPDATE,
 
   // -----------------
   // double parameters
@@ -35,6 +49,9 @@ enum {
   FISH_PLM_THETA, // [1 -> 2 (most aggressive)]
   FISH_SHENZHA10_PARAM, // [0 -> ~100 (most aggressive)]
 
+  // -------------------
+  // error codes
+  // -------------------
   FISH_ERROR_BADARG,
 } ;
 
@@ -74,6 +91,8 @@ struct fish_state {
   int riemann_solver;
   int reconstruction;
   int smoothness_indicator;
+  int boundary_conditions;
+  int time_update;
   double plm_theta;
   double shenzha10_param;
 } ;
