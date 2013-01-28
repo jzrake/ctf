@@ -23,7 +23,7 @@ function MaraSimulation:initialize_solver()
    local opts = self.user_opts
    self.CFL = opts.CFL or 0.8
    self.Ng = 3
-   self.N = opts.N or 128
+   self.N = opts.resolution or 128
    self.dx = 1.0 / self.N
 
    local fluid = ({nrhyd='euler',

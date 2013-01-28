@@ -22,38 +22,45 @@ local cmds = { }
 -- end
 
 local function main()
-   local parser = optparse.OptionParser{usage="%prog [options] [input_args]",
+   local usage = "test-1d <problem> [<options>]"
+   local parser = optparse.OptionParser{usage=usage,
 					version="CTF version 1.0"}
 
    parser.add_option{"--cpi", dest="cpi", help="checkpoint interval"}
+   parser.add_option{"--cfl", dest="CFL",
+		     help="Courant-Freidrichs-Lewy time-step constrain"}
    parser.add_option{"--tmax", dest="tmax", help="end simulation time"}
    parser.add_option{"--plot", dest="plot", action="store_true"}
    parser.add_option{"--problem", dest="problem", help="problem name to run"}
    parser.add_option{"--reconstruction", dest="reconstruction"}
    parser.add_option{"--riemann", dest="riemann"}
-   parser.add_option{"--advance", dest="advance"}
+   parser.add_option{"--advance", dest="advance",
+		     help="which Runge-Kutta to use for solution advance"}
    parser.add_option{"--solver", dest="solver"}
-   parser.add_option{"--code", dest="code"}
-   parser.add_option{"-N", dest="N", help="resolution"}
+   parser.add_option{"--backend", "-b", dest="backend",
+		     help="which backend code to use: currently Mara or Fish"}
+   parser.add_option{"--resolution, -N", dest="resolution", help="grid resolution"}
    parser.add_option{"--self-gravity", dest="self_gravity", action="store_true",
 		     help="include self gravity"}
+   parser.add_option{"--convergence", dest="convergence", action="store_true",
+		     help="run a convergence test over a few resolutions"}
 
    local opts, args = parser.parse_args()
    local problem_class = problems[arg[2]]
 
    if not problem_class then
-      print('usage: tests-1d problem [options]')
+      print('usage: '..usage)
       print("valid problem names are:")
       util.pretty_print(problems, '\t')
       return
    end
-   
+
    local sim_class = (
       {mara=MaraSim.MaraSimulation,
-       fish=FishSim.FishSimulation})[(opts.code or 'mara'):lower()]
-   
+       fish=FishSim.FishSimulation})[(opts.backend or 'mara'):lower()]
+
    if not sim_class then
-      print("valid codes are:")
+      print("valid backend codes are:")
       util.pretty_print({'Mara', 'Fish'}, '\t')
       return
    end
