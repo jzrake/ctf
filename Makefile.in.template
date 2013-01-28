@@ -6,6 +6,10 @@ CXX    =  c++
 CFLAGS = -Wall -O3
 
 
+# On Linux, you may need something like
+# LIBS = -lm -ldl
+
+
 # OS name: used for Lua, can be one of:
 #
 # [aix ansi bsd freebsd generic linux macosx mingw posix solaris]
