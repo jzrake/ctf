@@ -1,6 +1,7 @@
 
 
 #include <iostream>
+#include <cstdio>
 #include <cstring>
 #include <algorithm>
 #include "eulers.hpp"

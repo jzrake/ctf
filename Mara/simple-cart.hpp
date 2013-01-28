@@ -23,7 +23,7 @@ private:
 
 public:
   SimpleCartesianDomain(const double *x0, const double *x1, const int *N,
-			int Nd, int Nq, int Ng);
+			int Nd, int Nq, int Ng, void *cart_comm=NULL);
   ~SimpleCartesianDomain();
   void Synchronize(std::valarray<double> &A) const;
   int SubgridRank() const;

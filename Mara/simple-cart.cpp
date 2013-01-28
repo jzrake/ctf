@@ -7,7 +7,7 @@
 typedef SimpleCartesianDomain Domain;
 
 Domain::SimpleCartesianDomain(const double *x0, const double *x1, const int *N,
-			      int Nd, int Nq, int Ng)
+			      int Nd, int Nq, int Ng, void *cart_comm)
   : Ng(Ng), Nq(Nq), num_dims(Nd)
 {
 
