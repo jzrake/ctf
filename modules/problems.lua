@@ -38,7 +38,6 @@ function TestProblem:fluid() return 'nrhyd' end
 
 
 function problems.soundwave:fluid()
-   print(self)
    return self.user_opts.self_gravity and 'gravs' or 'nrhyd'
 end
 function problems.soundwave:initialize_problem()
@@ -51,7 +50,7 @@ function problems.soundwave:initialize_problem()
    self.SoundCrossingTime = self.DomainLength / self.SoundSpeed
    self.JeansLength = 2 * self.SoundSpeed * math.pi / (
       self.FourPiG * self.BackgroundDensity)^0.5
-   print("problems.soundwave: the Jeans length is "..self.JeansLength)
+   --print("problems.soundwave: the Jeans length is "..self.JeansLength)
 end
 function problems.soundwave:dynamical_time()
    return self.SoundCrossingTime

@@ -32,10 +32,23 @@ function MaraSimulation:initialize_solver()
    if not fluid then
       error('Mara does not support fluid system '..self.problem:fluid())
    end
+
+   local advance = self.user_opts.advance
+   local solver = ({
+      spectral = 'weno-split',
+      godunov = 'plm-split',
+      muscl = 'plm-muscl'})[self.user_opts.solver or 'godunov']
+
+   if self.user_opts.solver == 'muscl' and advance ~= 'single' then
+      print('[MaraSim] Warning! --solver=muscl only supports --advance=single'
+	 ..', going with single')
+      advance = 'single'
+   end
+
    Mara.start()
    Mara.set_fluid(fluid)
-   Mara.set_advance('rk3')
-   Mara.set_godunov('weno-split')
+   Mara.set_advance(advance or 'rk3')
+   Mara.set_godunov(solver)
    Mara.set_boundary(self.problem:boundary_conditions())
    Mara.set_riemann('hllc')
    Mara.config_solver({theta=2.0}, true)
