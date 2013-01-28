@@ -6,6 +6,9 @@ local TestProblem = oo.class('TestProblem')
 local TwoStateProblem = oo.class('TwoStateProblem', TestProblem)
 
 local problems = {
+   TestProblem = TestProblem,
+   TwoStateProblem = TwoStateProblem,
+
    soundwave   = oo.class('soundwave'  , TestProblem),
    densitywave = oo.class('densitywave', TestProblem),
    collapse1d  = oo.class('collapse1d' , TestProblem),
