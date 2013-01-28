@@ -33,7 +33,7 @@ function FishSimulation:initialize_solver()
    self.N = opts.N or 128
    self.dx = 1.0 / self.N
 
-   local FL = self.problem.fluid():upper()
+   local FL = self.problem:fluid():upper()
    local descr = fluids.descr_new()
    fluids.descr_setfluid(descr, fluids[FL])
    fluids.descr_setgamma(descr, 1.4)

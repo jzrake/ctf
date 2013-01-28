@@ -26,8 +26,14 @@ function MaraSimulation:initialize_solver()
    self.N = opts.N or 128
    self.dx = 1.0 / self.N
 
+   local fluid = ({nrhyd='euler',
+		   srhyd='srhd',
+		   srmhd='rmhd'})[self.problem:fluid()]
+   if not fluid then
+      error('Mara does not support fluid system '..self.problem:fluid())
+   end
    Mara.start()
-   Mara.set_fluid('euler')
+   Mara.set_fluid(fluid)
    Mara.set_advance('rk3')
    Mara.set_godunov('weno-split')
    Mara.set_boundary(self.problem:boundary_conditions())

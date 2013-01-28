@@ -33,17 +33,22 @@ function TestProblem:user_work_finish() end
 function TestProblem:boundary_conditions() return 'periodic' end
 function TestProblem:fluid() return 'nrhyd' end
 
+
+function problems.soundwave:fluid()
+   print(self)
+   return self.user_opts.self_gravity and 'gravs' or 'nrhyd'
+end
 function problems.soundwave:initialize_problem()
    self.DomainLength = 1.0
    self.BackgroundDensity = 1.0
    self.FourPiG = 1.0
    self.SoundSpeed  = 0.2
    self.WaveNumber = 8 * math.pi
-   self.WaveLength = 2 * math.pi / WaveNumber
-   self.SoundCrossingTime = DomainLength / SoundSpeed
+   self.WaveLength = 2 * math.pi / self.WaveNumber
+   self.SoundCrossingTime = self.DomainLength / self.SoundSpeed
    self.JeansLength = 2 * self.SoundSpeed * math.pi / (
       self.FourPiG * self.BackgroundDensity)^0.5
-   print("problems.soundwave: the Jeans length is"..self.JeansLength)
+   print("problems.soundwave: the Jeans length is "..self.JeansLength)
 end
 function problems.soundwave:dynamical_time()
    return self.SoundCrossingTime
@@ -54,6 +59,7 @@ end
 function problems.soundwave:solution(t)
 
    local sim = self.simulation
+   local grav = self.user_opts.self_gravity
    local N = sim.N
    local Ng = sim.Ng
    local dx = sim.dx
@@ -70,7 +76,7 @@ function problems.soundwave:solution(t)
    local u0 = 0.0
    local u1 = cs * D1 / D0
    local k0 = self.WaveNumber
-   local w0 = ((cs * k0)^2 - self.FourPiG * D0)^0.5
+   local w0 = grav and ((cs * k0)^2 - self.FourPiG * D0)^0.5 or cs * k0
 
    for n=0,#Pvec/5-1 do
       local x = (n - sim.Ng) * dx

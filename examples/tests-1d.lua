@@ -7,24 +7,19 @@ local util     = require 'util'
 
 local cmds = { }
 
-function cmds.single(sim_class, problem, opts)
-   local sim = sim_class(opts)
-   sim:run(problem)
-end
-
-function cmds.convergence(sim_class, problem, opts)
-   local ErrorTable = { }
-   for _,res in pairs{8,16,32,64,128,256,512,1024} do
-      opts.N = res
-      local sim = sim_class(opts)
-      sim:run(problem)
-      ErrorTable[sim.N] = sim.L1error
-   end
-   util.pretty_print(ErrorTable)
-   print("estimated convergence rate is",
-	 math.log10(ErrorTable[512]/ErrorTable[64]) / math.log10(512/64))
-   util.plot({['L1 error']=ErrorTable}, {'set logscale'})
-end
+-- function cmds.convergence(sim_class, problem, opts)
+--    local ErrorTable = { }
+--    for _,res in pairs{8,16,32,64,128,256,512,1024} do
+--       opts.N = res
+--       local sim = sim_class(opts)
+--       sim:run(problem)
+--       ErrorTable[sim.N] = sim.L1error
+--    end
+--    util.pretty_print(ErrorTable)
+--    print("estimated convergence rate is",
+-- 	 math.log10(ErrorTable[512]/ErrorTable[64]) / math.log10(512/64))
+--    util.plot({['L1 error']=ErrorTable}, {'set logscale'})
+-- end
 
 local function main()
    local parser = optparse.OptionParser{usage="%prog [options] [input_args]",
@@ -40,30 +35,32 @@ local function main()
    parser.add_option{"--solver", dest="solver"}
    parser.add_option{"--code", dest="code"}
    parser.add_option{"-N", dest="N", help="resolution"}
+   parser.add_option{"--self-gravity", dest="self_gravity", action="store_true",
+		     help="include self gravity"}
 
    local opts, args = parser.parse_args()
+   local problem_class = problems[arg[2]]
 
-   local problem_class = problems[opts.problem or 'densitywave']
-   local sim_class =
-      ({mara=MaraSim.MaraSimulation,
-	fish=FishSim.FishSimulation})[(opts.code or 'mara'):lower()]
-      
    if not problem_class then
+      print('usage: tests-1d problem [options]')
       print("valid problem names are:")
       util.pretty_print(problems, '\t')
       return
    end
+   
+   local sim_class = (
+      {mara=MaraSim.MaraSimulation,
+       fish=FishSim.FishSimulation})[(opts.code or 'mara'):lower()]
+   
    if not sim_class then
       print("valid codes are:")
-      util.pretty_print({'mara', 'fish'}, '\t')
+      util.pretty_print({'Mara', 'Fish'}, '\t')
       return
    end
-   if not cmds[args[2]] then
-      print("valid sub-commands are:")
-      util.pretty_print(cmds, '\t')
-   else
-      cmds[args[2]](sim_class, problem_class(opts), opts)
-   end
+
+   local sim = sim_class(opts)
+   local problem = problem_class(opts)
+   sim:run(problem)
 end
 
 main()
