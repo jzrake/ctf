@@ -2,6 +2,8 @@
 local oo = require 'class'
 local problems = require 'problems'
 
+print('#+STYLE: <link rel="stylesheet" type="text/css" href="http://orgmode.org/org-manual.css">')
+
 local vars = {'\\rho', 'p', 'v_x', 'v_y', 'v_z'}
 for _,v in pairs(problems) do
    if oo.issubclass(v, problems.TwoStateProblem) then
