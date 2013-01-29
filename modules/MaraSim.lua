@@ -50,7 +50,7 @@ function MaraSimulation:initialize_solver()
    Mara.set_advance(advance or 'rk3')
    Mara.set_godunov(solver)
    Mara.set_boundary(self.problem:boundary_conditions())
-   Mara.set_riemann('hllc')
+   Mara.set_riemann(self.user_opts.riemann or 'hllc')
    Mara.config_solver({theta=2.0}, true)
 
    local prim_names = Mara.fluid.GetPrimNames()
