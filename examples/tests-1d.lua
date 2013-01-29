@@ -44,6 +44,8 @@ local function main()
 		     help="include self gravity"}
    parser.add_option{"--convergence", dest="convergence", action="store_true",
 		     help="run a convergence test over a few resolutions"}
+   parser.add_option{"--output", "-o", dest="output",
+		     help="write an ASCII table of the final solution"}
 
    local opts, args = parser.parse_args()
    local problem_class = problems[arg[2]]

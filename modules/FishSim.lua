@@ -114,7 +114,7 @@ function FishSimulation:advance_physics()
 end
 
 function FishSimulation:checkpoint_write()
-   local n = self.status.iteration_number
+   local n = self.status.checkpoint_number
    local t = self.status.simulation_time
    local Ng = self.Ng
    local fname = string.format('data/chkpt.%04d.h5', n)
@@ -145,6 +145,21 @@ function FishSimulation:user_work_finish()
    if self.user_opts.plot then
       util.plot{['code' ]=P     [{{Ng,-Ng},{0,1}}]:table(),
 		['exact']=Pexact[{{Ng,-Ng},{0,1}}]:table()}
+   end
+   if self.user_opts.output then
+      local f = io.open(self.user_opts.output, 'w')
+      local P0 = P[{{Ng,-Ng},{0,1}}]:table()
+      local P1 = P[{{Ng,-Ng},{0,2}}]:table()
+      local P2 = P[{{Ng,-Ng},{0,3}}]:table()
+      local P3 = P[{{Ng,-Ng},{0,4}}]:table()
+      local P4 = P[{{Ng,-Ng},{0,5}}]:table()
+      for i=1, self.N do
+	 local line = string.format(
+	    "%d %+12.8e %+12.8e %+12.8e %+12.8e %+12.8e\n",
+	    i, P0[i], P1[i], P2[i], P3[i], P4[i])
+	 f:write(line)
+      end
+      f:close()
    end
 end
 
