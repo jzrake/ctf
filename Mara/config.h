@@ -3,13 +3,11 @@
 #define __MARA_CONFIG_HEADER__
 
 #define __MARA_BASE_VERSION "1.0"
-
-#define __MARA_INSTALL_DIR "/Users/jzrake/Work/Mara"
+#ifdef USE_MPI
 #define __MARA_USE_MPI 1
-#define __MARA_USE_HDF5 0
-#define __MARA_USE_HDF5_PAR 0
-#define __MARA_USE_FFTW 0
-#define __MARA_USE_GLFW 0
+#else
+#define __MARA_USE_MPI 0
+#endif // USE_MPI
 
 #ifdef __INTEL_COMPILER
 #define Mara_isinf_cxx(x) isinf(x)
