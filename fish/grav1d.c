@@ -1,10 +1,14 @@
 
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <math.h>
 #include <string.h>
-#include <fftw3.h>
 #include "fish.h"
+#ifdef USE_FFTW
+#include <fftw3.h>
+#endif // USE_FFTW
+
 
 static struct fluids_state **fluid;
 static fluids_descr *descr;
@@ -28,11 +32,13 @@ void fish_grav1d_setscheme(fish_state *S)
 
 void fish_grav1d_init(fluids_descr *descr_, int N)
 {
+  int fluid_system;
   NumGhostZones = 3;
   TotalZones = N + 2 * NumGhostZones;
 
-  timederiv = 0 ? timederiv_nogrv : timederiv_selfg;
   descr = descr_;
+  fluids_descr_getfluid(descr, &fluid_system);
+  timederiv = fluid_system == FLUIDS_GRAVS ? timederiv_selfg : timederiv_nogrv;
 
   fluid = (fluids_state**) malloc(TotalZones * sizeof(fluids_state*));
   dx = DomainLength / N;
@@ -169,7 +175,7 @@ void solve_poisson(double *Rho, double *Phi, double *Gph, double *rhobar)
 {
   int Ng = NumGhostZones;
   int N = TotalZones - Ng;
-
+#ifdef USE_FFTW
   fftw_complex *Rhox = fftw_alloc_complex(N);
   fftw_complex *Phix = fftw_alloc_complex(N);
   fftw_complex *Gphx = fftw_alloc_complex(N);
@@ -220,6 +226,15 @@ void solve_poisson(double *Rho, double *Phi, double *Gph, double *rhobar)
   fftw_free(Rhok);
   fftw_free(Phik);
   fftw_free(Gphk);
+#else
+  printf("[fish] Warning! self-gravity was requested, but no poisson solver "
+	 "is available, not computing self-gravity\n");
+  for (int i=0; i<N; ++i) {
+    Phi[i] = 0.0;
+    Gph[i] = 0.0;
+  }
+  *rhobar = 0.0;
+#endif USE_FFTW
 }
 
 void timederiv_nogrv(double *L)

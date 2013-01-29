@@ -12,7 +12,8 @@ FISH_A = libfish.a
 LUA_I ?= -I$(LUA_HOME)/include
 
 ifeq ($(strip $(USE_FFTW)), 1)
-INC += -I$(FFT_HOME)/include
+INCLUDE += -I$(FFT_HOME)/include
+DEFINES += -DUSE_FFTW
 endif
 
 OBJ = fish.o reconstruct.o fluids.o riemann.o matrix.o grav1d.o
@@ -23,7 +24,7 @@ default : $(FISH_A) lua-fluids.o lua-fish.o
 	$(CC) $(CFLAGS) -c $^ $(LUA_I)
 
 grav1d.o : grav1d.c
-	$(CC) $(CFLAGS) -c $^ $(LUA_I) $(INC)
+	$(CC) $(CFLAGS) -c $^ $(LUA_I) $(DEFINES) $(INCLUDE)
 
 $(FISH_A) : $(OBJ)
 	$(ARSTATIC) $@ $?

@@ -119,6 +119,7 @@ $(LUA_GLUT) :
 
 clean :
 	$(MAKE) -C cow clean MAKEFILE_IN=$(MAKEFILE_IN)
+	$(MAKE) -C fish clean MAKEFILE_IN=$(MAKEFILE_IN)
 	$(MAKE) -C Mara clean MAKEFILE_IN=$(MAKEFILE_IN)
 	$(MAKE) -C lua-buffer clean MAKEFILE_IN=$(MAKEFILE_IN)
 	$(MAKE) -C lua-mpi clean MAKEFILE_IN=$(MAKEFILE_IN)
