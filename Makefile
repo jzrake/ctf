@@ -25,8 +25,8 @@ LVER   ?= lua-5.2.1
 
 LUA_I ?= -I$(LUA_HOME)/include
 LUA_L ?= -L$(LUA_HOME)/lib -llua
-LUA_A ?= $(LUA_HOME)/lib/liblua.a
-FFT_L ?= $(FFT_HOME)/lib -lfftw
+LUA_A ?=   $(LUA_HOME)/lib/liblua.a
+FFT_L ?= -L$(FFT_HOME)/lib -lfftw3
 
 LUA_COW    = cow/lua-cow.o
 LUA_MARA   = Mara/mara.o

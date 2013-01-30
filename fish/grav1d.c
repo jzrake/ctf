@@ -8,8 +8,9 @@
 #ifdef USE_FFTW
 #include <fftw3.h>
 #endif // USE_FFTW
+#ifndef M_PI
 #define M_PI (4*atan(1.0))
-
+#endif // M_PI
 
 static struct fluids_state **fluid;
 static fluids_descr *descr;

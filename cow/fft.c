@@ -42,7 +42,9 @@
 #endif // COW_FFTW
 #define MODULE "fft"
 #define EFFECTIVELY_ZERO 1e-14
+#ifndef M_PI
 #define M_PI (4*atan(1.0))
+#endif // M_PI
 
 
 // Private functions used in this module
