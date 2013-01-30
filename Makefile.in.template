@@ -39,3 +39,4 @@ USE_HDF5 = 0 # needed to compile lua-hdf5 wrappers
 USE_MPIO = 0 # good for collective IO on clusters
 USE_MARA = 0 # relativistic MHD module
 USE_FISH = 1 # fluid conservation laws, riemann solvers, godunov schemes
+USE_VIS  = 1 # imaging utilities

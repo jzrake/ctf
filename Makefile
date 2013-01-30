@@ -35,6 +35,7 @@ LUA_FLUIDS = fish/lua-fluids.o
 LUA_MPI    = lua-mpi/lua-mpi.o
 LUA_HDF5   = lua-hdf5/lua-hdf5.o
 LUA_BUFFER = lua-buffer/lua-buffer.o
+LUA_VIS    = visual/lua-visual.o
 LUA_GLUT   = lua-glut
 
 MODULES = $(LUA_BUFFER)
@@ -73,11 +74,23 @@ ifeq ($(strip $(USE_FFTW)), 1)
 LIBS += $(FFT_L)
 endif
 
+ifeq ($(strip $(USE_VIS)), 1)
+MODULES += $(LUA_VIS)
+DEFINES += -DUSE_VIS
+LOCLIBS += visual/libvisual.a
+endif
+
 
 default : main
 
 $(LUA_A) :
 	$(CD) $(LVER); $(MAKE) $(OS) CC=$(CC); $(MAKE) install INSTALL_TOP=$(PWD)/$(LVER)
+
+visual/libvisual.a : $(LUA_A) .FORCE
+	$(MAKE) -C visual libvisual.a MAKEFILE_IN=$(MAKEFILE_IN)
+
+$(LUA_VIS) : $(LUA_A) .FORCE
+	$(MAKE) -C visual lua-visual.o MAKEFILE_IN=$(MAKEFILE_IN)
 
 cow/libcow.a : $(LUA_A) .FORCE
 	$(MAKE) -C cow libcow.a MAKEFILE_IN=$(MAKEFILE_IN)
@@ -119,6 +132,7 @@ $(LUA_GLUT) :
 	$(MAKE) -C lua-glut DEFS=$(LUA_I)
 
 clean :
+	$(MAKE) -C visual clean MAKEFILE_IN=$(MAKEFILE_IN)
 	$(MAKE) -C cow clean MAKEFILE_IN=$(MAKEFILE_IN)
 	$(MAKE) -C fish clean MAKEFILE_IN=$(MAKEFILE_IN)
 	$(MAKE) -C Mara clean MAKEFILE_IN=$(MAKEFILE_IN)
