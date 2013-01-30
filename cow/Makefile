@@ -13,6 +13,11 @@ LUA_I ?= -I$(LUA_HOME)/include
 HDF_I ?= -I$(HDF_HOME)/include
 FFT_I ?= -I$(FFT_HOME)/include
 
+ifeq ($(strip $(USE_FFTW)), 1)
+INCLUDE += $(FFT_I)
+DEFINES += -DUSE_FFTW
+endif
+
 INC = $(HDF_I) $(FFT_I)
 OPT = \
 	-DCOW_MPI=$(USE_MPI) \

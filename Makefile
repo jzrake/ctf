@@ -23,9 +23,10 @@ RM     ?= rm -f
 OS     ?= generic
 LVER   ?= lua-5.2.1
 
-LUA_I = -I$(LUA_HOME)/include
-LUA_L = -L$(LUA_HOME)/lib -llua
-LUA_A = $(LUA_HOME)/lib/liblua.a
+LUA_I ?= -I$(LUA_HOME)/include
+LUA_L ?= -L$(LUA_HOME)/lib -llua
+LUA_A ?= $(LUA_HOME)/lib/liblua.a
+FFT_L ?= $(FFT_HOME)/lib -lfftw
 
 LUA_COW    = cow/lua-cow.o
 LUA_MARA   = Mara/mara.o
@@ -69,7 +70,7 @@ LOCLIBS += fish/libfish.a
 endif
 
 ifeq ($(strip $(USE_FFTW)), 1)
-LIBS += -L$(FFT_HOME)/lib -lfftw3
+LIBS += $(FFT_L)
 endif
 
 

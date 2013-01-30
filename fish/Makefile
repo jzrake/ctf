@@ -10,10 +10,12 @@ CFLAGS += -std=c99
 
 FISH_A = libfish.a
 LUA_I ?= -I$(LUA_HOME)/include
+FFT_I ?= -I$(FFT_HOME)/include
+
 INCLUDE =
 
 ifeq ($(strip $(USE_FFTW)), 1)
-INCLUDE += -I$(FFT_HOME)/include
+INCLUDE += $(FFT_I)
 DEFINES += -DUSE_FFTW
 endif
 

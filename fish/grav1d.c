@@ -8,6 +8,7 @@
 #ifdef USE_FFTW
 #include <fftw3.h>
 #endif // USE_FFTW
+#define M_PI (4*atan(1.0))
 
 
 static struct fluids_state **fluid;
@@ -176,12 +177,12 @@ void solve_poisson(double *Rho, double *Phi, double *Gph, double *rhobar)
   int Ng = NumGhostZones;
   int N = TotalZones - Ng;
 #ifdef USE_FFTW
-  fftw_complex *Rhox = fftw_alloc_complex(N);
-  fftw_complex *Phix = fftw_alloc_complex(N);
-  fftw_complex *Gphx = fftw_alloc_complex(N);
-  fftw_complex *Rhok = fftw_alloc_complex(N);
-  fftw_complex *Phik = fftw_alloc_complex(N);
-  fftw_complex *Gphk = fftw_alloc_complex(N);
+  fftw_complex *Rhox = (fftw_complex*) fftw_malloc(N * sizeof(fftw_complex));
+  fftw_complex *Phix = (fftw_complex*) fftw_malloc(N * sizeof(fftw_complex));
+  fftw_complex *Gphx = (fftw_complex*) fftw_malloc(N * sizeof(fftw_complex));
+  fftw_complex *Rhok = (fftw_complex*) fftw_malloc(N * sizeof(fftw_complex));
+  fftw_complex *Phik = (fftw_complex*) fftw_malloc(N * sizeof(fftw_complex));
+  fftw_complex *Gphk = (fftw_complex*) fftw_malloc(N * sizeof(fftw_complex));
 
   fftw_plan fwd = fftw_plan_dft_1d(N, Rhox, Rhok, FFTW_FORWARD, FFTW_ESTIMATE);
   fftw_plan revphi = fftw_plan_dft_1d(N, Phik, Phix, FFTW_BACKWARD, FFTW_ESTIMATE);
