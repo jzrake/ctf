@@ -6,6 +6,7 @@ local util     = require 'util'
 local hdf5     = require 'lua-hdf5.LuaHDF5'
 local Mara     = require 'Mara'
 local problems = require 'problems'
+local visual   = require 'visual'
 
 
 local MaraSimulation = oo.class('MaraSimulation', sim.SimulationBase)
@@ -95,46 +96,26 @@ function MaraSimulation:checkpoint_write()
    local Ng = self.Ng
    local fname = string.format('data/chkpt.%04d.h5', n)
    local outfile = hdf5.File(fname, 'w')
-   outfile['prim' ] = self.Primitive[{{Ng,-Ng},{Ng,-Ng},nil}]
+   outfile['prim'] = self.Primitive[{{Ng,-Ng},{Ng,-Ng},nil}]
    outfile:close()
 end
 
 function MaraSimulation:user_work_iteration()
-   self.problem:user_work_iteration()
-end
+   if self.status.iteration_number % 10 ~= 0 then return end
 
-function MaraSimulation:user_work_finish()
-   local t = self.status.simulation_time
    local Ng = self.Ng
-   local P = self.Primitive
-   local Pexact = self.problem:solution(t)
-   local dx = self.dx
-   local P0 = Pexact[{{Ng,-Ng},nil}]:vector()
-   local P1 = P     [{{Ng,-Ng},nil}]:vector()
-   local L1 = 0.0
-   for i=0,#P0/5-1,5 do
-      L1 = L1 + math.abs(P1[i] - P0[i]) * dx
-   end
-   self.L1error = L1
-   if self.user_opts.plot then
-      util.plot{['code' ]=P     [{{Ng,-Ng},{0,1}}]:table(),
-		['exact']=Pexact[{{Ng,-Ng},{0,1}}]:table()}
-   end
-   if self.user_opts.output then
-      local f = io.open(self.user_opts.output, 'w')
-      local P0 = P[{{Ng,-Ng},{0,1}}]:table()
-      local P1 = P[{{Ng,-Ng},{0,2}}]:table()
-      local P2 = P[{{Ng,-Ng},{0,3}}]:table()
-      local P3 = P[{{Ng,-Ng},{0,4}}]:table()
-      local P4 = P[{{Ng,-Ng},{0,5}}]:table()
-      for i=1, self.N do
-	 local line = string.format(
-	    "%d %+12.8e %+12.8e %+12.8e %+12.8e %+12.8e\n",
-	    i, P0[i], P1[i], P2[i], P3[i], P4[i])
-	 f:write(line)
-      end
-      f:close()
-   end
+
+   local vel = self.Primitive[{{Ng,-Ng},{Ng,-Ng},{2,4}}]
+   local N = vel:shape()
+   local n = self.status.iteration_number
+   local fname = string.format('images/vel-%05d.ppm', n)
+   visual.line_integral_convolution(vel:vector():buffer(), N[1], N[2], fname)
+
+   local mag = self.Primitive[{{Ng,-Ng},{Ng,-Ng},{5,7}}]
+   local N = mag:shape()
+   local n = self.status.iteration_number
+   local fname = string.format('images/mag-%05d.ppm', n)
+   visual.line_integral_convolution(mag:vector():buffer(), N[1], N[2], fname)
 end
 
 function NSAccretion:fluid() return 'srmhd' end
@@ -163,13 +144,18 @@ function NSAccretion:solution()
 end
 
 function MaraSimulation:user_work_finish()
-   self:checkpoint_write()
+   os.execute("cd images; for i in `ls *.ppm`; "..
+	      "do convert $i `basename $i ppm`png; "..
+	      "rm $i; "..
+	      "done")
 end
 
 local user_opts = {
-   resolution = 32,
-   tmax = 10.0,
+   resolution = 256,
+   tmax = 24.0,
    cpi = 0.1,
+   solver = 'muscl',
+   riemann = 'hlld'
 }
 local simulation = MaraSimulation(user_opts)
 local problem = NSAccretion(user_opts)

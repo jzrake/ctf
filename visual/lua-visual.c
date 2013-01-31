@@ -17,9 +17,7 @@ static int _line_integral_convolution(lua_State *L)
   if (N_have != N_needed) {
     luaL_error(L, "[visual] input buffer must be (Nx, Ny, 2)");
   }
-
   line_integral_convolution(A, Nx, Ny, fname);
-  printf("in the _line_integral_convolution\n");
   return 0;
 }
 

@@ -63,6 +63,7 @@ static void WriteImage2PPM(int n_xres, int n_yres, unsigned char *pImage, const 
 
 int line_integral_convolution(double *A, int Nx, int Ny, const char *fname)
 {
+  srand(0);
   int n_xres = Nx;
   int n_yres = Ny;
   float *pVectr = (float *) malloc(sizeof(float) * n_xres * n_yres * 2);
@@ -70,10 +71,15 @@ int line_integral_convolution(double *A, int Nx, int Ny, const char *fname)
   float *p_LUT1 = (float *) malloc(sizeof(float) * DISCRETE_FILTER_SIZE);
   unsigned char *pNoise = (unsigned char*) malloc(sizeof(unsigned char) * n_xres * n_yres);
   unsigned char *pImage = (unsigned char*) malloc(sizeof(unsigned char) * n_xres * n_yres);
-  //  SyntheszSaddle(n_xres, n_yres, pVectr);
-  for (int n=0; n<n_xres * n_yres * 2; ++n) {
-    pVectr[n] = A[n];
+
+  // take input array in row-major format and convert to image format
+  for (int i=0; i<Nx; ++i) {
+    for (int j=0; j<Ny; ++j) {
+      pVectr[(j*Nx + i)*2 + 0] = A[(i*Ny + j)*2 + 0];
+      pVectr[(j*Nx + i)*2 + 1] = A[(i*Ny + j)*2 + 1];
+    }
   }
+
   NormalizVectrs(n_xres, n_yres, pVectr);
   MakeWhiteNoise(n_xres, n_yres, pNoise);
   GenBoxFiltrLUT(DISCRETE_FILTER_SIZE, p_LUT0, p_LUT1);
