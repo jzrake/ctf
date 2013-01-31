@@ -97,6 +97,10 @@ function MaraSimulation:checkpoint_write()
    outfile:close()
 end
 
+function MaraSimulation:local_mesh_size()
+   return self.N
+end
+
 function MaraSimulation:user_work_iteration()
    self.problem:user_work_iteration()
 end

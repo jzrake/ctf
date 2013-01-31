@@ -121,6 +121,10 @@ end
 function NSAccretion:fluid() return 'srmhd' end
 function NSAccretion:boundary_conditions() return 'outflow' end
 
+function MaraSimulation:local_mesh_size()
+   return self.N^2
+end
+
 function MaraSimulation:initialize_physics()
    self.Primitive = self.problem:solution()
 end
@@ -151,10 +155,11 @@ function MaraSimulation:user_work_finish()
 end
 
 local user_opts = {
-   resolution = 256,
+   resolution = 128,
    tmax = 24.0,
    cpi = 0.1,
    solver = 'muscl',
+   advance = 'single',
    riemann = 'hlld'
 }
 local simulation = MaraSimulation(user_opts)

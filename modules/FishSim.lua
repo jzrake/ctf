@@ -125,6 +125,10 @@ function FishSimulation:checkpoint_write()
    outfile:close()
 end
 
+function FishSimulation:local_mesh_size()
+   return self.N
+end
+
 function FishSimulation:user_work_iteration()
    self.problem:user_work_iteration()
 end

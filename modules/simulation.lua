@@ -12,6 +12,7 @@ function SimulationBase:initialize_solver() self:_notimplemented() end
 function SimulationBase:initialize_physics() self:_notimplemented() end
 function SimulationBase:finalize_solver() self:_notimplemented() end
 function SimulationBase:advance_physics() self:_notimplemented() end
+function SimulationBase:local_mesh_size() self:_notimplemented() end
 function SimulationBase:set_time_increment() self:_notimplemented() end
 function SimulationBase:checkpoint_condition()
    return (self.status.simulation_time - self.status.last_checkpoint_time >=
@@ -24,16 +25,19 @@ function SimulationBase:user_work_finish() end
 function SimulationBase:report_configuration() end
 function SimulationBase:advance_status()
    local status = self.status
+   local kz = self:local_mesh_size() / 1000
    status.iteration_number = status.iteration_number + 1
    status.simulation_time = status.simulation_time + status.time_increment
+   status.kilozones_per_second = kz / self.profiler['advance_physics']
 end
 function SimulationBase:iteration_message()
    local n = self.status.iteration_number
    if n % self.behavior.message_cadence ~= 0 then return end
-   local msg = string.format("%05d: t=%3.2f dt=%2.1e",
+   local msg = string.format("%05d: t=%3.2f dt=%2.1e %3.2fkz/s",
 			     self.status.iteration_number,
 			     self.status.simulation_time,
-			     self.status.time_increment)
+			     self.status.time_increment,
+			     self.status.kilozones_per_second)
    print(msg)
 end
 function SimulationBase:continue_condition()
@@ -51,7 +55,7 @@ function SimulationBase:main_loop()
       end
       self:user_work_iteration()
       self:set_time_increment()
-      self:advance_physics()
+      self:time('advance_physics')
       self:advance_status()
       self:iteration_message()
    end
@@ -73,47 +77,20 @@ function SimulationBase:__init__(user_opts)
 		     simulation_time      = 0.0,
 		     time_incremement     = 0.0,
 		     checkpoint_number    = 0,
-		     last_checkpoint_time = 0.0 }
+		     last_checkpoint_time = 0.0,
+		     kilozones_per_second = 0.0 }
    self.behavior = { max_iteration        = math.huge,
 		     max_wall_runtime     = math.huge,
 		     max_simulation_time  = 1.0, -- in simulation time
 		     checkpoint_cadence   = 1.0, -- in simulation time
 		     message_cadence      = 1 }  -- in iterations
+   self.profiler = { }
    self.user_opts = user_opts
 end
-
-
-local function main()
-   local optparse = require 'optparse'
-   local parser = optparse.OptionParser{usage="%prog [options] [input_args]",
-					version="CTF version 1.0"}
-   parser.add_option{"-s", "--solver", dest="solver", help="solver type"}
-
-   local opts, args = parser.parse_args()
-
-   local MySimulation = oo.class('MySimulation', SimulationBase)
-   function MySimulation:initialize_physics()
-      print'init physics'
-   end
-   function MySimulation:set_time_increment()
-      self.status.time_increment = 0.01
-   end
-   function MySimulation:advance_physics()
-      
-   end
-   local sim = MySimulation()
-   
-   sim.initialize_solver = function() print 'init solver' end
-
-   sim:initialize_behavior()
-   sim:initialize_solver()
-   sim:initialize_physics()
-   sim:main_loop()
+function SimulationBase:time(func_name, ...)
+   local start = os.clock()
+   self[func_name](self, ...)
+   self.profiler[func_name] = os.clock() - start
 end
 
-if ... then -- if __name__ == "__main__"
-   return {SimulationBase=SimulationBase}
-else
-   main()
-   print(debug.getinfo(1).source, ": All tests passed")
-end
+return {SimulationBase=SimulationBase}
