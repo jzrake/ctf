@@ -167,9 +167,7 @@ function problems.collapse1d:user_work_iteration()
    f:close()
 end
 
-
-
-function TwoStateProblem:boundary_conditions() 
+function TwoStateProblem:boundary_conditions()
    return 'outflow'
 end
 function TwoStateProblem:solution(t)
@@ -217,4 +215,12 @@ problems.SrhdCase2DFIM98.state2 = {1, 1e-2, 0.0, 0.0, 0.0}
 problems.SrhdHardTransverseRAM.state1 = {1, 1e+3, 0.0, 0.9, 0.0}
 problems.SrhdHardTransverseRAM.state2 = {1, 1e-2, 0.0, 0.9, 0.0}
 
+local p1d = { }
+for k,v in pairs(problems) do
+   if v ~= TestProblem and v ~= TwoStateProblem then
+      p1d[k] = v
+   end
+end
+
+problems.problems_1d = p1d
 return problems

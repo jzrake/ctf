@@ -53,7 +53,7 @@ local function main()
    if not problem_class then
       print('usage: '..usage)
       print("valid problem names are:")
-      util.pretty_print(problems, '\t')
+      util.pretty_print(problems.problems_1d, '\t')
       return
    end
 
