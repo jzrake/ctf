@@ -153,10 +153,10 @@ function FishSimulation:user_work_finish()
    if self.user_opts.output then
       local f = io.open(self.user_opts.output, 'w')
       local P0 = P[{{Ng,-Ng},{0,1}}]:table()
-      local P1 = P[{{Ng,-Ng},{0,2}}]:table()
-      local P2 = P[{{Ng,-Ng},{0,3}}]:table()
-      local P3 = P[{{Ng,-Ng},{0,4}}]:table()
-      local P4 = P[{{Ng,-Ng},{0,5}}]:table()
+      local P1 = P[{{Ng,-Ng},{1,2}}]:table()
+      local P2 = P[{{Ng,-Ng},{2,3}}]:table()
+      local P3 = P[{{Ng,-Ng},{3,4}}]:table()
+      local P4 = P[{{Ng,-Ng},{4,5}}]:table()
       for i=1, self.N do
 	 local line = string.format(
 	    "%d %+12.8e %+12.8e %+12.8e %+12.8e %+12.8e\n",
