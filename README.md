@@ -20,6 +20,18 @@ Copy the `Makefile.in.template` file to `Makefile.in`, and modify it for your
 system, then type `make`.
 
 
+# Examples
+
+There is an examples directory showing how to use most of the modules. Try
+something like this:
+
+`./ctf examples/tests-1d.lua soundwave -o output.dat`
+
+or if you have `gnuplot` installed,
+
+`./ctf examples/tests-1d.lua soundwave --plot`
+
+
 # License
 
 This code is made freely available for anybody's use. I only ask that if you

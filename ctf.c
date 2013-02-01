@@ -18,25 +18,62 @@ int luaopen_fish(lua_State *L);
 int luaopen_fluids(lua_State *L);
 int luaopen_visual(lua_State *L);
 
+
 #ifndef USE_MPI
 int luaopen_mpi(lua_State *L){lua_newtable(L);return 1;}
+#define HAVE_MPI "no"
+#else
+#define HAVE_MPI "yes"
 #endif
+
 #ifndef USE_HDF5
 int luaopen_hdf5(lua_State *L){lua_newtable(L);return 1;}
+#define HAVE_HDF5 "no"
+#else
+#define HAVE_HDF5 "yes"
 #endif
+
 #ifndef USE_MARA
 int luaopen_Mara(lua_State *L){lua_newtable(L);return 1;}
+#define HAVE_MARA "no"
+#else
+#define HAVE_MARA "yes"
 #endif
+
 #ifndef USE_COW
 int luaopen_cow(lua_State *L){lua_newtable(L);return 1;}
+#define HAVE_COW "no"
+#else
+#define HAVE_COW "yes"
 #endif
+
 #ifndef USE_FISH
 int luaopen_fish(lua_State *L){lua_newtable(L);return 1;}
 int luaopen_fluids(lua_State *L){lua_newtable(L);return 1;}
+#define HAVE_FISH "no"
+#else
+#define HAVE_FISH "yes"
 #endif
+
 #ifndef USE_VIS
 int luaopen_visual(lua_State *L){lua_newtable(L);return 1;}
+#define HAVE_VIS "no"
+#else
+#define HAVE_VIS "yes"
 #endif
+
+#ifndef USE_FFTW
+#define HAVE_FFTW "no"
+#else
+#define HAVE_FFTW "yes"
+#endif
+
+#ifndef USE_MPIO
+#define HAVE_MPIO "no"
+#else
+#define HAVE_MPIO "yes"
+#endif
+
 
 
 int main(int argc, char **argv)
@@ -52,6 +89,7 @@ int main(int argc, char **argv)
   luaL_requiref(L, "fish", luaopen_fish, 0); lua_pop(L, 1);
   luaL_requiref(L, "fluids", luaopen_fluids, 0); lua_pop(L, 1);
   luaL_requiref(L, "visual", luaopen_visual, 0); lua_pop(L, 1);
+
 
   // Create the global `arg` table
   // ---------------------------------------------------------------------------
@@ -73,11 +111,24 @@ int main(int argc, char **argv)
   lua_pop(L, 1);
 
 
-  // Run the script
+  // Provide some help or run the script
   // ---------------------------------------------------------------------------
   lua_pushcfunction(L, traceback);
   if (argc == 1) {
-    printf("usage: main script.lua [arg1=val1 arg2=val2]\n");
+    printf("**************************************************\n");
+    printf("*       Computational Turbulence Framework       *\n");
+    printf("*               Jonathan Zrake                   *\n");
+    printf("*         New York University 2008-2013          *\n");
+    printf("**************************************************\n");
+    printf("\nusage: ctf <script.lua> [<options>]\n");
+    printf("\nCompiled with support for:\n");
+    printf("\tMPI  ... %s\n", HAVE_MPI);
+    printf("\tHDF5 ... %s\n", HAVE_HDF5);
+    printf("\tFFTW ... %s\n", HAVE_FFTW);
+    printf("\tMPIO ... %s\n", HAVE_MPIO);
+    printf("\tMARA ... %s\n", HAVE_MARA);
+    printf("\tFISH ... %s\n", HAVE_FISH);
+    printf("\tVIS  ... %s\n", HAVE_VIS);
   }
   else {
     if (luaL_loadfile(L, argv[1])) {

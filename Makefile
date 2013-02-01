@@ -4,24 +4,19 @@
 # ------------------------------------------------------------------------------
 # 
 # Copy the `Makefile.in.template` file to `Makefile.in`, and modify it for your
-# system.
-#
-# 1. `git submodule update --init`
-# 2. `make lua`
-# 3. `make`
+# system, then type `make`.
 #
 # ------------------------------------------------------------------------------
 
 MAKEFILE_IN = $(PWD)/Makefile.in
 include $(MAKEFILE_IN)
 
-CFLAGS ?= -Wall
-CURL   ?= curl
-UNTAR  ?= tar -xvf
-CD     ?= cd
-RM     ?= rm -f
-OS     ?= generic
-LVER   ?= lua-5.2.1
+CFLAGS   ?= -Wall
+CURL     ?= curl
+UNTAR    ?= tar -xvf
+CD       ?= cd
+RM       ?= rm -f
+OS       ?= generic
 
 LUA_I ?= -I$(LUA_HOME)/include
 LUA_L ?= -L$(LUA_HOME)/lib -llua
@@ -72,6 +67,7 @@ endif
 
 ifeq ($(strip $(USE_FFTW)), 1)
 LIBS += $(FFT_L)
+DEFINES += -DUSE_FFTW
 endif
 
 ifeq ($(strip $(USE_VIS)), 1)
@@ -80,11 +76,17 @@ DEFINES += -DUSE_VIS
 LOCLIBS += visual/libvisual.a
 endif
 
+ifeq ($(strip $(USE_MPIO)), 1)
+DEFINES += -DUSE_MPIO
+endif
 
-default : main
+
+default : ctf
 
 $(LUA_A) :
-	$(CD) $(LVER); $(MAKE) $(OS) CC=$(CC); $(MAKE) install INSTALL_TOP=$(PWD)/$(LVER)
+	$(CD) $(LVER); \
+	$(MAKE) $(OS) CC=$(CC); \
+	$(MAKE) install INSTALL_TOP=$(LUA_HOME)
 
 visual/libvisual.a : $(LUA_A) .FORCE
 	$(MAKE) -C visual libvisual.a MAKEFILE_IN=$(MAKEFILE_IN)
@@ -122,10 +124,10 @@ $(LUA_HDF5) : $(LUA_A) .FORCE
 $(LUA_BUFFER) : $(LUA_A) .FORCE
 	$(MAKE) -C lua-buffer lua-buffer.o MAKEFILE_IN=$(MAKEFILE_IN)
 
-main.o : main.c $(LUA_A)
+ctf.o : ctf.c $(LUA_A) $(MAKEFILE_IN)
 	$(CC) $(CFLAGS) -c -o $@ $< $(LUA_I) $(DEFINES) -DINSTALL_DIR=\"$(PWD)\"
 
-main : main.o $(MODULES) $(LOCLIBS)
+ctf : ctf.o $(MODULES) $(LOCLIBS)
 	$(CXX) $(CFLAGS) -o $@ $^ $(LIBS)
 
 $(LUA_GLUT) :
@@ -141,7 +143,7 @@ clean :
 	$(MAKE) -C lua-hdf5 clean MAKEFILE_IN=$(MAKEFILE_IN)
 	$(MAKE) -C lua-glut clean
 	$(MAKE) -C $(LVER) clean
-	$(RM) *.o main
+	$(RM) *.o ctf
 
 show :
 	@echo $(MODULES)
