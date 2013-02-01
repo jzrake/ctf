@@ -5,6 +5,7 @@ include $(MAKEFILE_IN)
 RM ?= rm -f
 AR ?= ar
 ARSTATIC ?= $(AR) rcu
+RANLIB ?= ranlib
 CFLAGS ?= -Wall
 CFLAGS += -std=c99
 
@@ -34,6 +35,7 @@ default : $(COW_A) lua-cow.o
 
 $(COW_A) : $(OBJ)
 	$(ARSTATIC) $@ $?
+	$(RANLIB) $@
 
 cowfuncs.c : cow.h parse.py
 	python parse.py

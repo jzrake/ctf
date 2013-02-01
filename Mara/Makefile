@@ -5,6 +5,7 @@ include $(MAKEFILE_IN)
 RM ?= rm -f
 AR ?= ar
 ARSTATIC ?= $(AR) rcu
+RANLIB ?= ranlib
 CFLAGS ?= -Wall
 
 SRC_C   = $(wildcard *.c)
@@ -32,6 +33,7 @@ mara.o : mara.cpp
 
 $(MAR_A) : $(OBJ_C) $(OBJ_CPP)
 	$(ARSTATIC) $@ $?
+	$(RANLIB) $@
 
 clean :
 	$(RM) $(MAR_A) $(OBJ_C) $(OBJ_CPP) mara.o

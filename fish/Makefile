@@ -5,6 +5,7 @@ include $(MAKEFILE_IN)
 RM ?= rm -f
 AR ?= ar
 ARSTATIC ?= $(AR) rcu
+RANLIB ?= ranlib
 CFLAGS ?= -Wall
 CFLAGS += -std=c99
 
@@ -31,6 +32,7 @@ grav1d.o : grav1d.c
 
 $(FISH_A) : $(OBJ)
 	$(ARSTATIC) $@ $?
+	$(RANLIB) $@
 
 fluidsfuncs.c : fluids.h parse_fluids.py
 	python parse_fluids.py
