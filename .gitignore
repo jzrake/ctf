@@ -1,4 +1,5 @@
 /Makefile.in
+*.so
 *.o
 *.a
 *funcs.c
