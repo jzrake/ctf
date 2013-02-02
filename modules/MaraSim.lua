@@ -12,9 +12,9 @@ local MaraSimulation = oo.class('MaraSimulation', sim.SimulationBase)
 function MaraSimulation:initialize_behavior()
    local opts = self.user_opts
    local cpi = opts.cpi or 1.0
-   local tmax = opts.tmax or 1.0
+   local tmax = opts.tmax or self.problem:finish_time()
    local dynamical_time = self.problem:dynamical_time()
-   self.behavior.message_cadence = 10
+   self.behavior.message_cadence = opts.message_cadence or 10
    self.behavior.checkpoint_cadence = cpi * dynamical_time
    self.behavior.max_simulation_time = tmax * dynamical_time
 end
@@ -106,6 +106,7 @@ function MaraSimulation:user_work_iteration()
 end
 
 function MaraSimulation:user_work_finish()
+   self.problem:user_work_finish()
    local t = self.status.simulation_time
    local Ng = self.Ng
    local P = self.Primitive

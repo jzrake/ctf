@@ -31,6 +31,7 @@ function TestProblem:__init__(user_opts)
 end
 function TestProblem:initialize_problem() end
 function TestProblem:dynamical_time() return 1.0 end
+function TestProblem:finish_time() return 1.0 end
 function TestProblem:user_work_iteration() end
 function TestProblem:user_work_finish() end
 function TestProblem:boundary_conditions() return 'periodic' end
@@ -53,6 +54,9 @@ function problems.soundwave:initialize_problem()
    --print("problems.soundwave: the Jeans length is "..self.JeansLength)
 end
 function problems.soundwave:dynamical_time()
+   return self.SoundCrossingTime
+end
+function problems.soundwave:finish_time()
    return self.SoundCrossingTime
 end
 function problems.soundwave:initial_condition()
@@ -92,6 +96,9 @@ function problems.soundwave:solution(t)
 end
 
 function problems.densitywave:dynamical_time()
+   return 1.0
+end
+function problems.soundwave:finish_time()
    return 1.0
 end
 function problems.densitywave:solution(t)
@@ -170,6 +177,9 @@ end
 function TwoStateProblem:boundary_conditions()
    return 'outflow'
 end
+function TwoStateProblem:finish_time()
+   return self.problem_finish_time
+end
 function TwoStateProblem:solution(t)
    local sim = self.simulation
    local N = sim.N
@@ -194,6 +204,16 @@ function TwoStateProblem:solution(t)
    end
    return P, G
 end
+
+problems.Shocktube1.problem_finish_time = 0.20
+problems.Shocktube2.problem_finish_time = 0.05
+problems.Shocktube3.problem_finish_time = 0.01
+problems.Shocktube4.problem_finish_time = 0.02
+problems.Shocktube5.problem_finish_time = 0.02
+problems.ContactWave.problem_finish_time = 1.0
+problems.SrhdCase1DFIM98.problem_finish_time = 1.0
+problems.SrhdCase2DFIM98.problem_finish_time = 1.0
+problems.SrhdHardTransverseRAM.problem_finish_time = 1.0
 
 problems.Shocktube1.state1 = {1.000, 1.000, 0.000, 0.0, 0.0}
 problems.Shocktube1.state2 = {0.125, 0.100, 0.000, 0.0, 0.0}

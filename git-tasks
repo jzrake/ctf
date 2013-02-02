@@ -1,0 +1,52 @@
+#!/bin/bash
+
+gitserver=git@github.com:jzrake
+
+declare -a branches=('ctf' 'ctf' 'ctf' 'master' 'master' 'master')
+declare -a reponame=('cow' 'Mara' 'fish' 'lua-hdf5' 'lua-mpi' 'lua-glut')
+
+function add() {
+    for i in {0..5}
+    do
+	branch=${branches[i]}
+	repo=${reponame[i]}
+	git subtree add -P ${repo} ${gitserver}/${repo} ${branch} -m "Add subtree '${repo}'"
+    done
+}
+function push() {
+    for i in {0..5}
+    do
+	branch=${branches[i]}
+	repo=${reponame[i]}
+	git subtree push -P ${repo} ${gitserver}/${repo} ${branch}
+    done
+}
+function pull() {
+    for i in {0..5}
+    do
+	branch=${branches[i]}
+	repo=${reponame[i]}
+	git subtree pull -P ${repo} ${gitserver}/${repo} ${branch}
+    done
+}
+function addremotes() {
+    for i in {0..5}
+    do
+	git remote add ${reponame[i]} ${gitserver}/${reponame[i]}
+    done
+}
+function rmremotes() {
+    for i in {0..5}
+    do
+	git remote rm ${reponame[i]}
+    done
+}
+
+if [[ $1 =~ ^(push|pull|addremotes|rmremotes)$ ]]; then
+    "$@"
+else
+    echo "invalid subcommand $1" >&2
+    echo "push|pull|addremotes|rmremotes"
+    exit 1
+fi
+
