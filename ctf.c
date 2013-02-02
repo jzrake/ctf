@@ -104,10 +104,16 @@ int main(int argc, char **argv)
   // Set the Lua path
   // ---------------------------------------------------------------------------
   lua_getglobal(L, "package");
-  lua_pushfstring(L,"%s/?.lua;%s/modules/?.lua;",
-		  INSTALL_DIR,
-		  INSTALL_DIR);
+  lua_pushfstring(L,"%s/?.lua;%s/modules/?.lua;", INSTALL_DIR, INSTALL_DIR);
   lua_setfield(L, -2, "path");
+  lua_pop(L, 1);
+
+
+  // Set the Lua C path
+  // ---------------------------------------------------------------------------
+  lua_getglobal(L, "package");
+  lua_pushfstring(L,"%s/lua-glut/?.so;", INSTALL_DIR);
+  lua_setfield(L, -2, "cpath");
   lua_pop(L, 1);
 
 
