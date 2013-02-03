@@ -141,3 +141,13 @@ int fish_block_deallocate(fish_block *B)
   }
   return 0;
 }
+
+int fish_block_mapbuffer(fish_block *B, double *x, long flag)
+{
+  int nz = fish_block_totalstates(B);
+  int nq = fluids_descr_getncomp(B->descr, flag);
+  for (int n=0; n<nz; ++n) {
+    fluids_state_mapbuffer(B->fluid[n], &x[nq*n], flag);
+  }
+  return 0;
+}
