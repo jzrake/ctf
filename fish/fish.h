@@ -70,15 +70,6 @@ int fish_setparami(fish_state *S, int param, long flag);
 int fish_getparamd(fish_state *S, double *param, long flag);
 int fish_setparamd(fish_state *S, double param, long flag);
 
-void fish_grav1d_init(fluids_descr *descr, int N);
-void fish_grav1d_finalize();
-void fish_grav1d_setscheme(fish_state *S);
-void fish_grav1d_advance(double dt);
-void fish_grav1d_getprim(double *prim, double *grav);
-void fish_grav1d_setprim(double *prim);
-void fish_grav1d_mapbuffer(double *x, long flag);
-double fish_grav1d_maxwavespeed();
-
 fish_block *fish_block_new(void);
 int fish_block_del(fish_block *B);
 int fish_block_getrank(fish_block *B);
@@ -93,6 +84,18 @@ int fish_block_totalstates(fish_block *B);
 int fish_block_allocate(fish_block *B);
 int fish_block_deallocate(fish_block *B);
 char *fish_block_geterror(fish_block *B);
+
+
+void fish_grav1d_init(fluids_descr *descr, int N);
+void fish_grav1d_finalize();
+void fish_grav1d_setscheme(fish_state *S);
+void fish_grav1d_advance(double dt);
+void fish_grav1d_getprim(double *prim, double *grav);
+void fish_grav1d_setprim(double *prim);
+void fish_grav1d_mapbuffer(double *x, long flag);
+double fish_grav1d_maxwavespeed();
+
+int fish_smr1d();
 
 
 #ifdef FISH_PRIVATE_DEFS

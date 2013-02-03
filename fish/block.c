@@ -139,4 +139,5 @@ int fish_block_deallocate(fish_block *B)
     free(B->fluid);
     B->fluid = NULL;
   }
+  return 0;
 }
