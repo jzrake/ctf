@@ -123,7 +123,7 @@ local function run(NumZones)
    end
 
    fish.grav1d_finalize()
-   fish.del(scheme)
+   fish.state_del(scheme)
    fluids.descr_del(descr)
 
    local P0 = solution(t)[{{Ng,-Ng},nil}]:vector()

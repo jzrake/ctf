@@ -60,8 +60,8 @@ enum {
 typedef struct fish_state fish_state;
 typedef struct fish_block fish_block;
 
-fish_state *fish_new(void);
-int fish_del(fish_state *S);
+fish_state *fish_state_new(void);
+int fish_state_del(fish_state *S);
 int fish_intercellflux(fish_state *S, fluids_state **fluid, double *F, int N, int dim);
 int fish_timederivative(fish_state *S, fluids_state **fluid, int ndim, int *shape, double *dx, double *dUdt);
 int fish_getparami(fish_state *S, int *param, long flag);

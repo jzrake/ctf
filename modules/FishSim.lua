@@ -91,7 +91,7 @@ end
 
 function FishSimulation:finalize_solver()
    fish.grav1d_finalize()
-   fish.del(self.scheme)
+   fish.state_del(self.scheme)
    fluids.descr_del(self.descr)
 end
 

@@ -15,7 +15,7 @@
   }                                                                     \
   static int _fish_##s##_new(lua_State *L)				\
   {                                                                     \
-    fish_##s *a = fish_new();						\
+    fish_##s *a = fish_##s##_new();					\
       luafish_push_fish_##s(L, a);					\
 	return 1;							\
   }                                                                     \
