@@ -107,23 +107,11 @@ int fluids_descr_setfluid(fluids_descr *D, int fluid)
   D->cacheflags = FLUIDS_FLAGSALL;
 
   switch (fluid) {
-  case FLUIDS_SCADV:
-    D->nprimitive = 1;
-    break;
-  case FLUIDS_NRHYD:
-    D->nprimitive = 5;
-    break;
-  case FLUIDS_GRAVS:
-    D->nprimitive = 5;
-    D->ngravity = 4;
-    break;
-  case FLUIDS_GRAVP:
-    D->nprimitive = 5;
-    D->ngravity = 4;
-    break;
-  case FLUIDS_SRHYD:
-    D->nprimitive = 5;
-    break;
+  case FLUIDS_SCADV: D->nprimitive = 1; break;
+  case FLUIDS_NRHYD: D->nprimitive = 5; break;
+  case FLUIDS_GRAVS: D->nprimitive = 5; D->ngravity = 4; break;
+  case FLUIDS_GRAVP: D->nprimitive = 5; D->ngravity = 4; break;
+  case FLUIDS_SRHYD: D->nprimitive = 5; break;
   }
   D->cache = fluids_cache_new();
   _alloc_cache(D->cache, ALLOC, D->nprimitive, D->cacheflags);
