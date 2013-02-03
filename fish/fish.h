@@ -91,6 +91,7 @@ int fish_block_getdescr(fish_block *B, fluids_descr **D);
 int fish_block_setdescr(fish_block *B, fluids_descr *D);
 int fish_block_totalstates(fish_block *B);
 int fish_block_allocate(fish_block *B);
+int fish_block_deallocate(fish_block *B);
 char *fish_block_geterror(fish_block *B);
 
 

@@ -32,6 +32,7 @@ local function test2()
 	  "block's fluid descriptor must be set before allocating")
    fish.block_setdescr(B, D)
    assert(fish.block_allocate(B) == 0)
+   assert(fish.block_allocate(B) == 0) -- reallocates the fluid states
    fish.block_del(B)
    fluids.descr_del(D)
 end

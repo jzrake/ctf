@@ -26,14 +26,7 @@ fish_block *fish_block_new()
 
 int fish_block_del(fish_block *B)
 {
-  int ntot = fish_block_totalstates(B);
-  if (B->fluid) {
-    for (int n=0; n<ntot; ++n) {
-      fluids_state_del(B->fluid[n]);
-    }
-    free(B->fluid);
-    B->fluid = NULL;
-  }
+  fish_block_deallocate(B);
   free(B);
   return 0;
 }
@@ -123,13 +116,27 @@ int fish_block_allocate(fish_block *B)
     B->error = "block's fluid descriptor must be set before allocating";
     return FISH_ERROR;
   }
+  if (B->fluid != NULL) {
+    fish_block_deallocate(B);
+  }
 
   int ntot = fish_block_totalstates(B);
-  B->fluid = (fluids_state**) realloc(B->fluid, ntot * sizeof(fluids_state*));
+  B->fluid = (fluids_state**) malloc(ntot * sizeof(fluids_state*));
   for (int n=0; n<ntot; ++n) {
     B->fluid[n] = fluids_state_new();
     fluids_state_setdescr(B->fluid[n], B->descr);
   }
-
   return 0;
+}
+
+int fish_block_deallocate(fish_block *B)
+{
+  int ntot = fish_block_totalstates(B);
+  if (B->fluid) {
+    for (int n=0; n<ntot; ++n) {
+      fluids_state_del(B->fluid[n]);
+    }
+    free(B->fluid);
+    B->fluid = NULL;
+  }
 }
