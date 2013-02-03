@@ -52,7 +52,8 @@ enum {
   // -------------------
   // error codes
   // -------------------
-  FISH_ERROR_BADARG,
+  FISH_ERROR = -42,
+  FISH_ERROR_BADARG = -43,
 } ;
 
 #include "fluids.h"
@@ -84,6 +85,12 @@ int fish_block_getrank(fish_block *B);
 int fish_block_setrank(fish_block *B, int ndim);
 int fish_block_getsize(fish_block *B, int dim);
 int fish_block_setsize(fish_block *B, int dim, int size);
+int fish_block_getguard(fish_block *B);
+int fish_block_setguard(fish_block *B, int guard);
+int fish_block_getdescr(fish_block *B, fluids_descr **D);
+int fish_block_setdescr(fish_block *B, fluids_descr *D);
+int fish_block_totalstates(fish_block *B);
+int fish_block_allocate(fish_block *B);
 char *fish_block_geterror(fish_block *B);
 
 
@@ -109,8 +116,10 @@ struct fish_state {
 
 struct fish_block {
   int rank;
+  int guard;
   int size[3];
-  struct fluid_state **fluid;
+  fluids_state **fluid;
+  fluids_descr *descr;
   char *error;
 } ;
 
