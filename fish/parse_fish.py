@@ -61,6 +61,9 @@ for line in fishh:
         elif argtype == "fish_riemn *":
             ga = """fish_riemn *%s = *((fish_riemn**) """\
                 """luaL_checkudata(L, %d, "fish::riemn"));""" % (argname, narg)
+        elif argtype == "fish_block *":
+            ga = """fish_block *%s = *((fish_block**) """\
+                """luaL_checkudata(L, %d, "fish::block"));""" % (argname, narg)
         elif argtype == "fluids_state **":
             ga = """fluids_state **%s = (fluids_state**) lua_touserdata(L, %d);"""\
                 % (argname, narg)

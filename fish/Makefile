@@ -20,7 +20,7 @@ INCLUDE += $(FFT_I)
 DEFINES += -DUSE_FFTW
 endif
 
-OBJ = fish.o reconstruct.o fluids.o riemann.o matrix.o grav1d.o
+OBJ = fish.o reconstruct.o fluids.o riemann.o matrix.o grav1d.o smr1d.o
 
 default : $(FISH_A) lua-fluids.o lua-fish.o
 

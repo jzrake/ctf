@@ -58,6 +58,7 @@ enum {
 #include "fluids.h"
 
 typedef struct fish_state fish_state;
+typedef struct fish_block fish_block;
 
 fish_state *fish_new(void);
 int fish_del(fish_state *S);
@@ -77,6 +78,15 @@ void fish_grav1d_setprim(double *prim);
 void fish_grav1d_mapbuffer(double *x, long flag);
 double fish_grav1d_maxwavespeed();
 
+fish_block *fish_block_new(void);
+int fish_block_del(fish_block *B);
+int fish_block_getrank(fish_block *B);
+int fish_block_setrank(fish_block *B, int ndim);
+int fish_block_getsize(fish_block *B, int dim);
+int fish_block_setsize(fish_block *B, int dim, int size);
+char *fish_block_geterror(fish_block *B);
+
+
 #ifdef FISH_PRIVATE_DEFS
 
 enum { PCM_C2L, PCM_C2R,
@@ -95,6 +105,13 @@ struct fish_state {
   int time_update;
   double plm_theta;
   double shenzha10_param;
+} ;
+
+struct fish_block {
+  int rank;
+  int size[3];
+  struct fluid_state **fluid;
+  char *error;
 } ;
 
 #endif // FISH_PRIVATE_DEFS
