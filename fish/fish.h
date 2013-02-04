@@ -138,6 +138,7 @@ struct fish_block {
   struct fish_block *neighborR[3];
   struct fluids_state **fluid;
   struct fluids_descr *descr;
+  double *time_derivative;
   char *error;
 } ;
 

@@ -159,9 +159,12 @@ int fish_block_allocate(fish_block *B)
   if (B->fluid != NULL) {
     fish_block_deallocate(B);
   }
-
   int ntot = fish_block_totalstates(B);
+  int nprm = fluids_descr_getncomp(B->descr, FLUIDS_PRIMITIVE);
+
+  B->time_derivative = (double*) malloc(ntot * nprm * sizeof(double));
   B->fluid = (fluids_state**) malloc(ntot * sizeof(fluids_state*));
+
   for (int n=0; n<ntot; ++n) {
     B->fluid[n] = fluids_state_new();
     fluids_state_setdescr(B->fluid[n], B->descr);
@@ -178,7 +181,9 @@ int fish_block_deallocate(fish_block *B)
       fluids_state_del(B->fluid[n]);
     }
     free(B->fluid);
+    free(B->time_derivative);
     B->fluid = NULL;
+    B->time_derivative = NULL;
   }
   return 0;
 }
