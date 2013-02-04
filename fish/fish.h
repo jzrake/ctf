@@ -76,6 +76,8 @@ int fish_block_getrank(fish_block *B);
 int fish_block_setrank(fish_block *B, int ndim);
 int fish_block_getsize(fish_block *B, int dim);
 int fish_block_setsize(fish_block *B, int dim, int size);
+int fish_block_getrange(fish_block *B, int dim, double *x0, double *x1);
+int fish_block_setrange(fish_block *B, int dim, double x0, double x1);
 int fish_block_getguard(fish_block *B);
 int fish_block_setguard(fish_block *B, int guard);
 int fish_block_getdescr(fish_block *B, fluids_descr **D);
@@ -84,7 +86,9 @@ int fish_block_totalstates(fish_block *B);
 int fish_block_allocate(fish_block *B);
 int fish_block_deallocate(fish_block *B);
 int fish_block_mapbuffer(fish_block *B, double *x, long flag);
+int fish_block_advance(fish_block *B, double dt);
 char *fish_block_geterror(fish_block *B);
+fluids_state **fish_block_getfluid(fish_block *B);
 
 
 void fish_grav1d_init(fluids_descr *descr, int N);
@@ -123,6 +127,8 @@ struct fish_block {
   int rank;
   int guard;
   int size[3];
+  double x0[3];
+  double x1[3];
   fluids_state **fluid;
   fluids_descr *descr;
   char *error;

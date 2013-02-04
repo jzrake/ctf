@@ -16,6 +16,8 @@ fish_block *fish_block_new()
     .rank = 1,
     .guard = 0,
     .size = { 1, 1, 1 },
+    .x0 = { 0.0, 0.0, 0.0 },
+    .x1 = { 1.0, 1.0, 1.0 },
     .fluid = NULL,
     .descr = NULL,
     .error = NULL,
@@ -51,6 +53,32 @@ int fish_block_setsize(fish_block *B, int dim, int size)
 {
   if (dim < B->rank) {
     B->size[dim] = size;
+    return 0;
+  }
+  else {
+    B->error = "argument 'dim' must be smaller than the rank of the block";
+    return FISH_ERROR;
+  }
+}
+
+int fish_block_getrange(fish_block *B, int dim, double *x0, double *x1)
+{
+  if (dim < B->rank) {
+    *x0 = B->x0[dim];
+    *x1 = B->x1[dim];
+    return 0;
+  }
+  else {
+    B->error = "argument 'dim' must be smaller than the rank of the block";
+    return FISH_ERROR;
+  }
+}
+
+int fish_block_setrange(fish_block *B, int dim, double x0, double x1)
+{
+  if (dim < B->rank) {
+    B->x0[dim] = x0;
+    B->x1[dim] = x1;
     return 0;
   }
   else {
@@ -126,6 +154,7 @@ int fish_block_allocate(fish_block *B)
     B->fluid[n] = fluids_state_new();
     fluids_state_setdescr(B->fluid[n], B->descr);
   }
+
   return 0;
 }
 
@@ -150,4 +179,9 @@ int fish_block_mapbuffer(fish_block *B, double *x, long flag)
     fluids_state_mapbuffer(B->fluid[n], &x[nq*n], flag);
   }
   return 0;
+}
+
+fluids_state **fish_block_getfluid(fish_block *B)
+{
+  return B->fluid;
 }

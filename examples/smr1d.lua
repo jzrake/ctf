@@ -1,5 +1,6 @@
 
-local fish = require 'fish'
+local array  = require 'array'
+local fish   = require 'fish'
 local fluids = require 'fluids'
 
 local function test1()
@@ -37,5 +38,25 @@ local function test2()
    fluids.descr_del(D)
 end
 
+local function test3()
+   local x0 = array.vector(1)
+   local x1 = array.vector(1)
+   local B = fish.block_new()
+   fish.block_setrank(B, 1)
+   fish.block_setsize(B, 0, 2000)
+   fish.block_setrange(B, 0, -1.0, 1.0)
+   fish.block_getrange(B, 0, x0:pointer(), x1:pointer())
+   assert(x0[0] == -1.0)
+   assert(x1[0] ==  1.0)
+   fish.block_allocate(B)
+   fish.block_del(B)
+end
+
+local function test4()
+   fish.smr1d()
+end
+
 test1()
 test2()
+test3()
+test4()
