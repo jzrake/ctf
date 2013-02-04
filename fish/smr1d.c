@@ -7,7 +7,7 @@
 #include "fish.h"
 
 static void timederiv(fish_state *scheme, fish_block *block, double *L);
-static void set_bc(fish_state *scheme, fish_block *block, double *U, int nq);
+static void set_bc(fish_block *block);
 
 double fish_block_maxwavespeed(fish_block *block)
 {
@@ -49,6 +49,7 @@ int fish_block_advance(fish_block *block, fish_state *scheme, double dt)
       }
       fluids_state_fromcons(fluid[n], U1, FLUIDS_CACHE_DEFAULT);
     }
+    set_bc(block);
 
     timederiv(scheme, block, L);
     for (int n=0; n<TotalZones; ++n) {
@@ -58,6 +59,7 @@ int fish_block_advance(fish_block *block, fish_state *scheme, double dt)
       }
       fluids_state_fromcons(fluid[n], U1, FLUIDS_CACHE_DEFAULT);
     }
+    set_bc(block);
   break;
 
   case FISH_SHUOSHER_RK3:
@@ -71,6 +73,7 @@ int fish_block_advance(fish_block *block, fish_state *scheme, double dt)
       }
       fluids_state_fromcons(fluid[n], U1, FLUIDS_CACHE_DEFAULT);
     }
+    set_bc(block);
 
     /* ******************************* Step 2 ******************************* */
     timederiv(scheme, block, L);
@@ -82,6 +85,7 @@ int fish_block_advance(fish_block *block, fish_state *scheme, double dt)
       }
       fluids_state_fromcons(fluid[n], U1, FLUIDS_CACHE_DEFAULT);
     }
+    set_bc(block);
 
     /* ******************************* Step 3 ******************************* */
     timederiv(scheme, block, L);
@@ -93,6 +97,7 @@ int fish_block_advance(fish_block *block, fish_state *scheme, double dt)
       }
       fluids_state_fromcons(fluid[n], U1, FLUIDS_CACHE_DEFAULT);
     }
+    set_bc(block);
     break;
   }
 
@@ -112,36 +117,26 @@ void timederiv(fish_state *scheme, fish_block *block, double *L)
   }
   fish_block_gridspacing(block, 0, &dx);
   fish_timederivative(scheme, fluid, 1, &TotalZones, &dx, L);
-  set_bc(scheme, block, L, 5);
 }
 
 
-void set_bc(fish_state *scheme, fish_block *block, double *U, int nq)
+void set_bc(fish_block *block)
 {
-  int N = fish_block_totalstates(block);
   int Ng = fish_block_getguard(block);
-  int BC;
+  fish_block *BL, *BR;
 
-  fish_getparami(scheme, &BC, FISH_BOUNDARY_CONDITIONS);
+  fish_block_getneighbor(block, 0, FISH_LEFT, &BL);
+  fish_block_getneighbor(block, 0, FISH_RIGHT, &BR);
 
-  switch (BC) {
-  case FISH_PERIODIC:
-    for (int i=0; i<Ng; ++i) {
-      for (int q=0; q<nq; ++q) {
-	U[(    i    )*nq + q] = U[( N - 2*Ng + i)*nq + q];
-	U[(N - i - 1)*nq + q] = U[(-1 + 2*Ng - i)*nq + q];
-      }
-    }
-    break;
-  case FISH_OUTFLOW:
-    for (int i=0; i<Ng; ++i) {
-      for (int q=0; q<nq; ++q) {
-	U[(    i    )*nq + q] = U[(    Ng    )*nq + q];
-	U[(N - i - 1)*nq + q] = U[(N - Ng - 1)*nq + q];
-      }
-    }
-    break;
-  default:
-    break; // warning!
+  fluids_state **fluid0 = fish_block_getfluid(block);
+  fluids_state **fluidL = fish_block_getfluid(BL);
+  fluids_state **fluidR = fish_block_getfluid(BR);
+
+  int Nx0 = fish_block_getsize(block, 0);
+  int NxL = fish_block_getsize(BL, 0);
+
+  for (int n=0; n<Ng; ++n) {
+    fluids_state_copy(fluid0[n           ], fluidL[NxL + n]);
+    fluids_state_copy(fluid0[Nx0 + Ng + n], fluidR[Ng  + n]);
   }
 }

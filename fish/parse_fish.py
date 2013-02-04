@@ -67,6 +67,9 @@ for line in fishh:
         elif argtype == "fluids_state **":
             ga = """fluids_state **%s = (fluids_state**) lua_touserdata(L, %d);"""\
                 % (argname, narg)
+        elif argtype == "fish_block **":
+            ga = """fish_block **%s = (fish_block**) lua_touserdata(L, %d);"""\
+                % (argname, narg)
         elif argtype == "long":
             ga = """long %s = luaL_checklong(L, %d);""" % (argname, narg)
         elif argtype == "int":

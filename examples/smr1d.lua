@@ -54,6 +54,8 @@ function StaticMeshRefinement:initialize_solver()
    fish.block_setrange(block, 0, 0.0, 1.0)
    fish.block_setguard(block, self.Ng)
    fish.block_allocate(block)
+   fish.block_setneighbor(block, 0, fish.LEFT, block)
+   fish.block_setneighbor(block, 0, fish.RIGHT, block)
 
    local scheme = fish.state_new()
    fish.setparami(scheme, fluids[RS], fish.RIEMANN_SOLVER)
@@ -171,8 +173,8 @@ function StaticMeshRefinement:user_work_finish()
    end
 end
 
-local opts = {plot=false,
-	      tmax=0.1,
+local opts = {plot=true,
+	      tmax=1.0,
 	      solver='godunov',
 	      reconstruction='weno5'}
 local sim = StaticMeshRefinement(opts)

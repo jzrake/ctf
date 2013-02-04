@@ -49,6 +49,9 @@ enum {
   FISH_PLM_THETA, // [1 -> 2 (most aggressive)]
   FISH_SHENZHA10_PARAM, // [0 -> ~100 (most aggressive)]
 
+  FISH_LEFT,
+  FISH_RIGHT,
+
   // -------------------
   // error codes
   // -------------------
@@ -82,6 +85,8 @@ int fish_block_getguard(fish_block *B);
 int fish_block_setguard(fish_block *B, int guard);
 int fish_block_getdescr(fish_block *B, fluids_descr **D);
 int fish_block_setdescr(fish_block *B, fluids_descr *D);
+int fish_block_getneighbor(fish_block *B, int dim, int LR, fish_block **B1);
+int fish_block_setneighbor(fish_block *B, int dim, int LR, fish_block *B1);
 int fish_block_totalstates(fish_block *B);
 int fish_block_gridspacing(fish_block *B, int dim, double *dx);
 int fish_block_allocate(fish_block *B);
@@ -129,8 +134,10 @@ struct fish_block {
   int size[3];
   double x0[3];
   double x1[3];
-  fluids_state **fluid;
-  fluids_descr *descr;
+  struct fish_block *neighborL[3];
+  struct fish_block *neighborR[3];
+  struct fluids_state **fluid;
+  struct fluids_descr *descr;
   char *error;
 } ;
 

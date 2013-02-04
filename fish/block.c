@@ -197,3 +197,37 @@ fluids_state **fish_block_getfluid(fish_block *B)
 {
   return B->fluid;
 }
+
+int fish_block_getneighbor(fish_block *B, int dim, int LR, fish_block **B1)
+{
+  if (dim < B->rank) {
+    switch (LR) {
+    case FISH_LEFT : *B1 = B->neighborL[dim]; return 0;
+    case FISH_RIGHT: *B1 = B->neighborR[dim]; return 0;
+    default:
+      B->error = "argument 'LR' must be FISH_LEFT or FISH_RIGHT";
+      return FISH_ERROR;
+    }
+  }
+  else {
+    B->error = "argument 'dim' must be smaller than the rank of the block";
+    return FISH_ERROR;
+  }
+}
+
+int fish_block_setneighbor(fish_block *B, int dim, int LR, fish_block *B1)
+{
+  if (dim < B->rank) {
+    switch (LR) {
+    case FISH_RIGHT: B->neighborR[dim] = B1; return 0;
+    case FISH_LEFT : B->neighborL[dim] = B1; return 0;
+    default:
+      B->error = "argument 'LR' must be FISH_LEFT or FISH_RIGHT";
+      return FISH_ERROR;
+    }
+  }
+  else {
+    B->error = "argument 'dim' must be smaller than the rank of the block";
+    return FISH_ERROR;
+  }
+}
