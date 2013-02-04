@@ -138,6 +138,18 @@ int fish_block_totalstates(fish_block *B)
   }
 }
 
+int fish_block_gridspacing(fish_block *B, int dim, double *dx)
+{
+  if (dim < B->rank) {
+    *dx = (B->x1[dim] - B->x0[dim]) / B->size[dim];
+    return 0;
+  }
+  else {
+    B->error = "argument 'dim' must be smaller than the rank of the block";
+    return FISH_ERROR;
+  }
+}
+
 int fish_block_allocate(fish_block *B)
 {
   if (B->descr == NULL) {

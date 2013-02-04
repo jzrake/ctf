@@ -83,6 +83,7 @@ int fish_block_setguard(fish_block *B, int guard);
 int fish_block_getdescr(fish_block *B, fluids_descr **D);
 int fish_block_setdescr(fish_block *B, fluids_descr *D);
 int fish_block_totalstates(fish_block *B);
+int fish_block_gridspacing(fish_block *B, int dim, double *dx);
 int fish_block_allocate(fish_block *B);
 int fish_block_deallocate(fish_block *B);
 int fish_block_mapbuffer(fish_block *B, double *x, long flag);
