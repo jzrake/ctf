@@ -55,11 +55,8 @@ local function test3()
    fish.block_del(B)
 end
 
-local function test4()
-   fish.smr1d()
-end
 
 test1()
 test2()
 test3()
-test4()
+

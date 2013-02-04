@@ -87,7 +87,8 @@ int fish_block_gridspacing(fish_block *B, int dim, double *dx);
 int fish_block_allocate(fish_block *B);
 int fish_block_deallocate(fish_block *B);
 int fish_block_mapbuffer(fish_block *B, double *x, long flag);
-int fish_block_advance(fish_block *B, double dt);
+int fish_block_advance(fish_block *B, fish_state *scheme, double dt);
+double fish_block_maxwavespeed(fish_block *B);
 char *fish_block_geterror(fish_block *B);
 fluids_state **fish_block_getfluid(fish_block *B);
 
@@ -100,8 +101,6 @@ void fish_grav1d_getprim(double *prim, double *grav);
 void fish_grav1d_setprim(double *prim);
 void fish_grav1d_mapbuffer(double *x, long flag);
 double fish_grav1d_maxwavespeed();
-
-int fish_smr1d();
 
 
 #ifdef FISH_PRIVATE_DEFS
