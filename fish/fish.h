@@ -19,6 +19,7 @@ enum {
   // -------------------
   // time update methods
   // -------------------
+  FISH_SINGLE,
   FISH_MIDPOINT,
   FISH_SHUOSHER_RK3,
 
@@ -92,9 +93,9 @@ int fish_block_gridspacing(fish_block *B, int dim, double *dx);
 int fish_block_allocate(fish_block *B);
 int fish_block_deallocate(fish_block *B);
 int fish_block_mapbuffer(fish_block *B, double *x, long flag);
-//int fish_block_advance(fish_block *B, fish_state *scheme, double dt);
 int fish_block_timederivative(fish_block *block, fish_state *scheme);
-int fish_block_evolve(fish_block *block, double dt);
+int fish_block_evolve(fish_block *block, double *W, double dt);
+int fish_block_fillconserved(fish_block *block);
 int fish_block_fillguard(fish_block *block);
 double fish_block_maxwavespeed(fish_block *B);
 char *fish_block_geterror(fish_block *B);

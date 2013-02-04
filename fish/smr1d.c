@@ -8,6 +8,7 @@
 #define FISH_PRIVATE_DEFS
 #include "fish.h"
 
+
 double fish_block_maxwavespeed(fish_block *block)
 {
   int TotalZones = fish_block_totalstates(block);
@@ -35,9 +36,10 @@ int fish_block_timederivative(fish_block *block, fish_state *scheme)
   return 0;
 }
 
-int fish_block_evolve(fish_block *block, double dt)
+int fish_block_evolve(fish_block *block, double *W, double dt)
 {
   int TotalZones = fish_block_totalstates(block);
+  double *U = block->temp_conserved;
   double *L = block->time_derivative;
   double U1[5];
 
@@ -46,11 +48,26 @@ int fish_block_evolve(fish_block *block, double dt)
   for (int n=0; n<TotalZones; ++n) {
     fluids_state_derive(fluid[n], U1, FLUIDS_CONSERVED);
     for (int q=0; q<5; ++q) {
-      U1[q] += L[5*n + q] * dt;
+      double u1 = U1[q];
+      double u0 = U[5*n + q];
+      double du = L[5*n + q] * dt;
+      U1[q] = W[0]*u0 + W[1]*u1 + W[2]*du;
     }
     fluids_state_fromcons(fluid[n], U1, FLUIDS_CACHE_DEFAULT);
   }
 
+  return 0;
+}
+
+int fish_block_fillconserved(fish_block *block)
+{
+  int TotalZones = fish_block_totalstates(block);
+  int Nq = fluids_descr_getncomp(block->descr, FLUIDS_PRIMITIVE);
+  double *U = block->temp_conserved;
+  fluids_state **fluid = block->fluid;
+  for (int n=0; n<TotalZones; ++n) {
+    fluids_state_derive(fluid[n], &U[Nq*n], FLUIDS_CONSERVED);
+  }
   return 0;
 }
 

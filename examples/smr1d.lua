@@ -38,7 +38,8 @@ function StaticMeshRefinement:initialize_solver()
    local RS = ('riemann_'..(self.user_opts.riemann or 'hllc')):upper()
    local RC = (self.user_opts.reconstruction or 'plm'):upper()
    local ST = (self.user_opts.solver or 'godunov'):upper()
-   local UP = ({midpoint='midpoint',
+   local UP = ({single='single',
+		midpoint='midpoint',
 		rk3='shuosher_rk3'})[self.user_opts.advance or 'rk3']:upper()
    local BC = self.problem:boundary_conditions():upper()
 
@@ -79,7 +80,7 @@ function StaticMeshRefinement:report_configuration()
 		    'SOLVER_TYPE',
 		    'BOUNDARY_CONDITIONS',
 		    'TIME_UPDATE'} do
-      fish.getparami(scheme, enum:pointer(), fish[k])
+      fish.getparami(scheme, enum:buffer(), fish[k])
       local val = FishEnums[enum[0]] or FluidsEnums[enum[0]]
       cfg[k:lower()] = val:lower()
    end
@@ -117,10 +118,54 @@ function StaticMeshRefinement:set_time_increment()
 end
 
 function StaticMeshRefinement:advance_physics()
-   --fish.block_advance(self.block, self.scheme, self.status.time_increment)
-   fish.block_timederivative(self.block, self.scheme)
-   fish.block_evolve(self.block, self.status.time_increment)
-   fish.block_fillguard(self.block)
+
+   local dt = self.status.time_increment
+   local enum = array.vector(1, 'int')
+   fish.getparami(self.scheme, enum:buffer(), fish.TIME_UPDATE)
+
+   if enum[0] == fish.SINGLE then
+      local W = array.vector{1.0, 0.0, 1.0}
+
+      fish.block_fillconserved(self.block)
+      fish.block_timederivative(self.block, self.scheme)
+      fish.block_evolve(self.block, W:buffer(), dt)
+      fish.block_fillguard(self.block)
+
+   elseif enum[0] == fish.MIDPOINT then
+      local W0 = array.vector{1.0, 0.0, 0.5}
+      local W1 = array.vector{1.0, 0.0, 1.0}
+
+      fish.block_fillconserved(self.block)
+
+      fish.block_timederivative(self.block, self.scheme)
+      fish.block_evolve(self.block, W0:buffer(), dt)
+      fish.block_fillguard(self.block)
+
+      fish.block_timederivative(self.block, self.scheme)
+      fish.block_evolve(self.block, W1:buffer(), dt)
+      fish.block_fillguard(self.block)
+
+   elseif enum[0] == fish.SHUOSHER_RK3 then
+      local W0 = array.vector{1.0, 0.0, 1.0}
+      local W1 = array.vector{3/4, 1/4, 1/4}
+      local W2 = array.vector{1/3, 2/3, 2/3}
+
+      fish.block_fillconserved(self.block)
+
+      fish.block_timederivative(self.block, self.scheme)
+      fish.block_evolve(self.block, W0:buffer(), dt)
+      fish.block_fillguard(self.block)
+
+      fish.block_timederivative(self.block, self.scheme)
+      fish.block_evolve(self.block, W1:buffer(), dt)
+      fish.block_fillguard(self.block)
+
+      fish.block_timederivative(self.block, self.scheme)
+      fish.block_evolve(self.block, W2:buffer(), dt)
+      fish.block_fillguard(self.block)
+   else
+      error('unrecognized option: advance='..FishEnums[enum[0]])
+   end
 end
 
 function StaticMeshRefinement:checkpoint_write()
@@ -177,10 +222,11 @@ function StaticMeshRefinement:user_work_finish()
 end
 
 local opts = {plot=true,
-	      CFL=0.2,
-	      tmax=0.5,
+	      CFL=0.4,
+	      tmax=0.2,
 	      solver='godunov',
-	      reconstruction='weno5'}
+	      reconstruction='weno5',
+	      advance='midpoint'}
 local sim = StaticMeshRefinement(opts)
 local problem = problems.densitywave(opts)
 sim:run(problem)
