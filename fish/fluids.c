@@ -217,6 +217,22 @@ int fluids_state_del(fluids_state *S)
   return 0;
 }
 
+int fluids_state_copy(fluids_state *S0, fluids_state *S1)
+{
+  size_t sd = sizeof(double);
+  size_t si = sizeof(int);
+  if (S0->descr != S1->descr) {
+    return 1; // source and destination states must share the same descriptor
+  }
+  memcpy(S0->primitive, S1->primitive, S0->descr->nprimitive * sd);
+  memcpy(S0->passive, S1->passive, S0->descr->npassive * sd);
+  memcpy(S0->gravity, S1->gravity, S0->descr->ngravity * sd);
+  memcpy(S0->magnetic, S1->magnetic, S0->descr->nmagnetic * sd);
+  memcpy(S0->location, S1->location, S0->descr->nlocation * sd);
+  memcpy(S0->userflag, S1->userflag, si);
+  return 0;
+}
+
 int fluids_state_getdescr(fluids_state *S, fluids_descr **D)
 {
   *D = S->descr;
