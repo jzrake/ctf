@@ -26,7 +26,7 @@ local problems = {
 }
 
 function TestProblem:__init__(user_opts)
-   self.user_opts = user_opts
+   self.user_opts = user_opts or { }
    self:initialize_problem()
 end
 function TestProblem:initialize_problem() end
