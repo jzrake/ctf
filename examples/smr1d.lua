@@ -117,7 +117,10 @@ function StaticMeshRefinement:set_time_increment()
 end
 
 function StaticMeshRefinement:advance_physics()
-   fish.block_advance(self.block, self.scheme, self.status.time_increment)
+   --fish.block_advance(self.block, self.scheme, self.status.time_increment)
+   fish.block_timederivative(self.block, self.scheme)
+   fish.block_evolve(self.block, self.status.time_increment)
+   fish.block_fillguard(self.block)
 end
 
 function StaticMeshRefinement:checkpoint_write()
@@ -174,7 +177,8 @@ function StaticMeshRefinement:user_work_finish()
 end
 
 local opts = {plot=true,
-	      tmax=1.0,
+	      CFL=0.2,
+	      tmax=0.5,
 	      solver='godunov',
 	      reconstruction='weno5'}
 local sim = StaticMeshRefinement(opts)
