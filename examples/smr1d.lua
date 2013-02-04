@@ -97,6 +97,7 @@ function StaticMeshRefinement:report_configuration()
 end
 
 function StaticMeshRefinement:finalize_solver()
+   fish.block_del(self.block)
    fish.state_del(self.scheme)
    fluids.descr_del(self.descr)
 end
@@ -170,7 +171,8 @@ function StaticMeshRefinement:user_work_finish()
    end
 end
 
-local opts = {plot=true,
+local opts = {plot=false,
+	      tmax=0.1,
 	      solver='godunov',
 	      reconstruction='weno5'}
 local sim = StaticMeshRefinement(opts)
