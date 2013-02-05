@@ -15,8 +15,8 @@ function MaraSimulation:initialize_behavior()
    local tmax = opts.tmax or self.problem:finish_time()
    local dynamical_time = self.problem:dynamical_time()
    self.behavior.message_cadence = opts.message_cadence or 10
-   self.behavior.checkpoint_cadence = cpi * dynamical_time
-   self.behavior.max_simulation_time = tmax * dynamical_time
+   self.behavior.checkpoint_cadence = tonumber(cpi)
+   self.behavior.max_simulation_time = tonumber(tmax)
 end
 
 function MaraSimulation:initialize_solver()
