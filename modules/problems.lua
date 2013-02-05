@@ -98,7 +98,7 @@ end
 function problems.densitywave:dynamical_time()
    return 1.0
 end
-function problems.soundwave:finish_time()
+function problems.densitywave:finish_time()
    return 1.0
 end
 function problems.densitywave:solution(t)
