@@ -8,6 +8,7 @@ local hdf5     = require 'lua-hdf5.LuaHDF5'
 local util     = require 'util'
 local problems = require 'problems'
 
+
 local densitywave = oo.class('densitywave', problems.TestProblem)
 function densitywave:dynamical_time()
    return 1.0
@@ -19,7 +20,6 @@ function densitywave:solution(x, y, z, t)
    local sim = self.simulation
    local N = sim.N
    local Ng = sim.Ng
-   local dx = sim.dx
 
    local cs = 1.0
    local u0 = cs -- Mach 1 density wave
@@ -62,7 +62,6 @@ function StaticMeshRefinement:initialize_solver()
    self.CFL = opts.CFL or 0.8
    self.Ng = 3
    self.N = opts.resolution or 128
-   self.dx = 1.0 / self.N
 
    local FL = self.problem:fluid():upper()
    local RS = ('riemann_'..(self.user_opts.riemann or 'hllc')):upper()
@@ -78,13 +77,13 @@ function StaticMeshRefinement:initialize_solver()
    fluids.descr_setgamma(descr, 1.4)
    fluids.descr_seteos(descr, fluids.EOS_GAMMALAW)
 
-   local num_blocks = 1
+   local num_blocks = 4
    local X0 = 0.0
    local X1 = 1.0
    local dX = (X1 - X0) / num_blocks
 
    local blocks = { }
-   for i=0,0 do
+   for i=0,num_blocks-1 do
       local block = fish.block_new()
       fish.block_setdescr(block, descr)
       fish.block_setrank(block, 1)
@@ -94,8 +93,8 @@ function StaticMeshRefinement:initialize_solver()
       fish.block_allocate(block)
       table.insert(blocks, block)
    end
-   for i=1,1 do
-      local BL = blocks[i-1] or blocks[1]
+   for i,block in ipairs(blocks) do
+      local BL = blocks[i-1] or blocks[num_blocks]
       local BR = blocks[i+1] or blocks[1]
       fish.block_setneighbor(blocks[i], 0, fish.LEFT, BL)
       fish.block_setneighbor(blocks[i], 0, fish.RIGHT, BR)
@@ -158,6 +157,7 @@ function StaticMeshRefinement:initialize_physics()
       local P = array.array{Nx + 2*Ng, 5}
       local Pvec = P:vector()
       local pos = array.vector(1)
+
       for i=0,Nx+2*Ng-1 do
 	 fish.block_positionatindex(block, 0, i, pos:buffer())
 	 local Pi = self.problem:solution(pos[0], 0.0, 0.0, 0.0)
@@ -175,13 +175,21 @@ end
 
 function StaticMeshRefinement:set_time_increment()
    local Amax = 0.0
+   local Dmin = math.huge
    for _,block in pairs(self.blocks) do
+
+      local Dv = array.vector(1)
+      fish.block_gridspacing(block, 0, Dv:buffer())
+
+      local D = Dv[0]
+
       local A = fish.block_maxwavespeed(block)
-      if A > Amax then
-	 Amax = A
-      end
+
+      if A > Amax then Amax = A end
+      if D < Dmin then Dmin = D end
    end
-   local dt = self.CFL * self.dx / Amax
+
+   local dt = self.CFL * Dmin / Amax
    self.status.time_increment = dt
 end
 
@@ -270,7 +278,7 @@ function StaticMeshRefinement:checkpoint_write()
 end
 
 function StaticMeshRefinement:local_mesh_size()
-   return self.N
+   return #self.blocks * self.N
 end
 
 function StaticMeshRefinement:user_work_iteration()
@@ -306,10 +314,10 @@ function StaticMeshRefinement:user_work_finish()
 end
 
 local opts = {plot=true,
-	      CFL=0.4,
+	      CFL=0.8,
 	      tmax=1.0,
 	      solver='godunov',
-	      reconstruction='weno5',
+	      reconstruction='plm',
 	      advance='rk3'}
 local sim = StaticMeshRefinement(opts)
 local problem = densitywave(opts)
