@@ -64,7 +64,7 @@ local function main()
       end
       util.pretty_print(ErrorTable)
       print("estimated convergence rate is",
-	    math.log10(ErrorTable[512]/ErrorTable[64]) / math.log10(512/64))
+	    math.log10(ErrorTable[128]/ErrorTable[64]) / math.log10(128/64))
       util.plot({['L1 error']=ErrorTable}, {'set logscale'})
    else
       local sim = sim_class(opts)
