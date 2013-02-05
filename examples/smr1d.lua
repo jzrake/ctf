@@ -156,11 +156,10 @@ function StaticMeshRefinement:initialize_physics()
       local Ng = fish.block_getguard(block)
       local P = array.array{Nx + 2*Ng, 5}
       local Pvec = P:vector()
-      local pos = array.vector(1)
 
       for i=0,Nx+2*Ng-1 do
-	 fish.block_positionatindex(block, 0, i, pos:buffer())
-	 local Pi = self.problem:solution(pos[0], 0.0, 0.0, 0.0)
+	 local x = fish.block_positionatindex(block, 0, i)
+	 local Pi = self.problem:solution(x, 0.0, 0.0, 0.0)
 	 Pvec[5*i + 0] = Pi[1]
 	 Pvec[5*i + 1] = Pi[2]
 	 Pvec[5*i + 2] = Pi[3]
@@ -176,13 +175,9 @@ end
 function StaticMeshRefinement:set_time_increment()
    local Amax = 0.0
    local Dmin = math.huge
+
    for _,block in pairs(self.blocks) do
-
-      local Dv = array.vector(1)
-      fish.block_gridspacing(block, 0, Dv:buffer())
-
-      local D = Dv[0]
-
+      local D = fish.block_gridspacing(block, 0)
       local A = fish.block_maxwavespeed(block)
 
       if A > Amax then Amax = A end
@@ -292,18 +287,17 @@ function StaticMeshRefinement:user_work_finish()
    local exac_data = { }
 
    for _,block in pairs(self.blocks) do
-      local pos = array.vector(1)
       local Nx = fish.block_getsize(block, 0)
       local Ng = fish.block_getguard(block)
 
       for i=0,Nx+2*Ng-1 do
-	 fish.block_positionatindex(block, 0, i, pos:buffer())
+	 local x = fish.block_positionatindex(block, 0, i)
 
 	 local P0 = self.primitive[block]:vector()
-	 local P1 = self.problem:solution(pos[0], 0.0, 0.0, t)
+	 local P1 = self.problem:solution(x, 0.0, 0.0, t)
 
-	 code_data[pos[0]] = P0[5*i + 0]
-	 exac_data[pos[0]] = P1[1]
+	 code_data[x] = P0[5*i + 0]
+	 exac_data[x] = P1[1]
       end
    end
 

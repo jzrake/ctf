@@ -89,8 +89,7 @@ int fish_block_setdescr(fish_block *B, fluids_descr *D);
 int fish_block_getneighbor(fish_block *B, int dim, int LR, fish_block **B1);
 int fish_block_setneighbor(fish_block *B, int dim, int LR, fish_block *B1);
 int fish_block_totalstates(fish_block *B);
-int fish_block_gridspacing(fish_block *B, int dim, double *dx);
-int fish_block_positionatindex(fish_block *B, int dim, int index, double *x);
+
 int fish_block_allocate(fish_block *B);
 int fish_block_deallocate(fish_block *B);
 int fish_block_mapbuffer(fish_block *B, double *x, long flag);
@@ -98,6 +97,9 @@ int fish_block_timederivative(fish_block *block, fish_state *scheme);
 int fish_block_evolve(fish_block *block, double *W, double dt);
 int fish_block_fillconserved(fish_block *block);
 int fish_block_fillguard(fish_block *block);
+
+double fish_block_gridspacing(fish_block *B, int dim);
+double fish_block_positionatindex(fish_block *B, int dim, int index);
 double fish_block_maxwavespeed(fish_block *B);
 char *fish_block_geterror(fish_block *B);
 fluids_state **fish_block_getfluid(fish_block *B);

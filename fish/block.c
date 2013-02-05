@@ -138,18 +138,6 @@ int fish_block_totalstates(fish_block *B)
   }
 }
 
-int fish_block_gridspacing(fish_block *B, int dim, double *dx)
-{
-  if (dim < B->rank) {
-    *dx = (B->x1[dim] - B->x0[dim]) / B->size[dim];
-    return 0;
-  }
-  else {
-    B->error = "argument 'dim' must be smaller than the rank of the block";
-    return FISH_ERROR;
-  }
-}
-
 int fish_block_allocate(fish_block *B)
 {
   if (B->descr == NULL) {
@@ -240,7 +228,18 @@ int fish_block_setneighbor(fish_block *B, int dim, int LR, fish_block *B1)
   }
 }
 
-int fish_block_positionatindex(fish_block *B, int dim, int index, double *x)
+double fish_block_gridspacing(fish_block *B, int dim)
+{
+  if (dim < B->rank) {
+    return (B->x1[dim] - B->x0[dim]) / B->size[dim];
+  }
+  else {
+    B->error = "argument 'dim' must be smaller than the rank of the block";
+    return 0.0;
+  }
+}
+
+double fish_block_positionatindex(fish_block *B, int dim, int index)
 // -----------------------------------------------------------------------------
 // Returns the physical coordinates of the center of zone `index` along
 // dimension `dim`. The index includes padding, so that i=0 refers to ng zones
@@ -248,14 +247,94 @@ int fish_block_positionatindex(fish_block *B, int dim, int index, double *x)
 // -----------------------------------------------------------------------------
 {
   if (dim < B->rank) {
-    double dx;
-    fish_block_gridspacing(B, dim, &dx);
-    *x = B->x0[dim] + dx * (index - B->guard + 0.5);
-    return 0;
+    double dx = fish_block_gridspacing(B, dim);
+    return B->x0[dim] + dx * (index - B->guard + 0.5);
   }
   else {
     B->error = "argument 'dim' must be smaller than the rank of the block";
-    return FISH_ERROR;
+    return 0.0;
   }
 }
 
+double fish_block_maxwavespeed(fish_block *block)
+{
+  int TotalZones = fish_block_totalstates(block);
+  fluids_state **fluid = fish_block_getfluid(block);
+  double a = 0.0;
+  for (int n=0; n<TotalZones; ++n) {
+    double A[5];
+    fluids_state_derive(fluid[n], A, FLUIDS_EVAL0);
+    for (int q=0; q<5; ++q) {
+      a = fabs(A[q]) > a ? fabs(A[q]) : a;
+    }
+  }
+  return a;
+}
+
+int fish_block_timederivative(fish_block *block, fish_state *scheme)
+{
+  int TotalZones = fish_block_totalstates(block);
+  double *L = block->time_derivative;
+  fluids_state **fluid = block->fluid;
+  double dx = fish_block_gridspacing(block, 0);
+  for (int m=0; m<5*TotalZones; ++m) L[m] = 0.0;
+  fish_timederivative(scheme, fluid, 1, &TotalZones, &dx, L);
+  return 0;
+}
+
+int fish_block_evolve(fish_block *block, double *W, double dt)
+{
+  int TotalZones = fish_block_totalstates(block);
+  double *U = block->temp_conserved;
+  double *L = block->time_derivative;
+  double U1[5];
+
+  fluids_state **fluid = fish_block_getfluid(block);
+
+  for (int n=0; n<TotalZones; ++n) {
+    fluids_state_derive(fluid[n], U1, FLUIDS_CONSERVED);
+    for (int q=0; q<5; ++q) {
+      double u1 = U1[q];
+      double u0 = U[5*n + q];
+      double du = L[5*n + q] * dt;
+      U1[q] = W[0]*u0 + W[1]*u1 + W[2]*du;
+    }
+    fluids_state_fromcons(fluid[n], U1, FLUIDS_CACHE_DEFAULT);
+  }
+
+  return 0;
+}
+
+int fish_block_fillconserved(fish_block *block)
+{
+  int TotalZones = fish_block_totalstates(block);
+  int Nq = fluids_descr_getncomp(block->descr, FLUIDS_PRIMITIVE);
+  double *U = block->temp_conserved;
+  fluids_state **fluid = block->fluid;
+  for (int n=0; n<TotalZones; ++n) {
+    fluids_state_derive(fluid[n], &U[Nq*n], FLUIDS_CONSERVED);
+  }
+  return 0;
+}
+
+int fish_block_fillguard(fish_block *block)
+{
+  int Ng = fish_block_getguard(block);
+  fish_block *BL=NULL, *BR=NULL;
+
+  fish_block_getneighbor(block, 0, FISH_LEFT, &BL);
+  fish_block_getneighbor(block, 0, FISH_RIGHT, &BR);
+
+  fluids_state **fluid0 = fish_block_getfluid(block);
+  fluids_state **fluidL = fish_block_getfluid(BL);
+  fluids_state **fluidR = fish_block_getfluid(BR);
+
+  int Nx0 = fish_block_getsize(block, 0);
+  int NxL = fish_block_getsize(BL, 0);
+
+  for (int n=0; n<Ng; ++n) {
+    fluids_state_copy(fluid0[n           ], fluidL[NxL + n]);
+    fluids_state_copy(fluid0[Nx0 + Ng + n], fluidR[Ng  + n]);
+  }
+  return 0;
+}
