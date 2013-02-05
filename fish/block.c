@@ -19,9 +19,17 @@ fish_block *fish_block_new()
     .size = { 1, 1, 1 },
     .x0 = { 0.0, 0.0, 0.0 },
     .x1 = { 1.0, 1.0, 1.0 },
+    .neighborL = { NULL, NULL, NULL },
+    .neighborR = { NULL, NULL, NULL },
+    .children = { NULL/*(0,0,0)*/, NULL/*(0,0,1)*/,
+		  NULL/*(0,1,0)*/, NULL/*(0,1,1)*/,
+		  NULL/*(1,0,0)*/, NULL/*(1,0,1)*/,
+		  NULL/*(1,1,0)*/, NULL/*(1,1,1)*/ },
+    .parent = NULL,
     .fluid = NULL,
     .descr = NULL,
     .error = NULL,
+    .pstart = { 0, 0, 0 },
   } ;
   *B = block;
   return B;
@@ -197,6 +205,20 @@ int fish_block_setneighbor(fish_block *B, int dim, int LR, fish_block *B1)
     case FISH_LEFT : B->neighborL[dim] = B1; return 0;
   }
   return -1;
+}
+
+int fish_block_getchild(fish_block *B, int id, fish_block **B1)
+{
+  CHECK(id < 8, "argument 'id' must be smaller than 8");
+  *B1 = B->children[id];
+  return 0;
+}
+
+int fish_block_setchild(fish_block *B, int id, fish_block *B1)
+{
+  CHECK(id < 8, "argument 'id' must be smaller than 8");
+  B->children[id] = B1;
+  return 0;
 }
 
 double fish_block_gridspacing(fish_block *B, int dim)

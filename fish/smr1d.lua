@@ -48,15 +48,43 @@ local function test3()
    fish.block_setsize(B, 0, 20)
    fish.block_setrange(B, 0, -1.0, 1.0)
    fish.block_getrange(B, 0, x0:pointer(), x1:pointer())
+   fish.block_allocate(B)
    assert(x0[0] == -1.0)
    assert(x1[0] ==  1.0)
    assert(fish.block_gridspacing(B, 0) == 0.1)
-   fish.block_allocate(B)
    fish.block_del(B)
 end
 
+local function test4()
+   local B0 = fish.block_new()
+   local BL = fish.block_new()
+   local BR = fish.block_new()
+
+   for _,B in pairs{B0, BL, BR} do
+      fish.block_setrank(B, 1)
+      fish.block_setsize(B, 0, 16)
+      fish.block_setrange(B, 0, -1.0, 1.0)
+      fish.block_allocate(B)
+   end
+
+   fish.block_setchild(B0, 0, BL)
+   fish.block_setchild(B0, 4, BR)
+
+   local BchildL = fish.block_light()
+   local BchildR = fish.block_light()
+
+   fish.block_getchild(B0, 0, BchildL)
+   fish.block_getchild(B0, 4, BchildR)
+
+   assert(fish.block_light(BchildL) == fish.block_light(BL))
+   assert(fish.block_light(BchildR) == fish.block_light(BR))
+
+   fish.block_del(B0)
+   fish.block_del(BL)
+   fish.block_del(BR)
+end
 
 test1()
 test2()
 test3()
-
+test4()

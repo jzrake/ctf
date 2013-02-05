@@ -88,6 +88,8 @@ int fish_block_getdescr(fish_block *B, fluids_descr **D);
 int fish_block_setdescr(fish_block *B, fluids_descr *D);
 int fish_block_getneighbor(fish_block *B, int dim, int LR, fish_block **B1);
 int fish_block_setneighbor(fish_block *B, int dim, int LR, fish_block *B1);
+int fish_block_getchild(fish_block *B, int id, fish_block **B1);
+int fish_block_setchild(fish_block *B, int id, fish_block *B1);
 int fish_block_totalstates(fish_block *B);
 int fish_block_allocate(fish_block *B);
 int fish_block_deallocate(fish_block *B);
@@ -140,8 +142,7 @@ struct fish_block {
   double x1[3];
   struct fish_block *neighborL[3];
   struct fish_block *neighborR[3];
-  struct fish_block *childL[3];
-  struct fish_block *childR[3];
+  struct fish_block *children[8];
   struct fish_block *parent;
   struct fluids_state **fluid;
   struct fluids_descr *descr;
