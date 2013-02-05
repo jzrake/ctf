@@ -90,6 +90,7 @@ int fish_block_getneighbor(fish_block *B, int dim, int LR, fish_block **B1);
 int fish_block_setneighbor(fish_block *B, int dim, int LR, fish_block *B1);
 int fish_block_totalstates(fish_block *B);
 int fish_block_gridspacing(fish_block *B, int dim, double *dx);
+int fish_block_positionatindex(fish_block *B, int dim, int index, double *x);
 int fish_block_allocate(fish_block *B);
 int fish_block_deallocate(fish_block *B);
 int fish_block_mapbuffer(fish_block *B, double *x, long flag);

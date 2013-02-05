@@ -239,3 +239,23 @@ int fish_block_setneighbor(fish_block *B, int dim, int LR, fish_block *B1)
     return FISH_ERROR;
   }
 }
+
+int fish_block_positionatindex(fish_block *B, int dim, int index, double *x)
+// -----------------------------------------------------------------------------
+// Returns the physical coordinates of the center of zone `index` along
+// dimension `dim`. The index includes padding, so that i=0 refers to ng zones
+// to the left of the block boundary, where ng is the number of guard zones.
+// -----------------------------------------------------------------------------
+{
+  if (dim < B->rank) {
+    double dx;
+    fish_block_gridspacing(B, dim, &dx);
+    *x = B->x0[dim] + dx * (index - B->guard + 0.5);
+    return 0;
+  }
+  else {
+    B->error = "argument 'dim' must be smaller than the rank of the block";
+    return FISH_ERROR;
+  }
+}
+
