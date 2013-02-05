@@ -8,6 +8,7 @@
 #define FISH_PRIVATE_DEFS
 #include "fish.h"
 
+#define CHECK(c, m) do{if(!(c)){B->error=m;return -1;}B->error=NULL;}while(0)
 
 fish_block *fish_block_new()
 {
@@ -40,51 +41,35 @@ char *fish_block_geterror(fish_block *B)
 
 int fish_block_getsize(fish_block *B, int dim)
 {
-  if (dim < B->rank) {
-    return B->size[dim];
-  }
-  else {
-    B->error = "argument 'dim' must be smaller than the rank of the block";
-    return FISH_ERROR;
-  }
+  CHECK(dim < B->rank,
+	"argument 'dim' must be smaller than the rank of the block");
+  return B->size[dim];
 }
 
 int fish_block_setsize(fish_block *B, int dim, int size)
 {
-  if (dim < B->rank) {
-    B->size[dim] = size;
-    return 0;
-  }
-  else {
-    B->error = "argument 'dim' must be smaller than the rank of the block";
-    return FISH_ERROR;
-  }
+  CHECK(dim < B->rank,
+	"argument 'dim' must be smaller than the rank of the block");
+  B->size[dim] = size;
+  return 0;
 }
 
 int fish_block_getrange(fish_block *B, int dim, double *x0, double *x1)
 {
-  if (dim < B->rank) {
-    *x0 = B->x0[dim];
-    *x1 = B->x1[dim];
-    return 0;
-  }
-  else {
-    B->error = "argument 'dim' must be smaller than the rank of the block";
-    return FISH_ERROR;
-  }
+  CHECK(dim < B->rank,
+	"argument 'dim' must be smaller than the rank of the block");
+  *x0 = B->x0[dim];
+  *x1 = B->x1[dim];
+  return 0;
 }
 
 int fish_block_setrange(fish_block *B, int dim, double x0, double x1)
 {
-  if (dim < B->rank) {
-    B->x0[dim] = x0;
-    B->x1[dim] = x1;
-    return 0;
-  }
-  else {
-    B->error = "argument 'dim' must be smaller than the rank of the block";
-    return FISH_ERROR;
-  }
+  CHECK(dim < B->rank,
+	"argument 'dim' must be smaller than the rank of the block");
+  B->x0[dim] = x0;
+  B->x1[dim] = x1;
+  return 0;
 }
 
 int fish_block_getrank(fish_block *B)
@@ -94,14 +79,9 @@ int fish_block_getrank(fish_block *B)
 
 int fish_block_setrank(fish_block *B, int rank)
 {
-  if (rank >= 1 && rank <= 3) {
-    B->rank = rank;
-    return 0;
-  }
-  else {
-    B->error = "rank must be 1, 2, or 3";
-    return FISH_ERROR;
-  }
+  CHECK(rank >= 1 && rank <= 3, "rank must be 1, 2, or 3");
+  B->rank = rank;
+  return 0;
 }
 
 int fish_block_getguard(fish_block *B)
@@ -140,10 +120,9 @@ int fish_block_totalstates(fish_block *B)
 
 int fish_block_allocate(fish_block *B)
 {
-  if (B->descr == NULL) {
-    B->error = "block's fluid descriptor must be set before allocating";
-    return FISH_ERROR;
-  }
+  CHECK(B->descr != NULL,
+	"block's fluid descriptor must be set before allocating");
+
   if (B->fluid != NULL) {
     fish_block_deallocate(B);
   }
@@ -196,47 +175,35 @@ fluids_state **fish_block_getfluid(fish_block *B)
 
 int fish_block_getneighbor(fish_block *B, int dim, int LR, fish_block **B1)
 {
-  if (dim < B->rank) {
-    switch (LR) {
-    case FISH_LEFT : *B1 = B->neighborL[dim]; return 0;
-    case FISH_RIGHT: *B1 = B->neighborR[dim]; return 0;
-    default:
-      B->error = "argument 'LR' must be FISH_LEFT or FISH_RIGHT";
-      return FISH_ERROR;
-    }
+  CHECK(dim < B->rank,
+	"argument 'dim' must be smaller than the rank of the block");
+  CHECK(LR == FISH_LEFT || LR == FISH_RIGHT,
+	"argument 'LR' must be FISH_LEFT or FISH_RIGHT");
+  switch (LR) {
+  case FISH_LEFT : *B1 = B->neighborL[dim]; return 0;
+  case FISH_RIGHT: *B1 = B->neighborR[dim]; return 0;
   }
-  else {
-    B->error = "argument 'dim' must be smaller than the rank of the block";
-    return FISH_ERROR;
-  }
+  return -1;
 }
 
 int fish_block_setneighbor(fish_block *B, int dim, int LR, fish_block *B1)
 {
-  if (dim < B->rank) {
-    switch (LR) {
+  CHECK(dim < B->rank,
+	"argument 'dim' must be smaller than the rank of the block");
+  CHECK(LR == FISH_LEFT || LR == FISH_RIGHT,
+	"argument 'LR' must be FISH_LEFT or FISH_RIGHT");
+  switch (LR) {
     case FISH_RIGHT: B->neighborR[dim] = B1; return 0;
     case FISH_LEFT : B->neighborL[dim] = B1; return 0;
-    default:
-      B->error = "argument 'LR' must be FISH_LEFT or FISH_RIGHT";
-      return FISH_ERROR;
-    }
   }
-  else {
-    B->error = "argument 'dim' must be smaller than the rank of the block";
-    return FISH_ERROR;
-  }
+  return -1;
 }
 
 double fish_block_gridspacing(fish_block *B, int dim)
 {
-  if (dim < B->rank) {
-    return (B->x1[dim] - B->x0[dim]) / B->size[dim];
-  }
-  else {
-    B->error = "argument 'dim' must be smaller than the rank of the block";
-    return 0.0;
-  }
+  CHECK(dim < B->rank,
+	"argument 'dim' must be smaller than the rank of the block");
+  return (B->x1[dim] - B->x0[dim]) / B->size[dim];
 }
 
 double fish_block_positionatindex(fish_block *B, int dim, int index)
@@ -246,20 +213,17 @@ double fish_block_positionatindex(fish_block *B, int dim, int index)
 // to the left of the block boundary, where ng is the number of guard zones.
 // -----------------------------------------------------------------------------
 {
-  if (dim < B->rank) {
-    double dx = fish_block_gridspacing(B, dim);
-    return B->x0[dim] + dx * (index - B->guard + 0.5);
-  }
-  else {
-    B->error = "argument 'dim' must be smaller than the rank of the block";
-    return 0.0;
-  }
+  CHECK(dim < B->rank,
+	"argument 'dim' must be smaller than the rank of the block");
+  double dx = fish_block_gridspacing(B, dim);
+  return B->x0[dim] + dx * (index - B->guard + 0.5);
 }
 
-double fish_block_maxwavespeed(fish_block *block)
+double fish_block_maxwavespeed(fish_block *B)
 {
-  int TotalZones = fish_block_totalstates(block);
-  fluids_state **fluid = fish_block_getfluid(block);
+  CHECK(1, ""); // clear error message
+  int TotalZones = fish_block_totalstates(B);
+  fluids_state **fluid = fish_block_getfluid(B);
   double a = 0.0;
   for (int n=0; n<TotalZones; ++n) {
     double A[5];
@@ -271,25 +235,27 @@ double fish_block_maxwavespeed(fish_block *block)
   return a;
 }
 
-int fish_block_timederivative(fish_block *block, fish_state *scheme)
+int fish_block_timederivative(fish_block *B, fish_state *scheme)
 {
-  int TotalZones = fish_block_totalstates(block);
-  double *L = block->time_derivative;
-  fluids_state **fluid = block->fluid;
-  double dx = fish_block_gridspacing(block, 0);
+  CHECK(1, ""); // clear error message
+  int TotalZones = fish_block_totalstates(B);
+  double *L = B->time_derivative;
+  fluids_state **fluid = B->fluid;
+  double dx = fish_block_gridspacing(B, 0);
   for (int m=0; m<5*TotalZones; ++m) L[m] = 0.0;
   fish_timederivative(scheme, fluid, 1, &TotalZones, &dx, L);
   return 0;
 }
 
-int fish_block_evolve(fish_block *block, double *W, double dt)
+int fish_block_evolve(fish_block *B, double *W, double dt)
 {
-  int TotalZones = fish_block_totalstates(block);
-  double *U = block->temp_conserved;
-  double *L = block->time_derivative;
+  CHECK(1, ""); // clear error message
+  int TotalZones = fish_block_totalstates(B);
+  double *U = B->temp_conserved;
+  double *L = B->time_derivative;
   double U1[5];
 
-  fluids_state **fluid = fish_block_getfluid(block);
+  fluids_state **fluid = fish_block_getfluid(B);
 
   for (int n=0; n<TotalZones; ++n) {
     fluids_state_derive(fluid[n], U1, FLUIDS_CONSERVED);
@@ -305,31 +271,33 @@ int fish_block_evolve(fish_block *block, double *W, double dt)
   return 0;
 }
 
-int fish_block_fillconserved(fish_block *block)
+int fish_block_fillconserved(fish_block *B)
 {
-  int TotalZones = fish_block_totalstates(block);
-  int Nq = fluids_descr_getncomp(block->descr, FLUIDS_PRIMITIVE);
-  double *U = block->temp_conserved;
-  fluids_state **fluid = block->fluid;
+  CHECK(1, ""); // clear error message
+  int TotalZones = fish_block_totalstates(B);
+  int Nq = fluids_descr_getncomp(B->descr, FLUIDS_PRIMITIVE);
+  double *U = B->temp_conserved;
+  fluids_state **fluid = B->fluid;
   for (int n=0; n<TotalZones; ++n) {
     fluids_state_derive(fluid[n], &U[Nq*n], FLUIDS_CONSERVED);
   }
   return 0;
 }
 
-int fish_block_fillguard(fish_block *block)
+int fish_block_fillguard(fish_block *B)
 {
-  int Ng = fish_block_getguard(block);
+  CHECK(1, ""); // clear error message
+  int Ng = fish_block_getguard(B);
   fish_block *BL=NULL, *BR=NULL;
 
-  fish_block_getneighbor(block, 0, FISH_LEFT, &BL);
-  fish_block_getneighbor(block, 0, FISH_RIGHT, &BR);
+  fish_block_getneighbor(B, 0, FISH_LEFT, &BL);
+  fish_block_getneighbor(B, 0, FISH_RIGHT, &BR);
 
-  fluids_state **fluid0 = fish_block_getfluid(block);
+  fluids_state **fluid0 = fish_block_getfluid(B);
   fluids_state **fluidL = fish_block_getfluid(BL);
   fluids_state **fluidR = fish_block_getfluid(BR);
 
-  int Nx0 = fish_block_getsize(block, 0);
+  int Nx0 = fish_block_getsize(B, 0);
   int NxL = fish_block_getsize(BL, 0);
 
   for (int n=0; n<Ng; ++n) {
