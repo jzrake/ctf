@@ -325,24 +325,37 @@ int fish_block_fillconserved(fish_block *B)
 }
 
 int fish_block_fillguard(fish_block *B)
+// -----------------------------------------------------------------------------
+// Fill the guard zones of the block `B`. For each (rank-1) dimensional edge, if
+// if that edge borders another block of the same refinement level, then fill
+// guard zones from that block's interior. Otherwise, fill guard zones from the
+// overlying portion of the parent grid's interior.
+// -----------------------------------------------------------------------------
 {
   CHECK(1, ""); // clear error message
-  int Ng = fish_block_getguard(B);
-  fish_block *BL=NULL, *BR=NULL;
+  int Ng = B->guard;
 
-  fish_block_getneighbor(B, 0, FISH_LEFT, &BL);
-  fish_block_getneighbor(B, 0, FISH_RIGHT, &BR);
+  fish_block *BL = B->neighborL[0];
+  fish_block *BR = B->neighborR[0];
 
-  fluids_state **fluid0 = fish_block_getfluid(B);
-  fluids_state **fluidL = fish_block_getfluid(BL);
-  fluids_state **fluidR = fish_block_getfluid(BR);
-
-  int Nx0 = fish_block_getsize(B, 0);
-  int NxL = fish_block_getsize(BL, 0);
-
-  for (int n=0; n<Ng; ++n) {
-    fluids_state_copy(fluid0[n           ], fluidL[NxL + n]);
-    fluids_state_copy(fluid0[Nx0 + Ng + n], fluidR[Ng  + n]);
+  if (BL != NULL) {
+    int NxL = BL->size[0];
+    for (int n=0; n<Ng; ++n) {
+      fluids_state_copy(B->fluid[n], BL->fluid[NxL + n]);
+    }
   }
+  else {
+    // fill from above
+  }
+  if (BR != NULL) {
+    int Nx0 = B->size[0];
+    for (int n=0; n<Ng; ++n) {
+      fluids_state_copy(B->fluid[Nx0 + Ng + n], BR->fluid[Ng  + n]);
+    }
+  }
+  else {
+    // fill from above
+  }
+
   return 0;
 }

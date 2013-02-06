@@ -61,7 +61,7 @@ function StaticMeshRefinement:initialize_solver()
    local opts = self.user_opts
    self.CFL = opts.CFL or 0.8
    self.Ng = 3
-   self.N = opts.resolution or 128
+   self.N = opts.resolution or 16
 
    local FL = self.problem:fluid():upper()
    local RS = ('riemann_'..(self.user_opts.riemann or 'hllc')):upper()
@@ -77,7 +77,7 @@ function StaticMeshRefinement:initialize_solver()
    fluids.descr_setgamma(descr, 1.4)
    fluids.descr_seteos(descr, fluids.EOS_GAMMALAW)
 
-   local num_blocks = 4
+   local num_blocks = 64
    local X0 = 0.0
    local X1 = 1.0
    local dX = (X1 - X0) / num_blocks
@@ -309,7 +309,7 @@ end
 
 local opts = {plot=true,
 	      CFL=0.8,
-	      tmax=1.0,
+	      tmax=0.1,
 	      solver='godunov',
 	      reconstruction='plm',
 	      advance='rk3'}
