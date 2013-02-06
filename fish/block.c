@@ -21,10 +21,8 @@ fish_block *fish_block_new()
     .x1 = { 1.0, 1.0, 1.0 },
     .neighborL = { NULL, NULL, NULL },
     .neighborR = { NULL, NULL, NULL },
-    .children = { NULL/*(0,0,0)*/, NULL/*(0,0,1)*/,
-		  NULL/*(0,1,0)*/, NULL/*(0,1,1)*/,
-		  NULL/*(1,0,0)*/, NULL/*(1,0,1)*/,
-		  NULL/*(1,1,0)*/, NULL/*(1,1,1)*/ },
+    .children = { NULL, NULL, NULL, NULL,
+		  NULL, NULL, NULL, NULL },
     .parent = NULL,
     .fluid = NULL,
     .descr = NULL,
@@ -215,9 +213,29 @@ int fish_block_getchild(fish_block *B, int id, fish_block **B1)
 }
 
 int fish_block_setchild(fish_block *B, int id, fish_block *B1)
+// -----------------------------------------------------------------------------
+// Establish the block `B1` as the child block of `B` at location `id`, which
+// labels the (up to) three dimensional location within the parent block. id=0
+// means x-left/y-left/z-left, id=1 means x-right,y-left,z-left and so on. This
+// function infers the physical location of the child block, over-riding
+// whichever was previously set by the user.
+// -----------------------------------------------------------------------------
 {
   CHECK(id < 8, "argument 'id' must be smaller than 8");
   B->children[id] = B1;
+  B1->parent = B;
+  for (int n=0; n<B->rank; ++n) {
+    if (id & 1 << n) { // this block is on the right of dimension n
+      B1->pstart[n] = B->size[n] / 2;
+      B1->x0[n] = (B->x0[n] + B->x1[n]) * 0.5;
+      B1->x1[n] =  B->x1[n];
+    }
+    else { // this block is on the left of dimension n
+      B1->pstart[n] = 0;
+      B1->x0[n] =  B->x0[n];
+      B1->x1[n] = (B->x0[n] + B->x1[n]) * 0.5;
+    }
+  }
   return 0;
 }
 
@@ -230,9 +248,9 @@ double fish_block_gridspacing(fish_block *B, int dim)
 
 double fish_block_positionatindex(fish_block *B, int dim, int index)
 // -----------------------------------------------------------------------------
-// Returns the physical coordinates of the center of zone `index` along
-// dimension `dim`. The index includes padding, so that i=0 refers to ng zones
-// to the left of the block boundary, where ng is the number of guard zones.
+// Return the physical coordinates of the center of zone `index` along dimension
+// `dim`. The index includes padding, so that i=0 refers to ng zones to the left
+// of the block boundary, where ng is the number of guard zones.
 // -----------------------------------------------------------------------------
 {
   CHECK(dim < B->rank,

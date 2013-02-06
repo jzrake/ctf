@@ -61,23 +61,48 @@ local function test4()
    local BR = fish.block_new()
 
    for _,B in pairs{B0, BL, BR} do
-      fish.block_setrank(B, 1)
+      fish.block_setrank(B, 3)
       fish.block_setsize(B, 0, 16)
+      fish.block_setsize(B, 1, 16)
+      fish.block_setsize(B, 2, 16)
       fish.block_setrange(B, 0, -1.0, 1.0)
+      fish.block_setrange(B, 1, -1.0, 1.0)
+      fish.block_setrange(B, 2, -1.0, 1.0)
       fish.block_allocate(B)
    end
 
-   fish.block_setchild(B0, 0, BL)
-   fish.block_setchild(B0, 4, BR)
-
    local BchildL = fish.block_light()
    local BchildR = fish.block_light()
+   local x0 = array.vector(1)
+   local x1 = array.vector(1)
 
-   fish.block_getchild(B0, 0, BchildL)
-   fish.block_getchild(B0, 4, BchildR)
+   fish.block_setchild(B0, 0, BL) -- id=0
+   fish.block_setchild(B0, 3, BR) -- id=3
+   fish.block_getchild(B0, 0, BchildL) -- id=0
+   fish.block_getchild(B0, 3, BchildR) -- id=3
 
    assert(fish.block_light(BchildL) == fish.block_light(BL))
    assert(fish.block_light(BchildR) == fish.block_light(BR))
+
+   fish.block_getrange(BchildL, 0, x0:pointer(), x1:pointer())
+   assert(x0[0] == -1.0)
+   assert(x1[0] ==  0.0)
+   fish.block_getrange(BchildL, 1, x0:pointer(), x1:pointer())
+   assert(x0[0] == -1.0)
+   assert(x1[0] ==  0.0)
+   fish.block_getrange(BchildL, 2, x0:pointer(), x1:pointer())
+   assert(x0[0] == -1.0)
+   assert(x1[0] ==  0.0)
+
+   fish.block_getrange(BchildR, 0, x0:pointer(), x1:pointer())
+   assert(x0[0] ==  0.0)
+   assert(x1[0] ==  1.0)
+   fish.block_getrange(BchildR, 1, x0:pointer(), x1:pointer())
+   assert(x0[0] ==  0.0)
+   assert(x1[0] ==  1.0)
+   fish.block_getrange(BchildR, 2, x0:pointer(), x1:pointer())
+   assert(x0[0] == -1.0)
+   assert(x1[0] ==  0.0)
 
    fish.block_del(B0)
    fish.block_del(BL)
