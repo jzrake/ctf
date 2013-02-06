@@ -64,22 +64,23 @@ end
 -- *****************************************************************************
 -- Function to call Gnuplot from Lua using popen
 -- .............................................................................
-function util.plot(series, cmds, opts)
+function util.plot(series, opts)
    local opts = opts or { }
    local gp = io.popen("gnuplot", 'w')
 
-   if opts.pdf then
+   if opts.output then
       gp:write("set terminal postscript enhanced color\n")
-      gp:write(string.format("set output '| ps2pdf - %s.pdf'\n", opts.id))
+      gp:write(string.format("set output '| ps2pdf - %s.pdf'\n", opts.output))
       gp:write(string.format("set title '%s'\n", opts.id))
    end
 
-   for _,cmd in pairs(cmds or { }) do
+   for _,cmd in pairs(opts.cmds or { }) do
       gp:write(cmd..'\n')
    end
    local lines = { }
    for k,v in pairs(series) do
-      table.insert(lines, string.format(" '-' u 1:2 w lp title '%s'", k))
+      table.insert(lines, string.format(" '-' u 1:2 %s title '%s'",
+					opts.ls or 'w lp', k))
    end
    gp:write("plot" .. table.concat(lines, ",") .. "\n")
    for k,v in pairs(series) do
@@ -99,23 +100,9 @@ function util.plot(series, cmds, opts)
       end
       gp:write("e\n")
    end
-   if not opts.pdf then
+   if not opts.output then
       gp:write(string.format(" pause %f\n", opts.tpause or 100.0))
    end
-   gp:close()
-end
-
-function util.plot2(data, cmds)
-   local gp = io.popen("gnuplot", 'w')
-   for _,cmd in ipairs(cmds or { }) do
-      gp:write(cmd..'\n')
-   end
-   gp:write("plot '-' u 1:2 w linespoints title 'data'\n")
-   for k,v in pairs(data) do
-      gp:write(string.format("%e %e\n", k, v))
-   end
-   gp:write("e\n")
-   gp:write("pause 100\n")
    gp:close()
 end
 

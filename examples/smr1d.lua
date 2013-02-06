@@ -22,11 +22,11 @@ function densitywave:solution(x, y, z, t)
    local Ng = sim.Ng
 
    local cs = 1.0
-   local u0 = cs -- Mach 1 density wave
+   local u0 = -cs -- Mach 1 density wave
    local D0 = 1.0
    local D1 = D0 * 1e-1
    local p0 = D0 * cs^2 / 1.4
-   local k0 = 8 * math.pi
+   local k0 = 2 * math.pi
 
    local P = { }
    P[1] = D0 + D1 * math.cos(k0 * (x - u0 * t))
@@ -77,7 +77,7 @@ function StaticMeshRefinement:initialize_solver()
    fluids.descr_setgamma(descr, 1.4)
    fluids.descr_seteos(descr, fluids.EOS_GAMMALAW)
 
-   local num_blocks = 64
+   local num_blocks = 8
    local X0 = 0.0
    local X1 = 1.0
    local dX = (X1 - X0) / num_blocks
@@ -99,6 +99,27 @@ function StaticMeshRefinement:initialize_solver()
       fish.block_setneighbor(blocks[i], 0, fish.LEFT, BL)
       fish.block_setneighbor(blocks[i], 0, fish.RIGHT, BR)
    end
+
+   
+   local blockL = fish.block_new()
+   local blockR = fish.block_new()
+
+
+   for _,block in pairs{blockL, blockR} do
+      fish.block_setdescr(block, descr)
+      fish.block_setrank(block, 1)
+      fish.block_setsize(block, 0, self.N)
+      fish.block_setguard(block, self.Ng)
+      fish.block_allocate(block)
+   end
+
+   fish.block_setneighbor(blockL, 0, fish.RIGHT, blockR)
+   fish.block_setneighbor(blockR, 0, fish.LEFT, blockL)
+   fish.block_setchild(blocks[3], 0, blockL)
+   fish.block_setchild(blocks[3], 1, blockR)
+
+   table.insert(blocks, blockL)
+   table.insert(blocks, blockR)
 
    local scheme = fish.state_new()
    fish.setparami(scheme, fluids[RS], fish.RIEMANN_SOLVER)
@@ -286,30 +307,34 @@ function StaticMeshRefinement:user_work_finish()
    local code_data = { }
    local exac_data = { }
 
-   for _,block in pairs(self.blocks) do
+   for i,block in pairs(self.blocks) do
       local Nx = fish.block_getsize(block, 0)
       local Ng = fish.block_getguard(block)
 
-      for i=0,Nx+2*Ng-1 do
-	 local x = fish.block_positionatindex(block, 0, i)
+      if i ~= 3 then
 
-	 local P0 = self.primitive[block]:vector()
-	 local P1 = self.problem:solution(x, 0.0, 0.0, t)
+	 for i=Ng,Nx+Ng-1 do
+	    local x = fish.block_positionatindex(block, 0, i)
+	    
+	    local P0 = self.primitive[block]:vector()
+	    local P1 = self.problem:solution(x, 0.0, 0.0, t)
+	    
+	    code_data[x] = P0[5*i + 0]
+	    exac_data[x] = P1[1]
+	 end
 
-	 code_data[x] = P0[5*i + 0]
-	 exac_data[x] = P1[1]
       end
    end
 
    if self.user_opts.plot then
-      util.plot{['code' ]=code_data,
-		['exact']=exac_data}
+      util.plot({['code' ]=code_data}, {ls='w p', output=nil})
+		--['exact']=exac_data}
    end
 end
 
 local opts = {plot=true,
 	      CFL=0.8,
-	      tmax=0.1,
+	      tmax=1,
 	      solver='godunov',
 	      reconstruction='plm',
 	      advance='rk3'}

@@ -149,7 +149,7 @@ struct fish_block {
   double *temp_conserved;
   double *time_derivative;
   char *error;
-  int pstart[3]; // starting (absolute) indices into parent grid
+  int pstart[3]; // starting indices into parent grid
 } ;
 
 #endif // FISH_PRIVATE_DEFS

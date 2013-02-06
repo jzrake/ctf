@@ -325,37 +325,71 @@ int fish_block_fillconserved(fish_block *B)
 }
 
 int fish_block_fillguard(fish_block *B)
-// -----------------------------------------------------------------------------
-// Fill the guard zones of the block `B`. For each (rank-1) dimensional edge, if
-// if that edge borders another block of the same refinement level, then fill
-// guard zones from that block's interior. Otherwise, fill guard zones from the
-// overlying portion of the parent grid's interior.
-// -----------------------------------------------------------------------------
+/* -----------------------------------------------------------------------------
+ *
+ * Fill the guard zones of the block `B`. For each (rank-1) dimensional edge, if
+ * if that edge borders another block of the same refinement level, then fill
+ * guard zones from that block's interior. Otherwise, fill guard zones from the
+ * overlying portion of the parent grid's interior.
+ *
+ *
+ *
+ * |-------------------------------------------------------|
+ * |     |# # #|+ + + + + + + +|# # #|                     |
+ * |                     |# # #|+ + + + + + + +|# # #|     |      <- child grids
+ * |-------------------------------------------------------|
+ * | #   #   # | +   +   +   +   +   +   +   + | #   #   # |      <- parent grid
+ * |-------------------------------------------------------|
+ *
+ *                             ^ sibling grids exchange over fine-fine boundary
+ *
+ *             ^ parent grid fills child grid over jumps in refinement
+ *
+ *
+ * KEY: (diagram assumes 3 guard zones)
+ *
+ *  +: interior zone
+ *  #: Guard zone
+ *  |: Interior or exterior block edge
+ *
+ * -----------------------------------------------------------------------------
+ */
 {
   CHECK(1, ""); // clear error message
   int Ng = B->guard;
 
+  fish_block *P = B->parent;
   fish_block *BL = B->neighborL[0];
   fish_block *BR = B->neighborR[0];
+  int Nx0 = B->size[0];
 
-  if (BL != NULL) {
-    int NxL = BL->size[0];
+  if (BL != NULL) { // fill from sibling to the left
     for (int n=0; n<Ng; ++n) {
-      fluids_state_copy(B->fluid[n], BL->fluid[NxL + n]);
+      fluids_state_copy(B->fluid[n], BL->fluid[Nx0 + n]);
     }
   }
-  else {
-    // fill from above
+  else { // fill from parent
+
+    int i0 = B->pstart[0];
+
+    fluids_state_copy(B->fluid[0], P->fluid[i0 + 1]);
+    fluids_state_copy(B->fluid[1], P->fluid[i0 + 2]);
+    fluids_state_copy(B->fluid[2], P->fluid[i0 + 2]);
+
   }
-  if (BR != NULL) {
-    int Nx0 = B->size[0];
+  if (BR != NULL) { // fill from sibling to the right
     for (int n=0; n<Ng; ++n) {
       fluids_state_copy(B->fluid[Nx0 + Ng + n], BR->fluid[Ng  + n]);
     }
   }
-  else {
-    // fill from above
-  }
+  else { // fill from parent
 
+    int i0 = B->pstart[0] + Nx0 / 2;
+
+    fluids_state_copy(B->fluid[Nx0 + 3 + 0], P->fluid[i0 + 3 + 0]);
+    fluids_state_copy(B->fluid[Nx0 + 3 + 1], P->fluid[i0 + 3 + 0]);
+    fluids_state_copy(B->fluid[Nx0 + 3 + 2], P->fluid[i0 + 3 + 1]);
+
+  }
   return 0;
 }
