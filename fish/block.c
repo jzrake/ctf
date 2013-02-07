@@ -357,38 +357,59 @@ int fish_block_fillguard(fish_block *B)
 {
   CHECK(1, ""); // clear error message
   int Ng = B->guard;
+  int Nx = B->size[0];
 
-  fish_block *P = B->parent;
+  fish_block *B0 = B->parent;
   fish_block *BL = B->neighborL[0];
   fish_block *BR = B->neighborR[0];
-  int Nx0 = B->size[0];
 
   if (BL != NULL) { // fill from sibling to the left
     for (int n=0; n<Ng; ++n) {
-      fluids_state_copy(B->fluid[n], BL->fluid[Nx0 + n]);
+      fluids_state_copy(B->fluid[n], BL->fluid[Nx + n]);
     }
   }
   else { // fill from parent
 
     int i0 = B->pstart[0];
 
-    fluids_state_copy(B->fluid[0], P->fluid[i0 + 1]);
-    fluids_state_copy(B->fluid[1], P->fluid[i0 + 2]);
-    fluids_state_copy(B->fluid[2], P->fluid[i0 + 2]);
+    double Pl[5], Pr[5], P[5];
 
+    for (int ic=0; ic<Ng; ++ic) { // ic labels which guard zone we are filling
+
+      // decide on the two indices into the parent block which surround the
+      // current zone
+
+      int n0 = i0 + (ic + Ng - 1) / 2;
+      int n1 = n0 + 1;
+
+      fluids_state_getattr(B0->fluid[n0], Pl, FLUIDS_PRIMITIVE);
+      fluids_state_getattr(B0->fluid[n1], Pr, FLUIDS_PRIMITIVE);
+
+      for (int q=0; q<5; ++q) {
+
+	if ((Ng + ic) % 2 == 0) {
+	  P[q] = Pr[q] - 0.25 * (Pr[q] - Pl[q]);
+	}
+	else {
+	  P[q] = Pl[q] + 0.25 * (Pr[q] - Pl[q]);
+	}
+
+      }
+      fluids_state_setattr(B->fluid[ic], P, FLUIDS_PRIMITIVE);
+    }
   }
   if (BR != NULL) { // fill from sibling to the right
     for (int n=0; n<Ng; ++n) {
-      fluids_state_copy(B->fluid[Nx0 + Ng + n], BR->fluid[Ng  + n]);
+      fluids_state_copy(B->fluid[Nx + Ng + n], BR->fluid[Ng  + n]);
     }
   }
   else { // fill from parent
 
-    int i0 = B->pstart[0] + Nx0 / 2;
+    int i0 = B->pstart[0] + Nx / 2;
 
-    fluids_state_copy(B->fluid[Nx0 + 3 + 0], P->fluid[i0 + 3 + 0]);
-    fluids_state_copy(B->fluid[Nx0 + 3 + 1], P->fluid[i0 + 3 + 0]);
-    fluids_state_copy(B->fluid[Nx0 + 3 + 2], P->fluid[i0 + 3 + 1]);
+    fluids_state_copy(B->fluid[Nx + 3 + 0], B0->fluid[i0 + 3 + 0]);
+    fluids_state_copy(B->fluid[Nx + 3 + 1], B0->fluid[i0 + 3 + 0]);
+    fluids_state_copy(B->fluid[Nx + 3 + 2], B0->fluid[i0 + 3 + 1]);
 
   }
   return 0;

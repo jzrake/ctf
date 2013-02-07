@@ -22,7 +22,7 @@ function densitywave:solution(x, y, z, t)
    local Ng = sim.Ng
 
    local cs = 1.0
-   local u0 = -cs -- Mach 1 density wave
+   local u0 = cs -- Mach 1 density wave
    local D0 = 1.0
    local D1 = D0 * 1e-1
    local p0 = D0 * cs^2 / 1.4
@@ -334,7 +334,7 @@ end
 
 local opts = {plot=true,
 	      CFL=0.8,
-	      tmax=1,
+	      tmax=0.1,
 	      solver='godunov',
 	      reconstruction='plm',
 	      advance='rk3'}
