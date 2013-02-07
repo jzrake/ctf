@@ -334,7 +334,7 @@ end
 
 local opts = {plot=true,
 	      CFL=0.8,
-	      tmax=0.1,
+	      tmax=1,
 	      solver='godunov',
 	      reconstruction='plm',
 	      advance='rk3'}

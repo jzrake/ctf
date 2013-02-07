@@ -362,17 +362,15 @@ int fish_block_fillguard(fish_block *B)
   fish_block *B0 = B->parent;
   fish_block *BL = B->neighborL[0];
   fish_block *BR = B->neighborR[0];
+  double Pl[5], Pr[5], P[5];
 
   if (BL != NULL) { // fill from sibling to the left
-    for (int n=0; n<Ng; ++n) {
-      fluids_state_copy(B->fluid[n], BL->fluid[Nx + n]);
+    for (int ic=0; ic<Ng; ++ic) {
+      fluids_state_copy(B->fluid[ic], BL->fluid[Nx+ic]);
     }
   }
   else { // fill from parent
-
     int i0 = B->pstart[0];
-
-    double Pl[5], Pr[5], P[5];
 
     for (int ic=0; ic<Ng; ++ic) { // ic labels which guard zone we are filling
 
@@ -387,30 +385,37 @@ int fish_block_fillguard(fish_block *B)
 
       for (int q=0; q<5; ++q) {
 
-	if ((Ng + ic) % 2 == 0) {
-	  P[q] = Pr[q] - 0.25 * (Pr[q] - Pl[q]);
-	}
-	else {
-	  P[q] = Pl[q] + 0.25 * (Pr[q] - Pl[q]);
-	}
+	if ((Ng + ic) % 2 == 0) P[q] = Pr[q] - 0.25 * (Pr[q] - Pl[q]);
+	else                    P[q] = Pl[q] + 0.25 * (Pr[q] - Pl[q]);
 
       }
       fluids_state_setattr(B->fluid[ic], P, FLUIDS_PRIMITIVE);
     }
   }
   if (BR != NULL) { // fill from sibling to the right
-    for (int n=0; n<Ng; ++n) {
-      fluids_state_copy(B->fluid[Nx + Ng + n], BR->fluid[Ng  + n]);
+    for (int ic=0; ic<Ng; ++ic) {
+      fluids_state_copy(B->fluid[Nx+Ng+ic], BR->fluid[Ng+ic]);
     }
   }
   else { // fill from parent
+    int i0 = B->pstart[0] + Nx / 2 + Ng;
 
-    int i0 = B->pstart[0] + Nx / 2;
+    for (int ic=0; ic<Ng; ++ic) { // ic labels which guard zone we are filling
 
-    fluids_state_copy(B->fluid[Nx + 3 + 0], B0->fluid[i0 + 3 + 0]);
-    fluids_state_copy(B->fluid[Nx + 3 + 1], B0->fluid[i0 + 3 + 0]);
-    fluids_state_copy(B->fluid[Nx + 3 + 2], B0->fluid[i0 + 3 + 1]);
+      int n0 = i0 - 1 + (ic + 1) / 2;
+      int n1 = n0 + 1;
 
+      fluids_state_getattr(B0->fluid[n0], Pl, FLUIDS_PRIMITIVE);
+      fluids_state_getattr(B0->fluid[n1], Pr, FLUIDS_PRIMITIVE);
+
+      for (int q=0; q<5; ++q) {
+
+	if (ic % 2 == 0) P[q] = Pr[q] - 0.25 * (Pr[q] - Pl[q]);
+	else             P[q] = Pl[q] + 0.25 * (Pr[q] - Pl[q]);
+
+      }
+      fluids_state_setattr(B->fluid[Nx+Ng+ic], P, FLUIDS_PRIMITIVE);
+    }
   }
   return 0;
 }
