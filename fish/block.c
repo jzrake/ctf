@@ -89,6 +89,7 @@ int fish_block_getrank(fish_block *B)
 
 int fish_block_setrank(fish_block *B, int rank)
 {
+  CHECK(!B->allocated, "cannot set rank when allocated");
   CHECK(rank >= 1 && rank <= 3, "rank must be 1, 2, or 3");
   B->rank = rank;
   return 0;
@@ -102,7 +103,7 @@ int fish_block_getguard(fish_block *B)
 
 int fish_block_setguard(fish_block *B, int guard)
 {
-  CHECK(!B->allocated, "block cannot set guard zones when allocated");
+  CHECK(!B->allocated, "cannot set guard zones when allocated");
   B->guard = guard;
   return 0;
 }
@@ -116,7 +117,7 @@ int fish_block_getdescr(fish_block *B, fluids_descr **D)
 
 int fish_block_setdescr(fish_block *B, fluids_descr *D)
 {
-  CHECK(!B->allocated, "block cannot set fluid descriptor when allocated");
+  CHECK(!B->allocated, "cannot set fluid descriptor when allocated");
   B->descr = D;
   return 0;
 }
@@ -136,8 +137,7 @@ int fish_block_totalstates(fish_block *B)
 int fish_block_allocate(fish_block *B)
 {
   CHECK(!B->allocated, NULL); // will return if allocated, leave no message
-  CHECK(B->descr != NULL,
-	"block's fluid descriptor must be set before allocating");
+  CHECK(B->descr, "block needs a fluid descriptor");
 
   int ntot = fish_block_totalstates(B);
   int nprm = fluids_descr_getncomp(B->descr, FLUIDS_PRIMITIVE);
@@ -178,8 +178,7 @@ int fish_block_deallocate(fish_block *B)
 int fish_block_mapbuffer(fish_block *B, double *x, long flag)
 {
   CHECK(B->allocated, "block must already be allocated");
-  CHECK(B->descr != NULL,
-	"block's fluid descriptor must be set before allocating");
+  CHECK(B->descr, "block needs a fluid descriptor");
 
   int nz = fish_block_totalstates(B);
   int nq = fluids_descr_getncomp(B->descr, flag);
@@ -276,6 +275,9 @@ double fish_block_positionatindex(fish_block *B, int dim, int index)
 
 double fish_block_maxwavespeed(fish_block *B)
 {
+  CHECK(B->allocated, "block needs to be allocated");
+  CHECK(B->descr, "block needs a fluid descriptor");
+
   int TotalZones = fish_block_totalstates(B);
   fluids_state **fluid = fish_block_getfluid(B);
   double a = 0.0;
@@ -292,7 +294,9 @@ double fish_block_maxwavespeed(fish_block *B)
 
 int fish_block_timederivative(fish_block *B, fish_state *scheme)
 {
-  CHECK(1, NULL); // clear error message
+  CHECK(B->allocated, "block needs to be allocated");
+  CHECK(B->descr, "block needs a fluid descriptor");
+
   int TotalZones = fish_block_totalstates(B);
   double *L = B->time_derivative;
   fluids_state **fluid = B->fluid;
@@ -304,12 +308,13 @@ int fish_block_timederivative(fish_block *B, fish_state *scheme)
 
 int fish_block_evolve(fish_block *B, double *W, double dt)
 {
-  CHECK(1, NULL); // clear error message
+  CHECK(B->allocated, "block needs to be allocated");
+  CHECK(B->descr, "block needs a fluid descriptor");
+
   int TotalZones = fish_block_totalstates(B);
   double *U = B->temp_conserved;
   double *L = B->time_derivative;
   double U1[5];
-
   fluids_state **fluid = fish_block_getfluid(B);
 
   for (int n=0; n<TotalZones; ++n) {
@@ -327,7 +332,9 @@ int fish_block_evolve(fish_block *B, double *W, double dt)
 
 int fish_block_fillconserved(fish_block *B)
 {
-  CHECK(1, NULL); // clear error message
+  CHECK(B->allocated, "block needs to be allocated");
+  CHECK(B->descr, "block needs a fluid descriptor");
+
   int TotalZones = fish_block_totalstates(B);
   int Nq = fluids_descr_getncomp(B->descr, FLUIDS_PRIMITIVE);
   double *U = B->temp_conserved;
@@ -369,7 +376,9 @@ int fish_block_fillguard(fish_block *B)
  * -----------------------------------------------------------------------------
  */
 {
-  CHECK(1, NULL); // clear error message
+  CHECK(B->allocated, "block must be allocated");
+  CHECK(B->descr, "block needs a fluid descriptor");
+
   int Ng = B->guard;
   int Nx = B->size[0];
 

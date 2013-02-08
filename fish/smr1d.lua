@@ -30,7 +30,7 @@ local function test2()
 	  msg == "argument 'dim' must be smaller than the rank of the block")
    local err, msg = pcall(fish.block_allocate, B)
    assert(err == false and
-	  msg == "block's fluid descriptor must be set before allocating")
+	  msg == "block needs a fluid descriptor")
    fish.block_setdescr(B, D)
    fish.block_allocate(B)
    fish.block_del(B)
