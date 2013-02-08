@@ -14,6 +14,7 @@ fish_block *fish_block_new()
 {
   fish_block *B = (fish_block*) malloc(sizeof(fish_block));
   fish_block block = {
+    .allocated = 0,
     .rank = 1,
     .guard = 0,
     .size = { 1, 1, 1 },
@@ -35,7 +36,10 @@ fish_block *fish_block_new()
 
 int fish_block_del(fish_block *B)
 {
-  fish_block_deallocate(B);
+  CHECK(1, NULL);
+  if (B->allocated) {
+    fish_block_deallocate(B);
+  }
   free(B);
   return 0;
 }
@@ -92,29 +96,34 @@ int fish_block_setrank(fish_block *B, int rank)
 
 int fish_block_getguard(fish_block *B)
 {
+  CHECK(1, NULL);
   return B->guard;
 }
 
 int fish_block_setguard(fish_block *B, int guard)
 {
+  CHECK(!B->allocated, "block cannot set guard zones when allocated");
   B->guard = guard;
   return 0;
 }
 
 int fish_block_getdescr(fish_block *B, fluids_descr **D)
 {
+  CHECK(1, NULL);
   *D = B->descr;
   return 0;
 }
 
 int fish_block_setdescr(fish_block *B, fluids_descr *D)
 {
+  CHECK(!B->allocated, "block cannot set fluid descriptor when allocated");
   B->descr = D;
   return 0;
 }
 
 int fish_block_totalstates(fish_block *B)
 {
+  CHECK(1, NULL);
   int ng = B->guard;
   switch (B->rank) {
   case 1: return (B->size[0]+2*ng);
@@ -126,12 +135,10 @@ int fish_block_totalstates(fish_block *B)
 
 int fish_block_allocate(fish_block *B)
 {
+  CHECK(!B->allocated, NULL); // will return if allocated, leave no message
   CHECK(B->descr != NULL,
 	"block's fluid descriptor must be set before allocating");
 
-  if (B->fluid != NULL) {
-    fish_block_deallocate(B);
-  }
   int ntot = fish_block_totalstates(B);
   int nprm = fluids_descr_getncomp(B->descr, FLUIDS_PRIMITIVE);
 
@@ -144,11 +151,14 @@ int fish_block_allocate(fish_block *B)
     fluids_state_setdescr(B->fluid[n], B->descr);
   }
 
+  B->allocated = 1;
   return 0;
 }
 
 int fish_block_deallocate(fish_block *B)
 {
+  CHECK(B->allocated, NULL); // will return if not allocated, leave no message
+
   int ntot = fish_block_totalstates(B);
   if (B->fluid) {
     for (int n=0; n<ntot; ++n) {
@@ -161,11 +171,16 @@ int fish_block_deallocate(fish_block *B)
     B->time_derivative = NULL;
     B->temp_conserved = NULL;
   }
+  B->allocated = 0;
   return 0;
 }
 
 int fish_block_mapbuffer(fish_block *B, double *x, long flag)
 {
+  CHECK(B->allocated, "block must already be allocated");
+  CHECK(B->descr != NULL,
+	"block's fluid descriptor must be set before allocating");
+
   int nz = fish_block_totalstates(B);
   int nq = fluids_descr_getncomp(B->descr, flag);
   for (int n=0; n<nz; ++n) {
@@ -261,7 +276,6 @@ double fish_block_positionatindex(fish_block *B, int dim, int index)
 
 double fish_block_maxwavespeed(fish_block *B)
 {
-  CHECK(1, ""); // clear error message
   int TotalZones = fish_block_totalstates(B);
   fluids_state **fluid = fish_block_getfluid(B);
   double a = 0.0;
@@ -272,12 +286,13 @@ double fish_block_maxwavespeed(fish_block *B)
       a = fabs(A[q]) > a ? fabs(A[q]) : a;
     }
   }
+  CHECK(1, NULL); // clear error message
   return a;
 }
 
 int fish_block_timederivative(fish_block *B, fish_state *scheme)
 {
-  CHECK(1, ""); // clear error message
+  CHECK(1, NULL); // clear error message
   int TotalZones = fish_block_totalstates(B);
   double *L = B->time_derivative;
   fluids_state **fluid = B->fluid;
@@ -289,7 +304,7 @@ int fish_block_timederivative(fish_block *B, fish_state *scheme)
 
 int fish_block_evolve(fish_block *B, double *W, double dt)
 {
-  CHECK(1, ""); // clear error message
+  CHECK(1, NULL); // clear error message
   int TotalZones = fish_block_totalstates(B);
   double *U = B->temp_conserved;
   double *L = B->time_derivative;
@@ -307,13 +322,12 @@ int fish_block_evolve(fish_block *B, double *W, double dt)
     }
     fluids_state_fromcons(fluid[n], U1, FLUIDS_CACHE_DEFAULT);
   }
-
   return 0;
 }
 
 int fish_block_fillconserved(fish_block *B)
 {
-  CHECK(1, ""); // clear error message
+  CHECK(1, NULL); // clear error message
   int TotalZones = fish_block_totalstates(B);
   int Nq = fluids_descr_getncomp(B->descr, FLUIDS_PRIMITIVE);
   double *U = B->temp_conserved;
@@ -355,7 +369,7 @@ int fish_block_fillguard(fish_block *B)
  * -----------------------------------------------------------------------------
  */
 {
-  CHECK(1, ""); // clear error message
+  CHECK(1, NULL); // clear error message
   int Ng = B->guard;
   int Nx = B->size[0];
 

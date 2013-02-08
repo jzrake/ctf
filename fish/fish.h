@@ -94,10 +94,10 @@ int fish_block_totalstates(fish_block *B);
 int fish_block_allocate(fish_block *B);
 int fish_block_deallocate(fish_block *B);
 int fish_block_mapbuffer(fish_block *B, double *x, long flag);
-int fish_block_timederivative(fish_block *block, fish_state *scheme);
-int fish_block_evolve(fish_block *block, double *W, double dt);
-int fish_block_fillconserved(fish_block *block);
-int fish_block_fillguard(fish_block *block);
+int fish_block_timederivative(fish_block *B, fish_state *scheme);
+int fish_block_evolve(fish_block *B, double *W, double dt);
+int fish_block_fillconserved(fish_block *B);
+int fish_block_fillguard(fish_block *B);
 double fish_block_gridspacing(fish_block *B, int dim);
 double fish_block_positionatindex(fish_block *B, int dim, int index);
 double fish_block_maxwavespeed(fish_block *B);
@@ -135,6 +135,7 @@ struct fish_state {
 } ;
 
 struct fish_block {
+  int allocated;
   int rank;
   int guard;
   int size[3];

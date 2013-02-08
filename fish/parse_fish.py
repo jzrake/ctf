@@ -11,6 +11,7 @@ static int _%(funcname)s(lua_State *L)
 {
   %(getargs)s
   %(call)s
+  %(checkerr)s
   %(push)s
 }"""
 
@@ -104,11 +105,21 @@ for line in fishh:
     else:
         call = ("%s ret = " % retval) + call
         push = "lua_pushnumber(L, ret);\n  return 1;"
-        
+
+    if funcname.startswith('fish_block') and funcname != 'fish_block_del':
+        checkerr = \
+"""char *err = fish_block_geterror(B);
+  if (err) {
+    luaL_error(L, err);
+  }"""
+    else:
+        checkerr = "/* no error check line */"
+
     fbodies.append(func_proto % {'funcname': funcname,
                                  'getargs': '\n  '.join(getargs),
                                  'call': call,
-                                 'push': push})
+                                 'push': push,
+                                 'checkerr': checkerr})
     wrapped.append(funcname)
 
 
