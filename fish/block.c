@@ -212,38 +212,33 @@ int fish_block_getneighbor(fish_block *B, int dim, int LR, fish_block **B1)
 	*B1 = B->parent->children[0];
       }
       else if (B->pid == 0) {
-	fish_block *P0;
-	fish_block_getneighbor(B, dim, FISH_LEFT, &P0);
-	if (P0) {
-	  *B1 = P0->children[1];
+	fish_block *PL;
+	fish_block_getneighbor(B->parent, dim, FISH_LEFT, &PL);
+	if (PL) {
+	  *B1 = PL->children[1];
 	}
 	else {
 	  *B1 = NULL;
 	}
       }
+      break;
     case FISH_RIGHT:
       if (B->pid == 0) {
 	*B1 = B->parent->children[1];
       }
       else if (B->pid == 1) {
-	fish_block *P0;
-	fish_block_getneighbor(B, dim, FISH_RIGHT, &P0);
-	if (P0) {
-	  *B1 = P0->children[0];
+	fish_block *PR;
+	fish_block_getneighbor(B->parent, dim, FISH_RIGHT, &PR);
+	if (PR) {
+	  *B1 = PR->children[0];
 	}
 	else {
 	  *B1 = NULL;
 	}
       }
+      break;
     }
   }
-  // Old code: deprecate use of neighbor data member
-  /*
-  switch (LR) {
-  case FISH_LEFT : *B1 = B->neighborL[dim]; return 0;
-  case FISH_RIGHT: *B1 = B->neighborR[dim]; return 0;
-  }
-  */
   return 0;
 }
 

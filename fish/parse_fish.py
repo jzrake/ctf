@@ -18,6 +18,7 @@ static int _%(funcname)s(lua_State *L)
 fbodies = [ ]
 wrapped = [ ]
 enums = [ ]
+byhand = ['fish_block_getneighbor']
 
 for line in fishh:
     if line.startswith('typedef') or line.startswith('struct'): continue
@@ -34,6 +35,10 @@ for line in fishh:
             enums.append(n.groups())
         continue
     retval, funcname, argstr = m.groups()
+
+    if funcname in byhand:
+        wrapped.append(funcname)
+        continue
 
     args = argstr[1:-1].split(',')
     getargs = [ ]
