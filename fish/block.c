@@ -196,15 +196,55 @@ fluids_state **fish_block_getfluid(fish_block *B)
 
 int fish_block_getneighbor(fish_block *B, int dim, int LR, fish_block **B1)
 {
+  *B1 = NULL;
   CHECK(dim < B->rank,
 	"argument 'dim' must be smaller than the rank of the block");
   CHECK(LR == FISH_LEFT || LR == FISH_RIGHT,
 	"argument 'LR' must be FISH_LEFT or FISH_RIGHT");
+
+  if (B->parent == NULL) {
+    *B1 = NULL;
+  }
+  else {
+    switch (LR) {
+    case FISH_LEFT:
+      if (B->pid == 1) {
+	*B1 = B->parent->children[0];
+      }
+      else if (B->pid == 0) {
+	fish_block *P0;
+	fish_block_getneighbor(B, dim, FISH_LEFT, &P0);
+	if (P0) {
+	  *B1 = P0->children[1];
+	}
+	else {
+	  *B1 = NULL;
+	}
+      }
+    case FISH_RIGHT:
+      if (B->pid == 0) {
+	*B1 = B->parent->children[1];
+      }
+      else if (B->pid == 1) {
+	fish_block *P0;
+	fish_block_getneighbor(B, dim, FISH_RIGHT, &P0);
+	if (P0) {
+	  *B1 = P0->children[0];
+	}
+	else {
+	  *B1 = NULL;
+	}
+      }
+    }
+  }
+  // Old code: deprecate use of neighbor data member
+  /*
   switch (LR) {
   case FISH_LEFT : *B1 = B->neighborL[dim]; return 0;
   case FISH_RIGHT: *B1 = B->neighborR[dim]; return 0;
   }
-  return -1;
+  */
+  return 0;
 }
 
 int fish_block_setneighbor(fish_block *B, int dim, int LR, fish_block *B1)
