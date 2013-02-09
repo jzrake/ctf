@@ -18,23 +18,30 @@ function Block:__init__(args)
    -- **************************************************************************
    local block = fish.block_new()
    local descr = flui.descr_new()
+   local rank = #args.size
+   local guard = args.guard or 0
+   local parent = args.parent
+   local totsize = { }
 
    flui.descr_setfluid(descr, flui.NRHYD)
    flui.descr_setgamma(descr, 1.4)
    flui.descr_seteos(descr, flui.EOS_GAMMALAW)
 
    fish.block_setdescr (block, descr)
-   fish.block_setrank  (block, #args.size)
-   fish.block_setguard (block, args.guard or 0)
+   fish.block_setrank  (block, rank)
+   fish.block_setguard (block, guard)
 
    for i,N in ipairs(args.size) do
       fish.block_setsize  (block, i-1, N)
       fish.block_setrange (block, i-1, 0.0, 1.0)
+      totsize[i] = N + 2 * guard
    end
 
-   fish.block_allocate(block)
+   table.insert(totsize, flui.descr_getncomp(descr, flui.PRIMITIVE))
+   local primitive = array.array(totsize)
 
-   local parent = args.parent
+   fish.block_allocate  (block)
+   fish.block_mapbuffer (block, primitive:buffer(), flui.PRIMITIVE)
 
    if parent then
       if not args.id then
@@ -52,10 +59,11 @@ function Block:__init__(args)
       self._registry            = { }
    end
 
+   self._primitive = primitive
    self._block = block
    self._descr = descr
    self._children = { }
-   self._rank = #args.size
+   self._rank = rank
    self._registry[fish.block_light(block)] = self
 end
 

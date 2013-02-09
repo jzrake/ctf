@@ -20,8 +20,6 @@ fish_block *fish_block_new()
     .size = { 1, 1, 1 },
     .x0 = { 0.0, 0.0, 0.0 },
     .x1 = { 1.0, 1.0, 1.0 },
-    .neighborL = { NULL, NULL, NULL },
-    .neighborR = { NULL, NULL, NULL },
     .children = { NULL, NULL, NULL, NULL,
 		  NULL, NULL, NULL, NULL },
     .parent = NULL,
@@ -242,19 +240,6 @@ int fish_block_getneighbor(fish_block *B, int dim, int LR, fish_block **B1)
   return 0;
 }
 
-int fish_block_setneighbor(fish_block *B, int dim, int LR, fish_block *B1)
-{
-  CHECK(dim < B->rank,
-	"argument 'dim' must be smaller than the rank of the block");
-  CHECK(LR == FISH_LEFT || LR == FISH_RIGHT,
-	"argument 'LR' must be FISH_LEFT or FISH_RIGHT");
-  switch (LR) {
-    case FISH_RIGHT: B->neighborR[dim] = B1; return 0;
-    case FISH_LEFT : B->neighborL[dim] = B1; return 0;
-  }
-  return -1;
-}
-
 int fish_block_getchild(fish_block *B, int id, fish_block **B1)
 {
   CHECK(id < 8, "argument 'id' must be smaller than 8");
@@ -420,8 +405,11 @@ int fish_block_fillguard(fish_block *B)
   int Nx = B->size[0];
 
   fish_block *B0 = B->parent;
-  fish_block *BL = B->neighborL[0];
-  fish_block *BR = B->neighborR[0];
+  fish_block *BL;
+  fish_block *BR;
+  fish_block_getneighbor(B, 0, FISH_LEFT, &BL);
+  fish_block_getneighbor(B, 0, FISH_RIGHT, &BR);
+
   double Pl[5], Pr[5], P[5];
 
   if (BL != NULL) { // fill from sibling to the left
