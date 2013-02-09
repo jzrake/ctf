@@ -45,7 +45,7 @@ function Block:__init__(args)
 
    if parent then
       if not args.id then
-	 error("id must be given if creating a child block")
+         error("id must be given if creating a child block")
       end
       fish.block_setchild(parent._block, args.id, block)
       parent._children[args.id] = self
@@ -53,10 +53,12 @@ function Block:__init__(args)
       self._parent              = parent
       self._root                = parent._root
       self._registry            = parent._registry
+      self._id                  = args.id
    else
       self._parent              = nil
       self._root                = self
       self._registry            = { }
+      self._id                  = 0
    end
 
    self._primitive = primitive
@@ -74,7 +76,7 @@ end
 
 function Block:__tostring__(args)
    return string.format("<fish.block: [%s] level %d>",
-			table.concat(self:size(), ' '), self:level())
+                        table.concat(self:size(), ' '), self:level())
 end
 
 function Block:level()
@@ -108,9 +110,9 @@ function Block:add_child_block(id)
    -- Create and return a new child block with index `id`
    --
    local child = Block{ size=self:size(),
-			guard=self:guard(),
-			parent=self,
-			id=id }
+                        guard=self:guard(),
+                        parent=self,
+                        id=id }
    return child
 end
 
@@ -189,7 +191,7 @@ end
 function Block:table(q)
    --
    -- Return a table T[x] = P[q] for P in each zone over the block, where x is the
-   -- coordinate. 1d only.
+   -- coordinate (1d only)
    --
    local Nx, Ny, Nz = table.unpack(self:size())
    local Ng = self:guard()
@@ -202,11 +204,35 @@ function Block:table(q)
    return T
 end
 
+function Block:next(id)
+   local id = id or 0
+   for i=id,7 do
+      if self._children[i] then return self._children[i] end
+   end
+   return self._parent and self._parent:next(self._id+1) or self
+end
+
+function Block:walk()
+   local done = false
+   local function next_block(state, a)
+      local ap = a:next()
+      if done then
+	 return nil
+      elseif ap == self then
+	 done = true 
+      end
+      return ap
+   end
+   return next_block, nil, self
+end
+
 local function test1()
    local block0 = Block{ size={16}, guard=2 }
    local block1 = block0:add_child_block(0)
    local block2 = block1:add_child_block(0)
    local block3 = block1:add_child_block(1)
+
+   block3:add_child_block(0):add_child_block(0)
 
    print(block2:get_neighbor_block(0, 'R'))
 
@@ -216,16 +242,34 @@ local function test1()
 
    print(block2:total_zones())
    print(block2:max_wavespeed())
-
-   for k,v in pairs(block0._registry) do
-      print(k,v)
-   end
 end
 
+local function test2()
+   local mesh = Block{ size={16}, guard=2 }
+   for i=0,1 do
+      mesh:add_child_block(i)
+   end
+   for i=0,1 do
+      for j=0,1 do
+	 mesh:get_child_block(i):add_child_block(j)
+      end
+   end
+   for i=0,1 do
+      for j=0,1 do
+	 for k=0,1 do
+	    mesh:get_child_block(i):get_child_block(j):add_child_block(k)
+	 end
+      end
+   end
+   for b in mesh:walk() do
+      print(b)
+   end
+end
 
 if ... then -- if __name__ == "__main__"
    return {Block=Block}
 else
    test1()
+   test2()
    print(debug.getinfo(1).source, ": All tests passed")
 end
