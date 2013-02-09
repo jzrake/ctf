@@ -8,7 +8,7 @@
 #define FISH_PRIVATE_DEFS
 #include "fish.h"
 
-#define CHECK(c, m) do{if(!(c)){B->error=m;return -1;}B->error=NULL;}while(0)
+#define CHECK(c,m) do{if(!(c)){B->error=m;return -1;}B->error=NULL;}while(0)
 
 fish_block *fish_block_new()
 {
@@ -28,6 +28,7 @@ fish_block *fish_block_new()
     .fluid = NULL,
     .descr = NULL,
     .error = NULL,
+    .pid = 0,
     .pstart = { 0, 0, 0 },
   } ;
   *B = block;
@@ -238,6 +239,7 @@ int fish_block_setchild(fish_block *B, int id, fish_block *B1)
   CHECK(id < 8, "argument 'id' must be smaller than 8");
   B->children[id] = B1;
   B1->parent = B;
+  B1->pid = id;
   for (int n=0; n<B->rank; ++n) {
     if (id & 1 << n) { // this block is on the right of dimension n
       B1->pstart[n] = B->size[n] / 2;

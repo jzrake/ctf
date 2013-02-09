@@ -150,6 +150,7 @@ struct fish_block {
   double *temp_conserved;
   double *time_derivative;
   char *error;
+  int pid; // id in parent block array
   int pstart[3]; // starting indices into parent grid
 } ;
 
