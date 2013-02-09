@@ -134,15 +134,88 @@ function Block:get_neighbor_block(dim, dir)
    return self._registry[c]
 end
 
+function Block:fill_guard()
+   --
+   -- Return the child block at index `id`
+   --
+   fish.block_fillguard(self._block)
+end
+
+function Block:grid_spacing()
+   --
+   -- Return the maximum wavespeed over the block
+   --
+   return fish.block_gridspacing(self._block, 0)
+end
+
+function Block:total_zones()
+   --
+   -- Return the maximum wavespeed over the block
+   --
+   local Ntot = 1
+   local Ng = self:guard()
+   for _,N in ipairs(self:size()) do
+      Ntot = Ntot * (N + 2 * Ng)
+   end
+   return Ntot
+end
+
+function Block:max_wavespeed()
+   --
+   -- Return the maximum wavespeed over the block
+   --
+   return fish.block_maxwavespeed(self._block)
+end
+
+function Block:map(f)
+   --
+   -- Map the function f(x,y,z) over the coordinates of the block, filling in
+   -- the primitive data values
+   --
+   local Nx, Ny, Nz = table.unpack(self:size())
+   local Ng = self:guard()
+   local Pvec = self._primitive:vector()
+   for i=0,Nx+2*Ng-1 do
+      local x = fish.block_positionatindex(self._block, 0, i)
+      local Pi = f(x,0,0)
+      Pvec[5*i + 0] = Pi[1]
+      Pvec[5*i + 1] = Pi[2]
+      Pvec[5*i + 2] = Pi[3]
+      Pvec[5*i + 3] = Pi[4]
+      Pvec[5*i + 4] = Pi[5]
+   end
+end
+
+function Block:table(q)
+   --
+   -- Return a table T[x] = P[q] for P in each zone over the block, where x is the
+   -- coordinate. 1d only.
+   --
+   local Nx, Ny, Nz = table.unpack(self:size())
+   local Ng = self:guard()
+   local Pvec = self._primitive:vector()
+   local T = { }
+   for i=0,Nx+2*Ng-1 do
+      local x = fish.block_positionatindex(self._block, 0, i)
+      T[x] = Pvec[5*i + q]
+   end
+   return T
+end
 
 local function test1()
-   local block0 = Block{ size={16,16,16}, guard=2 }
+   local block0 = Block{ size={16}, guard=2 }
    local block1 = block0:add_child_block(0)
    local block2 = block1:add_child_block(0)
    local block3 = block1:add_child_block(1)
 
-   print(block2)
    print(block2:get_neighbor_block(0, 'R'))
+
+   block0:fill_guard()
+   block2:fill_guard()
+   block2:map(function(x) return {x+1,1,0,0,0} end)
+
+   print(block2:total_zones())
+   print(block2:max_wavespeed())
 
    for k,v in pairs(block0._registry) do
       print(k,v)

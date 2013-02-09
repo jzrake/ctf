@@ -310,7 +310,6 @@ double fish_block_maxwavespeed(fish_block *B)
       a = fabs(A[q]) > a ? fabs(A[q]) : a;
     }
   }
-  CHECK(1, NULL); // clear error message
   return a;
 }
 
@@ -407,8 +406,15 @@ int fish_block_fillguard(fish_block *B)
   fish_block *B0 = B->parent;
   fish_block *BL;
   fish_block *BR;
-  fish_block_getneighbor(B, 0, FISH_LEFT, &BL);
-  fish_block_getneighbor(B, 0, FISH_RIGHT, &BR);
+
+  if (B->parent) {
+    fish_block_getneighbor(B, 0, FISH_LEFT, &BL);
+    fish_block_getneighbor(B, 0, FISH_RIGHT, &BR);
+  }
+  else {
+    BL = B; // set periodic BC's on root block
+    BR = B;
+  }
 
   double Pl[5], Pr[5], P[5];
 
