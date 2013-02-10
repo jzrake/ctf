@@ -224,12 +224,12 @@ function Block:next(id)
 end
 
 function Block:walk()
-   local state = {current=self}
-   local function next_block(s, id)
-      id, s.current = s.current:next(id)
-      return id, s.current
+   local state = {b=self}
+   local function next_block(s)
+      s.id, s.b = s.b:next(s.id)
+      return s.b
    end
-   return next_block, state, nil
+   return next_block, state
 end
 
 local function test1()
@@ -268,16 +268,18 @@ local function test2()
 	 end
       end
    end
-
-   for k,b in mesh:walk() do
-      print(k,b)
+   local n = 0
+   for b in mesh:walk() do
+      print(b)
+      n = n + 1
    end
+   print('there are '..n..' total blocks')
 end
 
 if ... then -- if __name__ == "__main__"
    return {Block=Block}
 else
-   --test1()
+   test1()
    test2()
    print(debug.getinfo(1).source, ": All tests passed")
 end
