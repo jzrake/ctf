@@ -80,8 +80,8 @@ function StaticMeshRefinement:initialize_solver()
 
    local mesh = mesh.Block { size={self.N},
 			     guard=self.Ng }
-   mesh:add_child_block(0)--:add_child_block(1)--:add_child_block(1)
-   mesh:add_child_block(1)--:add_child_block(0)--:add_child_block(0)
+   mesh:add_child_block(0):add_child_block(1)--:add_child_block(1)
+   mesh:add_child_block(1):add_child_block(0)--:add_child_block(0)
 
    local scheme = fish.state_new()
    fish.setparami(scheme, fluids[RS], fish.RIEMANN_SOLVER)
@@ -240,25 +240,28 @@ function StaticMeshRefinement:user_work_finish()
    local t = self.status.simulation_time
 
    local levels = { }
+   local blocks = { }
+   local all = { }
    for b in self.mesh:walk() do
       local D = b:level()
       levels[D] = b:table(0, levels[D])
+      blocks[b] = b:table(0)
+      b:table(0, all)
    end
 
    if self.user_opts.plot then
+      util.plot({all=all}, {ls='w p', output=nil})
       --util.plot(levels, {ls='w p', output=nil})
-      util.plot({self.mesh:table(0),
-		 self.mesh[0]:table(0),
-		 self.mesh[1]:table(0)}, {ls='w p', output=nil})
+      --util.plot(blocks, {ls='w p', output=nil})
    end
 end
 
 local opts = {plot=true,
 	      resolution=64,
 	      CFL=0.8,
-	      tmax=0.1,
+	      tmax=1,
 	      solver='godunov',
-	      reconstruction='plm',
+	      reconstruction='weno5',
 	      advance='rk3'}
 local sim = StaticMeshRefinement(opts)
 local problem = densitywave(opts)
