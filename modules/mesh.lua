@@ -116,6 +116,9 @@ function Block:add_child_block(id)
    --
    -- Create and return a new child block with index `id`
    --
+   if self._children[id] then
+      error('child already exists')
+   end
    local child = Block{ size=self:size(),
                         guard=self:guard(),
                         parent=self,
@@ -206,9 +209,14 @@ end
 
 function Block:max_wavespeed()
    --
-   -- Return the maximum wavespeed over the block
+   -- Return the maximum wavespeed over the block and its descendants
    --
-   return fish.block_maxwavespeed(self._block)
+   local Amax = 0.0
+   for b in self:walk() do
+      local A = fish.block_maxwavespeed(self._block)
+      if A > Amax then Amax = A end
+   end
+   return Amax
 end
 
 function Block:map(f)
@@ -239,7 +247,7 @@ function Block:table(q, T, opts)
    local Nx, Ny, Nz = table.unpack(self:size())
    local Ng = self:guard()
    local Pvec = self._primitive:vector()
-   for i=Ng,Nx+Ng-1 do
+   for i=0,Nx+2*Ng-1 do
       local x = fish.block_positionatindex(self._block, 0, i)
       T[x] = Pvec[5*i + q]
    end
@@ -285,7 +293,6 @@ local function test1()
    local block3 = block1:add_child_block(1)
 
    block3:add_child_block(0):add_child_block(0)
-
    print(block2:get_neighbor_block(0, 'R'))
 
    block0:fill_guard()

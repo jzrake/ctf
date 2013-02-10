@@ -53,7 +53,7 @@ function StaticMeshRefinement:initialize_behavior()
    local cpi = opts.cpi or 1.0
    local tmax = opts.tmax or self.problem:finish_time()
    local dynamical_time = self.problem:dynamical_time()
-   self.behavior.message_cadence = opts.message_cadence or 10
+   self.behavior.message_cadence = opts.message_cadence or 1
    self.behavior.checkpoint_cadence = cpi * dynamical_time
    self.behavior.max_simulation_time = tmax * dynamical_time
 end
@@ -80,8 +80,8 @@ function StaticMeshRefinement:initialize_solver()
 
    local mesh = mesh.Block { size={self.N},
 			     guard=self.Ng }
-   mesh:add_child_block(0)--:add_child_block(1):add_child_block(1)
-   mesh:add_child_block(1)--:add_child_block(0):add_child_block(0)
+   mesh:add_child_block(0)--:add_child_block(1)--:add_child_block(1)
+   mesh:add_child_block(1)--:add_child_block(0)--:add_child_block(0)
 
    local scheme = fish.state_new()
    fish.setparami(scheme, fluids[RS], fish.RIEMANN_SOLVER)
@@ -148,7 +148,6 @@ end
 function StaticMeshRefinement:advance_physics()
    local dt = self.status.time_increment
    local enum = array.vector(1, 'int')
-   local blocks = {self.mesh._block}
    fish.getparami(self.scheme, enum:buffer(), fish.TIME_UPDATE)
 
    if enum[0] == fish.SINGLE then
@@ -247,14 +246,17 @@ function StaticMeshRefinement:user_work_finish()
    end
 
    if self.user_opts.plot then
-      util.plot(levels, {ls='w p', output=nil})
+      --util.plot(levels, {ls='w p', output=nil})
+      util.plot({self.mesh:table(0),
+		 self.mesh[0]:table(0),
+		 self.mesh[1]:table(0)}, {ls='w p', output=nil})
    end
 end
 
 local opts = {plot=true,
-	      resolution=128,
+	      resolution=64,
 	      CFL=0.8,
-	      tmax=0.001,
+	      tmax=0.1,
 	      solver='godunov',
 	      reconstruction='plm',
 	      advance='rk3'}

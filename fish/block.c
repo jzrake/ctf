@@ -247,6 +247,11 @@ int fish_block_getchild(fish_block *B, int id, fish_block **B1)
   return 0;
 }
 
+int fish_block_level(fish_block *B)
+{
+  return B->parent ? fish_block_level(B->parent) + 1 : 0;
+}
+
 int fish_block_setchild(fish_block *B, int id, fish_block *B1)
 // -----------------------------------------------------------------------------
 // Establish the block `B1` as the child block of `B` at location `id`, which
@@ -332,13 +337,14 @@ int fish_block_evolve(fish_block *B, double *W, double dt)
   CHECK(B->allocated, "block needs to be allocated");
   CHECK(B->descr, "block needs a fluid descriptor");
 
-  int TotalZones = fish_block_totalstates(B, FISH_INCLUDING_GUARD);
+  int Ng = B->guard;
+  int Nx = fish_block_getsize(B, 0);
   double *U = B->temp_conserved;
   double *L = B->time_derivative;
   double U1[5];
   fluids_state **fluid = fish_block_getfluid(B);
 
-  for (int n=0; n<TotalZones; ++n) {
+  for (int n=Ng; n<Nx+Ng; ++n) {
     fluids_state_derive(fluid[n], U1, FLUIDS_CONSERVED);
     for (int q=0; q<5; ++q) {
       double u1 = U1[q];
