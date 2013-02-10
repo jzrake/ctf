@@ -138,10 +138,19 @@ function Block:get_neighbor_block(dim, dir)
 end
 
 function Block:fill_guard()
-   --
-   -- Return the child block at index `id`
-   --
    fish.block_fillguard(self._block)
+end
+
+function Block:fill_conserved()
+   fish.block_fillconserved(self._block)
+end
+
+function Block:evolve(W, dt)
+   fish.block_evolve(self._block, W:buffer(), dt)
+end
+
+function Block:time_derivative(scheme)
+   fish.block_timederivative(self._block, scheme)
 end
 
 function Block:grid_spacing()
@@ -224,11 +233,16 @@ function Block:next(id)
 end
 
 function Block:walk()
-   local state = {b=self}
    local function next_block(s)
       s.id, s.b = s.b:next(s.id)
-      return s.b
+      if not s.first and s.b and s.b:level() == s.level then
+	 return nil
+      else
+	 s.first = false
+	 return s.b
+      end
    end
+   local state = {b=self,level=self:level(),first=true}
    return next_block, state
 end
 
@@ -270,6 +284,13 @@ local function test2()
    end
    local n = 0
    for b in mesh:walk() do
+      print(b)
+      n = n + 1
+   end
+   print('there are '..n..' total blocks')
+
+   local n = 0
+   for b in mesh:get_child_block(0):walk() do
       print(b)
       n = n + 1
    end
