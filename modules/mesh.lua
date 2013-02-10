@@ -75,8 +75,9 @@ function Block:__gc__(args)
 end
 
 function Block:__tostring__(args)
-   return string.format("<fish.block: [%s] level %d>",
-                        table.concat(self:size(), ' '), self:level())
+   return string.format("<fish.block @ %s: [%s] level=%d id=%d>",
+			string.sub(tostring(self._block), 11),
+                        table.concat(self:size(), ' '), self:level(), self._id)
 end
 
 function Block:level()
@@ -205,25 +206,30 @@ function Block:table(q)
 end
 
 function Block:next(id)
-   local id = id or 0
-   for i=id,7 do
-      if self._children[i] then return self._children[i] end
+   if id == nil then
+      return 0, self
    end
-   return self._parent and self._parent:next(self._id+1) or self
+
+   for i=id,7 do
+      if self._children[i] then
+	 return 0, self._children[i]
+      end
+   end
+
+   if self._parent then
+      return self._parent:next(self._id+1)
+   else
+      return nil
+   end
 end
 
 function Block:walk()
-   local done = false
-   local function next_block(state, a)
-      local ap = a:next()
-      if done then
-	 return nil
-      elseif ap == self then
-	 done = true 
-      end
-      return ap
+   local state = {current=self}
+   local function next_block(s, id)
+      id, s.current = s.current:next(id)
+      return id, s.current
    end
-   return next_block, nil, self
+   return next_block, state, nil
 end
 
 local function test1()
@@ -246,30 +252,32 @@ end
 
 local function test2()
    local mesh = Block{ size={16}, guard=2 }
-   for i=0,1 do
+   local N = 2
+   for i=0,N-1 do
       mesh:add_child_block(i)
    end
-   for i=0,1 do
-      for j=0,1 do
+   for i=0,N-1 do
+      for j=0,N-1 do
 	 mesh:get_child_block(i):add_child_block(j)
       end
    end
-   for i=0,1 do
-      for j=0,1 do
-	 for k=0,1 do
-	    mesh:get_child_block(i):get_child_block(j):add_child_block(k)
+   for i=0,N-1 do
+      for j=0,N-1 do
+	 for k=0,N-1 do
+	    local b = mesh:get_child_block(i):get_child_block(j):add_child_block(k)
 	 end
       end
    end
-   for b in mesh:walk() do
-      print(b)
+
+   for k,b in mesh:walk() do
+      print(k,b)
    end
 end
 
 if ... then -- if __name__ == "__main__"
    return {Block=Block}
 else
-   test1()
+   --test1()
    test2()
    print(debug.getinfo(1).source, ": All tests passed")
 end
