@@ -52,6 +52,8 @@ enum {
 
   FISH_LEFT,
   FISH_RIGHT,
+  FISH_INTERIOR,
+  FISH_INCLUDING_GUARD,
 
   // -------------------
   // error codes
@@ -88,7 +90,7 @@ int fish_block_getdescr(fish_block *B, fluids_descr **D);
 int fish_block_setdescr(fish_block *B, fluids_descr *D);
 int fish_block_getchild(fish_block *B, int id, fish_block **B1);
 int fish_block_setchild(fish_block *B, int id, fish_block *B1);
-int fish_block_totalstates(fish_block *B);
+int fish_block_totalstates(fish_block *B, int mode);
 int fish_block_allocate(fish_block *B);
 int fish_block_deallocate(fish_block *B);
 int fish_block_mapbuffer(fish_block *B, double *x, long flag);

@@ -79,7 +79,13 @@ function Block:__tostring__(args)
 			string.sub(tostring(self._block), 11),
                         table.concat(self:size(), ' '), self:level(), self._id)
 end
-
+function Block:__index__(key)
+   if type(key) == 'string' then
+      return oo.getattrib(self, key)
+   else
+      return self:get_child_block(key)
+   end
+end
 function Block:level()
    --
    -- Return the level depth of the block below root
@@ -153,23 +159,49 @@ function Block:time_derivative(scheme)
    fish.block_timederivative(self._block, scheme)
 end
 
-function Block:grid_spacing()
+function Block:grid_spacing(opts)
    --
    -- Return the maximum wavespeed over the block
    --
-   return fish.block_gridspacing(self._block, 0)
+   local opts = opts or { }
+   local mode = opts.mode or 'local'
+   if opts.mode == 'local' then
+      return fish.block_gridspacing(self._block, 0)
+   elseif opts.mode == 'smallest' then
+      local dx_min = fish.block_gridspacing(self._block, 0)
+      for b in self:walk() do
+	 local dx = fish.block_gridspacing(b._block, 0)
+	 if dx < dx_min then dx_min = dx end
+      end
+      return dx_min
+   else
+      error('mode must be one of [local, smallest]')
+   end
 end
 
-function Block:total_zones()
+function Block:total_states(opts)
+-- **************************************************************************
+   -- Return the total number of interior zones on this block
    --
-   -- Return the maximum wavespeed over the block
+   -- opts: {table} (optional)
    --
-   local Ntot = 1
-   local Ng = self:guard()
-   for _,N in ipairs(self:size()) do
-      Ntot = Ntot * (N + 2 * Ng)
+   --  + mode: string ('including_guard'), ['interior', 'including_guard']
+   --  + recurse: boolean (false), accumulate size over descendant blocks
+   --
+   -- **************************************************************************
+   --
+   local opts = opts or { }
+   local mode = (opts.mode or 'including_guard'):upper()
+   local recurse = opts.recurse or false
+   if opts.recurse then
+      local ntot = 0
+      for b in self:walk() do
+	 ntot = ntot + fish.block_totalstates(self._block, fish[mode])
+      end
+      return ntot
+   else
+      return fish.block_totalstates(self._block, fish[mode])
    end
-   return Ntot
 end
 
 function Block:max_wavespeed()
@@ -198,16 +230,16 @@ function Block:map(f)
    end
 end
 
-function Block:table(q)
+function Block:table(q, T, opts)
    --
-   -- Return a table T[x] = P[q] for P in each zone over the block, where x is the
-   -- coordinate (1d only)
+   -- Return a table T[x] = P[q] for P in each interior zone over the block,
+   -- where x is the coordinate (1d only)
    --
+   local T = T or { }
    local Nx, Ny, Nz = table.unpack(self:size())
    local Ng = self:guard()
    local Pvec = self._primitive:vector()
-   local T = { }
-   for i=0,Nx+2*Ng-1 do
+   for i=Ng,Nx+Ng-1 do
       local x = fish.block_positionatindex(self._block, 0, i)
       T[x] = Pvec[5*i + q]
    end
@@ -260,7 +292,8 @@ local function test1()
    block2:fill_guard()
    block2:map(function(x) return {x+1,1,0,0,0} end)
 
-   print(block2:total_zones())
+   print(block2:total_states())
+   print(block2:total_states{mode='interior'})
    print(block2:max_wavespeed())
 end
 
@@ -288,6 +321,7 @@ local function test2()
       n = n + 1
    end
    print('there are '..n..' total blocks')
+   print(mesh:total_states{recurse=true, mode='interior'} / n)
 
    local n = 0
    for b in mesh:get_child_block(0):walk() do
@@ -295,6 +329,9 @@ local function test2()
       n = n + 1
    end
    print('there are '..n..' total blocks')
+   print(mesh:get_child_block(0):total_states{recurse=true, mode='interior'} / n)
+   print(mesh:grid_spacing{mode='local'})
+   print(mesh:grid_spacing{mode='smallest'})
 end
 
 if ... then -- if __name__ == "__main__"

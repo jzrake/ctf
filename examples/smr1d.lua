@@ -80,6 +80,8 @@ function StaticMeshRefinement:initialize_solver()
 
    local mesh = mesh.Block { size={self.N},
 			     guard=self.Ng }
+   mesh:add_child_block(0)--:add_child_block(1):add_child_block(1)
+   mesh:add_child_block(1)--:add_child_block(0):add_child_block(0)
 
    local scheme = fish.state_new()
    fish.setparami(scheme, fluids[RS], fish.RIEMANN_SOLVER)
@@ -131,12 +133,14 @@ function StaticMeshRefinement:initialize_physics()
    local function primitive_init(x,y,z)
       return self.problem:solution(x,y,z,0)
    end
-   self.mesh:map(primitive_init)
+   for b in self.mesh:walk() do
+      b:map(primitive_init)
+   end
 end
 
 function StaticMeshRefinement:set_time_increment()
    local Amax = self.mesh:max_wavespeed()
-   local Dmin = self.mesh:grid_spacing()
+   local Dmin = self.mesh:grid_spacing{mode='smallest'}
    local dt = self.CFL * Dmin / Amax
    self.status.time_increment = dt
 end
@@ -150,40 +154,40 @@ function StaticMeshRefinement:advance_physics()
    if enum[0] == fish.SINGLE then
       local W0 = array.vector{1.0, 0.0, 1.0}
 
-      for _,block in pairs(blocks) do
-	 fish.block_fillconserved(block)
+      for block in self.mesh:walk() do
+	 block:fill_conserved()
       end
       -- ****************************** Step 1 ****************************** --
-      for _,block in pairs(blocks) do
-	 fish.block_timederivative(block, self.scheme)
-	 fish.block_evolve(block, W0:buffer(), dt)
+      for block in self.mesh:walk() do
+	 block:time_derivative(self.scheme)
+	 block:evolve(W0, dt)
       end
-      for _,block in pairs(blocks) do
-	 fish.block_fillguard(block)
+      for block in self.mesh:walk() do
+	 block:fill_guard(block)
       end
 
    elseif enum[0] == fish.MIDPOINT then
       local W0 = array.vector{1.0, 0.0, 0.5}
       local W1 = array.vector{1.0, 0.0, 1.0}
 
-      for _,block in pairs(blocks) do
-	 fish.block_fillconserved(block)
+      for block in self.mesh:walk() do
+	 block:fill_conserved()
       end
       -- ****************************** Step 1 ****************************** --
-      for _,block in pairs(blocks) do
-	 fish.block_timederivative(block, self.scheme)
-	 fish.block_evolve(block, W0:buffer(), dt)
+      for block in self.mesh:walk() do
+	 block:time_derivative(self.scheme)
+	 block:evolve(W0, dt)
       end
-      for _,block in pairs(blocks) do
-	 fish.block_fillguard(block)
+      for block in self.mesh:walk() do
+	 block:fill_guard(block)
       end
       -- ****************************** Step 2 ****************************** --
-      for _,block in pairs(blocks) do
-	 fish.block_timederivative(block, self.scheme)
-	 fish.block_evolve(block, W1:buffer(), dt)
+      for block in self.mesh:walk() do
+	 block:time_derivative(self.scheme)
+	 block:evolve(W1, dt)
       end
-      for _,block in pairs(blocks) do
-	 fish.block_fillguard(block)
+      for block in self.mesh:walk() do
+	 block:fill_guard(block)
       end
 
    elseif enum[0] == fish.SHUOSHER_RK3 then
@@ -191,32 +195,32 @@ function StaticMeshRefinement:advance_physics()
       local W1 = array.vector{3/4, 1/4, 1/4}
       local W2 = array.vector{1/3, 2/3, 2/3}
 
-      for _,block in pairs(blocks) do
-	 fish.block_fillconserved(block)
+      for block in self.mesh:walk() do
+	 block:fill_conserved(block)
       end
       -- ****************************** Step 1 ****************************** --
-      for _,block in pairs(blocks) do
-	 fish.block_timederivative(block, self.scheme)
-	 fish.block_evolve(block, W0:buffer(), dt)
+      for block in self.mesh:walk() do
+	 block:time_derivative(self.scheme)
+	 block:evolve(W0, dt)
       end
-      for _,block in pairs(blocks) do
-	 fish.block_fillguard(block)
+      for block in self.mesh:walk() do
+	 block:fill_guard(block)
       end
       -- ****************************** Step 2 ****************************** --
-      for _,block in pairs(blocks) do
-	 fish.block_timederivative(block, self.scheme)
-	 fish.block_evolve(block, W1:buffer(), dt)
+      for block in self.mesh:walk() do
+	 block:time_derivative(self.scheme)
+	 block:evolve(W1, dt)
       end
-      for _,block in pairs(blocks) do
-	 fish.block_fillguard(block)
+      for block in self.mesh:walk() do
+	 block:fill_guard(block)
       end
       -- ****************************** Step 3 ****************************** --
-      for _,block in pairs(blocks) do
-	 fish.block_timederivative(block, self.scheme)
-	 fish.block_evolve(block, W2:buffer(), dt)
+      for block in self.mesh:walk() do
+	 block:time_derivative(self.scheme)
+	 block:evolve(W2, dt)
       end
-      for _,block in pairs(blocks) do
-	 fish.block_fillguard(block)
+      for block in self.mesh:walk() do
+	 block:fill_guard(block)
       end
    end
 end
@@ -226,7 +230,7 @@ function StaticMeshRefinement:checkpoint_write()
 end
 
 function StaticMeshRefinement:local_mesh_size()
-   return self.mesh:total_zones()
+   return self.mesh:total_states{recurse=true, mode='interior'}
 end
 
 function StaticMeshRefinement:user_work_iteration()
@@ -235,17 +239,22 @@ end
 
 function StaticMeshRefinement:user_work_finish()
    local t = self.status.simulation_time
-   local code_data = self.mesh:table(0)
+
+   local levels = { }
+   for b in self.mesh:walk() do
+      local D = b:level()
+      levels[D] = b:table(0, levels[D])
+   end
 
    if self.user_opts.plot then
-      util.plot({['code' ]=code_data}, {ls='w p', output=nil})
+      util.plot(levels, {ls='w p', output=nil})
    end
 end
 
-local opts = {plot=false,
-	      resolution=16,
+local opts = {plot=true,
+	      resolution=128,
 	      CFL=0.8,
-	      tmax=1,
+	      tmax=0.001,
 	      solver='godunov',
 	      reconstruction='plm',
 	      advance='rk3'}
