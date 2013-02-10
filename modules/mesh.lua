@@ -5,6 +5,24 @@ local fish   = require 'fish'
 local flui   = require 'fluids'
 
 local Block = oo.class('Block')
+local FluidDescriptor = oo.class('FluidDescriptor')
+
+
+function FluidDescriptor:__init__()
+   local descr = flui.descr_new()
+   flui.descr_setfluid(descr, flui.NRHYD)
+   flui.descr_setgamma(descr, 1.4)
+   flui.descr_seteos(descr, flui.EOS_GAMMALAW)
+   self._descr = descr
+end
+
+function FluidDescriptor:__gc__()
+   flui.descr_del(self._descr)
+end
+
+function FluidDescriptor:get_ncomp(which)
+   return flui.descr_getncomp(self._descr, flui[which:upper()])
+end
 
 function Block:__init__(args)
    -- **************************************************************************
@@ -17,17 +35,13 @@ function Block:__init__(args)
    --
    -- **************************************************************************
    local block = fish.block_new()
-   local descr = flui.descr_new()
    local rank = #args.size
    local guard = args.guard or 0
    local parent = args.parent
+   local descr = parent and parent._descr or FluidDescriptor()
    local totsize = { }
 
-   flui.descr_setfluid(descr, flui.NRHYD)
-   flui.descr_setgamma(descr, 1.4)
-   flui.descr_seteos(descr, flui.EOS_GAMMALAW)
-
-   fish.block_setdescr (block, descr)
+   fish.block_setdescr (block, descr._descr)
    fish.block_setrank  (block, rank)
    fish.block_setguard (block, guard)
 
@@ -37,7 +51,7 @@ function Block:__init__(args)
       totsize[i] = N + 2 * guard
    end
 
-   table.insert(totsize, flui.descr_getncomp(descr, flui.PRIMITIVE))
+   table.insert(totsize, descr:get_ncomp('primitive'))
    local primitive = array.array(totsize)
 
    fish.block_allocate  (block)
