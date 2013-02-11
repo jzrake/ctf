@@ -109,7 +109,7 @@ function Block:__index__(key)
    if type(key) == 'string' then
       return ({descr=self._descr})[key] or oo.getattrib(self, key)
    else
-      return self:get_child_block(key)
+      return self:child_block(key)
    end
 end
 
@@ -153,14 +153,14 @@ function Block:add_child_block(id)
    return child
 end
 
-function Block:get_child_block(id)
+function Block:child_block(id)
    --
    -- Return the child block at index `id`
    --
    return self._children[id]
 end
 
-function Block:get_neighbor_block(dim, dir)
+function Block:neighbor_block(dim, dir)
    -- **************************************************************************
    -- args:
    --
@@ -169,7 +169,7 @@ function Block:get_neighbor_block(dim, dir)
    --
    -- **************************************************************************
    local d = ({L=fish.LEFT, R=fish.RIGHT})[dir]
-   local c = fish.block_getneighbor(self._block, dim, d)
+   local c = fish.block_neighbor(self._block, dim, d)
    return self._registry[c]
 end
 
@@ -324,7 +324,7 @@ local function test1()
    local block3 = block1:add_child_block(1)
 
    block3:add_child_block(0):add_child_block(0)
-   assert(block2:get_neighbor_block(0, 'R') == block3)
+   assert(block2:neighbor_block(0, 'R') == block3)
 
    block0:fill_guard()
    block2:fill_guard()
@@ -343,13 +343,13 @@ local function test2()
    end
    for i=0,N-1 do
       for j=0,N-1 do
-	 mesh:get_child_block(i):add_child_block(j)
+	 mesh[i]:add_child_block(j)
       end
    end
    for i=0,N-1 do
       for j=0,N-1 do
 	 for k=0,N-1 do
-	    local b = mesh:get_child_block(i):get_child_block(j):add_child_block(k)
+	    local b = mesh[i][j]:add_child_block(k)
 	 end
       end
    end
@@ -359,7 +359,7 @@ local function test2()
    assert(mesh:total_states{recurse=true, mode='interior'} / n == 16)
 
    local n = 0
-   for b in mesh:get_child_block(0):walk() do n = n + 1 end
+   for b in mesh[0]:walk() do n = n + 1 end
 
    assert(n == 7)
    assert(mesh:grid_spacing{mode='local'} == 0.0625)

@@ -192,7 +192,7 @@ fluids_state **fish_block_getfluid(fish_block *B)
   return B->fluid;
 }
 
-int fish_block_getneighbor(fish_block *B, int dim, int LR, fish_block **B1)
+int fish_block_neighbor(fish_block *B, int dim, int LR, fish_block **B1)
 {
   *B1 = NULL;
   CHECK(dim < B->rank,
@@ -211,7 +211,7 @@ int fish_block_getneighbor(fish_block *B, int dim, int LR, fish_block **B1)
       }
       else if (B->pid == 0) {
 	fish_block *PL;
-	fish_block_getneighbor(B->parent, dim, FISH_LEFT, &PL);
+	fish_block_neighbor(B->parent, dim, FISH_LEFT, &PL);
 	if (PL) {
 	  *B1 = PL->children[1];
 	}
@@ -226,7 +226,7 @@ int fish_block_getneighbor(fish_block *B, int dim, int LR, fish_block **B1)
       }
       else if (B->pid == 1) {
 	fish_block *PR;
-	fish_block_getneighbor(B->parent, dim, FISH_RIGHT, &PR);
+	fish_block_neighbor(B->parent, dim, FISH_RIGHT, &PR);
 	if (PR) {
 	  *B1 = PR->children[0];
 	}
@@ -244,6 +244,16 @@ int fish_block_getchild(fish_block *B, int id, fish_block **B1)
 {
   CHECK(id < 8, "argument 'id' must be smaller than 8");
   *B1 = B->children[id];
+  return 0;
+}
+
+int fish_block_getboundaryblock(fish_block *B, int dim, int LR, fish_block **B1)
+{
+  return 0;
+}
+
+int fish_block_setboundaryblock(fish_block *B, int dim, int LR, fish_block *B1)
+{
   return 0;
 }
 
@@ -414,8 +424,8 @@ int fish_block_fillguard(fish_block *B)
   fish_block *BR;
 
   if (B->parent) {
-    fish_block_getneighbor(B, 0, FISH_LEFT, &BL);
-    fish_block_getneighbor(B, 0, FISH_RIGHT, &BR);
+    fish_block_neighbor(B, 0, FISH_LEFT, &BL);
+    fish_block_neighbor(B, 0, FISH_RIGHT, &BR);
   }
   else {
     BL = B; // set periodic BC's on root block

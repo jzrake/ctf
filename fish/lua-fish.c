@@ -49,13 +49,13 @@
 FISH_STRUCT_TYPE(state)
 FISH_STRUCT_TYPE(block)
 
-static int _fish_block_getneighbor(lua_State *L)
+static int _fish_block_neighbor(lua_State *L)
 {
   fish_block *B = *((fish_block**) luaL_checkudata(L, 1, "fish::block"));
   int dim = luaL_checkinteger(L, 2);
   int LR = luaL_checkinteger(L, 3);
   fish_block *B1;
-  fish_block_getneighbor(B, dim, LR, &B1);
+  fish_block_neighbor(B, dim, LR, &B1);
   char *err = fish_block_geterror(B);
   if (err) {
     luaL_error(L, err);
