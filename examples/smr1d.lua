@@ -74,8 +74,12 @@ function StaticMeshRefinement:initialize_solver()
 
    local mesh = mesh.Block { size={self.N},
 			     guard=self.Ng }
-   mesh:add_child_block(0):add_child_block(1)--:add_child_block(1)
-   mesh:add_child_block(1):add_child_block(0)--:add_child_block(0)
+   mesh:add_child_block(0):add_child_block(1)
+   mesh:add_child_block(1):add_child_block(0)
+
+   -- set manual periodic BC's on level 1 blocks (they cover the grid)
+   mesh[0]:set_boundary_block(0, 'L', mesh[1])
+   mesh[1]:set_boundary_block(0, 'R', mesh[0])
 
    local scheme = fish.state_new()
    fish.setparami(scheme, fluids[RS], fish.RIEMANN_SOLVER)

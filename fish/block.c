@@ -440,17 +440,11 @@ int fish_block_fillguard(fish_block *B)
   int Nx = B->size[0];
 
   fish_block *B0 = B->parent;
-  fish_block *BL;
-  fish_block *BR;
+  fish_block *BL = B->boundaryL[0];
+  fish_block *BR = B->boundaryR[0];
 
-  if (B->parent) {
-    fish_block_neighbor(B, 0, FISH_LEFT, &BL);
-    fish_block_neighbor(B, 0, FISH_RIGHT, &BR);
-  }
-  else {
-    BL = B; // set periodic BC's on root block
-    BR = B;
-  }
+  if (BL == NULL) fish_block_neighbor(B, 0, FISH_LEFT, &BL);
+  if (BR == NULL) fish_block_neighbor(B, 0, FISH_RIGHT, &BR);
 
   double Pl[5], Pr[5], P[5];
 
@@ -460,6 +454,7 @@ int fish_block_fillguard(fish_block *B)
     }
   }
   else { // fill from parent
+    CHECK(B->parent, "block needs a parent or explicit boundary block");
     int i0 = B->pstart[0];
 
     for (int ic=0; ic<Ng; ++ic) { // ic labels which guard zone we are filling
@@ -488,6 +483,7 @@ int fish_block_fillguard(fish_block *B)
     }
   }
   else { // fill from parent
+    CHECK(B->parent, "block needs a parent or explicit boundary block");
     int i0 = B->pstart[0] + Nx / 2 + Ng;
 
     for (int ic=0; ic<Ng; ++ic) { // ic labels which guard zone we are filling

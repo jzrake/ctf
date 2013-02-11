@@ -69,6 +69,14 @@ function Block:__init__(args)
    fish.block_allocate  (block)
    fish.block_mapbuffer (block, primitive:buffer(), flui.PRIMITIVE)
 
+   self._primitive = primitive
+   self._block = block
+   self._descr = descr
+   self._children = { }
+   self._boundaryL = { }
+   self._boundaryR = { }
+   self._rank = rank
+
    if parent then
       if not args.id then
          error("id must be given if creating a child block")
@@ -85,15 +93,11 @@ function Block:__init__(args)
       self._root                = self
       self._registry            = { }
       self._id                  = 0
+
+      self:set_boundary_block(0, 'L', self) -- periodic BC's on root
+      self:set_boundary_block(0, 'R', self)
    end
 
-   self._primitive = primitive
-   self._block = block
-   self._descr = descr
-   self._children = { }
-   self._boundaryL = { }
-   self._boundaryR = { }
-   self._rank = rank
    self._registry[fish.block_light(block)] = self
 end
 
