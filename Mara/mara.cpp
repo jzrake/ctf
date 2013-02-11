@@ -713,8 +713,8 @@ int luaC_set_domain(lua_State *L)
   double *x1 = luaU_checkarray(L, 2);
 
   int *N = luaU_checklarray_i(L, 3, &Nd);
-  int Nq = luaL_checknumber(L, 4);
-  int Ng = luaL_checknumber(L, 5);
+  int Nq = luaL_checkinteger(L, 4);
+  int Ng = luaL_checkinteger(L, 5);
   void *cart_comm = lua_touserdata(L, 6); // optional, OK if NULL
 
   PhysicalDomain *new_f = NULL;
@@ -1210,7 +1210,7 @@ int luaC_new_ou_field(lua_State *L)
   const int Nd = luaL_checkinteger(L, 1);
   const double P0 = luaL_checknumber(L, 2);
   const double zeta = luaL_checknumber(L, 3);
-  const double k1 = luaL_checknumber(L, 4);
+  const int k1 = luaL_checkinteger(L, 4);
   const int seed = luaL_checkinteger(L, 5);
 
   std::stringstream stream;

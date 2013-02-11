@@ -146,7 +146,7 @@ int ShenTabulatedNuclearEos::find_upper_index_D(double logD) const
     throw SampledOutOfRangeDensity();
   }
 
-  return 1.0 + (logD - logD_values[0]) / (logD_values[1] - logD_values[0]);
+  return int(1.0 + (logD - logD_values[0]) / (logD_values[1] - logD_values[0]));
 }
 
 int ShenTabulatedNuclearEos::find_upper_index_T(double logT) const
@@ -160,7 +160,7 @@ int ShenTabulatedNuclearEos::find_upper_index_T(double logT) const
     throw SampledOutOfRangeTemperature();
   }
 
-  return 1.0 + (logT - logT_values[0]) / (logT_values[1] - logT_values[0]);
+  return int(1.0 + (logT - logT_values[0]) / (logT_values[1] - logT_values[0]));
 }
 #else
 

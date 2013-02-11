@@ -75,7 +75,7 @@ int GenericTabulatedEos::find_upper_index_D(double D) const
     throw SampledOutOfRangeDensity();
   }
 
-  return 1.0 + (D - D_values[0]) / (D_values[1] - D_values[0]);
+  return int(1.0 + (D - D_values[0]) / (D_values[1] - D_values[0]));
 }
 
 int GenericTabulatedEos::find_upper_index_T(double T) const
@@ -89,7 +89,7 @@ int GenericTabulatedEos::find_upper_index_T(double T) const
     throw SampledOutOfRangeTemperature();
   }
 
-  return 1.0 + (T - T_values[0]) / (T_values[1] - T_values[0]);
+  return int(1.0 + (T - T_values[0]) / (T_values[1] - T_values[0]));
 }
 
 double GenericTabulatedEos::sample_EOS(const std::vector<double> &EOS,
