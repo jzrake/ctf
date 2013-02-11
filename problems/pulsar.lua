@@ -107,15 +107,17 @@ function MaraSimulation:user_work_iteration()
 
    local vel = self.Primitive[{{Ng,-Ng},{Ng,-Ng},{2,4}}]
    local N = vel:shape()
+   local V = vel:vector()
    local n = self.status.iteration_number
    local fname = string.format('images/vel-%05d.ppm', n)
-   visual.line_integral_convolution(vel:vector():buffer(), N[1], N[2], fname)
+   visual.line_integral_convolution(V:buffer(), N[1], N[2], fname)
 
    local mag = self.Primitive[{{Ng,-Ng},{Ng,-Ng},{5,7}}]
    local N = mag:shape()
+   local B = vel:vector()
    local n = self.status.iteration_number
    local fname = string.format('images/mag-%05d.ppm', n)
-   visual.line_integral_convolution(mag:vector():buffer(), N[1], N[2], fname)
+   visual.line_integral_convolution(B:buffer(), N[1], N[2], fname)
 end
 
 function NSAccretion:fluid() return 'srmhd' end
