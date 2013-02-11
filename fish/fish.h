@@ -98,6 +98,7 @@ int fish_block_timederivative(fish_block *B, fish_state *scheme);
 int fish_block_evolve(fish_block *B, double *W, double dt);
 int fish_block_fillconserved(fish_block *B);
 int fish_block_fillguard(fish_block *B);
+int fish_block_project(fish_block *B);
 int fish_block_getneighbor(fish_block *B, int dim, int LR, fish_block **B1);
 int fish_block_level(fish_block *B);
 double fish_block_gridspacing(fish_block *B, int dim);

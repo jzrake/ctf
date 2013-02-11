@@ -479,3 +479,38 @@ int fish_block_fillguard(fish_block *B)
   }
   return 0;
 }
+
+int fish_block_project(fish_block *B)
+/* -----------------------------------------------------------------------------
+ *
+ * Project data from the finer child grid to the corresponding sub-volume of the
+ * parent grid.
+ *
+ * -----------------------------------------------------------------------------
+ */
+{
+  CHECK(B->allocated, "block must be allocated");
+  CHECK(B->descr, "block needs a fluid descriptor");
+  CHECK(B->parent, "block needs a parent in project onto");
+
+  int Ng = B->guard;
+  int Nx = B->size[0];
+
+  fish_block *B0 = B->parent;
+  double U0[5], U1[5], Up[5];
+  int i0 = Ng + B->pstart[0];
+
+  for (int n=Ng; n<Nx+Ng; n+=2) {
+
+    fluids_state_derive(B->fluid[n+0], U0, FLUIDS_CONSERVED);
+    fluids_state_derive(B->fluid[n+1], U1, FLUIDS_CONSERVED);
+
+    for (int q=0; q<5; ++q) {
+      Up[q] = 0.5 * (U0[q] + U1[q]);
+    }
+
+    fluids_state_fromcons(B0->fluid[i0+(n-Ng)/2], Up, FLUIDS_CACHE_DEFAULT);
+  }
+
+  return 0;
+}

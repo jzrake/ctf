@@ -97,7 +97,6 @@ end
 
 function Block:__gc__(args)
    fish.block_del(self._block)
-   flui.descr_del(self._descr)
 end
 
 function Block:__tostring__(args)
@@ -180,6 +179,10 @@ end
 
 function Block:fill_guard()
    fish.block_fillguard(self._block)
+end
+
+function Block:project()
+   fish.block_project(self._block)
 end
 
 function Block:evolve(W, dt)
@@ -275,7 +278,7 @@ function Block:table(q, T, opts)
    local Nx, Ny, Nz = table.unpack(self:size())
    local Ng = self:guard()
    local Pvec = self._primitive:vector()
-   for i=0,Nx+2*Ng-1 do
+   for i=Ng,Nx+Ng-1 do
       local x = fish.block_positionatindex(self._block, 0, i)
       T[x] = Pvec[5*i + q]
    end
@@ -368,11 +371,28 @@ local function test3()
    assert(mesh.descr:fluid() == 'nrhyd')
 end
 
+local function test4()
+   local mesh = Block{ size={64}, guard=3 }
+   local block1 = mesh:add_child_block(0)
+   local block2 = mesh:add_child_block(1)
+
+   block1:map(function(x) return {x+1,1,0,0,0} end)
+   block2:map(function(x) return {x+1,1,0,0,0} end)
+
+   block1:project()
+   block2:project()
+   --mesh:fill_guard()
+
+   local util = require 'util'
+   util.plot({all=mesh:table(0)}, {ls='w p', output=nil})
+end
+
 if ... then -- if __name__ == "__main__"
    return {Block=Block}
 else
    test1()
    test2()
    test3()
+   test4()
    print(debug.getinfo(1).source, ": All tests passed")
 end
