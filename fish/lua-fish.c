@@ -64,6 +64,21 @@ static int _fish_block_neighbor(lua_State *L)
   return 1;
 }
 
+static int _fish_block_getboundaryblock(lua_State *L)
+{
+  fish_block *B = *((fish_block**) luaL_checkudata(L, 1, "fish::block"));
+  int dim = luaL_checkinteger(L, 2);
+  int LR = luaL_checkinteger(L, 3);
+  fish_block *B1;
+  fish_block_getboundaryblock(B, dim, LR, &B1);
+  char *err = fish_block_geterror(B);
+  if (err) {
+    luaL_error(L, err);
+  }
+  lua_pushlightuserdata(L, B1);
+  return 1;
+}
+
 #include "fishfuncs.c"
 
 int luaopen_fish(lua_State *L)

@@ -20,9 +20,11 @@ fish_block *fish_block_new()
     .size = { 1, 1, 1 },
     .x0 = { 0.0, 0.0, 0.0 },
     .x1 = { 1.0, 1.0, 1.0 },
+    .parent = NULL,
+    .boundaryL = { NULL, NULL, NULL },
+    .boundaryR = { NULL, NULL, NULL },
     .children = { NULL, NULL, NULL, NULL,
 		  NULL, NULL, NULL, NULL },
-    .parent = NULL,
     .fluid = NULL,
     .descr = NULL,
     .error = NULL,
@@ -249,11 +251,29 @@ int fish_block_getchild(fish_block *B, int id, fish_block **B1)
 
 int fish_block_getboundaryblock(fish_block *B, int dim, int LR, fish_block **B1)
 {
+  CHECK(dim < B->rank,
+	"argument 'dim' must be smaller than the rank of the block");
+  CHECK(LR == FISH_LEFT || LR == FISH_RIGHT,
+	"argument 'LR' must be FISH_LEFT or FISH_RIGHT");
+  switch (LR) {
+  case FISH_LEFT : *B1 = B->boundaryL[dim]; break;
+  case FISH_RIGHT: *B1 = B->boundaryR[dim]; break;
+  }
   return 0;
 }
 
 int fish_block_setboundaryblock(fish_block *B, int dim, int LR, fish_block *B1)
 {
+  CHECK(dim < B->rank,
+	"argument 'dim' must be smaller than the rank of the block");
+  CHECK(LR == FISH_LEFT || LR == FISH_RIGHT,
+	"argument 'LR' must be FISH_LEFT or FISH_RIGHT");
+  CHECK(fish_block_level(B) == fish_block_level(B1),
+	"the boundary block must be at the same level");
+  switch (LR) {
+  case FISH_LEFT : B->boundaryL[dim] = B1; break;
+  case FISH_RIGHT: B->boundaryR[dim] = B1; break;
+  }
   return 0;
 }
 

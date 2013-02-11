@@ -91,6 +91,8 @@ function Block:__init__(args)
    self._block = block
    self._descr = descr
    self._children = { }
+   self._boundaryL = { }
+   self._boundaryR = { }
    self._rank = rank
    self._registry[fish.block_light(block)] = self
 end
@@ -171,6 +173,26 @@ function Block:neighbor_block(dim, dir)
    local d = ({L=fish.LEFT, R=fish.RIGHT})[dir]
    local c = fish.block_neighbor(self._block, dim, d)
    return self._registry[c]
+end
+
+function Block:get_boundary_block(dim, dir)
+   --
+   -- Set a boundary block to over-ride mesh connectivity. Arguments are the
+   -- same as Block:neighbor_block.
+   --
+   local d = ({L=fish.LEFT, R=fish.RIGHT})[dir]
+   local c = fish.block_getboundaryblock(self._block, dim, d)
+   return self._registry[c]
+end
+
+function Block:set_boundary_block(dim, dir, block)
+   --
+   -- Get the boundary block. Arguments are the same as Block:neighbor_block,
+   -- but with the boundary block given as the third argument.
+   --
+   local d = ({L=fish.LEFT, R=fish.RIGHT})[dir]
+   self['_boundary'..dir][dim] = block
+   fish.block_setboundaryblock(self._block, dim, d, block._block)
 end
 
 function Block:fill_conserved()
@@ -369,6 +391,15 @@ end
 local function test3()
    local mesh = Block { size={32} }
    assert(mesh.descr:fluid() == 'nrhyd')
+
+   mesh:set_boundary_block(0, 'L', mesh)
+   mesh:set_boundary_block(0, 'R', mesh)
+   assert(mesh:get_boundary_block(0, 'L') == mesh)
+   assert(mesh:get_boundary_block(0, 'R') == mesh)
+
+   mesh:add_child_block(0)
+   local err, msg = pcall(mesh.set_boundary_block, mesh, 0, 'L', mesh[0])
+   assert(not err)
 end
 
 local function test4()
@@ -384,7 +415,7 @@ local function test4()
    --mesh:fill_guard()
 
    local util = require 'util'
-   util.plot({all=mesh:table(0)}, {ls='w p', output=nil})
+   --util.plot({all=mesh:table(0)}, {ls='w p', output=nil})
 end
 
 if ... then -- if __name__ == "__main__"

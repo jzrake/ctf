@@ -146,8 +146,10 @@ struct fish_block {
   int size[3];
   double x0[3];
   double x1[3];
-  struct fish_block *children[8];
   struct fish_block *parent;
+  struct fish_block *children[8];
+  struct fish_block *boundaryL[3];
+  struct fish_block *boundaryR[3];
   struct fluids_state **fluid;
   struct fluids_descr *descr;
   double *temp_conserved;
