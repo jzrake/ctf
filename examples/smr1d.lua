@@ -39,11 +39,14 @@ function densitywave:solution(x, y, z, t)
 end
 
 
-
 local FishEnums   = { } -- Register the constants for string lookup later on
+for k,v in pairs(fish) do
+   if type(v)=='number' then FishEnums[v]=k end
+end
 local FluidsEnums = { }
-for k,v in pairs(fish)   do if type(v)=='number' then   FishEnums[v]=k end end
-for k,v in pairs(fluids) do if type(v)=='number' then FluidsEnums[v]=k end end
+for k,v in pairs(fluids) do
+   if type(v)=='number' then FluidsEnums[v]=k end
+end
 
 local StaticMeshRefinement = oo.class('StaticMeshRefinement', sim.SimulationBase)
       
@@ -133,7 +136,7 @@ end
 
 function StaticMeshRefinement:set_time_increment()
    local Amax = self.mesh:max_wavespeed()
-   local Dmin = self.mesh:grid_spacing{mode='smallest'}
+   local Dmin = self.mesh:grid_spacing{ mode='smallest' }
    local dt = self.CFL * Dmin / Amax
    self.status.time_increment = dt
 end
@@ -144,7 +147,7 @@ function StaticMeshRefinement:advance_physics()
    fish.getparami(self.scheme, enum:buffer(), fish.TIME_UPDATE)
 
    if enum[0] == fish.SINGLE then
-      local W0 = array.vector{1.0, 0.0, 1.0}
+      local W0 = array.vector{ 1.0, 0.0, 1.0 }
 
       for block in self.mesh:walk() do
 	 block:fill_conserved()
@@ -159,8 +162,8 @@ function StaticMeshRefinement:advance_physics()
       end
 
    elseif enum[0] == fish.MIDPOINT then
-      local W0 = array.vector{1.0, 0.0, 0.5}
-      local W1 = array.vector{1.0, 0.0, 1.0}
+      local W0 = array.vector{ 1.0, 0.0, 0.5 }
+      local W1 = array.vector{ 1.0, 0.0, 1.0 }
 
       for block in self.mesh:walk() do
 	 block:fill_conserved()
@@ -183,9 +186,9 @@ function StaticMeshRefinement:advance_physics()
       end
 
    elseif enum[0] == fish.SHUOSHER_RK3 then
-      local W0 = array.vector{1.0, 0.0, 1.0}
-      local W1 = array.vector{3/4, 1/4, 1/4}
-      local W2 = array.vector{1/3, 2/3, 2/3}
+      local W0 = array.vector{ 1.0, 0.0, 1.0 }
+      local W1 = array.vector{ 3/4, 1/4, 1/4 }
+      local W2 = array.vector{ 1/3, 2/3, 2/3 }
 
       for block in self.mesh:walk() do
 	 block:fill_conserved(block)
