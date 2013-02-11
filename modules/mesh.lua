@@ -174,12 +174,12 @@ function Block:get_neighbor_block(dim, dir)
    return self._registry[c]
 end
 
-function Block:fill_guard()
-   fish.block_fillguard(self._block)
-end
-
 function Block:fill_conserved()
    fish.block_fillconserved(self._block)
+end
+
+function Block:fill_guard()
+   fish.block_fillguard(self._block)
 end
 
 function Block:evolve(W, dt)
@@ -321,15 +321,15 @@ local function test1()
    local block3 = block1:add_child_block(1)
 
    block3:add_child_block(0):add_child_block(0)
-   print(block2:get_neighbor_block(0, 'R'))
+   assert(block2:get_neighbor_block(0, 'R') == block3)
 
    block0:fill_guard()
    block2:fill_guard()
    block2:map(function(x) return {x+1,1,0,0,0} end)
 
-   print(block2:total_states())
-   print(block2:total_states{mode='interior'})
-   print(block2:max_wavespeed())
+   assert(block2:total_states() == 20)
+   assert(block2:total_states{mode='interior'} == 16)
+   assert(math.abs(block2:max_wavespeed() - 1.1973303637677) < 1e-10)
 end
 
 local function test2()
@@ -351,27 +351,21 @@ local function test2()
       end
    end
    local n = 0
-   for b in mesh:walk() do
-      print(b)
-      n = n + 1
-   end
-   print('there are '..n..' total blocks')
-   print(mesh:total_states{recurse=true, mode='interior'} / n)
+   for b in mesh:walk() do n = n + 1 end
+   assert(n == 15)
+   assert(mesh:total_states{recurse=true, mode='interior'} / n == 16)
 
    local n = 0
-   for b in mesh:get_child_block(0):walk() do
-      print(b)
-      n = n + 1
-   end
-   print('there are '..n..' total blocks')
-   print(mesh:get_child_block(0):total_states{recurse=true, mode='interior'} / n)
-   print(mesh:grid_spacing{mode='local'})
-   print(mesh:grid_spacing{mode='smallest'})
+   for b in mesh:get_child_block(0):walk() do n = n + 1 end
+
+   assert(n == 7)
+   assert(mesh:grid_spacing{mode='local'} == 0.0625)
+   assert(mesh:grid_spacing{mode='smallest'} == 0.0078125)
 end
 
 local function test3()
    local mesh = Block { size={32} }
-   print(mesh.descr:fluid())
+   assert(mesh.descr:fluid() == 'nrhyd')
 end
 
 if ... then -- if __name__ == "__main__"
