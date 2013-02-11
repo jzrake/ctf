@@ -42,12 +42,11 @@ end
 
 local FishEnums   = { } -- Register the constants for string lookup later on
 local FluidsEnums = { }
-for k,v in pairs(fluids) do if type(v)=='number' then FluidsEnums[v]=k end end
 for k,v in pairs(fish)   do if type(v)=='number' then   FishEnums[v]=k end end
-
+for k,v in pairs(fluids) do if type(v)=='number' then FluidsEnums[v]=k end end
 
 local StaticMeshRefinement = oo.class('StaticMeshRefinement', sim.SimulationBase)
-
+      
 function StaticMeshRefinement:initialize_behavior()
    local opts = self.user_opts
    local cpi = opts.cpi or 1.0
@@ -73,11 +72,6 @@ function StaticMeshRefinement:initialize_solver()
 		rk3='shuosher_rk3'})[self.user_opts.advance or 'rk3']:upper()
    local BC = self.problem:boundary_conditions():upper()
 
-   local descr = fluids.descr_new()
-   fluids.descr_setfluid(descr, fluids[FL])
-   fluids.descr_setgamma(descr, 1.4)
-   fluids.descr_seteos(descr, fluids.EOS_GAMMALAW)
-
    local mesh = mesh.Block { size={self.N},
 			     guard=self.Ng }
    mesh:add_child_block(0):add_child_block(1)--:add_child_block(1)
@@ -92,7 +86,6 @@ function StaticMeshRefinement:initialize_solver()
    fish.setparamd(scheme, 2.0, fish.PLM_THETA)
 
    self.mesh   = mesh
-   self.descr  = descr
    self.scheme = scheme
 end
 
@@ -110,10 +103,7 @@ function StaticMeshRefinement:report_configuration()
       cfg[k:lower()] = val:lower()
    end
 
-   local enum = array.vector(1, 'int')
-   fluids.descr_getfluid(self.descr, enum:pointer())
-
-   cfg['fluid'] = FluidsEnums[enum[0]]:lower()
+   cfg['fluid'] = self.mesh.descr:fluid()
    cfg['resolution'] = self.N
    cfg['CFL'] = self.CFL
 
@@ -126,7 +116,6 @@ end
 
 function StaticMeshRefinement:finalize_solver()
    fish.state_del(self.scheme)
-   fluids.descr_del(self.descr)
 end
 
 function StaticMeshRefinement:initialize_physics()

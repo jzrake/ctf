@@ -24,6 +24,18 @@ function FluidDescriptor:get_ncomp(which)
    return flui.descr_getncomp(self._descr, flui[which:upper()])
 end
 
+function FluidDescriptor:fluid()
+   local E = { }
+   for k,v in pairs(flui) do
+      if type(v) == 'number' then
+	 E[v] = k
+      end
+   end
+   local F = array.vector(1, 'int')
+   flui.descr_getfluid(self._descr, F:buffer())
+   return E[F[0]]:lower()
+end
+
 function Block:__init__(args)
    -- **************************************************************************
    -- args: {table}
@@ -93,18 +105,20 @@ function Block:__tostring__(args)
 			string.sub(tostring(self._block), 11),
                         table.concat(self:size(), ' '), self:level(), self._id)
 end
+
 function Block:__index__(key)
    if type(key) == 'string' then
-      return oo.getattrib(self, key)
+      return ({descr=self._descr})[key] or oo.getattrib(self, key)
    else
       return self:get_child_block(key)
    end
 end
+
 function Block:level()
    --
    -- Return the level depth of the block below root
    --
-   return self._parent and self._parent:level() + 1 or 0
+   return fish.block_level(self._block)
 end
 
 function Block:size()
@@ -355,10 +369,16 @@ local function test2()
    print(mesh:grid_spacing{mode='smallest'})
 end
 
+local function test3()
+   local mesh = Block { size={32} }
+   print(mesh.descr:fluid())
+end
+
 if ... then -- if __name__ == "__main__"
    return {Block=Block}
 else
    test1()
    test2()
+   test3()
    print(debug.getinfo(1).source, ": All tests passed")
 end
