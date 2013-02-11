@@ -109,7 +109,9 @@ end
 
 function Block:__index__(key)
    if type(key) == 'string' then
-      return ({descr=self._descr})[key] or oo.getattrib(self, key)
+      return ( -- These are the class read-only attribute
+	 {descr=self._descr,
+	  primitive=self._primitive})[key] or oo.getattrib(self, key)
    else
       return self:child_block(key)
    end
@@ -407,15 +409,17 @@ local function test4()
    local block1 = mesh:add_child_block(0)
    local block2 = mesh:add_child_block(1)
 
-   block1:map(function(x) return {x+1,1,0,0,0} end)
-   block2:map(function(x) return {x+1,1,0,0,0} end)
-
+   local F = function(x) return {x+1,1,0,0,0} end
+   block1:map(F)
+   block2:map(F)
    block1:project()
    block2:project()
-   --mesh:fill_guard()
 
-   local util = require 'util'
-   --util.plot({all=mesh:table(0)}, {ls='w p', output=nil})
+   local P = mesh.primitive[{{3,-3},{0,1}}]:vector()
+   for i=0,#P-1 do
+      local x = fish.block_positionatindex(mesh._block, 0, i+3)
+      assert(P[i] == F(x)[1])
+   end
 end
 
 if ... then -- if __name__ == "__main__"
