@@ -185,7 +185,6 @@ function TwoStateProblem:solution(t)
    local N = sim.N
    local Ng = sim.Ng
    local dx = sim.dx
-   local p0 = 1e-6
 
    local L = self.state1
    local R = self.state2
@@ -199,8 +198,8 @@ function TwoStateProblem:solution(t)
       Pvec[5*n + 0] = x < 0.5 and L[1] or R[1]
       Pvec[5*n + 1] = x < 0.5 and L[2] or R[2]
       Pvec[5*n + 2] = x < 0.5 and L[3] or R[3]
-      Pvec[5*n + 3] = x < 0.5 and L[3] or R[4]
-      Pvec[5*n + 4] = x < 0.5 and L[4] or R[5]
+      Pvec[5*n + 3] = x < 0.5 and L[4] or R[4]
+      Pvec[5*n + 4] = x < 0.5 and L[5] or R[5]
    end
    return P, G
 end

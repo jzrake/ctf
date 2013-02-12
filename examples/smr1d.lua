@@ -11,6 +11,7 @@ local problems = require 'problems'
 
 
 local densitywave = oo.class('densitywave', problems.TestProblem)
+local ST1 = oo.class('ST1', problems.Shocktube1)
 function densitywave:dynamical_time()
    return 1.0
 end
@@ -19,16 +20,12 @@ function densitywave:finish_time()
 end
 function densitywave:solution(x, y, z, t)
    local sim = self.simulation
-   local N = sim.N
-   local Ng = sim.Ng
-
    local cs = 1.0
    local u0 = cs -- Mach 1 density wave
    local D0 = 1.0
    local D1 = D0 * 1e-1
    local p0 = D0 * cs^2 / 1.4
    local k0 = 2 * math.pi
-
    local P = { }
    P[1] = D0 + D1 * math.cos(k0 * (x - u0 * t))
    P[2] = p0
@@ -38,6 +35,18 @@ function densitywave:solution(x, y, z, t)
    return P
 end
 
+function ST1:solution(x, y, z, t)
+   local sim = self.simulation
+   local L = self.state1
+   local R = self.state2
+   local P = { }
+   P[1] = x < 0.5 and L[1] or R[1]
+   P[2] = x < 0.5 and L[2] or R[2]
+   P[3] = x < 0.5 and L[3] or R[3]
+   P[4] = x < 0.5 and L[4] or R[4]
+   P[5] = x < 0.5 and L[5] or R[5]
+   return P
+end
 
 local FishEnums   = { } -- Register the constants for string lookup later on
 for k,v in pairs(fish) do
@@ -66,14 +75,15 @@ function StaticMeshRefinement:initialize_solver()
    self.Ng = 3
    self.N = opts.resolution or 16
 
+   local BC = self.problem:boundary_conditions():upper()
    local FL = self.problem:fluid():upper()
    local RS = ('riemann_'..(self.user_opts.riemann or 'hllc')):upper()
    local RC = (self.user_opts.reconstruction or 'plm'):upper()
    local ST = (self.user_opts.solver or 'godunov'):upper()
-   local UP = ({single='single',
-		rk2='tvd_rk2',
-		rk3='shuosher_rk3'})[self.user_opts.advance or 'rk3']:upper()
-   local BC = self.problem:boundary_conditions():upper()
+   local UP = ({ single = 'single',
+		 rk2    = 'tvd_rk2',
+		 rk3    = 'shuosher_rk3'
+	       })[self.user_opts.advance or 'rk3']:upper()
 
    local mesh = mesh.Block { size={self.N},
 			     guard=self.Ng }
@@ -252,9 +262,9 @@ function StaticMeshRefinement:user_work_finish()
    end
 
    if self.user_opts.plot then
-      --util.plot({all=all}, {ls='w p', output=nil})
+      util.plot({all=all}, {ls='w p', output=nil})
       --util.plot(levels, {ls='w p', output=nil})
-      util.plot(blocks, {ls='w p', output=nil})
+      --util.plot(blocks, {ls='w p', output=nil})
    end
 end
 
@@ -264,7 +274,7 @@ local opts = {plot=true,
 	      tmax=0.1,
 	      solver='godunov',
 	      reconstruction='weno5',
-	      advance='rk2'}
+	      advance='rk3'}
 local sim = StaticMeshRefinement(opts)
-local problem = densitywave(opts)
+local problem = ST1(opts)--densitywave(opts)
 sim:run(problem)
