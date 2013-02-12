@@ -237,8 +237,12 @@ end
 
 function Block:fill()
    for _,c in pairs(self._children) do
-      if c:has_children() then c:fill() end
-      c:project()
+      if c:has_children() then
+	 c:fill()
+      end
+      if not self:dummy() then
+	 c:project()
+      end
    end
 end
 
@@ -293,13 +297,13 @@ function Block:max_wavespeed()
    --
    local Amax = 0.0
    for b in self:walk() do
-      local A = fish.block_maxwavespeed(self._block)
+      local A = fish.block_maxwavespeed(b._block)
       if A > Amax then Amax = A end
    end
    return Amax
 end
 
-function Block:map(f)
+function Block:map(f, opts)
    --
    -- Map the function f(x,y,z) over the coordinates of the block, filling in
    -- the primitive data values
@@ -354,7 +358,9 @@ end
 
 function Block:walk()
    local function next_block(s)
-      s.id, s.b = s.b:next(s.id)
+      repeat -- skip dummy blocks in walk
+	 s.id, s.b = s.b:next(s.id)
+      until not (s.b and s.b:dummy())
       if not s.first and s.b and s.b:level() == s.level then
 	 return nil
       else
@@ -429,10 +435,18 @@ local function test3()
    assert(not err)
 
    local dummy = Block { size={32,32}, dummy=true }
-   dummy:add_child_block(0, {dummy=true})
-   assert(dummy:dummy())
-   assert(dummy[0]:dummy())
-   assert(not mesh:dummy())
+   dummy      :add_child_block(0, {dummy=true})
+   dummy[0]   :add_child_block(0, {dummy=false})
+   dummy[0][0]:add_child_block(0, {dummy=false})
+   assert      (dummy:dummy())
+   assert(   dummy[0]:dummy())
+   assert(not mesh[0]:dummy())
+
+   local F = function(x) return {x+1,1,0,0,0} end
+   for b in dummy:walk() do
+      b:map(F)
+   end
+   dummy:fill()
 end
 
 local function test4()

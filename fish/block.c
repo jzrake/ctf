@@ -279,6 +279,7 @@ int fish_block_setboundaryblock(fish_block *B, int dim, int LR, fish_block *B1)
 
 int fish_block_level(fish_block *B)
 {
+  CHECK(1, NULL);
   return B->parent ? fish_block_level(B->parent) + 1 : 0;
 }
 
@@ -359,6 +360,7 @@ int fish_block_timederivative(fish_block *B, fish_state *scheme)
   double dx = fish_block_gridspacing(B, 0);
   for (int m=0; m<5*TotalZones; ++m) L[m] = 0.0;
   fish_timederivative(scheme, fluid, 1, &TotalZones, &dx, L);
+
   return 0;
 }
 
@@ -392,6 +394,7 @@ int fish_block_evolve(fish_block *B, double *W, double dt)
     }
     fluids_state_fromcons(fluid[n], U1, FLUIDS_CACHE_DEFAULT);
   }
+
   return 0;
 }
 
@@ -457,12 +460,15 @@ int fish_block_fillguard(fish_block *B)
   double Pl[5], Pr[5], P[5];
 
   if (BL != NULL) { // fill from sibling to the left
+    CHECK(BL->allocated, "block needs an allocated sibling");
     for (int ic=0; ic<Ng; ++ic) {
       fluids_state_copy(B->fluid[ic], BL->fluid[Nx+ic]);
     }
   }
   else { // fill from parent
     CHECK(B->parent, "block needs a parent or explicit boundary block");
+    CHECK(B->parent->allocated, "block needs an allocated parent");
+
     int i0 = B->pstart[0];
 
     for (int ic=0; ic<Ng; ++ic) { // ic labels which guard zone we are filling
@@ -486,12 +492,15 @@ int fish_block_fillguard(fish_block *B)
     }
   }
   if (BR != NULL) { // fill from sibling to the right
+    CHECK(BR->allocated, "block needs an allocated sibling");
     for (int ic=0; ic<Ng; ++ic) {
       fluids_state_copy(B->fluid[Nx+Ng+ic], BR->fluid[Ng+ic]);
     }
   }
   else { // fill from parent
     CHECK(B->parent, "block needs a parent or explicit boundary block");
+    CHECK(B->parent->allocated, "block needs an allocated parent");
+
     int i0 = B->pstart[0] + Nx / 2 + Ng;
 
     for (int ic=0; ic<Ng; ++ic) { // ic labels which guard zone we are filling
@@ -525,7 +534,8 @@ int fish_block_project(fish_block *B)
 {
   CHECK(B->allocated, "block must be allocated");
   CHECK(B->descr, "block needs a fluid descriptor");
-  CHECK(B->parent, "block needs a parent in project onto");
+  CHECK(B->parent, "block needs a parent to project onto");
+  CHECK(B->parent->allocated, "block needs an allocated parent");
 
   int Ng = B->guard;
   int Nx = B->size[0];

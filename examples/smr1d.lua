@@ -80,19 +80,23 @@ function StaticMeshRefinement:initialize_solver()
    local RS = ('riemann_'..(self.user_opts.riemann or 'hllc')):upper()
    local RC = (self.user_opts.reconstruction or 'plm'):upper()
    local ST = (self.user_opts.solver or 'godunov'):upper()
-   local UP = ({ single = 'single',
-		 rk2    = 'tvd_rk2',
-		 rk3    = 'shuosher_rk3'
+   local UP = ({ single  = 'single',
+		 rk2     = 'tvd_rk2',
+		 rk3     = 'shuosher_rk3'
 	       })[self.user_opts.advance or 'rk3']:upper()
 
    local mesh = mesh.Block { size={self.N},
-			     guard=self.Ng }
-   mesh:add_child_block(0):add_child_block(1)
-   mesh:add_child_block(1):add_child_block(0)
+			     guard=self.Ng, dummy=true }
+   mesh:add_child_block(0)--:add_child_block(1)
+   mesh:add_child_block(1)--:add_child_block(0)
 
    -- set manual periodic BC's on level 1 blocks (they cover the grid)
    mesh[0]:set_boundary_block(0, 'L', mesh[1])
    mesh[1]:set_boundary_block(0, 'R', mesh[0])
+
+   -- set manual inflow BC's on level 1 blocks (valid until waves get there)
+   --mesh[0]:set_boundary_block(0, 'L', mesh[0])
+   --mesh[1]:set_boundary_block(0, 'R', mesh[1])
 
    local scheme = fish.state_new()
    fish.setparami(scheme, fluids[RS], fish.RIEMANN_SOLVER)
@@ -108,7 +112,7 @@ end
 
 function StaticMeshRefinement:report_configuration()
    local scheme = self.scheme
-   local enum = array.vector(1, 'long')
+   local enum = array.vector(1, 'int')
    local cfg = { }
    for _,k in pairs{'RIEMANN_SOLVER',
 		    'RECONSTRUCTION',
@@ -262,19 +266,19 @@ function StaticMeshRefinement:user_work_finish()
    end
 
    if self.user_opts.plot then
-      util.plot({all=all}, {ls='w p', output=nil})
+      --util.plot({all=all}, {ls='w p', output=nil})
       --util.plot(levels, {ls='w p', output=nil})
-      --util.plot(blocks, {ls='w p', output=nil})
+      util.plot(blocks, {ls='w p', output=nil})
    end
 end
 
 local opts = {plot=true,
 	      resolution=64,
 	      CFL=0.8,
-	      tmax=0.1,
+	      tmax=0.01,
 	      solver='godunov',
 	      reconstruction='weno5',
-	      advance='rk3'}
+	      advance='single'}
 local sim = StaticMeshRefinement(opts)
-local problem = ST1(opts)--densitywave(opts)
+local problem = densitywave(opts)
 sim:run(problem)

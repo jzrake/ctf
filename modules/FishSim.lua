@@ -63,7 +63,7 @@ end
 
 function FishSimulation:report_configuration()
    local scheme = self.scheme
-   local enum = array.vector(1, 'long')
+   local enum = array.vector(1, 'int')
    local cfg = { }
    for _,k in pairs{'RIEMANN_SOLVER',
 		    'RECONSTRUCTION',
