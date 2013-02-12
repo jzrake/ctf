@@ -44,6 +44,7 @@ function Block:__init__(args)
    --  + guard: number, of guard zones
    --  + parent: block, if nil create new root block
    --  + id: number, needed if parent is given
+   --  + dummy: boolean, false by default: block will not be allocated
    --
    -- **************************************************************************
    local block = fish.block_new()
@@ -64,12 +65,16 @@ function Block:__init__(args)
    end
 
    table.insert(totsize, descr:get_ncomp('primitive'))
-   local primitive = array.array(totsize)
 
-   fish.block_allocate  (block)
-   fish.block_mapbuffer (block, primitive:buffer(), flui.PRIMITIVE)
+   if not args.dummy then
+      local primitive = array.array(totsize)
+      fish.block_allocate  (block)
+      fish.block_mapbuffer (block, primitive:buffer(), flui.PRIMITIVE)
+      self._primitive = primitive
+   else
+      self._primitive = { }
+   end
 
-   self._primitive = primitive
    self._block = block
    self._descr = descr
    self._children = { }
@@ -147,7 +152,11 @@ function Block:guard()
    return fish.block_getguard(self._block)
 end
 
-function Block:add_child_block(id)
+function Block:dummy()
+   return fish.block_allocated(self._block) == 0 and true or false
+end
+
+function Block:add_child_block(id, opts)
    --
    -- Create and return a new child block with index `id`
    --
@@ -157,7 +166,8 @@ function Block:add_child_block(id)
    local child = Block{ size=self:size(),
                         guard=self:guard(),
                         parent=self,
-                        id=id }
+                        id=id,
+			dummy=(opts or { }).dummy }
    return child
 end
 
@@ -406,6 +416,12 @@ local function test3()
    mesh:add_child_block(0)
    local err, msg = pcall(mesh.set_boundary_block, mesh, 0, 'L', mesh[0])
    assert(not err)
+
+   local dummy = Block { size={32,32}, dummy=true }
+   dummy:add_child_block(0, {dummy=true})
+   assert(dummy:dummy())
+   assert(dummy[0]:dummy())
+   assert(not mesh:dummy())
 end
 
 local function test4()

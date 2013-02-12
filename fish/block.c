@@ -540,3 +540,9 @@ int fish_block_project(fish_block *B)
 
   return 0;
 }
+
+int fish_block_allocated(fish_block *B)
+{
+  CHECK(1, NULL);
+  return B->allocated;
+}
