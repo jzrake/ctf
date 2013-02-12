@@ -157,6 +157,7 @@ function StaticMeshRefinement:advance_physics()
 	 block:time_derivative(self.scheme)
 	 block:evolve(W0, dt)
       end
+      self.mesh:fill()
       for block in self.mesh:walk() do
 	 block:fill_guard(block)
       end
@@ -173,6 +174,7 @@ function StaticMeshRefinement:advance_physics()
 	 block:time_derivative(self.scheme)
 	 block:evolve(W0, dt)
       end
+      self.mesh:fill()
       for block in self.mesh:walk() do
 	 block:fill_guard(block)
       end
@@ -181,6 +183,7 @@ function StaticMeshRefinement:advance_physics()
 	 block:time_derivative(self.scheme)
 	 block:evolve(W1, dt)
       end
+      self.mesh:fill()
       for block in self.mesh:walk() do
 	 block:fill_guard(block)
       end
@@ -198,6 +201,7 @@ function StaticMeshRefinement:advance_physics()
 	 block:time_derivative(self.scheme)
 	 block:evolve(W0, dt)
       end
+      self.mesh:fill()
       for block in self.mesh:walk() do
 	 block:fill_guard(block)
       end
@@ -206,6 +210,7 @@ function StaticMeshRefinement:advance_physics()
 	 block:time_derivative(self.scheme)
 	 block:evolve(W1, dt)
       end
+      self.mesh:fill()
       for block in self.mesh:walk() do
 	 block:fill_guard(block)
       end
@@ -214,6 +219,7 @@ function StaticMeshRefinement:advance_physics()
 	 block:time_derivative(self.scheme)
 	 block:evolve(W2, dt)
       end
+      self.mesh:fill()
       for block in self.mesh:walk() do
 	 block:fill_guard(block)
       end
@@ -246,9 +252,9 @@ function StaticMeshRefinement:user_work_finish()
    end
 
    if self.user_opts.plot then
-      util.plot({all=all}, {ls='w p', output=nil})
+      --util.plot({all=all}, {ls='w p', output=nil})
       --util.plot(levels, {ls='w p', output=nil})
-      --util.plot(blocks, {ls='w p', output=nil})
+      util.plot(blocks, {ls='w p', output=nil})
    end
 end
 
