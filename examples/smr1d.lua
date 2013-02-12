@@ -71,7 +71,7 @@ function StaticMeshRefinement:initialize_solver()
    local RC = (self.user_opts.reconstruction or 'plm'):upper()
    local ST = (self.user_opts.solver or 'godunov'):upper()
    local UP = ({single='single',
-		midpoint='midpoint',
+		rk2='tvd_rk2',
 		rk3='shuosher_rk3'})[self.user_opts.advance or 'rk3']:upper()
    local BC = self.problem:boundary_conditions():upper()
 
@@ -147,7 +147,7 @@ function StaticMeshRefinement:advance_physics()
    fish.getparami(self.scheme, enum:buffer(), fish.TIME_UPDATE)
 
    if enum[0] == fish.SINGLE then
-      local W0 = array.vector{ 1.0, 0.0, 1.0 }
+      local W0 = array.vector{ 0.0, 1.0 }
 
       for block in self.mesh:walk() do
 	 block:fill_conserved()
@@ -161,9 +161,9 @@ function StaticMeshRefinement:advance_physics()
 	 block:fill_guard(block)
       end
 
-   elseif enum[0] == fish.MIDPOINT then
-      local W0 = array.vector{ 1.0, 0.0, 0.5 }
-      local W1 = array.vector{ 1.0, 0.0, 1.0 }
+   elseif enum[0] == fish.TVD_RK2 then
+      local W0 = array.vector{ 0.0, 1.0 }
+      local W1 = array.vector{ 0.5, 0.5 }
 
       for block in self.mesh:walk() do
 	 block:fill_conserved()
@@ -186,9 +186,9 @@ function StaticMeshRefinement:advance_physics()
       end
 
    elseif enum[0] == fish.SHUOSHER_RK3 then
-      local W0 = array.vector{ 1.0, 0.0, 1.0 }
-      local W1 = array.vector{ 3/4, 1/4, 1/4 }
-      local W2 = array.vector{ 1/3, 2/3, 2/3 }
+      local W0 = array.vector{ 0.0, 1.0 }
+      local W1 = array.vector{ 3/4, 1/4 }
+      local W2 = array.vector{ 1/3, 2/3 }
 
       for block in self.mesh:walk() do
 	 block:fill_conserved(block)
@@ -255,10 +255,10 @@ end
 local opts = {plot=true,
 	      resolution=64,
 	      CFL=0.8,
-	      tmax=1,
+	      tmax=0.1,
 	      solver='godunov',
 	      reconstruction='weno5',
-	      advance='rk3'}
+	      advance='rk2'}
 local sim = StaticMeshRefinement(opts)
 local problem = densitywave(opts)
 sim:run(problem)

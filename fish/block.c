@@ -363,13 +363,22 @@ int fish_block_timederivative(fish_block *B, fish_state *scheme)
 }
 
 int fish_block_evolve(fish_block *B, double *W, double dt)
+/* -----------------------------------------------------------------------------
+ *
+ * Evolve the fluids states forward a time dt with a low-storage Runge-Kutta
+ * scheme. Use a weighted average of U^n (the conserved quantities at time level
+ * n) and U^{n+1}. U^{n+1} is computed in-place based on the stored time
+ * derivative L. The weight factors W[0] and W[1] must add to one.
+ *
+ * -----------------------------------------------------------------------------
+ */
 {
   CHECK(B->allocated, "block needs to be allocated");
   CHECK(B->descr, "block needs a fluid descriptor");
 
   int Ng = B->guard;
   int Nx = fish_block_getsize(B, 0);
-  double *U = B->temp_conserved;
+  double *U = B->temp_conserved; // U^n
   double *L = B->time_derivative;
   double U1[5];
   fluids_state **fluid = fish_block_getfluid(B);
@@ -377,10 +386,9 @@ int fish_block_evolve(fish_block *B, double *W, double dt)
   for (int n=Ng; n<Nx+Ng; ++n) {
     fluids_state_derive(fluid[n], U1, FLUIDS_CONSERVED);
     for (int q=0; q<5; ++q) {
-      double u1 = U1[q];
-      double u0 = U[5*n + q];
-      double du = L[5*n + q] * dt;
-      U1[q] = W[0]*u0 + W[1]*u1 + W[2]*du;
+      double u0 = U[5*n + q]; // beginning of the time-step
+      double u1 = U1[q] + L[5*n + q] * dt;
+      U1[q] = W[0]*u0 + W[1]*u1;
     }
     fluids_state_fromcons(fluid[n], U1, FLUIDS_CACHE_DEFAULT);
   }

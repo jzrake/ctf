@@ -236,7 +236,7 @@ void solve_poisson(double *Rho, double *Phi, double *Gph, double *rhobar)
     Gph[i] = 0.0;
   }
   *rhobar = 0.0;
-#endif USE_FFTW
+#endif // USE_FFTW
 }
 
 void timederiv_nogrv(double *L)
