@@ -69,6 +69,58 @@ function StaticMeshRefinement:initialize_behavior()
    self.behavior.max_simulation_time = tmax * dynamical_time
 end
 
+
+local function TiledUniformLevelMesh(args)
+   -- **************************************************************************
+   --
+   -- Create a mesh for which only the finest level is active, built from blocks
+   -- of size `N` to depth `level`
+   --
+   -- args: {table}
+   --
+   --  + N: number, size of block
+   --  + Ng: number, guard zones
+   --  + level: number, depth of the grid
+   --  + periodic: boolean, true by default
+   --
+   -- **************************************************************************
+   --
+   local mesh = mesh.Block { size={args.N},
+			     guard=args.guard,
+			     dummy=args.level ~= 0 }
+
+   local function expand_block(b, level)
+      if level == 0 then return end
+      b:add_child_block(0, {dummy=level ~= 1})
+      b:add_child_block(1, {dummy=level ~= 1})
+      expand_block(b[0], level - 1)
+      expand_block(b[1], level - 1)
+   end
+   expand_block(mesh, args.level)
+
+   local left_most, right_most
+
+   for b in mesh:walk() do
+      if not b:neighbor_block(0, 'L') then
+	 left_most = b
+      end
+      if not b:neighbor_block(0, 'R') then
+	 right_most = b
+      end
+   end
+
+   if not args.periodic then
+      left_most :set_boundary_block(0, 'L', left_most)
+      right_most:set_boundary_block(0, 'R', right_most)
+   else
+      left_most :set_boundary_block(0, 'L', right_most)
+      right_most:set_boundary_block(0, 'R', left_most)
+   end
+
+   return mesh
+end
+
+
 function StaticMeshRefinement:initialize_solver()
    local opts = self.user_opts
    self.CFL = opts.CFL or 0.8
@@ -85,19 +137,10 @@ function StaticMeshRefinement:initialize_solver()
 		 rk3     = 'shuosher_rk3'
 	       })[self.user_opts.advance or 'rk3']:upper()
 
-   local mesh = mesh.Block { size={self.N},
-			     guard=self.Ng, dummy=true }
-   mesh:add_child_block(0)--:add_child_block(1)
-   mesh:add_child_block(1)--:add_child_block(0)
-
-   -- set manual periodic BC's on level 1 blocks (they cover the grid)
-   mesh[0]:set_boundary_block(0, 'L', mesh[1])
-   mesh[1]:set_boundary_block(0, 'R', mesh[0])
-
-   -- set manual inflow BC's on level 1 blocks (valid until waves get there)
-   --mesh[0]:set_boundary_block(0, 'L', mesh[0])
-   --mesh[1]:set_boundary_block(0, 'R', mesh[1])
-
+   local mesh = TiledUniformLevelMesh{ N=self.N,
+				       level=3,
+				       guard=self.Ng,
+				       periodic=false }
    local scheme = fish.state_new()
    fish.setparami(scheme, fluids[RS], fish.RIEMANN_SOLVER)
    fish.setparami(scheme, fish[RC], fish.RECONSTRUCTION)
@@ -275,10 +318,11 @@ end
 local opts = {plot=true,
 	      resolution=64,
 	      CFL=0.8,
-	      tmax=0.01,
-	      solver='godunov',
+	      tmax=0.1,
+	      solver='spectral',
 	      reconstruction='weno5',
-	      advance='single'}
+	      advance='rk3'}
 local sim = StaticMeshRefinement(opts)
-local problem = densitywave(opts)
+local problem = ST1(opts)
 sim:run(problem)
+

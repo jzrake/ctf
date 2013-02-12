@@ -267,7 +267,7 @@ function Block:grid_spacing(opts)
 end
 
 function Block:total_states(opts)
--- **************************************************************************
+   -- **************************************************************************
    -- Return the total number of interior zones on this block
    --
    -- opts: {table} (optional)
@@ -276,7 +276,6 @@ function Block:total_states(opts)
    --  + recurse: boolean (false), accumulate size over descendant blocks
    --
    -- **************************************************************************
-   --
    local opts = opts or { }
    local mode = (opts.mode or 'including_guard'):upper()
    local recurse = opts.recurse or false
@@ -356,11 +355,16 @@ function Block:next(id)
    end
 end
 
-function Block:walk()
+function Block:walk(opts)
+   --
+   -- Return an iterator to traverse the tree of blocks depth-first. Unless
+   -- opts.include_dummy == true, inactive (dummy) blocks are skipped.
+   --
+   local opts = opts or { }
    local function next_block(s)
       repeat -- skip dummy blocks in walk
 	 s.id, s.b = s.b:next(s.id)
-      until not (s.b and s.b:dummy())
+      until opts.include_dummy or not (s.b and s.b:dummy())
       if not s.first and s.b and s.b:level() == s.level then
 	 return nil
       else
