@@ -178,6 +178,10 @@ function Block:child_block(id)
    return self._children[id]
 end
 
+function Block:has_children()
+   return next(self._children) and true or false
+end
+
 function Block:neighbor_block(dim, dir)
    -- **************************************************************************
    -- args:
@@ -219,16 +223,23 @@ function Block:fill_guard()
    fish.block_fillguard(self._block)
 end
 
-function Block:project()
-   fish.block_project(self._block)
-end
-
 function Block:evolve(W, dt)
    fish.block_evolve(self._block, W:buffer(), dt)
 end
 
 function Block:time_derivative(scheme)
    fish.block_timederivative(self._block, scheme)
+end
+
+function Block:project()
+   fish.block_project(self._block)
+end
+
+function Block:fill()
+   for _,c in pairs(self._children) do
+      if c:has_children() then c:fill() end
+      c:project()
+   end
 end
 
 function Block:grid_spacing(opts)
@@ -432,8 +443,12 @@ local function test4()
    local F = function(x) return {x+1,1,0,0,0} end
    block1:map(F)
    block2:map(F)
-   block1:project()
-   block2:project()
+   assert(mesh:has_children())
+   assert(not block1:has_children())
+
+   mesh:fill()
+   --block1:project()
+   --block2:project()
 
    local P = mesh.primitive[{{3,-3},{0,1}}]:vector()
    for i=0,#P-1 do
