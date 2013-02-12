@@ -140,7 +140,11 @@ function StaticMeshRefinement:initialize_solver()
    local mesh = TiledUniformLevelMesh{ N=self.N,
 				       level=3,
 				       guard=self.Ng,
-				       periodic=false }
+				       periodic=true }
+
+   mesh[0][1][0]:add_child_block(0):add_child_block(0)
+   mesh[0][1][1]:add_child_block(1):add_child_block(1)
+
    local scheme = fish.state_new()
    fish.setparami(scheme, fluids[RS], fish.RIEMANN_SOLVER)
    fish.setparami(scheme, fish[RC], fish.RECONSTRUCTION)
@@ -310,19 +314,20 @@ function StaticMeshRefinement:user_work_finish()
 
    if self.user_opts.plot then
       --util.plot({all=all}, {ls='w p', output=nil})
-      --util.plot(levels, {ls='w p', output=nil})
-      util.plot(blocks, {ls='w p', output=nil})
+      util.plot(levels, {ls='w p', output=nil})
+      --util.plot(blocks, {ls='w p', output=nil})
    end
 end
 
 local opts = {plot=true,
-	      resolution=64,
+	      resolution=16,
 	      CFL=0.8,
 	      tmax=0.1,
 	      solver='spectral',
 	      reconstruction='weno5',
 	      advance='rk3'}
-local sim = StaticMeshRefinement(opts)
-local problem = ST1(opts)
-sim:run(problem)
 
+local sim = StaticMeshRefinement(opts)
+--local problem = ST1(opts)
+local problem = densitywave(opts)
+sim:run(problem)
