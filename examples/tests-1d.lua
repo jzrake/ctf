@@ -7,12 +7,33 @@ local util     = require 'util'
 local oo       = require 'class'
 local sim      = require 'simulation'
 local array    = require 'array'
+local hdf5     = require 'lua-hdf5.LuaHDF5'
 
 local MyBase = oo.class('MyBase', sim.SimulationBase)
 local MyMara = oo.class('MyMara', MaraSim.MaraSimulation)
 local MyFish = oo.class('MyFish', FishSim.FishSimulation)
 
 local function build_mysim(cls)
+
+   function cls:_map_solution(t)
+      local N  = self.N
+      local Ng = self.Ng
+      local dx = self.dx
+
+      local P = array.array{N + 2*Ng, 5}
+      local Pvec = P:vector()
+
+      for n=0,#Pvec/5-1 do
+         local x  = (n - Ng) * dx
+         local Pi = self.problem:solution(x,0,0,t)
+         Pvec[5*n + 0] = Pi[1]
+         Pvec[5*n + 1] = Pi[2]
+         Pvec[5*n + 2] = Pi[3]
+         Pvec[5*n + 3] = Pi[4]
+         Pvec[5*n + 4] = Pi[5]
+      end
+      return P
+   end
 
    function cls:initialize_behavior()
       local opts = self.user_opts
@@ -29,36 +50,27 @@ local function build_mysim(cls)
 	 print('warning! Could not write checkpoint, HDF5 not available')
 	 return
       end
+
       local n = self.status.checkpoint_number
       local t = self.status.simulation_time
       local Ng = self.Ng
+
+      local Pexact = self:_map_solution(t)
+
       local fname = string.format('data/chkpt.%04d.h5', n)
       local outfile = hdf5.File(fname, 'w')
       outfile['prim' ] = self.Primitive[{{Ng,-Ng},nil}]
       outfile['grav' ] = self.Gravity  [{{Ng,-Ng},nil}]
+      outfile['exact'] = Pexact        [{{Ng,-Ng},nil}]
       outfile:close()
    end
 
    function cls:user_work_finish()
       local t  = self.status.simulation_time
       local P  = self.Primitive
-      local N  = self.N
       local Ng = self.Ng
-      local dx = self.dx
 
-      local Pexact = array.array{N + 2*Ng, 5}
-      local Pvec = Pexact:vector()
-
-      for n=0,#Pvec/5-1 do
-         local x  = (n - Ng) * dx
-         local Pi = self.problem:solution(x,0,0,t)
-         Pvec[5*n + 0] = Pi[1]
-         Pvec[5*n + 1] = Pi[2]
-         Pvec[5*n + 2] = Pi[3]
-         Pvec[5*n + 3] = Pi[4]
-         Pvec[5*n + 4] = Pi[5]
-      end
-
+      local Pexact = self:_map_solution(t)
       local dx = self.dx
       local P0 = Pexact[{{Ng,-Ng},nil}]:vector()
       local P1 = P     [{{Ng,-Ng},nil}]:vector()
@@ -156,7 +168,7 @@ local function main()
       util.pretty_print(ErrorTable)
       print("estimated convergence rate is",
 	    math.log10(ErrorTable[128]/ErrorTable[64]) / math.log10(128/64))
-      util.plot({['L1 error']=ErrorTable}, {'set logscale'})
+      util.plot({['L1 error']=ErrorTable}, {cmds={'set logscale'}})
    else
       local sim = sim_class(opts)
       local problem = problem_class(opts)
