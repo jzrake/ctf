@@ -10,44 +10,6 @@ local mesh     = require 'mesh'
 local problems = require 'problems'
 
 
-local densitywave = oo.class('densitywave', problems.TestProblem)
-local ST1 = oo.class('ST1', problems.Shocktube1)
-function densitywave:dynamical_time()
-   return 1.0
-end
-function densitywave:finish_time()
-   return 1.0
-end
-function densitywave:solution(x, y, z, t)
-   local sim = self.simulation
-   local cs = 1.0
-   local u0 = cs -- Mach 1 density wave
-   local D0 = 1.0
-   local D1 = D0 * 1e-1
-   local p0 = D0 * cs^2 / 1.4
-   local k0 = 2 * math.pi
-   local P = { }
-   P[1] = D0 + D1 * math.cos(k0 * (x - u0 * t))
-   P[2] = p0
-   P[3] = u0
-   P[4] = 0.0
-   P[5] = 0.0
-   return P
-end
-
-function ST1:solution(x, y, z, t)
-   local sim = self.simulation
-   local L = self.state1
-   local R = self.state2
-   local P = { }
-   P[1] = x < 0.5 and L[1] or R[1]
-   P[2] = x < 0.5 and L[2] or R[2]
-   P[3] = x < 0.5 and L[3] or R[3]
-   P[4] = x < 0.5 and L[4] or R[4]
-   P[5] = x < 0.5 and L[5] or R[5]
-   return P
-end
-
 local FishEnums   = { } -- Register the constants for string lookup later on
 for k,v in pairs(fish) do
    if type(v)=='number' then FishEnums[v]=k end
@@ -81,7 +43,7 @@ local function TiledUniformLevelMesh(args)
    --  + N: number, size of block
    --  + Ng: number, guard zones
    --  + level: number, depth of the grid
-   --  + periodic: boolean, true by default
+   --  + bc: string (boundary conditions), only periodic and outflow so far
    --
    -- **************************************************************************
    --
@@ -109,12 +71,14 @@ local function TiledUniformLevelMesh(args)
       end
    end
 
-   if not args.periodic then
+   if args.bc == 'outflow' then
       left_most :set_boundary_block(0, 'L', left_most)
       right_most:set_boundary_block(0, 'R', right_most)
-   else
+   elseif args.bc == 'periodic' then
       left_most :set_boundary_block(0, 'L', right_most)
       right_most:set_boundary_block(0, 'R', left_most)
+   else
+      error("must give bc='periodic or bc='outflow', got "..tostring(bc))
    end
 
    return mesh
@@ -140,10 +104,7 @@ function StaticMeshRefinement:initialize_solver()
    local mesh = TiledUniformLevelMesh{ N=self.N,
 				       level=3,
 				       guard=self.Ng,
-				       periodic=true }
-
-   mesh[0][1][0]:add_child_block(0):add_child_block(0)
-   mesh[0][1][1]:add_child_block(1):add_child_block(1)
+				       bc=self.problem.boundary_conditions() }
 
    local scheme = fish.state_new()
    fish.setparami(scheme, fluids[RS], fish.RIEMANN_SOLVER)
@@ -320,7 +281,7 @@ function StaticMeshRefinement:user_work_finish()
 end
 
 local opts = {plot=true,
-	      resolution=16,
+	      resolution=32,
 	      CFL=0.8,
 	      tmax=0.1,
 	      solver='spectral',
@@ -328,6 +289,6 @@ local opts = {plot=true,
 	      advance='rk3'}
 
 local sim = StaticMeshRefinement(opts)
---local problem = ST1(opts)
-local problem = densitywave(opts)
+local problem = problems.densitywave(opts)
+--local problem = problems.Shocktube1(opts)
 sim:run(problem)
