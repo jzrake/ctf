@@ -57,6 +57,8 @@ local function build_mysim(cls)
 
       local Pexact = self:_map_solution(t)
 
+      os.execute('mkdir -p data')
+
       local fname = string.format('data/chkpt.%04d.h5', n)
       local outfile = hdf5.File(fname, 'w')
       outfile['prim' ] = self.Primitive[{{Ng,-Ng},nil}]
