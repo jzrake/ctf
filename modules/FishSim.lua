@@ -7,16 +7,6 @@ local fluids   = require 'fluids'
 local hdf5     = require 'lua-hdf5.LuaHDF5'
 local util     = require 'util'
 
-
-local FishEnums   = { } -- Register the constants for string lookup later on
-for k,v in pairs(fish) do
-   if type(v)=='number' then FishEnums[v]=k end
-end
-local FluidsEnums = { }
-for k,v in pairs(fluids) do
-   if type(v)=='number' then FluidsEnums[v]=k end
-end
-
 local FishSimulation = oo.class('FishSimulation', sim.SimulationBase)
 
 function FishSimulation:initialize_solver()
@@ -58,18 +48,25 @@ function FishSimulation:report_configuration()
    local scheme = self.scheme
    local enum = array.vector(1, 'int')
    local cfg = { }
+
+   local FishEnums   = { } -- Register the constants for string lookup later on
+   for k,v in pairs(fish) do
+      if type(v)=='number' then FishEnums[v]=k end
+   end
+   local FluidsEnums = { }
+   for k,v in pairs(fluids) do
+      if type(v)=='number' then FluidsEnums[v]=k end
+   end
+
    for _,k in pairs{'RIEMANN_SOLVER',
 		    'RECONSTRUCTION',
 		    'SOLVER_TYPE',
 		    'BOUNDARY_CONDITIONS',
 		    'TIME_UPDATE'} do
-      fish.getparami(scheme, enum:pointer(), fish[k])
+      fish.getparami(scheme, enum:buffer(), fish[k])
       local val = FishEnums[enum[0]] or FluidsEnums[enum[0]]
       cfg[k:lower()] = val:lower()
    end
-
-   local enum = array.vector(1, 'int')
-   fluids.descr_getfluid(self.descr, enum:pointer())
 
    cfg['fluid'] = FluidsEnums[enum[0]]:lower()
    cfg['resolution'] = self.N

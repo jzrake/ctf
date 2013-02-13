@@ -10,28 +10,6 @@ local mesh     = require 'mesh'
 local problems = require 'problems'
 
 
-local FishEnums   = { } -- Register the constants for string lookup later on
-for k,v in pairs(fish) do
-   if type(v)=='number' then FishEnums[v]=k end
-end
-local FluidsEnums = { }
-for k,v in pairs(fluids) do
-   if type(v)=='number' then FluidsEnums[v]=k end
-end
-
-local StaticMeshRefinement = oo.class('StaticMeshRefinement', sim.SimulationBase)
-      
-function StaticMeshRefinement:initialize_behavior()
-   local opts = self.user_opts
-   local cpi = opts.cpi or 1.0
-   local tmax = opts.tmax or self.problem:finish_time()
-   local dynamical_time = self.problem:dynamical_time()
-   self.behavior.message_cadence = opts.message_cadence or 1
-   self.behavior.checkpoint_cadence = cpi * dynamical_time
-   self.behavior.max_simulation_time = tmax * dynamical_time
-end
-
-
 local function TiledUniformLevelMesh(args)
    -- **************************************************************************
    --
@@ -43,7 +21,7 @@ local function TiledUniformLevelMesh(args)
    --  + N: number, size of block
    --  + Ng: number, guard zones
    --  + level: number, depth of the grid
-   --  + bc: string (boundary conditions), only periodic and outflow so far
+   --  + bc: string (boundary conditions), ['periodic', 'outflow']
    --
    -- **************************************************************************
    --
@@ -85,6 +63,18 @@ local function TiledUniformLevelMesh(args)
 end
 
 
+local StaticMeshRefinement = oo.class('StaticMeshRefinement', sim.SimulationBase)
+
+function StaticMeshRefinement:initialize_behavior()
+   local opts = self.user_opts
+   local cpi = opts.cpi or 1.0
+   local tmax = opts.tmax or self.problem:finish_time()
+   local dynamical_time = self.problem:dynamical_time()
+   self.behavior.message_cadence = opts.message_cadence or 1
+   self.behavior.checkpoint_cadence = cpi * dynamical_time
+   self.behavior.max_simulation_time = tmax * dynamical_time
+end
+
 function StaticMeshRefinement:initialize_solver()
    local opts = self.user_opts
    self.CFL = opts.CFL or 0.8
@@ -101,11 +91,6 @@ function StaticMeshRefinement:initialize_solver()
 		 rk3     = 'shuosher_rk3'
 	       })[self.user_opts.advance or 'rk3']:upper()
 
-   local mesh = TiledUniformLevelMesh{ N=self.N,
-				       level=3,
-				       guard=self.Ng,
-				       bc=self.problem.boundary_conditions() }
-
    local scheme = fish.state_new()
    fish.setparami(scheme, fluids[RS], fish.RIEMANN_SOLVER)
    fish.setparami(scheme, fish[RC], fish.RECONSTRUCTION)
@@ -113,6 +98,11 @@ function StaticMeshRefinement:initialize_solver()
    fish.setparami(scheme, fish[BC], fish.BOUNDARY_CONDITIONS)
    fish.setparami(scheme, fish[UP], fish.TIME_UPDATE)
    fish.setparamd(scheme, 2.0, fish.PLM_THETA)
+
+   local mesh = TiledUniformLevelMesh{ N=self.N,
+				       level=3,
+				       guard=self.Ng,
+				       bc=self.problem.boundary_conditions() }
 
    self.mesh   = mesh
    self.scheme = scheme
@@ -122,6 +112,16 @@ function StaticMeshRefinement:report_configuration()
    local scheme = self.scheme
    local enum = array.vector(1, 'int')
    local cfg = { }
+
+   local FishEnums   = { } -- Register the constants for string lookup later on
+   for k,v in pairs(fish) do
+      if type(v)=='number' then FishEnums[v]=k end
+   end
+   local FluidsEnums = { }
+   for k,v in pairs(fluids) do
+      if type(v)=='number' then FluidsEnums[v]=k end
+   end
+
    for _,k in pairs{'RIEMANN_SOLVER',
 		    'RECONSTRUCTION',
 		    'SOLVER_TYPE',
@@ -168,83 +168,33 @@ function StaticMeshRefinement:advance_physics()
    local enum = array.vector(1, 'int')
    fish.getparami(self.scheme, enum:buffer(), fish.TIME_UPDATE)
 
-   if enum[0] == fish.SINGLE then
-      local W0 = array.vector{ 0.0, 1.0 }
-
-      for block in self.mesh:walk() do
-	 block:fill_conserved()
-      end
-      -- ****************************** Step 1 ****************************** --
+   local function step(w0, w1)
+      local W = array.vector{ w0, w1 }
       for block in self.mesh:walk() do
 	 block:time_derivative(self.scheme)
-	 block:evolve(W0, dt)
+	 block:evolve(W, dt)
       end
       self.mesh:fill()
       for block in self.mesh:walk() do
 	 block:fill_guard(block)
       end
+   end
+
+   for block in self.mesh:walk() do
+      block:fill_conserved()
+   end
+
+   if enum[0] == fish.SINGLE then
+      step(0.0, 1.0)
 
    elseif enum[0] == fish.TVD_RK2 then
-      local W0 = array.vector{ 0.0, 1.0 }
-      local W1 = array.vector{ 0.5, 0.5 }
-
-      for block in self.mesh:walk() do
-	 block:fill_conserved()
-      end
-      -- ****************************** Step 1 ****************************** --
-      for block in self.mesh:walk() do
-	 block:time_derivative(self.scheme)
-	 block:evolve(W0, dt)
-      end
-      self.mesh:fill()
-      for block in self.mesh:walk() do
-	 block:fill_guard(block)
-      end
-      -- ****************************** Step 2 ****************************** --
-      for block in self.mesh:walk() do
-	 block:time_derivative(self.scheme)
-	 block:evolve(W1, dt)
-      end
-      self.mesh:fill()
-      for block in self.mesh:walk() do
-	 block:fill_guard(block)
-      end
+      step(0.0, 1.0)
+      step(0.5, 0.5)
 
    elseif enum[0] == fish.SHUOSHER_RK3 then
-      local W0 = array.vector{ 0.0, 1.0 }
-      local W1 = array.vector{ 3/4, 1/4 }
-      local W2 = array.vector{ 1/3, 2/3 }
-
-      for block in self.mesh:walk() do
-	 block:fill_conserved(block)
-      end
-      -- ****************************** Step 1 ****************************** --
-      for block in self.mesh:walk() do
-	 block:time_derivative(self.scheme)
-	 block:evolve(W0, dt)
-      end
-      self.mesh:fill()
-      for block in self.mesh:walk() do
-	 block:fill_guard(block)
-      end
-      -- ****************************** Step 2 ****************************** --
-      for block in self.mesh:walk() do
-	 block:time_derivative(self.scheme)
-	 block:evolve(W1, dt)
-      end
-      self.mesh:fill()
-      for block in self.mesh:walk() do
-	 block:fill_guard(block)
-      end
-      -- ****************************** Step 3 ****************************** --
-      for block in self.mesh:walk() do
-	 block:time_derivative(self.scheme)
-	 block:evolve(W2, dt)
-      end
-      self.mesh:fill()
-      for block in self.mesh:walk() do
-	 block:fill_guard(block)
-      end
+      step(0.0, 1.0)
+      step(3/4, 1/4)
+      step(1/3, 2/3)
    end
 end
 
