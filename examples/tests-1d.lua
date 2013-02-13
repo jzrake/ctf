@@ -25,6 +25,10 @@ local function build_mysim(cls)
    end
 
    function cls:checkpoint_write()
+      if not hdf5.File then
+	 print('warning! Could not write checkpoint, HDF5 not available')
+	 return
+      end
       local n = self.status.checkpoint_number
       local t = self.status.simulation_time
       local Ng = self.Ng

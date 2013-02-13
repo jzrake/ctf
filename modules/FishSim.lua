@@ -68,6 +68,7 @@ function FishSimulation:report_configuration()
       cfg[k:lower()] = val:lower()
    end
 
+   fluids.descr_getfluid(self.descr, enum:buffer())
    cfg['fluid'] = FluidsEnums[enum[0]]:lower()
    cfg['resolution'] = self.N
    cfg['CFL'] = self.CFL

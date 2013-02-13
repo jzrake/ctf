@@ -1,8 +1,9 @@
 
-local oo    = require 'class'
-local array = require 'array'
+local oo       = require 'class'
+local array    = require 'array'
+local FishCls  = require 'FishClasses'
 
-local TestProblem = oo.class('TestProblem')
+local TestProblem     = oo.class('TestProblem')
 local TwoStateProblem = oo.class('TwoStateProblem', TestProblem)
 
 local problems = {
@@ -35,7 +36,7 @@ function TestProblem:finish_time() return 1.0 end
 function TestProblem:user_work_iteration() end
 function TestProblem:user_work_finish() end
 function TestProblem:boundary_conditions() return 'periodic' end
-function TestProblem:fluid() return 'nrhyd' end
+function TestProblem:fluid() return self._fluid or 'nrhyd' end
 
 
 function problems.soundwave:fluid()
@@ -161,6 +162,11 @@ function TwoStateProblem:finish_time()
 end
 
 function TwoStateProblem:solution(x,y,z,t)
+
+   if t > 0.0 then
+      return self:_exact_solution(x,y,z,t)
+   end
+
    local L = self.state1
    local R = self.state2
    local P = { }
@@ -174,15 +180,42 @@ function TwoStateProblem:solution(x,y,z,t)
    return P
 end
 
+function TwoStateProblem:_exact_solution(x,y,z,t)
+   --
+   -- Return the exact solution to the Riemann problem defined by state1 and
+   -- state2. Assumes gamma=1.4, and only works when fluid='nrhyd'.
+   --
+   if self:fluid() ~= 'nrhyd' then
+      -- Exact solution to Riemann problem only available for fluid='nrhyd'.
+      return {0,0,0,0,0}
+   end
+
+   local D = FishCls.FluidDescriptor{gamma=1.4, fluid='nrhyd'}
+   local R = FishCls.RiemannSolver()
+   local SL = FishCls.FluidState(D)
+   local SR = FishCls.FluidState(D)
+
+   for i=1,5 do
+      SL.primitive[i-1] = self.state1[i]
+      SR.primitive[i-1] = self.state2[i]
+   end
+
+   return R:solve(SL, SR, (x-0.5)/t):table()
+end
+
 problems.Shocktube1.problem_finish_time = 0.20
 problems.Shocktube2.problem_finish_time = 0.05
 problems.Shocktube3.problem_finish_time = 0.01
 problems.Shocktube4.problem_finish_time = 0.02
 problems.Shocktube5.problem_finish_time = 0.02
 problems.ContactWave.problem_finish_time = 1.0
-problems.SrhdCase1DFIM98.problem_finish_time = 1.0
-problems.SrhdCase2DFIM98.problem_finish_time = 1.0
-problems.SrhdHardTransverseRAM.problem_finish_time = 1.0
+problems.SrhdCase1DFIM98.problem_finish_time = 0.1
+problems.SrhdCase2DFIM98.problem_finish_time = 0.1
+problems.SrhdHardTransverseRAM.problem_finish_time = 0.01
+
+problems.SrhdCase1DFIM98._fluid = 'srhyd'
+problems.SrhdCase2DFIM98._fluid = 'srhyd'
+problems.SrhdHardTransverseRAM._fluid = 'srhyd'
 
 problems.Shocktube1.state1 = {1.000, 1.000, 0.000, 0.0, 0.0}
 problems.Shocktube1.state2 = {0.125, 0.100, 0.000, 0.0, 0.0}

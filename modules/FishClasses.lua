@@ -84,6 +84,7 @@ local function test1()
    SL.primitive[1] = 1.0
    SR.primitive[0] = 0.125
    SR.primitive[1] = 0.1
+
    local soln = R:solve(SL, SR, 0.0)
    local real = array.vector{0.42631942817850,
 			     0.30313017805065,
