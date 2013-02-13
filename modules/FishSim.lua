@@ -9,22 +9,15 @@ local util     = require 'util'
 
 
 local FishEnums   = { } -- Register the constants for string lookup later on
+for k,v in pairs(fish) do
+   if type(v)=='number' then FishEnums[v]=k end
+end
 local FluidsEnums = { }
-for k,v in pairs(fluids) do if type(v)=='number' then FluidsEnums[v]=k end end
-for k,v in pairs(fish)   do if type(v)=='number' then   FishEnums[v]=k end end
-
+for k,v in pairs(fluids) do
+   if type(v)=='number' then FluidsEnums[v]=k end
+end
 
 local FishSimulation = oo.class('FishSimulation', sim.SimulationBase)
-
-function FishSimulation:initialize_behavior()
-   local opts = self.user_opts
-   local cpi = opts.cpi or 1.0
-   local tmax = opts.tmax or self.problem:finish_time()
-   local dynamical_time = self.problem:dynamical_time()
-   self.behavior.message_cadence = opts.message_cadence or 10
-   self.behavior.checkpoint_cadence = tonumber(cpi)
-   self.behavior.max_simulation_time = tonumber(tmax)
-end
 
 function FishSimulation:initialize_solver()
    local opts = self.user_opts
@@ -63,7 +56,7 @@ end
 
 function FishSimulation:report_configuration()
    local scheme = self.scheme
-   local enum = array.vector(1, 'long')
+   local enum = array.vector(1, 'int')
    local cfg = { }
    for _,k in pairs{'RIEMANN_SOLVER',
 		    'RECONSTRUCTION',
@@ -91,12 +84,29 @@ end
 
 function FishSimulation:finalize_solver()
    fish.grav1d_finalize()
-   fish.del(self.scheme)
+   fish.state_del(self.scheme)
    fluids.descr_del(self.descr)
 end
 
 function FishSimulation:initialize_physics()
-   local P, G = self.problem:solution(0.0)
+   local N  = self.N
+   local Ng = self.Ng
+   local dx = self.dx
+
+   local P = array.array{N + 2*Ng, 5}
+   local G = array.array{N + 2*Ng, 4}
+   local Pvec = P:vector()
+
+   for n=0,#Pvec/5-1 do
+      local x  = (n - Ng) * dx
+      local Pi = self.problem:solution(x,0,0,0)
+      Pvec[5*n + 0] = Pi[1]
+      Pvec[5*n + 1] = Pi[2]
+      Pvec[5*n + 2] = Pi[3]
+      Pvec[5*n + 3] = Pi[4]
+      Pvec[5*n + 4] = Pi[5]
+   end
+
    fish.grav1d_mapbuffer(P:buffer(), fluids.PRIMITIVE)
    fish.grav1d_mapbuffer(G:buffer(), fluids.GRAVITY)
    self.Primitive = P
@@ -113,58 +123,12 @@ function FishSimulation:advance_physics()
    fish.grav1d_advance(self.status.time_increment)
 end
 
-function FishSimulation:checkpoint_write()
-   local n = self.status.checkpoint_number
-   local t = self.status.simulation_time
-   local Ng = self.Ng
-   local fname = string.format('data/chkpt.%04d.h5', n)
-   local outfile = hdf5.File(fname, 'w')
-   outfile['prim' ] = self.Primitive          [{{Ng,-Ng},nil}]
-   outfile['grav' ] = self.Gravity            [{{Ng,-Ng},nil}]
-   outfile['exact'] = self.problem:solution(t)[{{Ng,-Ng},nil}]
-   outfile:close()
-end
-
 function FishSimulation:local_mesh_size()
    return self.N
 end
 
 function FishSimulation:user_work_iteration()
    self.problem:user_work_iteration()
-end
-
-function FishSimulation:user_work_finish()
-   local t = self.status.simulation_time
-   local Ng = self.Ng
-   local P = self.Primitive
-   local Pexact = self.problem:solution(t)
-   local dx = self.dx
-   local P0 = Pexact[{{Ng,-Ng},nil}]:vector()
-   local P1 = P     [{{Ng,-Ng},nil}]:vector()
-   local L1 = 0.0
-   for i=0,#P0/5-1,5 do
-      L1 = L1 + math.abs(P1[i] - P0[i]) * dx
-   end
-   self.L1error = L1
-   if self.user_opts.plot then
-      util.plot{['code' ]=P     [{{Ng,-Ng},{0,1}}]:table(),
-		['exact']=Pexact[{{Ng,-Ng},{0,1}}]:table()}
-   end
-   if self.user_opts.output then
-      local f = io.open(self.user_opts.output, 'w')
-      local P0 = P[{{Ng,-Ng},{0,1}}]:table()
-      local P1 = P[{{Ng,-Ng},{1,2}}]:table()
-      local P2 = P[{{Ng,-Ng},{2,3}}]:table()
-      local P3 = P[{{Ng,-Ng},{3,4}}]:table()
-      local P4 = P[{{Ng,-Ng},{4,5}}]:table()
-      for i=1, self.N do
-	 local line = string.format(
-	    "%d %+12.8e %+12.8e %+12.8e %+12.8e %+12.8e\n",
-	    i, P0[i], P1[i], P2[i], P3[i], P4[i])
-	 f:write(line)
-      end
-      f:close()
-   end
 end
 
 return {FishSimulation=FishSimulation}

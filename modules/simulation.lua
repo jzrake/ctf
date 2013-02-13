@@ -85,7 +85,7 @@ function SimulationBase:__init__(user_opts)
 		     checkpoint_cadence   = 1.0, -- in simulation time
 		     message_cadence      = 1 }  -- in iterations
    self.profiler = { }
-   self.user_opts = user_opts
+   self.user_opts = user_opts or { }
 end
 function SimulationBase:time(func_name, ...)
    local start = os.clock()

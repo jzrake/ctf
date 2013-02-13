@@ -26,7 +26,7 @@ local problems = {
 }
 
 function TestProblem:__init__(user_opts)
-   self.user_opts = user_opts
+   self.user_opts = user_opts or { }
    self:initialize_problem()
 end
 function TestProblem:initialize_problem() end
@@ -41,6 +41,7 @@ function TestProblem:fluid() return 'nrhyd' end
 function problems.soundwave:fluid()
    return self.user_opts.self_gravity and 'gravs' or 'nrhyd'
 end
+
 function problems.soundwave:initialize_problem()
    self.DomainLength = 1.0
    self.BackgroundDensity = 1.0
@@ -53,27 +54,17 @@ function problems.soundwave:initialize_problem()
       self.FourPiG * self.BackgroundDensity)^0.5
    --print("problems.soundwave: the Jeans length is "..self.JeansLength)
 end
+
 function problems.soundwave:dynamical_time()
    return self.SoundCrossingTime
 end
+
 function problems.soundwave:finish_time()
    return self.SoundCrossingTime
 end
-function problems.soundwave:initial_condition()
-   return self:solution(0.0)
-end
-function problems.soundwave:solution(t)
 
-   local sim = self.simulation
+function problems.soundwave:solution(x,y,z,t)
    local grav = self.user_opts.self_gravity
-   local N = sim.N
-   local Ng = sim.Ng
-   local dx = sim.dx
-
-   local P = array.array{N + 2*Ng, 5}
-   local G = array.array{N + 2*Ng, 4}
-   local Pvec = P:vector()
-
    local cs = self.SoundSpeed
    local D0 = self.BackgroundDensity
    local D1 = D0 * 1e-6
@@ -83,74 +74,61 @@ function problems.soundwave:solution(t)
    local u1 = cs * D1 / D0
    local k0 = self.WaveNumber
    local w0 = grav and ((cs * k0)^2 - self.FourPiG * D0)^0.5 or cs * k0
+   local P = { }
 
-   for n=0,#Pvec/5-1 do
-      local x = (n - sim.Ng) * dx
-      Pvec[5*n + 0] = D0 + D1 * math.cos(k0*x - w0*t)
-      Pvec[5*n + 1] = p0 + p1 * math.cos(k0*x - w0*t)
-      Pvec[5*n + 2] = u0 + u1 * math.cos(k0*x - w0*t)
-      Pvec[5*n + 3] = 0.0
-      Pvec[5*n + 4] = 0.0
-   end
-   return P, G
+   P[1] = D0 + D1 * math.cos(k0*x - w0*t)
+   P[2] = p0 + p1 * math.cos(k0*x - w0*t)
+   P[3] = u0 + u1 * math.cos(k0*x - w0*t)
+   P[4] = 0.0
+   P[5] = 0.0
+
+   return P
 end
 
 function problems.densitywave:dynamical_time()
    return 1.0
 end
-function problems.soundwave:finish_time()
+
+function problems.densitywave:finish_time()
    return 1.0
 end
-function problems.densitywave:solution(t)
-   local sim = self.simulation
-   local N = sim.N
-   local Ng = sim.Ng
-   local dx = sim.dx
 
-   local P = array.array{N + 2*Ng, 5}
-   local G = array.array{N + 2*Ng, 4}
-   local Pvec = P:vector()
-
+function problems.densitywave:solution(x,y,z,t)
    local cs = 1.0
    local u0 = cs -- Mach 1 density wave
    local D0 = 1.0
    local D1 = D0 * 1e-1
    local p0 = D0 * cs^2 / 1.4
-   local k0 = 8 * math.pi
+   local k0 = 2 * math.pi
+   local P = { }
 
-   for n=0,#Pvec/5-1 do
-      local x  = (n - Ng) * dx
-      Pvec[5*n + 0] = D0 + D1 * math.cos(k0 * (x - u0 * t))
-      Pvec[5*n + 1] = p0
-      Pvec[5*n + 2] = u0
-      Pvec[5*n + 3] = 0.0
-      Pvec[5*n + 4] = 0.0
-   end
-   return P, G
+   P[1] = D0 + D1 * math.cos(k0 * (x - u0 * t))
+   P[2] = p0
+   P[3] = u0
+   P[4] = 0.0
+   P[5] = 0.0
+
+   return P
 end
 
-function problems.collapse1d:fluid() return 'gravs' end
-function problems.collapse1d:initialize_problem() self.max_density = { } end
-function problems.collapse1d:solution(t)
-   local sim = self.simulation
-   local N = sim.N
-   local Ng = sim.Ng
-   local dx = sim.dx
+function problems.collapse1d:fluid()
+   return'gravs'
+end
+
+function problems.collapse1d:initialize_problem()
+   self.max_density = { }
+end
+
+function problems.collapse1d:solution(x,y,z,t)
    local p0 = 1e-6
 
-   local P = array.array{N + 2*Ng, 5}
-   local G = array.array{N + 2*Ng, 4}
-   local Pvec = P:vector()
+   P[1] = math.abs(x - 0.5) < 0.25 and 1.0 or 1e-6
+   P[2] = p0
+   P[3] = 0.0
+   P[4] = 0.0
+   P[5] = 0.0
 
-   for n=0,#Pvec/5-1 do
-      local x  = (n - Ng) * dx
-      Pvec[5*n + 0] = math.abs(x - 0.5) < 0.25 and 1.0 or 1e-6
-      Pvec[5*n + 1] = p0
-      Pvec[5*n + 2] = 0.0
-      Pvec[5*n + 3] = 0.0
-      Pvec[5*n + 4] = 0.0
-   end
-   return P, G
+   return P
 end
 
 function problems.collapse1d:user_work_iteration()
@@ -177,32 +155,23 @@ end
 function TwoStateProblem:boundary_conditions()
    return 'outflow'
 end
+
 function TwoStateProblem:finish_time()
    return self.problem_finish_time
 end
-function TwoStateProblem:solution(t)
-   local sim = self.simulation
-   local N = sim.N
-   local Ng = sim.Ng
-   local dx = sim.dx
-   local p0 = 1e-6
 
+function TwoStateProblem:solution(x,y,z,t)
    local L = self.state1
    local R = self.state2
+   local P = { }
 
-   local P = array.array{N + 2*Ng, 5}
-   local G = array.array{N + 2*Ng, 4}
-   local Pvec = P:vector()
+   P[1] = x < 0.5 and L[1] or R[1]
+   P[2] = x < 0.5 and L[2] or R[2]
+   P[3] = x < 0.5 and L[3] or R[3]
+   P[4] = x < 0.5 and L[4] or R[4]
+   P[5] = x < 0.5 and L[5] or R[5]
 
-   for n=0,#Pvec/5-1 do
-      local x  = (n - Ng) * dx
-      Pvec[5*n + 0] = x < 0.5 and L[1] or R[1]
-      Pvec[5*n + 1] = x < 0.5 and L[2] or R[2]
-      Pvec[5*n + 2] = x < 0.5 and L[3] or R[3]
-      Pvec[5*n + 3] = x < 0.5 and L[3] or R[4]
-      Pvec[5*n + 4] = x < 0.5 and L[4] or R[5]
-   end
-   return P, G
+   return P
 end
 
 problems.Shocktube1.problem_finish_time = 0.20

@@ -32,7 +32,7 @@ static const long FLUIDS_REVECS[3] = {FLUIDS_REVECS0,
 				      FLUIDS_REVECS1,
 				      FLUIDS_REVECS2};
 
-fish_state *fish_new(void)
+fish_state *fish_state_new(void)
 {
   fish_state *S = (fish_state*) malloc(sizeof(fish_state));
   fish_state state = {
@@ -48,7 +48,7 @@ fish_state *fish_new(void)
   *S = state;
   return S;
 }
-int fish_del(fish_state *S)
+int fish_state_del(fish_state *S)
 {
   free(S);
   return 0;

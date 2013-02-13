@@ -119,6 +119,7 @@ int fluids_descr_getncomp(fluids_descr *D, long flag);
 /* fluids_state member functions */
 fluids_state *fluids_state_new(void);
 int fluids_state_del(fluids_state *S);
+int fluids_state_copy(fluids_state *S0, fluids_state *S1);
 int fluids_state_getdescr(fluids_state *S, fluids_descr **D);
 int fluids_state_setdescr(fluids_state *S, fluids_descr *D);
 int fluids_state_getattr(fluids_state *S, double *x, long flag);

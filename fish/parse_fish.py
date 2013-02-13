@@ -11,12 +11,14 @@ static int _%(funcname)s(lua_State *L)
 {
   %(getargs)s
   %(call)s
+  %(checkerr)s
   %(push)s
 }"""
 
 fbodies = [ ]
 wrapped = [ ]
 enums = [ ]
+byhand = ['fish_block_neighbor', 'fish_block_getboundaryblock']
 
 for line in fishh:
     if line.startswith('typedef') or line.startswith('struct'): continue
@@ -33,6 +35,10 @@ for line in fishh:
             enums.append(n.groups())
         continue
     retval, funcname, argstr = m.groups()
+
+    if funcname in byhand:
+        wrapped.append(funcname)
+        continue
 
     args = argstr[1:-1].split(',')
     getargs = [ ]
@@ -61,8 +67,14 @@ for line in fishh:
         elif argtype == "fish_riemn *":
             ga = """fish_riemn *%s = *((fish_riemn**) """\
                 """luaL_checkudata(L, %d, "fish::riemn"));""" % (argname, narg)
+        elif argtype == "fish_block *":
+            ga = """fish_block *%s = *((fish_block**) """\
+                """luaL_checkudata(L, %d, "fish::block"));""" % (argname, narg)
         elif argtype == "fluids_state **":
             ga = """fluids_state **%s = (fluids_state**) lua_touserdata(L, %d);"""\
+                % (argname, narg)
+        elif argtype == "fish_block **":
+            ga = """fish_block **%s = (fish_block**) lua_touserdata(L, %d);"""\
                 % (argname, narg)
         elif argtype == "long":
             ga = """long %s = luaL_checklong(L, %d);""" % (argname, narg)
@@ -98,11 +110,21 @@ for line in fishh:
     else:
         call = ("%s ret = " % retval) + call
         push = "lua_pushnumber(L, ret);\n  return 1;"
-        
+
+    if funcname.startswith('fish_block') and funcname != 'fish_block_del':
+        checkerr = \
+"""char *err = fish_block_geterror(B);
+  if (err) {
+    luaL_error(L, err);
+  }"""
+    else:
+        checkerr = "/* no error check line */"
+
     fbodies.append(func_proto % {'funcname': funcname,
                                  'getargs': '\n  '.join(getargs),
                                  'call': call,
-                                 'push': push})
+                                 'push': push,
+                                 'checkerr': checkerr})
     wrapped.append(funcname)
 
 
