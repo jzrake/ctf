@@ -83,12 +83,12 @@ local function build_mysim(cls)
       end
       self.L1error = L1
 
-      if self.user_opts.plot then
+      if self.user_opts.plot and not self.user_opts.convergence then
          util.plot{['code' ]=P     [{{Ng,-Ng},{0,1}}]:table(),
                    ['exact']=Pexact[{{Ng,-Ng},{0,1}}]:table()}
       end
 
-      if self.user_opts.output then
+      if self.user_opts.output and not self.user_opts.convergence then
          local f = io.open(self.user_opts.output, 'w')
          local P0 = P[{{Ng,-Ng},{0,1}}]:table()
          local P1 = P[{{Ng,-Ng},{1,2}}]:table()
@@ -103,6 +103,12 @@ local function build_mysim(cls)
          end
          f:close()
       end
+
+      self.problem:user_work_finish()
+   end
+
+   function cls:user_work_iteration()
+      self.problem:user_work_iteration()
    end
 end
 
@@ -159,7 +165,9 @@ local function main()
    end
 
    if opts.convergence then
+
       local ErrorTable = { }
+
       for _,res in pairs{8,16,32,64,128,256,512,1024} do
          opts.resolution = res
          local sim = sim_class(opts)
@@ -167,10 +175,21 @@ local function main()
          sim:run(problem)
          ErrorTable[res] = sim.L1error
       end
+
       util.pretty_print(ErrorTable)
+
       print("estimated convergence rate is",
 	    math.log10(ErrorTable[128]/ErrorTable[64]) / math.log10(128/64))
-      util.plot({['L1 error']=ErrorTable}, {cmds={'set logscale'}})
+
+      --util.plot({['L1 error']=ErrorTable}, {cmds={'set logscale'}})
+
+      if opts.output then
+	 local f = io.open(opts.output, 'w')
+	 for N,L in pairs(ErrorTable) do
+	    f:write(string.format('%d %8.6e\n', N, L))
+	 end
+	 f:close()
+      end
    else
       local sim = sim_class(opts)
       local problem = problem_class(opts)

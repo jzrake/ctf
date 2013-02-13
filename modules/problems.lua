@@ -122,6 +122,7 @@ end
 
 function problems.collapse1d:solution(x,y,z,t)
    local p0 = 1e-6
+   local P = { }
 
    P[1] = math.abs(x - 0.5) < 0.25 and 1.0 or 1e-6
    P[2] = p0
@@ -145,8 +146,8 @@ function problems.collapse1d:user_work_iteration()
    self.max_density[sim.status.simulation_time] = Dmax
 end
 
-function problems.collapse1d:user_work_iteration()
-   local f = io.open('stuff.dat', 'w')
+function problems.collapse1d:user_work_finish()
+   local f = io.open('central-density.dat', 'w')
    for k,v in pairs(self.max_density) do
       f:write(k..' '..v,'\n')
    end
