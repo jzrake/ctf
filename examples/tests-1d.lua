@@ -45,25 +45,28 @@ local function build_mysim(cls)
       self.behavior.max_simulation_time = tmax * dynamical_time
    end
 
-   function cls:checkpoint_write()
+   function cls:checkpoint_write(fname)
       if not hdf5.File then
 	 print('warning! Could not write checkpoint, HDF5 not available')
 	 return
       end
 
+      local base = self.user_opts.id or 'chkpt'
       local n = self.status.checkpoint_number
       local t = self.status.simulation_time
-      local Ng = self.Ng
-
       local Pexact = self:_map_solution(t)
+      local Ng = self.Ng
+      local fname = fname or string.format('data/%s.%04d.h5', base, n)
 
       os.execute('mkdir -p data')
+      print('writing checkpoint ' .. fname)
 
-      local fname = string.format('data/chkpt.%04d.h5', n)
       local outfile = hdf5.File(fname, 'w')
       outfile['prim' ] = self.Primitive[{{Ng,-Ng},nil}]
       outfile['grav' ] = self.Gravity  [{{Ng,-Ng},nil}]
       outfile['exact'] = Pexact        [{{Ng,-Ng},nil}]
+      outfile['id']    = base
+      outfile['problem'] = oo.classname(self.problem)
       outfile:close()
    end
 
@@ -88,20 +91,26 @@ local function build_mysim(cls)
                    ['exact']=Pexact[{{Ng,-Ng},{0,1}}]:table()}
       end
 
-      if self.user_opts.output and not self.user_opts.convergence then
-         local f = io.open(self.user_opts.output, 'w')
-         local P0 = P[{{Ng,-Ng},{0,1}}]:table()
-         local P1 = P[{{Ng,-Ng},{1,2}}]:table()
-         local P2 = P[{{Ng,-Ng},{2,3}}]:table()
-         local P3 = P[{{Ng,-Ng},{3,4}}]:table()
-         local P4 = P[{{Ng,-Ng},{4,5}}]:table()
-         for i=1, self.N do
-            local line = string.format(
-               "%d %+12.8e %+12.8e %+12.8e %+12.8e %+12.8e\n",
-               i, P0[i], P1[i], P2[i], P3[i], P4[i])
-            f:write(line)
-         end
-         f:close()
+      local output = self.user_opts.output
+
+      if output and not self.user_opts.convergence then
+	 if util.endswith(output, '.h5') then
+	    self:checkpoint_write(output)
+	 else
+	    local f = io.open(output, 'w')
+	    local P0 = P[{{Ng,-Ng},{0,1}}]:table()
+	    local P1 = P[{{Ng,-Ng},{1,2}}]:table()
+	    local P2 = P[{{Ng,-Ng},{2,3}}]:table()
+	    local P3 = P[{{Ng,-Ng},{3,4}}]:table()
+	    local P4 = P[{{Ng,-Ng},{4,5}}]:table()
+	    for i=1, self.N do
+	       local line = string.format(
+		  "%d %+12.8e %+12.8e %+12.8e %+12.8e %+12.8e\n",
+		  i, P0[i], P1[i], P2[i], P3[i], P4[i])
+	       f:write(line)
+	    end
+	    f:close()
+	 end
       end
 
       self.problem:user_work_finish()
@@ -122,6 +131,7 @@ local function main()
                                         version="CTF version 1.0"}
 
    parser.add_option{"--cpi", dest="cpi", help="checkpoint interval"}
+   parser.add_option{"--id", dest="id", help="problem ID: used for checkpoint names"}
    parser.add_option{"--cfl", dest="CFL",
                      help="Courant-Freidrichs-Lewy time-step constrain"}
    parser.add_option{"--tmax", dest="tmax", help="end simulation time"}

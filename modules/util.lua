@@ -27,6 +27,14 @@ end
 
 
 -- *****************************************************************************
+-- Check if a string `s` end swith the string `send`
+-- .............................................................................
+function util.endswith(s, send)
+   return #s >= #send and s:find(send, #s-#send+1, true) and true or false
+end
+
+
+-- *****************************************************************************
 -- Utility to print tables
 -- .............................................................................
 function util.pretty_print(t, indent, compare)
