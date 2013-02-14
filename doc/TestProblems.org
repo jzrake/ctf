@@ -1,4 +1,6 @@
-#+STYLE: <link rel="stylesheet" type="text/css" href="http://orgmode.org/org-manual.css">
+#+STYLE: <link rel="stylesheet" type="text/css" href="https://dl.dropbox.com/u/68714342/style.css">
+# #+STYLE: <link rel="stylesheet" type="text/css" href="http://orgmode.org/org-manual.css">
+
 
 * One dimensional smooth problems
 ** DensityWave
@@ -9,24 +11,16 @@
     and the behavior is only that of the scalar conservation law $\dot \rho + u_0
     \rho' = 0$. The problem is described by the following parameters:
 
-   1. sound speed: $c_s$
-   2. advection velocity: $u_0$
-   3. background density: $\rho_0$
-   4. wave amplitude: $\rho_1$
-   5. background pressure: $p_0 = \rho_0 c_s^2 / \Gamma$
-   6. wave-number: $k_0 = 2\pi / L$
+    + sound speed: $c_s$
+    + advection velocity: $u_0$
+    + background density: $\rho_0$
+    + wave amplitude: $\rho_1$
+    + background pressure: $p_0 = \rho_0 c_s^2 / \Gamma$
+    + wave-number: $k_0 = 2\pi / L$
 
-    $$
-    \left(\begin{array}{c}
-    \rho(x,t) \\
-    p(x,t) \\
-    u(x,t)
-    \end{array}\right) = \left(\begin{array}{c}
-    \rho_0 + \rho_1 \cos{k_0 (x - u_0 t)} \\
-    p_0 \\
-    0 \\
-    \end{array}\right)
-    $$
+    $$ \left(\begin{array}{c} \rho(x,t) \\ p(x,t) \\ u(x,t) \end{array}\right) =
+    \left(\begin{array}{c} \rho_0 + \rho_1 \cos{k_0 (x - u_0 t)} \\ p_0 \\ 0
+    \\ \end{array}\right) $$
 
     Because of its smoothness and simplicity, this problem is ideal for gauging
     the convergence order of a scheme. Any scheme claiming to converge at order
@@ -34,11 +28,11 @@
     test, the problem is run for half of the domain-crossing time at resolutions
     $2^n$ for $n$ between 3 and 10. Five different reference schemes are used:
 
-   1. =HLLC-PLM-MUSCL=
-   2. =HLLC-PLM-RK3=
-   3. =HLLC-WENO5-RK3=
-   4. =CHAR-WENO5-RK3=
-   5. =CHAR-WENO5-RK4=
+    1. =HLLC-PLM-MUSCL=
+    2. =HLLC-PLM-RK3=
+    3. =HLLC-WENO5-RK3=
+    4. =CHAR-WENO5-RK3=
+    5. =CHAR-WENO5-RK4=
 
 *** Performance of the schemes
     For the formally 5th order =WENO5= reconstruction schemes, it is evident
@@ -48,7 +42,6 @@
     this problem does not involve any non-linear waves, it is not surprising
     that the Godunov scheme =HLLC-WENO5-RK3= accomplishes the same convergence
     order as the characteristic decomposition =CHAR-WENO5-RK3=.
-
     file://Users/jzrake/Work/ctf/doc/DensityWave-L1.png
 
     |------+------------------+----------------+------------------+------------------+------------------|
@@ -65,31 +58,24 @@
 
 ** SoundWave
 *** Problem description
-   This problem sets up a smooth and small-amplitude perturbation to create a
-   left-going sound wave. It is only slightly more challenging as a convergence
-   test than the density wave. The problem is described by the following
-   parameters:
+    This problem sets up a smooth and small-amplitude perturbation to create a
+    left-going sound wave. It is only slightly more challenging as a convergence
+    test than the density wave. The problem is described by the following
+    parameters:
 
-   1. sound speed: $c_s$
-   2. background density: $\rho_0$
-   3. background pressure: $p_0 = \rho_0 c_s^2 / \Gamma$
-   4. density wave amplitude: $\rho_1 = 10^{-6} \rho_0$
-   5. pressure wave amplitude: $p_1 = c_s^2 \rho_1$
-   6. velocity wave amplitude: $u_1 = c_s \rho_1 / \rho_0$
-   7. wave-number: $k_0 = 8\pi / L$
-   8. frequence: $\omega_0 = c_s k_0$
+    + sound speed: $c_s$
+    + background density: $\rho_0$
+    + background pressure: $p_0 = \rho_0 c_s^2 / \Gamma$
+    + density wave amplitude: $\rho_1 = 10^{-6} \rho_0$
+    + pressure wave amplitude: $p_1 = c_s^2 \rho_1$
+    + velocity wave amplitude: $u_1 = c_s \rho_1 / \rho_0$
+    + wave-number: $k_0 = 8\pi / L$
+    + frequence: $\omega_0 = c_s k_0$
 
-   $$
-   \left(\begin{array}{c}
-   \rho(x,t) \\
-   p(x,t) \\
-   u(x,t)
-   \end{array}\right) = \left(\begin{array}{c}
-   \rho_0 + \rho_1 \cos{(k_0 x - \omega_0 t)} \\
-   p_0 + p_1 \cos{(k_0 x - \omega_0 t)} \\
-   u_0 + u_1 \cos{(k_0 x - \omega_0 t)} \\
-   \end{array}\right)
-   $$
+    $$ \left(\begin{array}{c} \rho(x,t) \\ p(x,t) \\ u(x,t) \end{array}\right) =
+    \left(\begin{array}{c} \rho_0 + \rho_1 \cos{(k_0 x - \omega_0 t)} \\ p_0 +
+    p_1 \cos{(k_0 x - \omega_0 t)} \\ u_0 + u_1 \cos{(k_0 x - \omega_0 t)}
+    \\ \end{array}\right) $$
 
 *** Performance of the schemes
     The need for higher temporal order is highlighted by this problem. While RK4
@@ -97,28 +83,28 @@
     converges faster than 3rd order. Since the problem uses a very
     small-purturbation ($10^{-6}) the absolute error is small, and round-off
     error exceeds the truncation error quickly.
-
     file://Users/jzrake/Work/ctf/doc/SoundWave-L1.png
 
-   |------+------------------+----------------+------------------+------------------+------------------|
-   |  $N$ | =HLLC-PLM-MUSCL= | =HLLC-PLM-RK3= | =HLLC-WENO5-RK3= | =CHAR-WENO5-RK3= | =CHAR-WENO5-RK4= |
-   |------+------------------+----------------+------------------+------------------+------------------|
-   |   16 |             0.81 |           0.36 |             0.61 |             0.61 |             0.78 |
-   |   32 |             2.14 |           0.47 |             2.40 |             2.40 |             3.45 |
-   |   64 |             2.06 |           2.29 |             3.39 |             3.39 |             4.85 |
-   |  128 |             1.75 |           1.72 |             3.18 |             3.18 |             4.71 |
-   |  256 |             1.95 |           1.69 |             3.07 |             3.07 |             3.71 |
-   |  512 |             2.09 |           1.85 |             3.12 |             3.12 |             0.23 |
-   | 1024 |             2.13 |           1.95 |             2.08 |             2.08 |             0.01 |
-   |------+------------------+----------------+------------------+------------------+------------------|
+    |------+------------------+----------------+------------------+------------------+------------------|
+    |  $N$ | =HLLC-PLM-MUSCL= | =HLLC-PLM-RK3= | =HLLC-WENO5-RK3= | =CHAR-WENO5-RK3= | =CHAR-WENO5-RK4= |
+    |------+------------------+----------------+------------------+------------------+------------------|
+    |   16 |             0.81 |           0.36 |             0.61 |             0.61 |             0.78 |
+    |   32 |             2.14 |           0.47 |             2.40 |             2.40 |             3.45 |
+    |   64 |             2.06 |           2.29 |             3.39 |             3.39 |             4.85 |
+    |  128 |             1.75 |           1.72 |             3.18 |             3.18 |             4.71 |
+    |  256 |             1.95 |           1.69 |             3.07 |             3.07 |             3.71 |
+    |  512 |             2.09 |           1.85 |             3.12 |             3.12 |             0.23 |
+    | 1024 |             2.13 |           1.95 |             2.08 |             2.08 |             0.01 |
+    |------+------------------+----------------+------------------+------------------+------------------|
 
 
 ** Collapse1d
-
+   This problem tests the collapse of a cold dust cloud in one dimension.
 
 * One dimensional two-state problems
 ** Shocktube1
-
+   |--------+----------+----------|
+   |        |  $x<0.5$ |  $x>0.5$ |
    |--------+----------+----------|
    | $\rho$ | 1.000000 | 0.125000 |
    | $p$    | 1.000000 | 0.100000 |
@@ -126,9 +112,11 @@
    | $v_y$  | 0.000000 | 0.000000 |
    | $v_z$  | 0.000000 | 0.000000 |
    |--------+----------+----------|
+   file://Users/jzrake/Work/ctf/doc/Shocktube1.png
 
 ** Shocktube2
-
+   |--------+-----------+----------|
+   |        |   $x<0.5$ |  $x>0.5$ |
    |--------+-----------+----------|
    | $\rho$ |  1.000000 | 1.000000 |
    | $p$    |  0.400000 | 0.400000 |
@@ -136,9 +124,11 @@
    | $v_y$  |  0.000000 | 0.000000 |
    | $v_z$  |  0.000000 | 0.000000 |
    |--------+-----------+----------|
+   file://Users/jzrake/Work/ctf/doc/Shocktube2.png
 
 ** Shocktube3
-
+   |--------+-------------+----------|
+   |        |     $x<0.5$ |  $x>0.5$ |
    |--------+-------------+----------|
    | $\rho$ |    1.000000 | 1.000000 |
    | $p$    | 1000.000000 | 0.010000 |
@@ -146,9 +136,11 @@
    | $v_y$  |    0.000000 | 0.000000 |
    | $v_z$  |    0.000000 | 0.000000 |
    |--------+-------------+----------|
+   file://Users/jzrake/Work/ctf/doc/Shocktube3.png
 
 ** Shocktube4
-
+   |--------+----------+------------|
+   |        |  $x<0.5$ |    $x>0.5$ |
    |--------+----------+------------|
    | $\rho$ | 1.000000 |   1.000000 |
    | $p$    | 0.010000 | 100.000000 |
@@ -156,9 +148,11 @@
    | $v_y$  | 0.000000 |   0.000000 |
    | $v_z$  | 0.000000 |   0.000000 |
    |--------+----------+------------|
+   file://Users/jzrake/Work/ctf/doc/Shocktube4.png
 
 ** Shocktube5
-
+   |--------+------------+-----------|
+   |        |    $x<0.5$ |   $x>0.5$ |
    |--------+------------+-----------|
    | $\rho$ |   5.999240 |  5.999240 |
    | $p$    | 460.894000 | 46.095000 |
@@ -166,9 +160,11 @@
    | $v_y$  |   0.000000 |  0.000000 |
    | $v_z$  |   0.000000 |  0.000000 |
    |--------+------------+-----------|
+   file://Users/jzrake/Work/ctf/doc/Shocktube5.png
 
 ** ContactWave
-
+   |--------+----------+----------|
+   |        |  $x<0.5$ |  $x>0.5$ |
    |--------+----------+----------|
    | $\rho$ | 1.000000 | 0.100000 |
    | $p$    | 1.000000 | 1.000000 |
@@ -176,19 +172,11 @@
    | $v_y$  | 0.700000 | 0.700000 |
    | $v_z$  | 0.200000 | 0.200000 |
    |--------+----------+----------|
-
-** SrhdCase2DFIM98
-
-   |--------+-------------+----------|
-   | $\rho$ |    1.000000 | 1.000000 |
-   | $p$    | 1000.000000 | 0.010000 |
-   | $v_x$  |    0.000000 | 0.000000 |
-   | $v_y$  |    0.000000 | 0.000000 |
-   | $v_z$  |    0.000000 | 0.000000 |
-   |--------+-------------+----------|
+   file://Users/jzrake/Work/ctf/doc/ContactWave.png
 
 ** SrhdCase1DFIM98
-
+   |--------+-----------+----------|
+   |        |   $x<0.5$ |  $x>0.5$ |
    |--------+-----------+----------|
    | $\rho$ | 10.000000 | 1.000000 |
    | $p$    | 13.300000 | 0.000001 |
@@ -197,8 +185,20 @@
    | $v_z$  |  0.000000 | 0.000000 |
    |--------+-----------+----------|
 
-** SrhdHardTransverseRAM
+** SrhdCase2DFIM98
+   |--------+-------------+----------|
+   |        |     $x<0.5$ |  $x>0.5$ |
+   |--------+-------------+----------|
+   | $\rho$ |    1.000000 | 1.000000 |
+   | $p$    | 1000.000000 | 0.010000 |
+   | $v_x$  |    0.000000 | 0.000000 |
+   | $v_y$  |    0.000000 | 0.000000 |
+   | $v_z$  |    0.000000 | 0.000000 |
+   |--------+-------------+----------|
 
+** SrhdHardTransverseRAM
+   |--------+-------------+----------|
+   |        |     $x<0.5$ |  $x>0.5$ |
    |--------+-------------+----------|
    | $\rho$ |    1.000000 | 1.000000 |
    | $p$    | 1000.000000 | 0.010000 |
@@ -208,5 +208,3 @@
    |--------+-------------+----------|
 
 
-
-* Credits

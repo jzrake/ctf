@@ -96,7 +96,7 @@ function FishSimulation:initialize_physics()
    local Pvec = P:vector()
 
    for n=0,#Pvec/5-1 do
-      local x  = (n - Ng) * dx
+      local x  = (n - Ng + 0.5) * dx
       local Pi = self.problem:solution(x,0,0,0)
       Pvec[5*n + 0] = Pi[1]
       Pvec[5*n + 1] = Pi[2]

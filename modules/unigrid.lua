@@ -67,6 +67,21 @@ function DataManagerHDF5:__init__(domain, dataset_names, opts)
    self.dset_opts.mpio = opts.mpio or 'COLLECTIVE'
 end
 
+function DataManagerHDF5:local_mesh_size(which)
+   local which = which or 'total'
+   if which == 'total' then
+      return cow.domain_getnumlocalzonesinterior(self.domain, cow.ALL_DIMS)
+   elseif which == 'shape' then
+      local size = { }   
+      for i=1,self.ndim do
+	 size[i] = cow.domain_getnumlocalzonesinterior(self.domain, i-1)
+      end
+      return size
+   else
+      error("argument 'which' must be ['total', 'shape']")
+   end
+end
+
 function DataManagerHDF5:write(filename, opts)
    local opts = opts or { }
    local start = os.clock()
@@ -79,7 +94,7 @@ function DataManagerHDF5:write(filename, opts)
    end
 
    for i,name in ipairs(self.dataset_names) do
-      print("[Mara] writing " .. name)
+      print("[HDF5] writing " .. name)
       local dset = hdf5.DataSet(group, name, opts.dset_mode or 'w', dset_opts)
       local mspace = hdf5.DataSpace(self.array_shape)
       local fspace = dset:get_space()
@@ -89,7 +104,7 @@ function DataManagerHDF5:write(filename, opts)
       dset:write(self.array:buffer(), mspace, fspace)
 
       if i == #self.dataset_names  then
-	 print("[Mara] write stats:")
+	 print("[HDF5] write stats:")
 	 util.pretty_print(dset:get_mpio(), '\t# ')
       end
       dset:close()
@@ -97,7 +112,7 @@ function DataManagerHDF5:write(filename, opts)
    file:close()
    MPI.Barrier(self.file_opts.mpi.comm)
    local dt = os.clock() - start
-   print("[Mara] write time: " .. dt .. ' seconds')
+   print(string.format("[HDF5] write time: %3.2f seconds", dt))
    return dt
 end
 
@@ -108,7 +123,7 @@ function DataManagerHDF5:read(filename, opts)
    local group = opts.group and hdf5.Group(file, opts.group) or file
 
    for i,name in ipairs(self.dataset_names) do
-      print("[Mara] reading " .. name)
+      print("[HDF5] reading " .. name)
       local dset = hdf5.DataSet(group, name, 'r+')
       local mspace = hdf5.DataSpace(self.array_shape)
       local fspace = dset:get_space()
@@ -118,7 +133,7 @@ function DataManagerHDF5:read(filename, opts)
       dset:read(self.array:buffer(), mspace, fspace)
 
       if i == #self.dataset_names then
-	 print("[Mara] read stats:")
+	 print("[HDF5] read stats:")
 	 util.pretty_print(dset:get_mpio(), '\t# ')
       end
       dset:close()
@@ -126,13 +141,13 @@ function DataManagerHDF5:read(filename, opts)
    file:close()
    MPI.Barrier(self.file_opts.mpi.comm)
    local dt = os.clock() - start
-   print("[Mara] read time: " .. dt .. ' seconds')
+   print(string.format("[HDF5] write time: %3.2f seconds", dt))
    return dt
 end
 
 function DataManagerHDF5:power_spectrum(nbins)
    if #self.dataset_names ~= 3 then
-      error("[Mara] need a three-dimensional field to get a power spectrum")
+      error("[HDF5] need a three-dimensional field to get a power spectrum")
    end
 
    local nbins = nbins or 128

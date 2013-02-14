@@ -24,7 +24,7 @@ local function build_mysim(cls)
       local Pvec = P:vector()
 
       for n=0,#Pvec/5-1 do
-         local x  = (n - Ng) * dx
+         local x  = (n - Ng + 0.5) * dx
          local Pi = self.problem:solution(x,0,0,t)
          Pvec[5*n + 0] = Pi[1]
          Pvec[5*n + 1] = Pi[2]
@@ -46,7 +46,7 @@ local function build_mysim(cls)
    end
 
    function cls:checkpoint_write(fname)
-      if not hdf5.File then
+      if not next(hdf5) then -- next(t) is true when t is empty
 	 print('warning! Could not write checkpoint, HDF5 not available')
 	 return
       end
@@ -62,10 +62,11 @@ local function build_mysim(cls)
       print('writing checkpoint ' .. fname)
 
       local outfile = hdf5.File(fname, 'w')
-      outfile['prim' ] = self.Primitive[{{Ng,-Ng},nil}]
-      outfile['grav' ] = self.Gravity  [{{Ng,-Ng},nil}]
-      outfile['exact'] = Pexact        [{{Ng,-Ng},nil}]
-      outfile['id']    = base
+      outfile['prim' ]   = self.Primitive[{{Ng,-Ng},nil}]
+      outfile['grav' ]   = self.Gravity  [{{Ng,-Ng},nil}]
+      outfile['exact']   = Pexact        [{{Ng,-Ng},nil}]
+      outfile['id']      = base
+      outfile['time']    = t
       outfile['problem'] = oo.classname(self.problem)
       outfile:close()
    end
@@ -126,17 +127,16 @@ build_mysim(MyFish)
 
 
 local function main()
-   local usage = "test-1d <problem> [<options>]"
+   local usage = "tests-1d <problem> [<options>]"
    local parser = optparse.OptionParser{usage=usage,
                                         version="CTF version 1.0"}
 
    parser.add_option{"--cpi", dest="cpi", help="checkpoint interval"}
    parser.add_option{"--id", dest="id", help="problem ID: used for checkpoint names"}
    parser.add_option{"--cfl", dest="CFL",
-                     help="Courant-Freidrichs-Lewy time-step constrain"}
+                     help="Courant-Freidrichs-Lewy time-step constraint"}
    parser.add_option{"--tmax", dest="tmax", help="end simulation time"}
    parser.add_option{"--plot", dest="plot", action="store_true"}
-   parser.add_option{"--problem", dest="problem", help="problem name to run"}
    parser.add_option{"--reconstruction", dest="reconstruction"}
    parser.add_option{"--riemann", dest="riemann"}
    parser.add_option{"--advance", dest="advance",

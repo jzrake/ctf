@@ -2,8 +2,8 @@
 
 gitserver=git@github.com:jzrake
 
-declare -a branches=('ctf' 'ctf' 'ctf' 'master' 'master' 'master')
-declare -a reponame=('cow' 'Mara' 'fish' 'lua-hdf5' 'lua-mpi' 'lua-glut')
+branches=('ctf' 'ctf' 'ctf' 'master' 'master' 'master')
+reponame=('cow' 'Mara' 'fish' 'lua-hdf5' 'lua-mpi' 'lua-glut')
 
 function add() {
     for i in {0..5}
@@ -49,4 +49,3 @@ else
     echo "push|pull|addremotes|rmremotes"
     exit 1
 fi
-

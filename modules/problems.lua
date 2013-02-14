@@ -10,6 +10,9 @@ local problems = {
    TestProblem = TestProblem,
    TwoStateProblem = TwoStateProblem,
 
+   problems_1d = { },
+   problems_2d = { },
+
    soundwave   = oo.class('soundwave'  , TestProblem),
    densitywave = oo.class('densitywave', TestProblem),
    collapse1d  = oo.class('collapse1d' , TestProblem),
@@ -24,7 +27,15 @@ local problems = {
    SrhdCase1DFIM98       = oo.class('SrhdCase1DFIM98'      , TwoStateProblem),
    SrhdCase2DFIM98       = oo.class('SrhdCase2DFIM98'      , TwoStateProblem),
    SrhdHardTransverseRAM = oo.class('SrhdHardTransverseRAM', TwoStateProblem),
+
+   SmoothKelvinHelmholtz = oo.class('SmoothKelvinHelmholtz', TestProblem),
 }
+for k,v in pairs(problems) do
+   if oo.isclass(v) and oo.issubclass(v, TwoStateProblem) then
+      problems.problems_1d[k] = v
+   end
+end
+
 
 function TestProblem:__init__(user_opts)
    self.user_opts = user_opts or { }
@@ -159,7 +170,7 @@ function TwoStateProblem:boundary_conditions()
 end
 
 function TwoStateProblem:finish_time()
-   return self.problem_finish_time
+   return self._finish_time
 end
 
 function TwoStateProblem:solution(x,y,z,t)
@@ -204,15 +215,15 @@ function TwoStateProblem:_exact_solution(x,y,z,t)
    return R:solve(SL, SR, (x-0.5)/t):table()
 end
 
-problems.Shocktube1.problem_finish_time = 0.20
-problems.Shocktube2.problem_finish_time = 0.05
-problems.Shocktube3.problem_finish_time = 0.01
-problems.Shocktube4.problem_finish_time = 0.02
-problems.Shocktube5.problem_finish_time = 0.02
-problems.ContactWave.problem_finish_time = 1.0
-problems.SrhdCase1DFIM98.problem_finish_time = 0.1
-problems.SrhdCase2DFIM98.problem_finish_time = 0.1
-problems.SrhdHardTransverseRAM.problem_finish_time = 0.01
+problems.Shocktube1._finish_time = 0.20
+problems.Shocktube2._finish_time = 0.05
+problems.Shocktube3._finish_time = 0.01
+problems.Shocktube4._finish_time = 0.02
+problems.Shocktube5._finish_time = 0.02
+problems.ContactWave._finish_time = 1.0
+problems.SrhdCase1DFIM98._finish_time = 0.1
+problems.SrhdCase2DFIM98._finish_time = 0.1
+problems.SrhdHardTransverseRAM._finish_time = 0.01
 
 problems.SrhdCase1DFIM98._fluid = 'srhyd'
 problems.SrhdCase2DFIM98._fluid = 'srhyd'
@@ -238,12 +249,37 @@ problems.SrhdCase2DFIM98.state2 = {1, 1e-2, 0.0, 0.0, 0.0}
 problems.SrhdHardTransverseRAM.state1 = {1, 1e+3, 0.0, 0.9, 0.0}
 problems.SrhdHardTransverseRAM.state2 = {1, 1e-2, 0.0, 0.9, 0.0}
 
-local p1d = { }
-for k,v in pairs(problems) do
-   if v ~= TestProblem and v ~= TwoStateProblem then
-      p1d[k] = v
-   end
+
+function problems.SmoothKelvinHelmholtz:finish_time()
+   return 0.1
 end
 
-problems.problems_1d = p1d
+function problems.SmoothKelvinHelmholtz:solution(x,y,z,t)
+   local P0 = 2.5
+   local rho1 = 1.0
+   local rho2 = 2.0
+   local L = .025
+   local U1 = 0.5
+   local U2 = -0.5
+   local w0 = 0.01
+   local vy = w0*math.sin(4*math.pi*x)
+
+   local rho,vx
+   if y < 0.25 then
+      rho = rho1 - 0.5*(rho1-rho2)*math.exp( (y-0.25)/L)
+      vx  = U1   - 0.5*( U1 - U2 )*math.exp( (y-0.25)/L)
+   elseif y < 0.5 then
+      rho = rho2 + 0.5*(rho1-rho2)*math.exp(-(y-0.25)/L)
+      vx  = U2   + 0.5*( U1 - U2 )*math.exp(-(y-0.25)/L)
+   elseif y < 0.75 then
+      rho = rho2 + 0.5*(rho1-rho2)*math.exp( (y-0.75)/L)
+      vx  = U2   + 0.5*( U1 - U2 )*math.exp( (y-0.75)/L)
+   else
+      rho = rho1 - 0.5*(rho1-rho2)*math.exp(-(y-0.75)/L)
+      vx  = U1   - 0.5*( U1 - U2 )*math.exp(-(y-0.75)/L)
+   end
+   return { rho, P0, vx, vy, 0.0 }
+end
+
+
 return problems
