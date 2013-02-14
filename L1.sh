@@ -1,8 +1,11 @@
 
+# Give the problem name as the first argument
+problem=$1
+
 # ----------------------------------------------------------
 # Mara: HLLC-PLM-MUSCL
 # ----------------------------------------------------------
-./ctf examples/tests-1d.lua densitywave --convergence \
+./ctf examples/tests-1d.lua ${problem} --convergence \
     --backend=mara \
     --tmax=0.5 \
     --solver=muscl \
@@ -12,7 +15,7 @@
 # ----------------------------------------------------------
 # Mara: HLLC-PLM-RK3
 # ----------------------------------------------------------
-./ctf examples/tests-1d.lua densitywave --convergence \
+./ctf examples/tests-1d.lua ${problem} --convergence \
     --backend=mara \
     --tmax=0.5 \
     --solver=godunov \
@@ -22,7 +25,7 @@
 # ----------------------------------------------------------
 # Fish: HLLC-WENO5-RK3
 # ----------------------------------------------------------
-./ctf examples/tests-1d.lua densitywave --convergence \
+./ctf examples/tests-1d.lua ${problem} --convergence \
     --backend=fish \
     --tmax=0.5 \
     --reconstruction=weno5 \
@@ -33,7 +36,7 @@
 # ----------------------------------------------------------
 # Mara: CHAR-WENO5-RK3
 # ----------------------------------------------------------
-./ctf examples/tests-1d.lua densitywave --convergence \
+./ctf examples/tests-1d.lua ${problem} --convergence \
     --backend=mara \
     --tmax=0.5 \
     --solver=spectral \
@@ -43,7 +46,7 @@
 # ----------------------------------------------------------
 # Mara: CHAR-WENO5-RK4
 # ----------------------------------------------------------
-./ctf examples/tests-1d.lua densitywave --convergence \
+./ctf examples/tests-1d.lua ${problem} --convergence \
     --backend=mara \
     --tmax=0.5 \
     --solver=spectral \
