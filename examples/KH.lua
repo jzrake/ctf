@@ -113,6 +113,10 @@ function MyMara:checkpoint_write(fname)
 end
 
 function MyMara:user_work_finish()
+   local output = self.user_opts.output
+   if output then
+      self:checkpoint_write(output)
+   end
    self.problem:user_work_finish()
 end
 
@@ -146,6 +150,8 @@ local function main()
    parser.add_option{"--resolution", "-N", dest="resolution", help="grid resolution"}
    parser.add_option{"--message-cadence", dest="message_cadence",
                      help="print a message every N iterations"}
+   parser.add_option{"--output", "-o", dest="output",
+                     help="write an HDF5 file of the final solution"}
 
    local opts, args = parser.parse_args()
    local problem_class = problems[arg[2]]

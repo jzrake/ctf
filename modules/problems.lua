@@ -251,18 +251,18 @@ problems.SrhdHardTransverseRAM.state2 = {1, 1e-2, 0.0, 0.9, 0.0}
 
 
 function problems.SmoothKelvinHelmholtz:finish_time()
-   return 0.1
+   return 2.5
 end
 
 function problems.SmoothKelvinHelmholtz:solution(x,y,z,t)
-   local P0 = 2.5
-   local rho1 = 1.0
-   local rho2 = 2.0
-   local L = .025
-   local U1 = 0.5
-   local U2 = -0.5
-   local w0 = 0.01
-   local vy = w0*math.sin(4*math.pi*x)
+   local P0    =  2.5
+   local rho1  =  1.0
+   local rho2  =  2.0
+   local L     =  0.025
+   local U1    =  0.5
+   local U2    = -0.5
+   local w0    =  0.01
+   local vy    =  w0 * math.sin(4*math.pi*x)
 
    local rho,vx
    if y < 0.25 then

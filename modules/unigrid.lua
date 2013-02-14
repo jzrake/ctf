@@ -93,8 +93,10 @@ function DataManagerHDF5:write(filename, opts)
       dset_opts.chunk = self.sgrid_shape
    end
 
+   print("[HDF5] writing to file " .. filename)
+
    for i,name in ipairs(self.dataset_names) do
-      print("[HDF5] writing " .. name)
+      print("[HDF5] writing data set" .. name)
       local dset = hdf5.DataSet(group, name, opts.dset_mode or 'w', dset_opts)
       local mspace = hdf5.DataSpace(self.array_shape)
       local fspace = dset:get_space()
@@ -122,8 +124,10 @@ function DataManagerHDF5:read(filename, opts)
    local file = hdf5.File(filename, 'r', self.file_opts)
    local group = opts.group and hdf5.Group(file, opts.group) or file
 
+   print("[HDF5] reading from file " .. filename)
+
    for i,name in ipairs(self.dataset_names) do
-      print("[HDF5] reading " .. name)
+      print("[HDF5] reading data set" .. name)
       local dset = hdf5.DataSet(group, name, 'r+')
       local mspace = hdf5.DataSpace(self.array_shape)
       local fspace = dset:get_space()
@@ -141,7 +145,7 @@ function DataManagerHDF5:read(filename, opts)
    file:close()
    MPI.Barrier(self.file_opts.mpi.comm)
    local dt = os.clock() - start
-   print(string.format("[HDF5] write time: %3.2f seconds", dt))
+   print(string.format("[HDF5] read time: %3.2f seconds", dt))
    return dt
 end
 
