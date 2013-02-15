@@ -20,7 +20,7 @@ function MyMara:initialize_physics()
    local function pinit(x,y,z)
       return self.problem:solution(x,y,z,0)
    end
-   local P = self.primitive.array
+   local P = self.Primitive
    Mara.init_prim(P:buffer(), pinit)
 end
 
@@ -75,14 +75,17 @@ function MyMara:initialize_solver()
    Mara.set_godunov(solver)
    Mara.set_boundary(self.problem:boundary_conditions())
    Mara.set_riemann(self.user_opts.riemann or 'hllc')
-   Mara.config_solver({theta=2.0}, true)
+   Mara.config_solver({theta  =  opts.plm_theta or 2.0,
+		       IS     =  opts.IS or 'js96',
+		       sz10A  =  100.0 or opts.sz10A}, false)
 
    local prim_names = Mara.fluid.GetPrimNames()
    local Nq = #prim_names
 
    self.domain = domain
-   self.primitive = unigrid.DataManagerHDF5(domain, prim_names)
-   self.shape = self.primitive:local_mesh_size('shape')
+   self.prim_manager = unigrid.DataManagerHDF5(domain, prim_names)
+   self.shape = self.prim_manager:local_mesh_size('shape')
+   self.Primitive = self.prim_manager.array
    Mara.set_domain({0,0}, {1,1}, self.shape, Nq, self.Ng, domain_comm)
 end
 
@@ -97,19 +100,19 @@ end
 
 function MyMara:advance_physics()
    local dt = self.status.time_increment
-   local P = self.primitive.array:buffer()
+   local P = self.Primitive:buffer()
    Mara.advance(P, dt)
 end
 
 function MyMara:local_mesh_size()
-   return self.primitive:local_mesh_size()
+   return self.prim_manager:local_mesh_size()
 end
 
 function MyMara:checkpoint_write(fname)
    local base = self.user_opts.id or 'chkpt'
    local n = self.status.checkpoint_number
    local fname = fname or string.format('data/%s.%04d.h5', base, n)
-   self.primitive:write(fname, {group='prim'})
+   self.prim_manager:write(fname, {group='prim'})
 end
 
 function MyMara:user_work_finish()
@@ -141,12 +144,19 @@ local function main()
    parser.add_option{"--cfl", dest="CFL",
                      help="Courant-Freidrichs-Lewy time-step constraint"}
    parser.add_option{"--tmax", dest="tmax", help="end simulation time"}
-   parser.add_option{"--plot", dest="plot", action="store_true"}
+   parser.add_option{"--plot", dest="plot", action="store_true",
+		     help="pop a gnuplot window after run"}
+   parser.add_option{"--reconstruction", dest="reconstruction"}
+   parser.add_option{"--IS", dest="IS",
+		     help='WENO smoothness indicator: [js96, b08, sz10]'}
+   parser.add_option{"--sz10A", dest="sz10A",
+		     help="Shen & Zha (2010) 'A' parameter: [0,100]"}
    parser.add_option{"--reconstruction", dest="reconstruction"}
    parser.add_option{"--riemann", dest="riemann"}
    parser.add_option{"--advance", dest="advance",
                      help="which Runge-Kutta to use for solution advance"}
-   parser.add_option{"--solver", dest="solver"}
+   parser.add_option{"--solver", dest="solver",
+		     help="godunov (riemann solver) or spectral (characteristic-wise)"}
    parser.add_option{"--resolution", "-N", dest="resolution", help="grid resolution"}
    parser.add_option{"--message-cadence", dest="message_cadence",
                      help="print a message every N iterations"}

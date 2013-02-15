@@ -250,6 +250,10 @@ problems.SrhdHardTransverseRAM.state1 = {1, 1e+3, 0.0, 0.9, 0.0}
 problems.SrhdHardTransverseRAM.state2 = {1, 1e-2, 0.0, 0.9, 0.0}
 
 
+function problems.SmoothKelvinHelmholtz:initialize_problem()
+   self.vertical_Ek = { }
+end
+
 function problems.SmoothKelvinHelmholtz:finish_time()
    return 2.5
 end
@@ -281,5 +285,24 @@ function problems.SmoothKelvinHelmholtz:solution(x,y,z,t)
    return { rho, P0, vx, vy, 0.0 }
 end
 
+function problems.SmoothKelvinHelmholtz:user_work_iteration()
+   local P = self.simulation.Primitive:vector()
+   local t = self.simulation.status.simulation_time
+   local E = 0.0
+   local n = 0
+   for i=0,#P-1,5 do
+      local rho = P[i + 0]
+      local vy = P[i + 3]
+      E = E + 0.5 * rho * vy^2
+      n = n + 1
+   end
+
+   self.vertical_Ek[t] = E / n
+end
+
+function problems.SmoothKelvinHelmholtz:user_work_finish()
+   local util = require 'util'
+   util.pretty_print(self.vertical_Ek)
+end
 
 return problems

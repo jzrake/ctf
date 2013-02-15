@@ -41,7 +41,9 @@ function MaraSimulation:initialize_solver()
    Mara.set_godunov(solver)
    Mara.set_boundary(self.problem:boundary_conditions())
    Mara.set_riemann(self.user_opts.riemann or 'hllc')
-   Mara.config_solver({theta=2.0}, true)
+   Mara.config_solver({theta  =  opts.plm_theta or 2.0,
+		       IS     =  opts.IS or 'js96',
+		       sz10A  =  100.0 or opts.sz10A}, false)
 
    local prim_names = Mara.fluid.GetPrimNames()
    local Nq = #prim_names
@@ -52,6 +54,7 @@ end
 function MaraSimulation:report_configuration()
    Mara.show()
    Mara.units.Print()
+   print()
 end
 
 function MaraSimulation:finalize_solver()
