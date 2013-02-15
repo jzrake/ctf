@@ -1,5 +1,4 @@
 #+STYLE: <link rel="stylesheet" type="text/css" href="https://dl.dropbox.com/u/68714342/style.css">
-# #+STYLE: <link rel="stylesheet" type="text/css" href="http://orgmode.org/org-manual.css">
 
 
 * One dimensional smooth problems
@@ -236,7 +235,7 @@
     rate of Kelvin-Helmholtz instability. The vertical velocity is given a
     sinusoidal perturbation with 4 wave-lengths over the domain. The resulting
     flow, when properly resolved, contains a single vortex for each wave-length
-    of the perturbation. The domain is $[0,1]^2$.
+    of the perturbation. The domain is $[0,L]^2$.
 
     + background pressure: $p_0 = 2.5$
     + outer density: $\rho_1 = 1.0$
@@ -246,20 +245,18 @@
     + shearing layer width: $\delta = 0.025$
     + perturbation amplitude: $w_0 = 10^{-2}$
 
-    $$ \left(\begin{array}{c} p \\ v \end{array}\right) =
-    \left(\begin{array}{c} p_0 \\ w_0 \sin(4 \pi x) \end{array}\right) $$
-
-    $$ \left(\begin{array}{c} \rho \\ u \end{array}\right)
-    = \begin{cases} \left(\begin{array}{c} \rho_1 - 0.5(\rho_1 - \rho_2) e^{(y -
-    0.25) / \delta} \\ u_1 - 0.5(u_1 - u_2) e^{(y - 0.25) /
-    \delta} \end{array}\right) & 0.0 \le y < 0.25 \\ \left(\begin{array}{c}
-    \rho_2 + 0.5(\rho_1 - \rho_2) e^{-(y - 0.25) / \delta} \\ u_2 + 0.5(u_1 -
-    u_2) e^{-(y - 0.25) / \delta} \end{array}\right) & 0.25 \le y < 0.5 \\
-    \left(\begin{array}{c} \rho_2 + 0.5(\rho_1 - \rho_2) e^{(y - 0.25) / \delta}
-    \\ u_2 + 0.5(u_1 - u_2) e^{(y - 0.25) / \delta} \end{array}\right) & 0.5 \le
-    y < 0.75 \\ \left(\begin{array}{c} \rho_1 - 0.5(\rho_1 - \rho_2) e^{-(y -
-    0.25) / \delta} \\ u_1 - 0.5(u_1 - u_2) e^{-(y - 0.25) /
-    \delta} \end{array}\right) & 0.75 \le y < 1.0 \\ \end{cases} $$
+    $$ \left(\begin{array}{c}
+    \rho \\
+    p \\
+    u \\
+    v \\
+    \end{array}\right) =
+    \left(\begin{array}{c}
+    1/2 (\tanh{\frac{y-L/4}{\delta}} - \tanh{\frac{y-3L/4}{\delta}})) + 1 \\
+    p_0 \\
+    1/2 (\tanh{\frac{y-L/4}{\delta}} - \tanh{\frac{y-3L/4}{\delta}})) - 1/2 \\
+    w_0 \sin(4 \pi x) \\
+    \end{array}\right) $$
 
 *** Performance at different resolutions
     =HLLC-PLM-RK3=

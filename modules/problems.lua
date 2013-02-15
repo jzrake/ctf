@@ -258,7 +258,7 @@ function problems.SmoothKelvinHelmholtz:finish_time()
    return 2.5
 end
 
-function problems.SmoothKelvinHelmholtz:solution(x,y,z,t)
+function problems.SmoothKelvinHelmholtz:solution_old(x,y,z,t)
    local P0    =  2.5
    local rho1  =  1.0
    local rho2  =  2.0
@@ -282,6 +282,21 @@ function problems.SmoothKelvinHelmholtz:solution(x,y,z,t)
       rho = rho1 - 0.5*(rho1-rho2)*math.exp(-(y-0.75)/L)
       vx  = U1   - 0.5*( U1 - U2 )*math.exp(-(y-0.75)/L)
    end
+   return { rho, P0, vx, vy, 0.0 }
+end
+
+function problems.SmoothKelvinHelmholtz:solution(x,y,z,t)
+   local P0   =  2.5
+   local D1   =  1.0
+   local D2   =  2.0
+   local U1   =  0.5
+   local U2   = -0.5
+   local dL   =  0.035
+   local w0   =  0.010
+   local prof = 0.5 * (math.tanh((y - 0.25)/dL) - math.tanh((y - 0.75)/dL))
+   local rho  = prof + 1.0
+   local vx   = prof - 0.5
+   local vy   = w0 * math.sin(4 * math.pi * x)
    return { rho, P0, vx, vy, 0.0 }
 end
 
