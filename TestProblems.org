@@ -262,6 +262,11 @@
     \delta} \end{array}\right) & 0.75 \le y < 1.0 \\ \end{cases} $$
 
 *** Performance at different resolutions
+    =HLLC-PLM-RK3=
     file://Users/jzrake/Work/ctf/doc/KH-hllc-plm-rk3.png
     [[file://Users/jzrake/Work/ctf/doc/KH-hllc-plm-rk3.pdf][PDF version]]
+
+    =CHAR-WENO5-RK3=
+    file://Users/jzrake/Work/ctf/doc/KH-char-weno5-rk3.png
+    [[file://Users/jzrake/Work/ctf/doc/KH-char-weno5-rk3.pdf][PDF version]]
 
