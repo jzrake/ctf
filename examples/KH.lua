@@ -84,9 +84,8 @@ function MyMara:initialize_solver()
 
    self.domain = domain
    self.prim_manager = unigrid.DataManagerHDF5(domain, prim_names)
-   self.shape = self.prim_manager:local_mesh_size('shape')
    self.Primitive = self.prim_manager.array
-   Mara.set_domain({0,0}, {1,1}, self.shape, Nq, self.Ng, domain_comm)
+   Mara.set_domain({0,0}, {1,1}, {self.Nx, self.Ny}, Nq, self.Ng, domain_comm)
 end
 
 function MyMara:initialize_behavior()

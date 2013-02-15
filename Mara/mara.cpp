@@ -513,20 +513,20 @@ EquationOfState *BuildGenericTabulatedEos(lua_State *L)
 
 int luaC_Mara_init_prim(lua_State *L)
 {
-  const PhysicalDomain *domain = Mara->domain;
-
-  double *UserPrim = (double*) lua_touserdata(L, 1);
-  unsigned N_have = lua_rawlen(L, 1) / sizeof(double); // total number of zones
-  unsigned N_needed = Mara->domain->GetNumberOfZones() * Mara->domain->get_Nq();
-  if (N_have != N_needed) {
-    luaL_error(L, "[Mara] primitive has the wrong size for the domain");
-  }
-
-  if (domain == NULL) {
+  if (Mara->domain == NULL) {
     luaL_error(L, "[Mara] need a domain to run this, use set_domain");
   }
   if (lua_type(L, 2) != LUA_TFUNCTION) {
     luaL_error(L, "[Mara] argument must be a function");
+  }
+
+  const PhysicalDomain *domain = Mara->domain;
+  double *UserPrim = (double*) lua_touserdata(L, 1);
+  unsigned N_have = lua_rawlen(L, 1) / sizeof(double); // total number of zones
+  unsigned N_needed = Mara->domain->GetNumberOfZones() * Mara->domain->get_Nq();
+
+  if (N_have != N_needed) {
+    luaL_error(L, "[Mara] primitive has the wrong size for the domain");
   }
 
   const int Ng = domain->get_Ng();
