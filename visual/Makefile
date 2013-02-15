@@ -14,10 +14,13 @@ default : $(VIS_A) lic.o
 lic.o : lic.cpp
 	$(CXX) $(CFLAGS) -c $<
 
+image.o : image.c
+	$(CC) $(CFLAGS) -c $<
+
 lua-visual.o : lua-visual.c
 	$(CC) $(CFLAGS) -c $< $(LUA_I)
 
-$(VIS_A) : lic.o
+$(VIS_A) : lic.o image.o
 	$(ARSTATIC) $@ $?
 
 clean :
