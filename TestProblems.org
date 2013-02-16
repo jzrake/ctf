@@ -82,10 +82,10 @@
     The need for higher temporal order is highlighted by this problem. While RK4
     accomplishes 5th order convergence, there is no resolution for which RK3
     converges faster than 3rd order. Since the problem uses a very
-    small-purturbation ($10^{-6}) the absolute error is small, and round-off
+    small-purturbation ($10^{-6}$) the absolute error is small, and round-off
     error exceeds the truncation error quickly.
-    file://Users/jzrake/Work/ctf/doc/SoundWave-L1.png
-    [[file://Users/jzrake/Work/ctf/doc/SoundWave-L1.pdf][PDF version]]
+
+    file://Users/jzrake/Work/ctf/doc/SoundWave-L1.png [[file://Users/jzrake/Work/ctf/doc/SoundWave-L1.pdf][PDF version]]
 
     |------+------------------+----------------+------------------+------------------+------------------|
     |  $N$ | =HLLC-PLM-MUSCL= | =HLLC-PLM-RK3= | =HLLC-WENO5-RK3= | =CHAR-WENO5-RK3= | =CHAR-WENO5-RK4= |
@@ -98,7 +98,6 @@
     |  512 |             2.09 |           1.85 |             3.12 |             3.12 |             0.23 |
     | 1024 |             2.13 |           1.95 |             2.08 |             2.08 |             0.01 |
     |------+------------------+----------------+------------------+------------------+------------------|
-
 
 ** Collapse1d
    This problem tests the collapse of a cold dust cloud in one dimension.
@@ -116,7 +115,7 @@
   exact Riemann solver for the Euler equation]] is implemented according to the
   algorithm of Toro (1997).
 
-
+  
 ** Shocktube1
    |--------+----------+----------|
    |        |  $x<0.5$ |  $x>0.5$ |
@@ -127,8 +126,7 @@
    | $v_y$  | 0.000000 | 0.000000 |
    | $v_z$  | 0.000000 | 0.000000 |
    |--------+----------+----------|
-   file://Users/jzrake/Work/ctf/doc/Shocktube1.png
-   [[file://Users/jzrake/Work/ctf/doc/Shocktube1.pdf][PDF version]]
+   file://Users/jzrake/Work/ctf/doc/Shocktube1.png [[file://Users/jzrake/Work/ctf/doc/Shocktube1.pdf][PDF version]]
 
 ** Shocktube2
    |--------+-----------+----------|
@@ -140,8 +138,7 @@
    | $v_y$  |  0.000000 | 0.000000 |
    | $v_z$  |  0.000000 | 0.000000 |
    |--------+-----------+----------|
-   file://Users/jzrake/Work/ctf/doc/Shocktube2.png
-   [[file://Users/jzrake/Work/ctf/doc/Shocktube2.pdf][PDF version]]
+   file://Users/jzrake/Work/ctf/doc/Shocktube2.png [[file://Users/jzrake/Work/ctf/doc/Shocktube2.pdf][PDF version]]
 
 ** Shocktube3
    |--------+-------------+----------|
@@ -153,8 +150,7 @@
    | $v_y$  |    0.000000 | 0.000000 |
    | $v_z$  |    0.000000 | 0.000000 |
    |--------+-------------+----------|
-   file://Users/jzrake/Work/ctf/doc/Shocktube3.png
-   [[file://Users/jzrake/Work/ctf/doc/Shocktube3.pdf][PDF version]]
+   file://Users/jzrake/Work/ctf/doc/Shocktube3.png [[file://Users/jzrake/Work/ctf/doc/Shocktube3.pdf][PDF version]]
 
 ** Shocktube4
    |--------+----------+------------|
@@ -166,8 +162,7 @@
    | $v_y$  | 0.000000 |   0.000000 |
    | $v_z$  | 0.000000 |   0.000000 |
    |--------+----------+------------|
-   file://Users/jzrake/Work/ctf/doc/Shocktube4.png
-   [[file://Users/jzrake/Work/ctf/doc/Shocktube4.pdf][PDF version]]
+   file://Users/jzrake/Work/ctf/doc/Shocktube4.png [[file://Users/jzrake/Work/ctf/doc/Shocktube4.pdf][PDF version]]
 
 ** Shocktube5
    |--------+------------+-----------|
@@ -179,8 +174,7 @@
    | $v_y$  |   0.000000 |  0.000000 |
    | $v_z$  |   0.000000 |  0.000000 |
    |--------+------------+-----------|
-   file://Users/jzrake/Work/ctf/doc/Shocktube5.png
-   [[file://Users/jzrake/Work/ctf/doc/Shocktube5.pdf][PDF version]]
+   file://Users/jzrake/Work/ctf/doc/Shocktube5.png [[file://Users/jzrake/Work/ctf/doc/Shocktube5.pdf][PDF version]]
 
 ** ContactWave
    |--------+----------+----------|
@@ -192,8 +186,7 @@
    | $v_y$  | 0.700000 | 0.700000 |
    | $v_z$  | 0.200000 | 0.200000 |
    |--------+----------+----------|
-   file://Users/jzrake/Work/ctf/doc/ContactWave.png
-   [[file://Users/jzrake/Work/ctf/doc/ContactWave.pdf][PDF version]]
+   file://Users/jzrake/Work/ctf/doc/ContactWave.png [[file://Users/jzrake/Work/ctf/doc/ContactWave.pdf][PDF version]]
 
 ** SrhdCase1DFIM98
    |--------+-----------+----------|
@@ -227,7 +220,7 @@
    | $v_y$  |    0.900000 | 0.900000 |
    | $v_z$  |    0.000000 | 0.000000 |
    |--------+-------------+----------|
-
+   
 * Two dimensional problems
 ** Kelvin-Helmholtz instability
 *** Problem description
@@ -262,3 +255,43 @@
     =HLLC-PLM-RK3=
     file://Users/jzrake/Work/ctf/doc/KH-hllc-plm-rk3.png
     [[file://Users/jzrake/Work/ctf/doc/KH-hllc-plm-rk3.pdf][PDF version]]
+* Using the exact Riemann solver
+
+The exact Riemann solver of Toro (1997) is implemented in [[https://github.com/jzrake/ctf/blob/fd5d576ad7af8cd3d5f0e295d274e7390f039ff6/fish/riemann.c#L352][here, in
+riemann.c]]. This solver generates the exact self-similar solution to the Riemann
+problem defined by piece-wise constant initial data along the characterstic in
+the self-similar variable $x/t$. This particular solver only works for the Euler
+equations with gamma-law equation of state, with arbitrary adiabatic constant
+$\Gamma$.
+
+The exact Riemann solver may be used in any of the Godunov schemes (the ones
+which require a Riemann solver). From C code, a =Fish= scheme may be configured
+to use the exact Riemann solver:
+
+#+BEGIN_SRC C
+fish_setparami(scheme, FLUIDS_RIEMANN_EXACT, FISH_RIEMANN_SOLVER)
+#+END_SRC
+
+When configured this way, the scheme will call the exact Riemann solver in each
+of the internal =fish_intercellflux= calls. The solver can also be queried
+directly from Lua code using the higher level front-end:
+
+#+BEGIN_SRC Lua
+local FishCls = require 'FishClasses'
+local D = FishCls.FluidDescriptor{gamma=1.4, fluid='nrhyd'}
+local R = FishCls.RiemannSolver()
+local SL = FishCls.FluidState(D)
+local SR = FishCls.FluidState(D)
+
+SL.primitive[0] = 1.000 -- density
+SR.primitive[0] = 0.125
+SL.primitive[1] = 1.0   -- pressure
+SR.primitive[1] = 0.1
+SL.primitive[2] = 0.0   -- velocity
+SR.primitive[2] = 0.0
+
+local x = 1.0
+local t = 0.5
+local P = R:solve(SL, SR, x/t)
+print(P)
+#+END_SRC
