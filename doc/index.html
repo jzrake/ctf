@@ -1,0 +1,788 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<title>Mara: Computational Turbulence Framework</title>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
+<meta name="title" content="Mara: Computational Turbulence Framework"/>
+<meta name="generator" content="Org-mode"/>
+<meta name="generated" content="2013-02-15"/>
+<meta name="author" content="Jonathan Zrake"/>
+<meta name="description" content="Docs page for the Mara/CTF astrophysical gasdynamics code"/>
+<meta name="keywords" content=""/>
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  html { font-family: Times, serif; font-size: 12pt; }
+  .title  { text-align: center; }
+  .todo   { color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #add8e6; font-weight:normal }
+  .target { }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
+  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
+  .center {margin-left:auto; margin-right:auto; text-align:center;}
+  p.verse { margin-left: 3% }
+  pre {
+	border: 1pt solid #AEBDCC;
+	background-color: #F3F5F7;
+	padding: 5pt;
+	font-family: courier, monospace;
+        font-size: 90%;
+        overflow:auto;
+  }
+  table { border-collapse: collapse; }
+  td, th { vertical-align: top;  }
+  th.right  { text-align:center;  }
+  th.left   { text-align:center;   }
+  th.center { text-align:center; }
+  td.right  { text-align:right;  }
+  td.left   { text-align:left;   }
+  td.center { text-align:center; }
+  dt { font-weight: bold; }
+  div.figure { padding: 0.5em; }
+  div.figure p { text-align: center; }
+  div.inlinetask {
+    padding:10px;
+    border:2px solid gray;
+    margin:10px;
+    background: #ffffcc;
+  }
+  textarea { overflow-x: auto; }
+  .linenr { font-size:smaller }
+  .code-highlighted {background-color:#ffff00;}
+  .org-info-js_info-navigation { border-style:none; }
+  #org-info-js_console-label { font-size:10px; font-weight:bold;
+                               white-space:nowrap; }
+  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
+                                 font-weight:bold; }
+  /*]]>*/-->
+</style>
+<link rel="stylesheet" type="text/css" href="style.css">
+<script type="text/javascript">
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+<script type="text/javascript" src="http://orgmode.org/mathjax/MathJax.js">
+<!--/*--><![CDATA[/*><!--*/
+    MathJax.Hub.Config({
+        // Only one of the two following lines, depending on user settings
+        // First allows browser-native MathML display, second forces HTML/CSS
+        //  config: ["MMLorHTML.js"], jax: ["input/TeX"],
+            jax: ["input/TeX", "output/HTML-CSS"],
+        extensions: ["tex2jax.js","TeX/AMSmath.js","TeX/AMSsymbols.js",
+                     "TeX/noUndefined.js"],
+        tex2jax: {
+            inlineMath: [ ["\\(","\\)"] ],
+            displayMath: [ ['$$','$$'], ["\\[","\\]"], ["\\begin{displaymath}","\\end{displaymath}"] ],
+            skipTags: ["script","noscript","style","textarea","pre","code"],
+            ignoreClass: "tex2jax_ignore",
+            processEscapes: false,
+            processEnvironments: true,
+            preview: "TeX"
+        },
+        showProcessingMessages: true,
+        displayAlign: "center",
+        displayIndent: "2em",
+
+        "HTML-CSS": {
+             scale: 100,
+             availableFonts: ["STIX","TeX"],
+             preferredFont: "TeX",
+             webFont: "TeX",
+             imageFont: "TeX",
+             showMathMenu: true,
+        },
+        MMLorHTML: {
+             prefer: {
+                 MSIE:    "MML",
+                 Firefox: "MML",
+                 Opera:   "HTML",
+                 other:   "HTML"
+             }
+        }
+    });
+/*]]>*///-->
+</script>
+</head>
+<body>
+
+<div id="preamble">
+
+</div>
+
+<div id="content">
+<h1 class="title">Mara: Computational Turbulence Framework</h1>
+
+
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#sec-1">1 Introduction</a></li>
+<li><a href="#sec-2">2 One dimensional smooth problems</a>
+<ul>
+<li><a href="#sec-2-1">2.1 DensityWave</a>
+<ul>
+<li><a href="#sec-2-1-1">2.1.1 Problem description</a></li>
+<li><a href="#sec-2-1-2">2.1.2 Performance of the schemes</a></li>
+</ul>
+</li>
+<li><a href="#sec-2-2">2.2 SoundWave</a>
+<ul>
+<li><a href="#sec-2-2-1">2.2.1 Problem description</a></li>
+<li><a href="#sec-2-2-2">2.2.2 Performance of the schemes</a></li>
+</ul>
+</li>
+<li><a href="#sec-2-3">2.3 Collapse1d</a></li>
+</ul>
+</li>
+<li><a href="#sec-3">3 One dimensional two-state problems</a>
+<ul>
+<li><a href="#sec-3-1">3.1 Shocktube1</a></li>
+<li><a href="#sec-3-2">3.2 Shocktube2</a></li>
+<li><a href="#sec-3-3">3.3 Shocktube3</a></li>
+<li><a href="#sec-3-4">3.4 Shocktube4</a></li>
+<li><a href="#sec-3-5">3.5 Shocktube5</a></li>
+<li><a href="#sec-3-6">3.6 ContactWave</a></li>
+<li><a href="#sec-3-7">3.7 SrhdCase1DFIM98</a></li>
+<li><a href="#sec-3-8">3.8 SrhdCase2DFIM98</a></li>
+<li><a href="#sec-3-9">3.9 SrhdHardTransverseRAM</a></li>
+</ul>
+</li>
+<li><a href="#sec-4">4 Two dimensional problems</a>
+<ul>
+<li><a href="#sec-4-1">4.1 Kelvin-Helmholtz instability</a>
+<ul>
+<li><a href="#sec-4-1-1">4.1.1 Problem description</a></li>
+<li><a href="#sec-4-1-2">4.1.2 Performance at different resolutions</a></li>
+</ul></li>
+</ul>
+</li>
+<li><a href="#sec-5">5 Using the exact Riemann solver</a></li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> Introduction</h2>
+<div class="outline-text-2" id="text-1">
+
+<p>  <a href="http://zrake.webfactional.com/static/images/turbulent-bndlayer-KH-mara.png"><img src="turbulent-bndlayer-KH-mara-small.png" alt="turbulent-bndlayer-KH-mara-small.png"/></a>
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2" class="outline-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> One dimensional smooth problems</h2>
+<div class="outline-text-2" id="text-2">
+
+
+</div>
+
+<div id="outline-container-2-1" class="outline-3">
+<h3 id="sec-2-1"><span class="section-number-3">2.1</span> DensityWave</h3>
+<div class="outline-text-3" id="text-2-1">
+
+
+</div>
+
+<div id="outline-container-2-1-1" class="outline-4">
+<h4 id="sec-2-1-1"><span class="section-number-4">2.1.1</span> Problem description</h4>
+<div class="outline-text-4" id="text-2-1-1">
+
+<p>    This problem sets up a smooth density wave advecting with a uniform velocity
+    and periodic boundaries. This is probably the easiest problem for a code
+    which solves the Euler equations, as all the non-linear features are absent,
+    and the behavior is only that of the scalar conservation law \(\dot \rho + u_0
+    \rho' = 0\). The problem is described by the following parameters:
+</p>
+<ul>
+<li>sound speed: \(c_s\)
+</li>
+<li>advection velocity: \(u_0\)
+</li>
+<li>background density: \(\rho_0\)
+</li>
+<li>wave amplitude: \(\rho_1\)
+</li>
+<li>background pressure: \(p_0 = \rho_0 c_s^2 / \Gamma\)
+</li>
+<li>wave-number: \(k_0 = 2\pi / L\)
+</li>
+</ul>
+
+
+<p>
+    $$ \left(\begin{array}{c} \rho(x,t) \\ p(x,t) \\ u(x,t) \end{array}\right) =
+    \left(\begin{array}{c} \rho_0 + \rho_1 \cos{k_0 (x - u_0 t)} \\ p_0 \\ 0
+    \\ \end{array}\right) $$
+
+    Because of its smoothness and simplicity, this problem is ideal for gauging
+    the convergence order of a scheme. Any scheme claiming to converge at order
+    \(n\) must absolutely pass this test before any other. For the convergence
+    test, the problem is run for half of the domain-crossing time at resolutions
+    \(2^n\) for \(n\) between 3 and 10. Five different reference schemes are used:
+</p>
+<ol>
+<li><code>HLLC-PLM-MUSCL</code>
+</li>
+<li><code>HLLC-PLM-RK3</code>
+</li>
+<li><code>HLLC-WENO5-RK3</code>
+</li>
+<li><code>CHAR-WENO5-RK3</code>
+</li>
+<li><code>CHAR-WENO5-RK4</code>
+</li>
+</ol>
+
+
+</div>
+
+</div>
+
+<div id="outline-container-2-1-2" class="outline-4">
+<h4 id="sec-2-1-2"><span class="section-number-4">2.1.2</span> Performance of the schemes</h4>
+<div class="outline-text-4" id="text-2-1-2">
+
+<p>    For the formally 5th order <code>WENO5</code> reconstruction schemes, it is evident
+    that the truncation error introduced by the 3rd order temporal update comes
+    to dominate the error by resolution \(64^3\). At higher resolutions, the
+    classic 4th order Runge-Kutta update preserves 5th order convergence. Since
+    this problem does not involve any non-linear waves, it is not surprising
+    that the Godunov scheme <code>HLLC-WENO5-RK3</code> accomplishes the same convergence
+    order as the characteristic decomposition scheme <code>CHAR-WENO5-RK3</code>.
+</p>
+<p>
+    <a href="DensityWave-L1.pdf"><img src="DensityWave-L1.png" alt="DensityWave-L1.png"/></a>
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<caption></caption>
+<colgroup><col class="right" /><col class="right" /><col class="right" /><col class="right" /><col class="right" /><col class="right" />
+</colgroup>
+<thead>
+<tr><th scope="col" class="right">\(N\)</th><th scope="col" class="right"><code>HLLC-PLM-MUSCL</code></th><th scope="col" class="right"><code>HLLC-PLM-RK3</code></th><th scope="col" class="right"><code>HLLC-WENO5-RK3</code></th><th scope="col" class="right"><code>CHAR-WENO5-RK3</code></th><th scope="col" class="right"><code>CHAR-WENO5-RK4</code></th></tr>
+</thead>
+<tbody>
+<tr><td class="right">16</td><td class="right">2.07</td><td class="right">2.27</td><td class="right">4.52</td><td class="right">4.46</td><td class="right">4.53</td></tr>
+<tr><td class="right">32</td><td class="right">2.23</td><td class="right">2.04</td><td class="right">4.42</td><td class="right">4.69</td><td class="right">4.95</td></tr>
+<tr><td class="right">64</td><td class="right">2.25</td><td class="right">2.08</td><td class="right">3.97</td><td class="right">4.33</td><td class="right">5.04</td></tr>
+<tr><td class="right">128</td><td class="right">2.27</td><td class="right">2.00</td><td class="right">3.40</td><td class="right">3.66</td><td class="right">5.04</td></tr>
+<tr><td class="right">256</td><td class="right">2.36</td><td class="right">2.01</td><td class="right">3.13</td><td class="right">3.23</td><td class="right">5.13</td></tr>
+<tr><td class="right">512</td><td class="right">2.28</td><td class="right">1.98</td><td class="right">3.04</td><td class="right">3.06</td><td class="right">5.28</td></tr>
+<tr><td class="right">1024</td><td class="right">2.35</td><td class="right">2.00</td><td class="right">3.01</td><td class="right">3.02</td><td class="right">5.44</td></tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-2-2" class="outline-3">
+<h3 id="sec-2-2"><span class="section-number-3">2.2</span> SoundWave</h3>
+<div class="outline-text-3" id="text-2-2">
+
+
+</div>
+
+<div id="outline-container-2-2-1" class="outline-4">
+<h4 id="sec-2-2-1"><span class="section-number-4">2.2.1</span> Problem description</h4>
+<div class="outline-text-4" id="text-2-2-1">
+
+<p>    This problem sets up a smooth and small-amplitude perturbation to create a
+    left-going sound wave. It is only slightly more challenging as a convergence
+    test than the density wave. The problem is described by the following
+    parameters:
+</p>
+<ul>
+<li>sound speed: \(c_s\)
+</li>
+<li>background density: \(\rho_0\)
+</li>
+<li>background pressure: \(p_0 = \rho_0 c_s^2 / \Gamma\)
+</li>
+<li>density wave amplitude: \(\rho_1 = 10^{-6} \rho_0\)
+</li>
+<li>pressure wave amplitude: \(p_1 = c_s^2 \rho_1\)
+</li>
+<li>velocity wave amplitude: \(u_1 = c_s \rho_1 / \rho_0\)
+</li>
+<li>wave-number: \(k_0 = 8\pi / L\)
+</li>
+<li>frequence: \(\omega_0 = c_s k_0\)
+</li>
+</ul>
+
+
+<p>
+    $$ \left(\begin{array}{c} \rho(x,t) \\ p(x,t) \\ u(x,t) \end{array}\right) =
+    \left(\begin{array}{c} \rho_0 + \rho_1 \cos{(k_0 x - \omega_0 t)} \\ p_0 +
+    p_1 \cos{(k_0 x - \omega_0 t)} \\ u_0 + u_1 \cos{(k_0 x - \omega_0 t)}
+    \\ \end{array}\right) $$
+
+</p></div>
+
+</div>
+
+<div id="outline-container-2-2-2" class="outline-4">
+<h4 id="sec-2-2-2"><span class="section-number-4">2.2.2</span> Performance of the schemes</h4>
+<div class="outline-text-4" id="text-2-2-2">
+
+<p>    The need for higher temporal order is highlighted by this problem. While RK4
+    accomplishes 5th order convergence, there is no resolution for which RK3
+    converges faster than 3rd order. Since the problem uses a very
+    small-purturbation (\(10^{-6}\)) the absolute error is small, and round-off
+    error exceeds the truncation error quickly.
+</p>
+<p>
+    <a href="SoundWave-L1.pdf"><img src="SoundWave-L1.png" alt="SoundWave-L1.png"/></a>
+</p>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<caption></caption>
+<colgroup><col class="right" /><col class="right" /><col class="right" /><col class="right" /><col class="right" /><col class="right" />
+</colgroup>
+<thead>
+<tr><th scope="col" class="right">\(N\)</th><th scope="col" class="right"><code>HLLC-PLM-MUSCL</code></th><th scope="col" class="right"><code>HLLC-PLM-RK3</code></th><th scope="col" class="right"><code>HLLC-WENO5-RK3</code></th><th scope="col" class="right"><code>CHAR-WENO5-RK3</code></th><th scope="col" class="right"><code>CHAR-WENO5-RK4</code></th></tr>
+</thead>
+<tbody>
+<tr><td class="right">16</td><td class="right">0.81</td><td class="right">0.36</td><td class="right">0.61</td><td class="right">0.61</td><td class="right">0.78</td></tr>
+<tr><td class="right">32</td><td class="right">2.14</td><td class="right">0.47</td><td class="right">2.40</td><td class="right">2.40</td><td class="right">3.45</td></tr>
+<tr><td class="right">64</td><td class="right">2.06</td><td class="right">2.29</td><td class="right">3.39</td><td class="right">3.39</td><td class="right">4.85</td></tr>
+<tr><td class="right">128</td><td class="right">1.75</td><td class="right">1.72</td><td class="right">3.18</td><td class="right">3.18</td><td class="right">4.71</td></tr>
+<tr><td class="right">256</td><td class="right">1.95</td><td class="right">1.69</td><td class="right">3.07</td><td class="right">3.07</td><td class="right">3.71</td></tr>
+<tr><td class="right">512</td><td class="right">2.09</td><td class="right">1.85</td><td class="right">3.12</td><td class="right">3.12</td><td class="right">0.23</td></tr>
+<tr><td class="right">1024</td><td class="right">2.13</td><td class="right">1.95</td><td class="right">2.08</td><td class="right">2.08</td><td class="right">0.01</td></tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-2-3" class="outline-3">
+<h3 id="sec-2-3"><span class="section-number-3">2.3</span> Collapse1d</h3>
+<div class="outline-text-3" id="text-2-3">
+
+<p>   This problem tests the collapse of a cold dust cloud in one dimension.
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-3" class="outline-2">
+<h2 id="sec-3"><span class="section-number-2">3</span> One dimensional two-state problems</h2>
+<div class="outline-text-2" id="text-3">
+
+<p>  The two-state problems in this section demonstrate the <code>Mara</code>'s
+  shock-capturing capability. Each problem sets up a piecewise-constant initial
+  data, defined by a different pressure, density, and velocity to either side of
+  the midpoint of the domain at \(x=0.5\). Around discontinuities, the code will
+  not converge at higher order. Instead, we expect better schemes to introduce a
+  smaller degree of numerical dissipation around the discontinuity.
+</p>
+<p>
+  These problems show the solution as generated by a reference scheme,
+  <code>HLLC-PLM-RK3</code> on 128 grid points, compared against the exact solution. <a href="https://github.com/jzrake/ctf/blob/fd5d576ad7af8cd3d5f0e295d274e7390f039ff6/fish/riemann.c#L352">The exact Riemann solver for the Euler equation</a> is implemented according to the
+  algorithm of Toro (1997).
+</p>
+
+
+</div>
+
+<div id="outline-container-3-1" class="outline-3">
+<h3 id="sec-3-1"><span class="section-number-3">3.1</span> Shocktube1</h3>
+<div class="outline-text-3" id="text-3-1">
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<caption></caption>
+<colgroup><col class="left" /><col class="right" /><col class="right" />
+</colgroup>
+<thead>
+<tr><th scope="col" class="left"></th><th scope="col" class="right">\(x&lt;0.5\)</th><th scope="col" class="right">\(x&gt;0.5\)</th></tr>
+</thead>
+<tbody>
+<tr><td class="left">\(\rho\)</td><td class="right">1.000000</td><td class="right">0.125000</td></tr>
+<tr><td class="left">\(p\)</td><td class="right">1.000000</td><td class="right">0.100000</td></tr>
+<tr><td class="left">\(v_x\)</td><td class="right">0.000000</td><td class="right">0.000000</td></tr>
+<tr><td class="left">\(v_y\)</td><td class="right">0.000000</td><td class="right">0.000000</td></tr>
+<tr><td class="left">\(v_z\)</td><td class="right">0.000000</td><td class="right">0.000000</td></tr>
+</tbody>
+</table>
+
+   <a href="Shocktube1.pdf"><img src="Shocktube1.png" alt="Shocktube1.png"/></a>
+
+</div>
+
+</div>
+
+<div id="outline-container-3-2" class="outline-3">
+<h3 id="sec-3-2"><span class="section-number-3">3.2</span> Shocktube2</h3>
+<div class="outline-text-3" id="text-3-2">
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<caption></caption>
+<colgroup><col class="left" /><col class="right" /><col class="right" />
+</colgroup>
+<thead>
+<tr><th scope="col" class="left"></th><th scope="col" class="right">\(x&lt;0.5\)</th><th scope="col" class="right">\(x&gt;0.5\)</th></tr>
+</thead>
+<tbody>
+<tr><td class="left">\(\rho\)</td><td class="right">1.000000</td><td class="right">1.000000</td></tr>
+<tr><td class="left">\(p\)</td><td class="right">0.400000</td><td class="right">0.400000</td></tr>
+<tr><td class="left">\(v_x\)</td><td class="right">-2.000000</td><td class="right">2.000000</td></tr>
+<tr><td class="left">\(v_y\)</td><td class="right">0.000000</td><td class="right">0.000000</td></tr>
+<tr><td class="left">\(v_z\)</td><td class="right">0.000000</td><td class="right">0.000000</td></tr>
+</tbody>
+</table>
+
+   <a href="file:///Shocktube2.pdf"><img src="Shocktube2.png" alt="Shocktube2.png"/></a>
+
+</div>
+
+</div>
+
+<div id="outline-container-3-3" class="outline-3">
+<h3 id="sec-3-3"><span class="section-number-3">3.3</span> Shocktube3</h3>
+<div class="outline-text-3" id="text-3-3">
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<caption></caption>
+<colgroup><col class="left" /><col class="right" /><col class="right" />
+</colgroup>
+<thead>
+<tr><th scope="col" class="left"></th><th scope="col" class="right">\(x&lt;0.5\)</th><th scope="col" class="right">\(x&gt;0.5\)</th></tr>
+</thead>
+<tbody>
+<tr><td class="left">\(\rho\)</td><td class="right">1.000000</td><td class="right">1.000000</td></tr>
+<tr><td class="left">\(p\)</td><td class="right">1000.000000</td><td class="right">0.010000</td></tr>
+<tr><td class="left">\(v_x\)</td><td class="right">0.000000</td><td class="right">0.000000</td></tr>
+<tr><td class="left">\(v_y\)</td><td class="right">0.000000</td><td class="right">0.000000</td></tr>
+<tr><td class="left">\(v_z\)</td><td class="right">0.000000</td><td class="right">0.000000</td></tr>
+</tbody>
+</table>
+
+   <a href="file:///Shocktube3.pdf"><img src="Shocktube3.png" alt="Shocktube3.png"/></a>
+
+</div>
+
+</div>
+
+<div id="outline-container-3-4" class="outline-3">
+<h3 id="sec-3-4"><span class="section-number-3">3.4</span> Shocktube4</h3>
+<div class="outline-text-3" id="text-3-4">
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<caption></caption>
+<colgroup><col class="left" /><col class="right" /><col class="right" />
+</colgroup>
+<thead>
+<tr><th scope="col" class="left"></th><th scope="col" class="right">\(x&lt;0.5\)</th><th scope="col" class="right">\(x&gt;0.5\)</th></tr>
+</thead>
+<tbody>
+<tr><td class="left">\(\rho\)</td><td class="right">1.000000</td><td class="right">1.000000</td></tr>
+<tr><td class="left">\(p\)</td><td class="right">0.010000</td><td class="right">100.000000</td></tr>
+<tr><td class="left">\(v_x\)</td><td class="right">0.000000</td><td class="right">0.000000</td></tr>
+<tr><td class="left">\(v_y\)</td><td class="right">0.000000</td><td class="right">0.000000</td></tr>
+<tr><td class="left">\(v_z\)</td><td class="right">0.000000</td><td class="right">0.000000</td></tr>
+</tbody>
+</table>
+
+   <a href="file:///Shocktube4.pdf"><img src="Shocktube4.png" alt="Shocktube4.png"/></a>
+
+</div>
+
+</div>
+
+<div id="outline-container-3-5" class="outline-3">
+<h3 id="sec-3-5"><span class="section-number-3">3.5</span> Shocktube5</h3>
+<div class="outline-text-3" id="text-3-5">
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<caption></caption>
+<colgroup><col class="left" /><col class="right" /><col class="right" />
+</colgroup>
+<thead>
+<tr><th scope="col" class="left"></th><th scope="col" class="right">\(x&lt;0.5\)</th><th scope="col" class="right">\(x&gt;0.5\)</th></tr>
+</thead>
+<tbody>
+<tr><td class="left">\(\rho\)</td><td class="right">5.999240</td><td class="right">5.999240</td></tr>
+<tr><td class="left">\(p\)</td><td class="right">460.894000</td><td class="right">46.095000</td></tr>
+<tr><td class="left">\(v_x\)</td><td class="right">19.597500</td><td class="right">-6.196330</td></tr>
+<tr><td class="left">\(v_y\)</td><td class="right">0.000000</td><td class="right">0.000000</td></tr>
+<tr><td class="left">\(v_z\)</td><td class="right">0.000000</td><td class="right">0.000000</td></tr>
+</tbody>
+</table>
+
+   <a href="file:///Shocktube5.pdf"><img src="Shocktube5.png" alt="Shocktube5.png"/></a>
+
+</div>
+
+</div>
+
+<div id="outline-container-3-6" class="outline-3">
+<h3 id="sec-3-6"><span class="section-number-3">3.6</span> ContactWave</h3>
+<div class="outline-text-3" id="text-3-6">
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<caption></caption>
+<colgroup><col class="left" /><col class="right" /><col class="right" />
+</colgroup>
+<thead>
+<tr><th scope="col" class="left"></th><th scope="col" class="right">\(x&lt;0.5\)</th><th scope="col" class="right">\(x&gt;0.5\)</th></tr>
+</thead>
+<tbody>
+<tr><td class="left">\(\rho\)</td><td class="right">1.000000</td><td class="right">0.100000</td></tr>
+<tr><td class="left">\(p\)</td><td class="right">1.000000</td><td class="right">1.000000</td></tr>
+<tr><td class="left">\(v_x\)</td><td class="right">0.000000</td><td class="right">0.000000</td></tr>
+<tr><td class="left">\(v_y\)</td><td class="right">0.700000</td><td class="right">0.700000</td></tr>
+<tr><td class="left">\(v_z\)</td><td class="right">0.200000</td><td class="right">0.200000</td></tr>
+</tbody>
+</table>
+
+   <a href="file:///ContactWave.pdf"><img src="ContactWave.png" alt="ContactWave.png"/></a>
+
+</div>
+
+</div>
+
+<div id="outline-container-3-7" class="outline-3">
+<h3 id="sec-3-7"><span class="section-number-3">3.7</span> SrhdCase1DFIM98</h3>
+<div class="outline-text-3" id="text-3-7">
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<caption></caption>
+<colgroup><col class="left" /><col class="right" /><col class="right" />
+</colgroup>
+<thead>
+<tr><th scope="col" class="left"></th><th scope="col" class="right">\(x&lt;0.5\)</th><th scope="col" class="right">\(x&gt;0.5\)</th></tr>
+</thead>
+<tbody>
+<tr><td class="left">\(\rho\)</td><td class="right">10.000000</td><td class="right">1.000000</td></tr>
+<tr><td class="left">\(p\)</td><td class="right">13.300000</td><td class="right">0.000001</td></tr>
+<tr><td class="left">\(v_x\)</td><td class="right">0.000000</td><td class="right">0.000000</td></tr>
+<tr><td class="left">\(v_y\)</td><td class="right">0.000000</td><td class="right">0.000000</td></tr>
+<tr><td class="left">\(v_z\)</td><td class="right">0.000000</td><td class="right">0.000000</td></tr>
+</tbody>
+</table>
+
+
+</div>
+
+</div>
+
+<div id="outline-container-3-8" class="outline-3">
+<h3 id="sec-3-8"><span class="section-number-3">3.8</span> SrhdCase2DFIM98</h3>
+<div class="outline-text-3" id="text-3-8">
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<caption></caption>
+<colgroup><col class="left" /><col class="right" /><col class="right" />
+</colgroup>
+<thead>
+<tr><th scope="col" class="left"></th><th scope="col" class="right">\(x&lt;0.5\)</th><th scope="col" class="right">\(x&gt;0.5\)</th></tr>
+</thead>
+<tbody>
+<tr><td class="left">\(\rho\)</td><td class="right">1.000000</td><td class="right">1.000000</td></tr>
+<tr><td class="left">\(p\)</td><td class="right">1000.000000</td><td class="right">0.010000</td></tr>
+<tr><td class="left">\(v_x\)</td><td class="right">0.000000</td><td class="right">0.000000</td></tr>
+<tr><td class="left">\(v_y\)</td><td class="right">0.000000</td><td class="right">0.000000</td></tr>
+<tr><td class="left">\(v_z\)</td><td class="right">0.000000</td><td class="right">0.000000</td></tr>
+</tbody>
+</table>
+
+
+</div>
+
+</div>
+
+<div id="outline-container-3-9" class="outline-3">
+<h3 id="sec-3-9"><span class="section-number-3">3.9</span> SrhdHardTransverseRAM</h3>
+<div class="outline-text-3" id="text-3-9">
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<caption></caption>
+<colgroup><col class="left" /><col class="right" /><col class="right" />
+</colgroup>
+<thead>
+<tr><th scope="col" class="left"></th><th scope="col" class="right">\(x&lt;0.5\)</th><th scope="col" class="right">\(x&gt;0.5\)</th></tr>
+</thead>
+<tbody>
+<tr><td class="left">\(\rho\)</td><td class="right">1.000000</td><td class="right">1.000000</td></tr>
+<tr><td class="left">\(p\)</td><td class="right">1000.000000</td><td class="right">0.010000</td></tr>
+<tr><td class="left">\(v_x\)</td><td class="right">0.000000</td><td class="right">0.000000</td></tr>
+<tr><td class="left">\(v_y\)</td><td class="right">0.900000</td><td class="right">0.900000</td></tr>
+<tr><td class="left">\(v_z\)</td><td class="right">0.000000</td><td class="right">0.000000</td></tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-4" class="outline-2">
+<h2 id="sec-4"><span class="section-number-2">4</span> Two dimensional problems</h2>
+<div class="outline-text-2" id="text-4">
+
+
+</div>
+
+<div id="outline-container-4-1" class="outline-3">
+<h3 id="sec-4-1"><span class="section-number-3">4.1</span> Kelvin-Helmholtz instability</h3>
+<div class="outline-text-3" id="text-4-1">
+
+
+</div>
+
+<div id="outline-container-4-1-1" class="outline-4">
+<h4 id="sec-4-1-1"><span class="section-number-4">4.1.1</span> Problem description</h4>
+<div class="outline-text-4" id="text-4-1-1">
+
+<p>    This problem uses a smooth shearing profile to capture the linear growth
+    rate of Kelvin-Helmholtz instability. The vertical velocity is given a
+    sinusoidal perturbation with 4 wave-lengths over the domain. The resulting
+    flow, when properly resolved, contains a single vortex for each wave-length
+    of the perturbation. The domain is \([0,L]^2\).
+</p>
+<ul>
+<li>background pressure: \(p_0 = 2.5\)
+</li>
+<li>outer density: \(\rho_1 = 1.0\)
+</li>
+<li>inner density: \(\rho_2 = 2.0\)
+</li>
+<li>outer velocity: \(u_1 =  0.5\)
+</li>
+<li>inner velocity: \(u_2 = -0.5\)
+</li>
+<li>shearing layer width: \(\delta = 0.025\)
+</li>
+<li>perturbation amplitude: \(w_0 = 10^{-2}\)
+</li>
+</ul>
+
+
+<p>
+    $$ \left(\begin{array}{c}
+    \rho \\
+    p \\
+    u \\
+    v \\
+    \end{array}\right) =
+    \left(\begin{array}{c}
+    1/2 (\tanh{\frac{y-L/4}{\delta}} - \tanh{\frac{y-3L/4}{\delta}})) + 1 \\
+    p_0 \\
+    1/2 (\tanh{\frac{y-L/4}{\delta}} - \tanh{\frac{y-3L/4}{\delta}})) - 1/2 \\
+    w_0 \sin(4 \pi x) \\
+    \end{array}\right) $$
+
+</p></div>
+
+</div>
+
+<div id="outline-container-4-1-2" class="outline-4">
+<h4 id="sec-4-1-2"><span class="section-number-4">4.1.2</span> Performance at different resolutions</h4>
+<div class="outline-text-4" id="text-4-1-2">
+
+<p>    <code>HLLC-PLM-RK3</code>
+    <a href="KH-hllc-plm-rk3.pdf"><img src="KH-hllc-plm-rk3.png" alt="KH-hllc-plm-rk3.png"/></a>
+</p>
+</div>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-5" class="outline-2">
+<h2 id="sec-5"><span class="section-number-2">5</span> Using the exact Riemann solver</h2>
+<div class="outline-text-2" id="text-5">
+
+
+<p>
+The exact Riemann solver of Toro (1997) is implemented in <a href="https://github.com/jzrake/ctf/blob/fd5d576ad7af8cd3d5f0e295d274e7390f039ff6/fish/riemann.c#L352">here, in riemann.c</a>. This solver generates the exact self-similar solution to the Riemann
+problem defined by piece-wise constant initial data along the characterstic in
+the self-similar variable \(x/t\). This particular solver only works for the Euler
+equations with gamma-law equation of state, with arbitrary adiabatic constant
+\(\Gamma\).
+</p>
+<p>
+The exact Riemann solver may be used in any of the Godunov schemes (the ones
+which require a Riemann solver). From C code, a <code>Fish</code> scheme may be configured
+to use the exact Riemann solver:
+</p>
+
+
+
+<pre class="example">fish_setparami(scheme, FLUIDS_RIEMANN_EXACT, FISH_RIEMANN_SOLVER)
+</pre>
+
+
+<p>
+When configured this way, the scheme will call the exact Riemann solver in each
+of the internal <code>fish_intercellflux</code> calls. The solver can also be queried
+directly from Lua code using the higher level front-end:
+</p>
+
+
+
+<pre class="example">local FishCls = require 'FishClasses'
+local D = FishCls.FluidDescriptor{gamma=1.4, fluid='nrhyd'}
+local R = FishCls.RiemannSolver()
+local SL = FishCls.FluidState(D)
+local SR = FishCls.FluidState(D)
+
+SL.primitive[0] = 1.000 -- density
+SR.primitive[0] = 0.125
+SL.primitive[1] = 1.0   -- pressure
+SR.primitive[1] = 0.1
+SL.primitive[2] = 0.0   -- velocity
+SR.primitive[2] = 0.0
+
+local x = 1.0
+local t = 0.5
+local P = R:solve(SL, SR, x/t)
+print(P)
+</pre>
+
+</div>
+</div>
+</div>
+
+<div id="postamble">
+<p class="date">Date: 2013-02-15</p>
+<p class="author">Author: Jonathan Zrake</p>
+<p class="creator">Org version 7.8.11 with Emacs version 24</p>
+<a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a>
+
+</div>
+</body>
+</html>
