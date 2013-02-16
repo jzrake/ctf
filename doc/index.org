@@ -1,5 +1,12 @@
-#+STYLE: <link rel="stylesheet" type="text/css" href="https://dl.dropbox.com/u/68714342/style.css">
+#+TITLE: Mara: Computational Turbulence Framework
+#+AUTHOR: Jonathan Zrake
+#+DATE: <2013-02-15 Fri>
+#+EMAIL: <jonathan.zrake@gmail.com>
+#+DESCRIPTION: Docs page for the Mara/CTF astrophysical gasdynamics code
+#+STYLE: <link rel="stylesheet" type="text/css" href="style.css">
 
+* Introduction
+  [[http://zrake.webfactional.com/static/images/turbulent-bndlayer-KH-mara.png][turbulent-bndlayer-KH-mara-small.png]]
 
 * One dimensional smooth problems
 ** DensityWave
@@ -42,8 +49,8 @@
     that the Godunov scheme =HLLC-WENO5-RK3= accomplishes the same convergence
     order as the characteristic decomposition scheme =CHAR-WENO5-RK3=.
 
-    file://Users/jzrake/Work/ctf/doc/DensityWave-L1.png
-    [[file://Users/jzrake/Work/ctf/doc/DensityWave-L1.pdf][PDF version]]
+    [[file:DensityWave-L1.pdf][file:DensityWave-L1.png]]
+
 
     |------+------------------+----------------+------------------+------------------+------------------|
     |  $N$ | =HLLC-PLM-MUSCL= | =HLLC-PLM-RK3= | =HLLC-WENO5-RK3= | =CHAR-WENO5-RK3= | =CHAR-WENO5-RK4= |
@@ -85,7 +92,7 @@
     small-purturbation ($10^{-6}$) the absolute error is small, and round-off
     error exceeds the truncation error quickly.
 
-    file://Users/jzrake/Work/ctf/doc/SoundWave-L1.png [[file://Users/jzrake/Work/ctf/doc/SoundWave-L1.pdf][PDF version]]
+    [[file:SoundWave-L1.pdf][file:SoundWave-L1.png]]
 
     |------+------------------+----------------+------------------+------------------+------------------|
     |  $N$ | =HLLC-PLM-MUSCL= | =HLLC-PLM-RK3= | =HLLC-WENO5-RK3= | =CHAR-WENO5-RK3= | =CHAR-WENO5-RK4= |
@@ -126,7 +133,7 @@
    | $v_y$  | 0.000000 | 0.000000 |
    | $v_z$  | 0.000000 | 0.000000 |
    |--------+----------+----------|
-   file://Users/jzrake/Work/ctf/doc/Shocktube1.png [[file://Users/jzrake/Work/ctf/doc/Shocktube1.pdf][PDF version]]
+   [[file:Shocktube1.pdf][file:Shocktube1.png]]
 
 ** Shocktube2
    |--------+-----------+----------|
@@ -138,7 +145,7 @@
    | $v_y$  |  0.000000 | 0.000000 |
    | $v_z$  |  0.000000 | 0.000000 |
    |--------+-----------+----------|
-   file://Users/jzrake/Work/ctf/doc/Shocktube2.png [[file://Users/jzrake/Work/ctf/doc/Shocktube2.pdf][PDF version]]
+   [[file:/Shocktube2.pdf][file:Shocktube2.png]]
 
 ** Shocktube3
    |--------+-------------+----------|
@@ -150,7 +157,7 @@
    | $v_y$  |    0.000000 | 0.000000 |
    | $v_z$  |    0.000000 | 0.000000 |
    |--------+-------------+----------|
-   file://Users/jzrake/Work/ctf/doc/Shocktube3.png [[file://Users/jzrake/Work/ctf/doc/Shocktube3.pdf][PDF version]]
+   [[file:/Shocktube3.pdf][file:Shocktube3.png]]
 
 ** Shocktube4
    |--------+----------+------------|
@@ -162,7 +169,7 @@
    | $v_y$  | 0.000000 |   0.000000 |
    | $v_z$  | 0.000000 |   0.000000 |
    |--------+----------+------------|
-   file://Users/jzrake/Work/ctf/doc/Shocktube4.png [[file://Users/jzrake/Work/ctf/doc/Shocktube4.pdf][PDF version]]
+   [[file:/Shocktube4.pdf][file:Shocktube4.png]]
 
 ** Shocktube5
    |--------+------------+-----------|
@@ -174,7 +181,7 @@
    | $v_y$  |   0.000000 |  0.000000 |
    | $v_z$  |   0.000000 |  0.000000 |
    |--------+------------+-----------|
-   file://Users/jzrake/Work/ctf/doc/Shocktube5.png [[file://Users/jzrake/Work/ctf/doc/Shocktube5.pdf][PDF version]]
+   [[file:/Shocktube5.pdf][file:Shocktube5.png]]
 
 ** ContactWave
    |--------+----------+----------|
@@ -186,7 +193,7 @@
    | $v_y$  | 0.700000 | 0.700000 |
    | $v_z$  | 0.200000 | 0.200000 |
    |--------+----------+----------|
-   file://Users/jzrake/Work/ctf/doc/ContactWave.png [[file://Users/jzrake/Work/ctf/doc/ContactWave.pdf][PDF version]]
+   [[file:/ContactWave.pdf][file:ContactWave.png]]
 
 ** SrhdCase1DFIM98
    |--------+-----------+----------|
@@ -253,8 +260,8 @@
 
 *** Performance at different resolutions
     =HLLC-PLM-RK3=
-    file://Users/jzrake/Work/ctf/doc/KH-hllc-plm-rk3.png
-    [[file://Users/jzrake/Work/ctf/doc/KH-hllc-plm-rk3.pdf][PDF version]]
+    [[file:KH-hllc-plm-rk3.pdf][file:KH-hllc-plm-rk3.png]]
+
 * Using the exact Riemann solver
 
 The exact Riemann solver of Toro (1997) is implemented in [[https://github.com/jzrake/ctf/blob/fd5d576ad7af8cd3d5f0e295d274e7390f039ff6/fish/riemann.c#L352][here, in
