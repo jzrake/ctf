@@ -83,7 +83,7 @@ function MyMara:initialize_solver()
    local Nq = #prim_names
 
    self.domain = domain
-   self.prim_manager = unigrid.DataManagerHDF5(domain, prim_names)
+   self.prim_manager = unigrid.DataManagerHDF5(domain, prim_names, {mpio=nil})
    self.Primitive = self.prim_manager.array
    Mara.set_domain({0,0}, {1,1}, {self.Nx, self.Ny}, Nq, self.Ng, domain_comm)
 end
