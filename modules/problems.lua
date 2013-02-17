@@ -29,6 +29,7 @@ local problems = {
    SrhdHardTransverseRAM = oo.class('SrhdHardTransverseRAM', TwoStateProblem),
 
    SmoothKelvinHelmholtz = oo.class('SmoothKelvinHelmholtz', TestProblem),
+   ThrowBlobs = oo.class('ThrowBlobs', TestProblem),
 }
 for k,v in pairs(problems) do
    if oo.isclass(v) and oo.issubclass(v, TwoStateProblem) then
@@ -62,12 +63,13 @@ function problems.soundwave:initialize_problem()
    self.BackgroundDensity = 1.0
    self.FourPiG = 1.0
    self.SoundSpeed  = 0.2
-   self.WaveNumber = 8 * math.pi
+   self.WaveNumber = 4 * math.pi
    self.WaveLength = 2 * math.pi / self.WaveNumber
    self.SoundCrossingTime = self.DomainLength / self.SoundSpeed
    self.JeansLength = 2 * self.SoundSpeed * math.pi / (
       self.FourPiG * self.BackgroundDensity)^0.5
-   --print("problems.soundwave: the Jeans length is "..self.JeansLength)
+   print("[soundwave] the Jeans length is "..self.JeansLength)
+   print("[soundwave] the wave length is "..self.WaveLength)
 end
 
 function problems.soundwave:dynamical_time()
@@ -322,5 +324,50 @@ function problems.SmoothKelvinHelmholtz:user_work_finish()
    local util = require 'util'
    util.pretty_print(self.vertical_Ek)
 end
+
+
+
+function problems.ThrowBlobs:initialize_problem()
+
+end
+
+function problems.ThrowBlobs:finish_time()
+   return 1.0
+end
+
+function problems.ThrowBlobs:solution(x,y,z,t)
+   local r1 = ((x - 0.3)^2 + (y - 0.32)^2)^0.5
+   local r2 = ((x - 0.7)^2 + (y - 0.68)^2)^0.5
+   local cs = 1.0
+   local Ma = 0.5
+   local D0 = 1e-1
+   local D1 = 1e+1
+   local gamma = 1.4
+   local rho, vx
+
+   if r1 < 0.2 then
+      rho =  D1
+      vx  =  0.5 * Ma * cs
+   elseif r2 < 0.2 then
+      rho =  D1
+      vx  = -0.5 * Ma * cs
+   else
+      rho =  D0
+      vx  =  0.0
+   end
+
+   local pre = D1 * cs^2 / gamma
+   return { rho, pre, vx, 0.0, 0.0 }
+end
+
+function problems.ThrowBlobs:user_work_iteration()
+
+end
+
+function problems.ThrowBlobs:user_work_finish()
+
+end
+
+
 
 return problems

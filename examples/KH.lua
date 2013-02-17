@@ -166,7 +166,8 @@ local function main()
    local problem_class = problems[arg[2]]
 
    local sim = MyMara(opts)
-   local problem = problems.SmoothKelvinHelmholtz(opts)
+   --local problem = problems.SmoothKelvinHelmholtz(opts)
+   local problem = problems.ThrowBlobs(opts)
    sim:run(problem)
 end
 
