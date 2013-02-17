@@ -335,9 +335,16 @@ function problems.ThrowBlobs:finish_time()
    return 1.0
 end
 
+function problems.ThrowBlobs:boundary_conditions()
+   return 'outflow'
+end
+
 function problems.ThrowBlobs:solution(x,y,z,t)
-   local r1 = ((x - 0.3)^2 + (y - 0.32)^2)^0.5
-   local r2 = ((x - 0.7)^2 + (y - 0.68)^2)^0.5
+   local R0 = 0.75
+   local dR = 0.75 * R0
+   local b0 = 0.05
+   local r1 = ((x - 0.5 - dR/2)^2 + (y - 0.5 - R0 + b0)^2)^0.5
+   local r2 = ((x - 0.5 + dR/2)^2 + (y - 0.5 + R0 - b0)^2)^0.5
    local cs = 1.0
    local Ma = 0.5
    local D0 = 1e-1
@@ -345,10 +352,10 @@ function problems.ThrowBlobs:solution(x,y,z,t)
    local gamma = 1.4
    local rho, vx
 
-   if r1 < 0.2 then
+   if r1 < R0 then
       rho =  D1
       vx  =  0.5 * Ma * cs
-   elseif r2 < 0.2 then
+   elseif r2 < R0 then
       rho =  D1
       vx  = -0.5 * Ma * cs
    else
