@@ -240,9 +240,9 @@
     + background pressure: $p_0 = 2.5$
     + outer density: $\rho_1 = 1.0$
     + inner density: $\rho_2 = 2.0$
-    + outer velocity: $u_1 =  0.5$
-    + inner velocity: $u_2 = -0.5$
-    + shearing layer width: $\delta = 0.025$
+    + outer velocity: $u_1 = -0.5$
+    + inner velocity: $u_2 =  0.5$
+    + shearing layer width: $\delta = 0.035$
     + perturbation amplitude: $w_0 = 10^{-2}$
 
     $$ \left(\begin{array}{c}
@@ -252,9 +252,10 @@
     v \\
     \end{array}\right) =
     \left(\begin{array}{c}
-    1/2 (\tanh{\frac{y-L/4}{\delta}} - \tanh{\frac{y-3L/4}{\delta}})) + 1 \\
+    \frac{\rho_2 - \rho_1}{2} (\tanh{\frac{y-L/4}{\delta}} - \tanh{\frac{y-3L/4}{\delta}}) +
+    \rho_1 \\
     p_0 \\
-    1/2 (\tanh{\frac{y-L/4}{\delta}} - \tanh{\frac{y-3L/4}{\delta}})) - 1/2 \\
+    \frac{u_2 - u_1}{2} (\tanh{\frac{y-L/4}{\delta}} - \tanh{\frac{y-3L/4}{\delta}} - 1) \\
     w_0 \sin(4 \pi x) \\
     \end{array}\right) $$
 
