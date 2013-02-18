@@ -3,9 +3,13 @@
 #+DATE: <2013-02-15 Fri>
 #+EMAIL: <jonathan.zrake@gmail.com>
 #+DESCRIPTION: Docs page for the Mara/CTF astrophysical gasdynamics code
-#+STYLE: <link rel="stylesheet" type="text/css" href="style.css">
+#+STYLE: <link rel="stylesheet" type="text/css" href="stylesheet.css">
+# #+INFOJS_OPT: view:info toc:nil
 
 * Introduction
+  :PROPERTIES:
+  :HTML_CONTAINER_CLASS: introduction
+  :END:
   [[http://zrake.webfactional.com/static/images/turbulent-bndlayer-KH-mara.png][turbulent-bndlayer-KH-mara-small.png]]
 
 * One dimensional smooth problems
@@ -260,7 +264,6 @@
     \end{array}\right) $$
 
 *** Performance at different resolutions
-    =HLLC-PLM-RK3=
     [[file:KH-hllc-plm-rk3.pdf][file:KH-hllc-plm-rk3.png]]
 
 * Using the exact Riemann solver
