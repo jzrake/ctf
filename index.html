@@ -680,11 +680,11 @@
 </li>
 <li>inner density: \(\rho_2 = 2.0\)
 </li>
-<li>outer velocity: \(u_1 =  0.5\)
+<li>outer velocity: \(u_1 = -0.5\)
 </li>
-<li>inner velocity: \(u_2 = -0.5\)
+<li>inner velocity: \(u_2 =  0.5\)
 </li>
-<li>shearing layer width: \(\delta = 0.025\)
+<li>shearing layer width: \(\delta = 0.035\)
 </li>
 <li>perturbation amplitude: \(w_0 = 10^{-2}\)
 </li>
@@ -699,9 +699,10 @@
     v \\
     \end{array}\right) =
     \left(\begin{array}{c}
-    1/2 (\tanh{\frac{y-L/4}{\delta}} - \tanh{\frac{y-3L/4}{\delta}})) + 1 \\
+    \frac{\rho_2 - \rho_1}{2} (\tanh{\frac{y-L/4}{\delta}} - \tanh{\frac{y-3L/4}{\delta}}) +
+    \rho_1 \\
     p_0 \\
-    1/2 (\tanh{\frac{y-L/4}{\delta}} - \tanh{\frac{y-3L/4}{\delta}})) - 1/2 \\
+    \frac{u_2 - u_1}{2} (\tanh{\frac{y-L/4}{\delta}} - \tanh{\frac{y-3L/4}{\delta}} - 1) \\
     w_0 \sin(4 \pi x) \\
     \end{array}\right) $$
 
