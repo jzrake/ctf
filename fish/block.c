@@ -365,7 +365,7 @@ int fish_block_timederivative(fish_block *B, fish_state *scheme)
   return 0;
 }
 
-int fish_block_sourceterms(fish_block *B, fish_state *scheme)
+int fish_block_sourceterms(fish_block *B)
 /* -----------------------------------------------------------------------------
  *
  * Add the source terms onto the existing time-derivative data

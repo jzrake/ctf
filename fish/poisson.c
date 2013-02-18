@@ -19,6 +19,12 @@
 #define CHECK(c,m) do{if(!(c)){B->error=m;return -1;}B->error=NULL;}while(0)
 
 int fish_block_solvepoisson(fish_block *B)
+/* -----------------------------------------------------------------------------
+ *
+ * Solve the Poisson equation in 1d assuming periodic boundary conditions.
+ *
+ * -----------------------------------------------------------------------------
+ */
 {
 #ifndef USE_FFTW
   CHECK(0, "FFTW must be enabled to solve a poisson equation with DFT's");
@@ -26,6 +32,10 @@ int fish_block_solvepoisson(fish_block *B)
   CHECK(B->allocated, "block must already be allocated");
   CHECK(B->descr, "block needs a fluid descriptor");
   CHECK(B->rank == 1, "block must be 1d, higher dimensions not yet supported");
+
+  int fluid_id;
+  fluids_descr_getfluid(B->descr, &fluid_id);
+  CHECK(fluid_id == FLUIDS_GRAVS, "fluid id must be GRAVS");
 
   int Ng = B->guard;
   int Nx = B->size[0];

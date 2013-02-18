@@ -213,6 +213,14 @@ function Block:time_derivative(scheme)
    fish.block_timederivative(self._block, scheme)
 end
 
+function Block:source_terms(scheme)
+   fish.block_sourceterms(self._block)
+end
+
+function Block:solve_poisson(scheme)
+   fish.block_solvepoisson(self._block)
+end
+
 function Block:project()
    fish.block_project(self._block)
 end
