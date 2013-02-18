@@ -5,6 +5,7 @@
 #+DESCRIPTION: Docs page for the Mara/CTF astrophysical gasdynamics code
 #+STYLE: <link rel="stylesheet" type="text/css" href="stylesheet.css">
 # #+INFOJS_OPT: view:info toc:nil
+#+OPTIONS: toc:2
 
 * Introduction
   :PROPERTIES:
