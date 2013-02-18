@@ -1,45 +1,19 @@
 
-local oo     = require 'class'
-local array  = require 'array'
-local fish   = require 'fish'
-local flui   = require 'fluids'
+local oo      = require 'class'
+local array   = require 'array'
+local fish    = require 'fish'
+local flui    = require 'fluids'
+local FishCls = require 'FishClasses'
 
 local Block = oo.class('Block')
 local FluidDescriptor = oo.class('FluidDescriptor')
 
 
-function FluidDescriptor:__init__()
-   local descr = flui.descr_new()
-   flui.descr_setfluid(descr, flui.NRHYD)
-   flui.descr_setgamma(descr, 1.4)
-   flui.descr_seteos(descr, flui.EOS_GAMMALAW)
-   self._descr = descr
-end
-
-function FluidDescriptor:__gc__()
-   flui.descr_del(self._descr)
-end
-
-function FluidDescriptor:get_ncomp(which)
-   return flui.descr_getncomp(self._descr, flui[which:upper()])
-end
-
-function FluidDescriptor:fluid()
-   local E = { }
-   for k,v in pairs(flui) do
-      if type(v) == 'number' then
-	 E[v] = k
-      end
-   end
-   local F = array.vector(1, 'int')
-   flui.descr_getfluid(self._descr, F:buffer())
-   return E[F[0]]:lower()
-end
-
 function Block:__init__(args)
    -- **************************************************************************
    -- args: {table}
    --
+   --  + descr: a fluid descriptor to use, ignored unless root block
    --  + size: table, e.g. {16,32,32}
    --  + guard: number, of guard zones
    --  + parent: block, if nil create new root block
@@ -51,10 +25,10 @@ function Block:__init__(args)
    local rank = #args.size
    local guard = args.guard or 0
    local parent = args.parent
-   local descr = parent and parent._descr or FluidDescriptor()
+   local descr = parent and parent._descr or args.descr
    local totsize = { }
 
-   fish.block_setdescr (block, descr._descr)
+   fish.block_setdescr (block, descr._c)
    fish.block_setrank  (block, rank)
    fish.block_setguard (block, guard)
 
@@ -64,15 +38,22 @@ function Block:__init__(args)
       totsize[i] = N + 2 * guard
    end
 
-   table.insert(totsize, descr:get_ncomp('primitive'))
-
    if not args.dummy then
+      totsize[rank + 1] = descr:get_ncomp('primitive')
       local primitive = array.array(totsize)
+
+      totsize[rank + 1] = descr:get_ncomp('gravity')
+      local gravity = array.array(totsize)
+
       fish.block_allocate  (block)
       fish.block_mapbuffer (block, primitive:buffer(), flui.PRIMITIVE)
+      fish.block_mapbuffer (block, gravity:buffer(), flui.GRAVITY)
+
       self._primitive = primitive
+      self._gravity = gravity
    else
       self._primitive = { }
+      self._gravity = { }
    end
 
    self._block = block
@@ -120,7 +101,8 @@ function Block:__index__(key)
    if type(key) == 'string' then
       return ( -- These are the class read-only attribute
 	 {descr=self._descr,
-	  primitive=self._primitive})[key] or oo.getattrib(self, key)
+	  primitive=self._primitive,
+	  gravity=self._gravity})[key] or oo.getattrib(self, key)
    else
       return self:child_block(key)
    end
@@ -377,7 +359,8 @@ function Block:walk(opts)
 end
 
 local function test1()
-   local block0 = Block{ size={16}, guard=2 }
+   local descr = FishCls.FluidDescriptor()
+   local block0 = Block{ descr=descr, size={16}, guard=2 }
    local block1 = block0:add_child_block(0)
    local block2 = block1:add_child_block(0)
    local block3 = block1:add_child_block(1)
@@ -391,11 +374,12 @@ local function test1()
 
    assert(block2:total_states() == 20)
    assert(block2:total_states{mode='interior'} == 16)
-   assert(math.abs(block2:max_wavespeed() - 1.1973303637677) < 1e-10)
+   assert(math.abs(block2:max_wavespeed() - 1.1786209258374) < 1e-10)
 end
 
 local function test2()
-   local mesh = Block{ size={16}, guard=2 }
+   local descr = FishCls.FluidDescriptor()
+   local mesh = Block{ descr=descr, size={16}, guard=2 }
    local N = 2
    for i=0,N-1 do
       mesh:add_child_block(i)
@@ -426,7 +410,8 @@ local function test2()
 end
 
 local function test3()
-   local mesh = Block { size={32} }
+   local descr = FishCls.FluidDescriptor()
+   local mesh = Block { descr=descr, size={32} }
    assert(mesh.descr:fluid() == 'nrhyd')
 
    mesh:set_boundary_block(0, 'L', mesh)
@@ -438,7 +423,7 @@ local function test3()
    local err, msg = pcall(mesh.set_boundary_block, mesh, 0, 'L', mesh[0])
    assert(not err)
 
-   local dummy = Block { size={32,32}, dummy=true }
+   local dummy = Block { descr=descr, size={32,32}, dummy=true }
    dummy      :add_child_block(0, {dummy=true})
    dummy[0]   :add_child_block(0, {dummy=false})
    dummy[0][0]:add_child_block(0, {dummy=false})
@@ -454,7 +439,8 @@ local function test3()
 end
 
 local function test4()
-   local mesh = Block{ size={64}, guard=3 }
+   local descr = FishCls.FluidDescriptor{ fluid='gravs' }
+   local mesh = Block{ descr=descr, size={64}, guard=3 }
    local block1 = mesh:add_child_block(0)
    local block2 = mesh:add_child_block(1)
 
@@ -473,6 +459,8 @@ local function test4()
       local x = fish.block_positionatindex(mesh._block, 0, i+3)
       assert(P[i] == F(x)[1])
    end
+
+   assert(mesh.gravity:shape()[2] == 4)
 end
 
 if ... then -- if __name__ == "__main__"

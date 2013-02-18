@@ -4,7 +4,6 @@ local oo       = require 'class'
 local array    = require 'array'
 local fish     = require 'fish'
 local fluids   = require 'fluids'
-local hdf5     = require 'lua-hdf5.LuaHDF5'
 local util     = require 'util'
 
 local FishSimulation = oo.class('FishSimulation', sim.SimulationBase)

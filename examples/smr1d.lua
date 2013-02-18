@@ -4,10 +4,10 @@ local oo       = require 'class'
 local array    = require 'array'
 local fish     = require 'fish'
 local fluids   = require 'fluids'
-local hdf5     = require 'lua-hdf5.LuaHDF5'
 local util     = require 'util'
 local mesh     = require 'mesh'
 local problems = require 'problems'
+local FishCls  = require 'FishClasses'
 
 
 local function TiledUniformLevelMesh(args)
@@ -25,7 +25,9 @@ local function TiledUniformLevelMesh(args)
    --
    -- **************************************************************************
    --
-   local mesh = mesh.Block { size={args.N},
+   local descr = FishCls.FluidDescriptor{fluid='nrhyd'}
+   local mesh = mesh.Block { descr=descr,
+			     size={args.N},
 			     guard=args.guard,
 			     dummy=args.level ~= 0 }
 
