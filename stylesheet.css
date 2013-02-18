@@ -1,0 +1,50 @@
+
+body {
+    color: #000000;
+    background-color: #FFFFFF;
+    line-height: 1.4;
+    font-size: 16px;
+    color: #000000;
+    text-align: left;
+    margin-right: 180px;
+    margin-left: 180px;
+    background-color: #FFFFFF;
+}
+
+img {
+    border: 2px solid black;;
+    max-width: 650px;
+}
+
+pre {
+    background-color: #eee;
+    box-shadow: 5px 5px 5px #888;
+    border: none;
+    padding: 5pt;
+    margin-bottom: 14pt;
+    color: black;
+    padding: 12pt;
+    font-family: Courier New;
+    font-size: 95%;
+    overflow: auto; 
+}
+
+table, th, td
+{
+    text-align: center;
+    border: 1px solid black;
+}
+
+h1.title {
+    text-shadow: 2px 2px 4px #999;
+    font-size: 42pt;
+    font-family: Courier New;
+}
+
+h1 { font-family: Courier New; }
+h2 { font-family: Courier New; }
+h3 { font-family: Courier New; }
+a { }
+a:visited { }
+a:hover { }
+p { }
