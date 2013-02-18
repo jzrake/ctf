@@ -336,12 +336,13 @@ double fish_block_maxwavespeed(fish_block *B)
   CHECK(B->allocated, "block needs to be allocated");
   CHECK(B->descr, "block needs a fluid descriptor");
 
-  int TotalZones = fish_block_totalstates(B, FISH_INCLUDING_GUARD);
-  fluids_state **fluid = fish_block_getfluid(B);
+  int Ng = B->guard;
+  int Nx = B->size[0];
   double a = 0.0;
-  for (int n=0; n<TotalZones; ++n) {
+
+  for (int n=Ng; n<Nx+Ng; ++n) {
     double A[5];
-    fluids_state_derive(fluid[n], A, FLUIDS_EVAL0);
+    fluids_state_derive(B->fluid[n], A, FLUIDS_EVAL0);
     for (int q=0; q<5; ++q) {
       a = fabs(A[q]) > a ? fabs(A[q]) : a;
     }
@@ -364,6 +365,32 @@ int fish_block_timederivative(fish_block *B, fish_state *scheme)
   return 0;
 }
 
+int fish_block_sourceterms(fish_block *B, fish_state *scheme)
+/* -----------------------------------------------------------------------------
+ *
+ * Add the source terms onto the existing time-derivative data
+ *
+ * -----------------------------------------------------------------------------
+ */
+{
+  CHECK(B->allocated, "block needs to be allocated");
+  CHECK(B->descr, "block needs a fluid descriptor");
+
+  int Ng = B->guard;
+  int Nx = B->size[0];
+  double *L = B->time_derivative;
+  double S[5];
+
+  for (int n=Ng; n<Nx+Ng; ++n) {
+    fluids_state_derive(B->fluid[n], S, FLUIDS_SOURCETERMS);
+    for (int q=0; q<5; ++q) {
+      L[5*n + q] += S[q];
+    }
+  }
+
+  return 0;
+}
+
 int fish_block_evolve(fish_block *B, double *W, double dt)
 /* -----------------------------------------------------------------------------
  *
@@ -379,20 +406,19 @@ int fish_block_evolve(fish_block *B, double *W, double dt)
   CHECK(B->descr, "block needs a fluid descriptor");
 
   int Ng = B->guard;
-  int Nx = fish_block_getsize(B, 0);
+  int Nx = B->size[0];
   double *U = B->temp_conserved; // U^n
   double *L = B->time_derivative;
   double U1[5];
-  fluids_state **fluid = fish_block_getfluid(B);
 
   for (int n=Ng; n<Nx+Ng; ++n) {
-    fluids_state_derive(fluid[n], U1, FLUIDS_CONSERVED);
+    fluids_state_derive(B->fluid[n], U1, FLUIDS_CONSERVED);
     for (int q=0; q<5; ++q) {
       double u0 = U[5*n + q]; // beginning of the time-step
       double u1 = U1[q] + L[5*n + q] * dt;
       U1[q] = W[0]*u0 + W[1]*u1;
     }
-    fluids_state_fromcons(fluid[n], U1, FLUIDS_CACHE_DEFAULT);
+    fluids_state_fromcons(B->fluid[n], U1, FLUIDS_CACHE_DEFAULT);
   }
 
   return 0;
