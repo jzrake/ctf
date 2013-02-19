@@ -7,7 +7,7 @@
 #define FISH_PRIVATE_DEFS
 #include "fish.h"
 
-#define MAXQ 8 // for small statically-declared arrays
+#define MAXQ 5 // for small statically-declared arrays
 
 static void _pcm(fish_state *S, fluids_state **src, fluids_state *L,
 		 fluids_state *R, long flag);
@@ -328,7 +328,7 @@ int _intercell_godunov(fish_state *S, fluids_state **fluid, double *F, int N,
   case FISH_PCM:
     for (int n=0; n<N-1; ++n) {
       _pcm(S, &fluid[n], SL, SR, FLUIDS_PRIMITIVE);
-      _pcm(S, &fluid[n], SL, SR, FLUIDS_GRAVITY);
+      //_pcm(S, &fluid[n], SL, SR, FLUIDS_GRAVITY);
       fluids_riemn_execute(R);
       fluids_riemn_sample(R, S_, 0.0);
       fluids_state_derive(S_, &F[Q*n], FLUIDS_FLUX[dim]);
@@ -337,7 +337,7 @@ int _intercell_godunov(fish_state *S, fluids_state **fluid, double *F, int N,
   case FISH_PLM:
     for (int n=1; n<N-2; ++n) {
       _plm(S, &fluid[n], SL, SR, FLUIDS_PRIMITIVE);
-      _plm(S, &fluid[n], SL, SR, FLUIDS_GRAVITY);
+      //_plm(S, &fluid[n], SL, SR, FLUIDS_GRAVITY);
       fluids_riemn_execute(R);
       fluids_riemn_sample(R, S_, 0.0);
       fluids_state_derive(S_, &F[Q*n], FLUIDS_FLUX[dim]);
@@ -346,7 +346,7 @@ int _intercell_godunov(fish_state *S, fluids_state **fluid, double *F, int N,
   case FISH_WENO5:
     for (int n=2; n<N-3; ++n) {
       _weno5(S, &fluid[n], SL, SR, FLUIDS_PRIMITIVE);
-      _weno5(S, &fluid[n], SL, SR, FLUIDS_GRAVITY);
+      //_weno5(S, &fluid[n], SL, SR, FLUIDS_GRAVITY);
       fluids_riemn_execute(R);
       fluids_riemn_sample(R, S_, 0.0);
       fluids_state_derive(S_, &F[Q*n], FLUIDS_FLUX[dim]);

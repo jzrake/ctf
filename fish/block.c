@@ -418,6 +418,32 @@ int fish_block_sourceterms(fish_block *B)
     }
   }
 
+  int fluid_id;
+  double rhobar;
+  fluids_descr_getrhobar(B->descr, &rhobar);
+  fluids_descr_getfluid(B->descr, &fluid_id);
+
+  if (fluid_id == FLUIDS_GRAVP) {
+    for (int n=Ng; n<Nx+Ng; ++n) {
+      double G0[4], G1[4], G2[4];
+      fluids_state_getattr(B->fluid[n-1], G0, FLUIDS_GRAVITY);
+      fluids_state_getattr(B->fluid[n+0], G1, FLUIDS_GRAVITY);
+      fluids_state_getattr(B->fluid[n+1], G2, FLUIDS_GRAVITY);
+
+      double phiL = 0.5 * (G1[0] + G0[0]);
+      double gphL = 0.5 * (G1[1] + G0[1]);
+      double phiR = 0.5 * (G2[0] + G1[0]);
+      double gphR = 0.5 * (G2[1] + G1[1]);
+
+      double gp2L = gphL*gphL;
+      double gp2R = gphR*gphR;
+      double fpxL = gphL*gphL + rhobar*phiL - 0.5*gp2L;
+      double fpxR = gphR*gphR + rhobar*phiR - 0.5*gp2R;
+
+      L[5*n + 2] -= (fpxR - fpxL) / dx; // momentum flux
+    }
+  }
+
   return 0;
 }
 

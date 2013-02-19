@@ -121,16 +121,19 @@ end
 function StaticMeshRefinement:advance_physics()
    local dt = self.status.time_increment
    local enum = array.vector(1, 'int')
+   local fid = self.descr:fluid()
    fish.getparami(self.scheme._c, enum:buffer(), fish.TIME_UPDATE)
 
    local function step(w0, w1)
       local W = array.vector{ w0, w1 }
       for block in self.mesh:walk() do
-	 block:time_derivative(self.scheme._c)
-	 block:source_terms()
-	 if self.mesh.descr:fluid() == 'gravs' then
+	 for block in self.grid:walk() do
+	 if fid == 'gravs' or
+	    fid == 'gravp' then
 	    block:solve_poisson()
 	 end
+	 block:time_derivative(self.scheme._c)
+	 block:source_terms()
 	 block:evolve(W, dt)
       end
       self.mesh:fill()

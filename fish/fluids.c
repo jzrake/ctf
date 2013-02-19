@@ -955,6 +955,7 @@ int _gravp_flux(fluids_state *S, long modes)
 
   _nrhyd_flux(S, modes);
 
+  /*
   if (modes & FLUIDS_FLUX0) {
     C->flux[0][Sx] += G[gph+0] * G[gph+0] + rhobar*G[phi] - 0.5 * gph2;
     C->flux[0][Sy] += G[gph+0] * G[gph+1] + rhobar*G[phi];
@@ -970,6 +971,7 @@ int _gravp_flux(fluids_state *S, long modes)
     C->flux[2][Sy] += G[gph+2] * G[gph+1] + rhobar*G[phi];
     C->flux[2][Sz] += G[gph+2] * G[gph+2] + rhobar*G[phi] - 0.5 * gph2;
   }
+  */
   return 0;
 }
 int _gravp_eigenval(fluids_state *S, long modes)

@@ -35,7 +35,9 @@ int fish_block_solvepoisson(fish_block *B)
 
   int fluid_id;
   fluids_descr_getfluid(B->descr, &fluid_id);
-  CHECK(fluid_id == FLUIDS_GRAVS, "fluid id must be GRAVS");
+  CHECK(fluid_id == FLUIDS_GRAVS ||
+	fluid_id == FLUIDS_GRAVP,
+	"fluid id must be GRAVS");
 
   int Ng = B->guard;
   int Nx = B->size[0];
@@ -81,7 +83,7 @@ int fish_block_solvepoisson(fish_block *B)
   fftw_execute(revgph);
 
   for (int i=0; i<Nx; ++i) {
-    double G[4];
+    double G[4] = { 0, 0, 0, 0 };
     G[phi] = Phix[i][0] / Nx;
     G[gph] = Gphx[i][0] / Nx;
     fluids_state_setattr(B->fluid[i+Ng], G, FLUIDS_GRAVITY);
