@@ -14,11 +14,17 @@ local MyMara = oo.class('MyMara', MyBase, MaraSim.MaraSimulation)
 local MyFish = oo.class('MyFish', MyBase, FishSim.FishSimulation)
 
 
+function MyFish:initialize_solver()
+   oo.super(self, FishSim.FishSimulation):initialize_solver()
+   self.Primitive = self.grid.primitive
+   self.Gravity = self.grid.gravity
+   self.dx = 1.0 / self.N
+end
 
 function MyBase:_map_solution(t)
    local N  = self.N
    local Ng = self.Ng
-   local dx = self.dx
+   local dx = 1.0 / N
 
    local P = array.array{N + 2*Ng, 5}
    local Pvec = P:vector()
@@ -39,10 +45,9 @@ function MyBase:initialize_behavior()
    local opts = self.user_opts
    local cpi = opts.cpi or 1.0
    local tmax = opts.tmax or self.problem:finish_time()
-   local dynamical_time = self.problem:dynamical_time()
    self.behavior.message_cadence = opts.message_cadence or 10
-   self.behavior.checkpoint_cadence = cpi * dynamical_time
-   self.behavior.max_simulation_time = tmax * dynamical_time
+   self.behavior.checkpoint_cadence = tonumber(cpi)
+   self.behavior.max_simulation_time = tonumber(tmax)
 end
 
 function MyBase:checkpoint_write(fname)
@@ -63,7 +68,6 @@ function MyBase:checkpoint_write(fname)
 
    local outfile = hdf5.File(fname, 'w')
    outfile['prim' ]   = self.Primitive[{{Ng,-Ng},nil}]
-   outfile['grav' ]   = self.Gravity  [{{Ng,-Ng},nil}]
    outfile['exact']   = Pexact        [{{Ng,-Ng},nil}]
    outfile['id']      = base
    outfile['time']    = t

@@ -108,7 +108,7 @@ function FishScheme:__gc__(args)
    fish.state_del(self._c)
 end
 
-function FishScheme:report_configuration()
+function FishScheme:report_configuration(extras)
    local scheme = self._c
    local enum = array.vector(1, 'int')
    local cfg = { }
@@ -130,6 +130,10 @@ function FishScheme:report_configuration()
       fish.getparami(scheme, enum:buffer(), fish[k])
       local val = FishEnums[enum[0]] or FluidsEnums[enum[0]]
       cfg[k:lower()] = val:lower()
+   end
+
+   for k,v in pairs(extras or { }) do
+      cfg[k] = v
    end
 
    cfg['resolution'] = self.N

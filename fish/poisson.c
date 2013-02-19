@@ -84,6 +84,7 @@ int fish_block_solvepoisson(fish_block *B)
     double G[4];
     G[phi] = Phix[i][0] / Nx;
     G[gph] = Gphx[i][0] / Nx;
+    fluids_state_setattr(B->fluid[i+Ng], G, FLUIDS_GRAVITY);
   }
 
   fftw_destroy_plan(fwd);

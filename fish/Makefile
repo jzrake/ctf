@@ -20,15 +20,12 @@ INCLUDE += $(FFT_I)
 DEFINES += -DUSE_FFTW
 endif
 
-OBJ = fish.o reconstruct.o fluids.o riemann.o matrix.o grav1d.o block.o poisson.o
+OBJ = fish.o reconstruct.o fluids.o riemann.o matrix.o block.o poisson.o
 
 default : $(FISH_A) lua-fluids.o lua-fish.o
 
 %.o : %.c
 	$(CC) $(CFLAGS) -c $^ $(LUA_I)
-
-grav1d.o : grav1d.c
-	$(CC) $(CFLAGS) -c $^ $(LUA_I) $(DEFINES) $(INCLUDE)
 
 poisson.o : poisson.c
 	$(CC) $(CFLAGS) -c $^ $(DEFINES) $(INCLUDE)

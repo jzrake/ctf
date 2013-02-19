@@ -113,15 +113,6 @@ double fish_block_maxwavespeed(fish_block *B);
 char *fish_block_geterror(fish_block *B);
 fluids_state **fish_block_getfluid(fish_block *B);
 
-void fish_grav1d_init(fluids_descr *descr, int N);
-void fish_grav1d_finalize();
-void fish_grav1d_setscheme(fish_state *S);
-void fish_grav1d_advance(double dt);
-void fish_grav1d_getprim(double *prim, double *grav);
-void fish_grav1d_setprim(double *prim);
-void fish_grav1d_mapbuffer(double *x, long flag);
-double fish_grav1d_maxwavespeed();
-
 
 #ifdef FISH_PRIVATE_DEFS
 

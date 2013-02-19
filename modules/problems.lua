@@ -34,6 +34,9 @@ for k,v in pairs(problems) do
    if oo.isclass(v) and oo.issubclass(v, TwoStateProblem) then
       problems.problems_1d[k] = v
    end
+   problems.problems_1d['soundwave'] = problems.soundwave
+   problems.problems_1d['densitywave'] = problems.densitywave
+   problems.problems_1d['collapse1d'] = problems.collapse1d
 end
 
 
