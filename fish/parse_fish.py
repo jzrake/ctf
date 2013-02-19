@@ -18,7 +18,9 @@ static int _%(funcname)s(lua_State *L)
 fbodies = [ ]
 wrapped = [ ]
 enums = [ ]
-byhand = ['fish_block_neighbor', 'fish_block_getboundaryblock']
+byhand = ['fish_block_neighbor',
+          'fish_block_getboundaryblock',
+          'fish_block_getboundaryflag']
 
 for line in fishh:
     if line.startswith('typedef') or line.startswith('struct'): continue

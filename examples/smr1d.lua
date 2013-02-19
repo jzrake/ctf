@@ -52,8 +52,8 @@ local function TiledUniformLevelMesh(args)
    end
 
    if args.bc == 'outflow' then
-      left_most :set_boundary_block(0, 'L', left_most)
-      right_most:set_boundary_block(0, 'R', right_most)
+      left_most :set_boundary_flag(0, 'L', 'outflow')
+      right_most:set_boundary_flag(0, 'R', 'outflow')
    elseif args.bc == 'periodic' then
       left_most :set_boundary_block(0, 'L', right_most)
       right_most:set_boundary_block(0, 'R', left_most)
@@ -128,7 +128,9 @@ function StaticMeshRefinement:advance_physics()
       for block in self.mesh:walk() do
 	 block:time_derivative(self.scheme._c)
 	 block:source_terms()
-	 block:solve_poisson()
+	 if self.mesh.descr:fluid() == 'gravs' then
+	    block:solve_poisson()
+	 end
 	 block:evolve(W, dt)
       end
       self.mesh:fill()
@@ -187,10 +189,10 @@ function StaticMeshRefinement:user_work_finish()
    end
 end
 
-local opts = {plot=false,
-	      resolution=32,
+local opts = {plot=true,
+	      resolution=16,
 	      CFL=0.8,
-	      tmax=0.01,
+	      tmax=0.1,
 	      solver='spectral',
 	      reconstruction='weno5',
 	      advance='rk3'}

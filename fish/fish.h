@@ -13,6 +13,7 @@ enum {
   // -------------------
   // boundary conditions
   // -------------------
+  FISH_NONE,
   FISH_PERIODIC,
   FISH_OUTFLOW,
 
@@ -93,6 +94,8 @@ int fish_block_getchild(fish_block *B, int id, fish_block **B1);
 int fish_block_setchild(fish_block *B, int id, fish_block *B1);
 int fish_block_getboundaryblock(fish_block *B, int dim, int LR, fish_block **B1);
 int fish_block_setboundaryblock(fish_block *B, int dim, int LR, fish_block *B1);
+int fish_block_getboundaryflag(fish_block *B, int dim, int LR, int *flag);
+int fish_block_setboundaryflag(fish_block *B, int dim, int LR, int flag);
 int fish_block_totalstates(fish_block *B, int mode);
 int fish_block_allocate(fish_block *B);
 int fish_block_deallocate(fish_block *B);
@@ -135,12 +138,14 @@ struct fish_state {
 } ;
 
 struct fish_block {
-  int allocated;
-  int rank;
-  int guard;
-  int size[3];
-  double x0[3];
-  double x1[3];
+  int allocated; // whether the block holds data
+  int rank;      // dimensionality: 1, 2, or 3
+  int guard;     // number of guard zones
+  int bcL[3];    // boundary conditions flag (left)
+  int bcR[3];    // boundary conditions flag (right)
+  int size[3];   // number of zones (interior)
+  double x0[3];  // lower domain bounds
+  double x1[3];  // upper domain bounds
   struct fish_block *parent;
   struct fish_block *children[8];
   struct fish_block *boundaryL[3];

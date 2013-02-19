@@ -79,6 +79,21 @@ static int _fish_block_getboundaryblock(lua_State *L)
   return 1;
 }
 
+static int _fish_block_getboundaryflag(lua_State *L)
+{
+  fish_block *B = *((fish_block**) luaL_checkudata(L, 1, "fish::block"));
+  int dim = luaL_checkinteger(L, 2);
+  int LR = luaL_checkinteger(L, 3);
+  int flag;
+  fish_block_getboundaryflag(B, dim, LR, &flag);
+  char *err = fish_block_geterror(B);
+  if (err) {
+    luaL_error(L, err);
+  }
+  lua_pushinteger(L, flag);
+  return 1;
+}
+
 #include "fishfuncs.c"
 
 int luaopen_fish(lua_State *L)

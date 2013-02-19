@@ -79,9 +79,6 @@ function Block:__init__(args)
       self._root                = self
       self._registry            = { }
       self._id                  = 0
-
-      self:set_boundary_block(0, 'L', self) -- periodic BC's on root
-      self:set_boundary_block(0, 'R', self)
    end
 
    self._registry[fish.block_light(block)] = self
@@ -189,12 +186,20 @@ end
 
 function Block:set_boundary_block(dim, dir, block)
    --
-   -- Get the boundary block. Arguments are the same as Block:neighbor_block,
+   -- Set the boundary block. Arguments are the same as Block:neighbor_block,
    -- but with the boundary block given as the third argument.
    --
    local d = ({L=fish.LEFT, R=fish.RIGHT})[dir]
    self['_boundary'..dir][dim] = block
    fish.block_setboundaryblock(self._block, dim, d, block._block)
+end
+
+function Block:set_boundary_flag(dim, dir, flag)
+   --
+   -- Set a physical boundary conditions flag.
+   --
+   local d = ({L=fish.LEFT, R=fish.RIGHT})[dir]
+   fish.block_setboundaryflag(self._block, dim, d, fish[flag:upper()])
 end
 
 function Block:fill_conserved()

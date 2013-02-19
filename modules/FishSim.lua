@@ -16,8 +16,9 @@ function FishSimulation:initialize_solver()
    self.CFL = opts.CFL or 0.8
    self.Ng = 3
    self.N = opts.resolution or 128
+   local bcflag = self.problem:boundary_conditions()
    local descr = FishCls.FluidDescriptor{ fluid=self.problem:fluid() }
-   local scheme = FishCls.FishScheme { bc=self.problem:boundary_conditions(),
+   local scheme = FishCls.FishScheme { bc=bcflag,
 				       riemann=self.user_opts.riemann,
 				       reconstruction=self.user_opts.reconstruction,
 				       solver=self.user_opts.solver,
@@ -25,6 +26,15 @@ function FishSimulation:initialize_solver()
    local grid = mesh.Block { descr=descr,
 			     size={self.N},
 			     guard=self.Ng }
+
+   if bcflag == 'periodic' then
+      grid:set_boundary_block(0, 'L', grid)
+      grid:set_boundary_block(0, 'R', grid)
+   else
+      grid:set_boundary_flag(0, 'L', bcflag)
+      grid:set_boundary_flag(0, 'R', bcflag)
+   end
+
    self.grid   = grid
    self.scheme = scheme
    self.descr  = descr
