@@ -129,7 +129,7 @@ function problems.densitywave:solution(x,y,z,t)
 end
 
 function problems.collapse1d:fluid()
-   return'gravs'
+   return'gravp'
 end
 
 function problems.collapse1d:initialize_problem()
@@ -137,7 +137,7 @@ function problems.collapse1d:initialize_problem()
 end
 
 function problems.collapse1d:solution(x,y,z,t)
-   local p0 = 1e-6
+   local p0 = 1e-5
    local d = 0.5
    local P = { }
 

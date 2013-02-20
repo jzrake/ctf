@@ -411,20 +411,18 @@ int fish_block_sourceterms(fish_block *B)
   double dx = fish_block_gridspacing(B, 0);
   double S[5];
 
-  for (int n=Ng; n<Nx+Ng; ++n) {
-    fluids_state_derive(B->fluid[n], S, FLUIDS_SOURCETERMS);
-    for (int q=0; q<5; ++q) {
-      L[5*n + q] += S[q];
-    }
-  }
-
   int fluid_id;
   double rhobar;
   fluids_descr_getrhobar(B->descr, &rhobar);
   fluids_descr_getfluid(B->descr, &fluid_id);
 
-  if (fluid_id == FLUIDS_GRAVP) {
-    for (int n=Ng; n<Nx+Ng; ++n) {
+  FILE *outf = fopen("sources-gravs.dat", "w");
+
+  for (int n=Ng; n<Nx+Ng; ++n) {
+
+    fluids_state_derive(B->fluid[n], S, FLUIDS_SOURCETERMS);
+
+    if (fluid_id == FLUIDS_GRAVP) {
       double G0[4], G1[4], G2[4];
       fluids_state_getattr(B->fluid[n-1], G0, FLUIDS_GRAVITY);
       fluids_state_getattr(B->fluid[n+0], G1, FLUIDS_GRAVITY);
@@ -440,10 +438,18 @@ int fish_block_sourceterms(fish_block *B)
       double fpxL = gphL*gphL + rhobar*phiL - 0.5*gp2L;
       double fpxR = gphR*gphR + rhobar*phiR - 0.5*gp2R;
 
-      L[5*n + 2] -= (fpxR - fpxL) / dx; // momentum flux
+      S[2] -= (fpxR - fpxL) / dx; // momentum flux
+    }
+
+    printf("%d: S = [%+5.4e %+5.4e %+5.4e %+5.4e %+5.4e]\n",
+	   n, S[0], S[1], S[2], S[3], S[4]);
+    fprintf(outf, "%d %e %e\n", n, S[1], S[2]);
+
+    for (int q=0; q<5; ++q) {
+      L[5*n + q] += S[q];
     }
   }
-
+  fclose(outf);
   return 0;
 }
 
@@ -475,8 +481,13 @@ int fish_block_evolve(fish_block *B, double *W, double dt)
       U1[q] = W[0]*u0 + W[1]*u1;
     }
     int err = fluids_state_fromcons(B->fluid[n], U1, FLUIDS_CACHE_DEFAULT);
-    //    printf("%d %d: %f %f %f %f %f\n", n, err, U1[0], U1[1], U1[2], U1[3], U1[4]);
-    CHECK2(!err, "conserved to primitive conversion failed", err);
+    if (err) {
+      printf("error: n=%d\n", n);
+      printf(" 1/2 p^2/rho = %+5.4e\n", U1[2]*U1[2] / U1[0] / 2);
+      printf("       E_tot = %+5.4e\n", U1[1]);
+      //      printf("%d: U1 = %+5.4e %+5.4e %+5.4e %+5.4e %+5.4e\n", n, U1[0], U1[1], U1[2], U1[3], U1[4]);
+    }
+    //CHECK2(!err, "conserved to primitive conversion failed", err);
   }
 
   return 0;
