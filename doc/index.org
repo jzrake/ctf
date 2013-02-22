@@ -135,7 +135,9 @@
    | $v_y$  | 0.000000 | 0.000000 |
    | $v_z$  | 0.000000 | 0.000000 |
    |--------+----------+----------|
-   [[file:Shocktube1.pdf][file:Shocktube1.png]]
+   #+ATTR_HTML: class="thumbnail"
+   [[file:Shocktube1.png]]
+   file:Shocktube1.pdf
 
 ** Shocktube2
    |--------+-----------+----------|
@@ -147,7 +149,9 @@
    | $v_y$  |  0.000000 | 0.000000 |
    | $v_z$  |  0.000000 | 0.000000 |
    |--------+-----------+----------|
-   [[file:/Shocktube2.pdf][file:Shocktube2.png]]
+   #+ATTR_HTML: class="thumbnail"
+   [[file:Shocktube2.png]]
+   file:Shocktube2.pdf
 
 ** Shocktube3
    |--------+-------------+----------|
@@ -159,7 +163,9 @@
    | $v_y$  |    0.000000 | 0.000000 |
    | $v_z$  |    0.000000 | 0.000000 |
    |--------+-------------+----------|
-   [[file:/Shocktube3.pdf][file:Shocktube3.png]]
+   #+ATTR_HTML: class="thumbnail"
+   [[file:Shocktube3.png]]
+   file:Shocktube3.pdf
 
 ** Shocktube4
    |--------+----------+------------|
@@ -171,7 +177,9 @@
    | $v_y$  | 0.000000 |   0.000000 |
    | $v_z$  | 0.000000 |   0.000000 |
    |--------+----------+------------|
-   [[file:/Shocktube4.pdf][file:Shocktube4.png]]
+   #+ATTR_HTML: class="thumbnail"
+   [[file:Shocktube4.png]]
+   file:Shocktube4.pdf
 
 ** Shocktube5
    |--------+------------+-----------|
@@ -183,7 +191,9 @@
    | $v_y$  |   0.000000 |  0.000000 |
    | $v_z$  |   0.000000 |  0.000000 |
    |--------+------------+-----------|
-   [[file:/Shocktube5.pdf][file:Shocktube5.png]]
+   #+ATTR_HTML: class="thumbnail"
+   [[file:Shocktube5.png]]
+   file:Shocktube5.pdf
 
 ** ContactWave
    |--------+----------+----------|
@@ -195,7 +205,9 @@
    | $v_y$  | 0.700000 | 0.700000 |
    | $v_z$  | 0.200000 | 0.200000 |
    |--------+----------+----------|
-   [[file:/ContactWave.pdf][file:ContactWave.png]]
+   #+ATTR_HTML: class="thumbnail"
+   [[file:ContactWave.png]]
+   file:ContactWave.pdf
 
 ** SrhdCase1DFIM98
    |--------+-----------+----------|
@@ -303,10 +315,11 @@
 
 *** Code performance
     The code performs well on this problem, provided the atmosphere $\rho_{atm}$
-    is sufficiently large, $10^{-6}$ works fine. The density profile remains
-    reasonably square, but with some slight artifact at the density jump. In
-    order to compare with the exact solution, the maximum density on the grid is
-    recorded at each time step, and compared against the true solution
+    is sufficiently large, $10^{-6} \times \rho_0$ works fine. The density
+    profile remains reasonably square, but with some slight artifact at the
+    density jump. In order to compare with the exact solution, the maximum
+    density on the grid is recorded at each time step, and compared against the
+    true solution
 
     $$ \rho_0(t) = \frac{M/L}{1 - (1-\delta_0/L) \cosh(t/\tau)} $$
     [[file:Collapse1d-rhox.pdf][file:Collapse1d-rhox.png]]
