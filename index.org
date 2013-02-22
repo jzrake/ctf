@@ -111,9 +111,6 @@
     | 1024 |             2.13 |           1.95 |             2.08 |             2.08 |             0.01 |
     |------+------------------+----------------+------------------+------------------+------------------|
 
-** Collapse1d
-   This problem tests the collapse of a cold dust cloud in one dimension.
-
 * One dimensional two-state problems
   The two-state problems in this section demonstrate the =Mara='s
   shock-capturing capability. Each problem sets up a piecewise-constant initial
@@ -267,6 +264,54 @@
 *** Performance at different resolutions
     [[file:KH-hllc-plm-rk3.pdf][file:KH-hllc-plm-rk3.png]]
 
+* Self-gravity
+** Collapse1d
+*** Problem description
+   This problem tests the collapse of a cold dust cloud in one dimension. The
+   initial density field is a uniform-density region of width $\delta$ with a
+   low-density "atmosphere":
+
+   $$ \rho(x) = \begin{cases} \rho_0 & |x|<\delta/2 \\ \rho_{atm} &
+   \text{otherwise} \end{cases} $$
+
+   The problem domain is $[-L/2, L/2]$ with periodic boundaries so that the
+   total mass $M = \delta \rho_0$ is a constant. The exact potential can easily
+   be written down for this density field. In periodic boundaries, solutions
+   only exist when the net charge is zero, so we solve the Poisson equation
+
+   $$ \nabla^2 \phi = \rho - \bar{\rho} $$
+
+   for deviations away from the mean density $\bar{\rho} = M/L$. Letting
+   $\phi(\pm \delta/2) = 0$, we can immediately write down the potential.
+
+   $$ \phi(x) = \begin{cases}
+   -\frac{\rho_0}{2} (x+\delta/2)(x+3\delta/2+L) & x < -\delta/2 \\
+   -\frac{\rho_0}{2} (x-\delta/2)(x-3\delta/2-L) & x >  \delta/2 \\
+    \frac{\rho_0(1-\delta/L)}{2} (x-\delta/2)(x+\delta/2) & \text{otherwise} \\
+   \end{cases} $$
+
+   Under the influence of gravity, all fluid elements experience an acceleration
+   $a(x) = -\phi'(x) = -\rho_0 (1 - \delta/L) x$. As the dust cloud collapses,
+   the density $\rho_0(t)$ increases while $\delta(t)$ decreases so as to hold
+   $M$ fixed. By following the location of the density jump $\delta(t)/2$, we
+   can write down the following ODE for $\delta(t)$.
+
+   $$ \ddot{\delta} + M(1 - \frac{\delta}{L}) = 0 $$
+
+   which has the solution $\delta(t) = L - (L - \delta_0) \cosh(t/\tau)$, where
+   $\tau = (M/L)^{-1/2}$ is the Jeans time.
+
+*** Code performance
+    The code performs well on this problem, provided the atmosphere $\rho_{atm}$
+    is sufficiently large, $10^{-6}$ works fine. The density profile remains
+    reasonably square, but with some slight artifact at the density jump. In
+    order to compare with the exact solution, the maximum density on the grid is
+    recorded at each time step, and compared against the true solution
+
+    $$ \rho_0(t) = \frac{M/L}{1 - (1-\delta_0/L) \cosh(t/\tau)} $$
+    [[file:Collapse1d-rhox.pdf][file:Collapse1d-rhox.png]]
+    [[file:Collapse1d-rhot.pdf][file:Collapse1d-rhot.png]]
+
 * Using the exact Riemann solver
 
 The exact Riemann solver of Toro (1997) is implemented in [[https://github.com/jzrake/ctf/blob/fd5d576ad7af8cd3d5f0e295d274e7390f039ff6/fish/riemann.c#L352][here, in
@@ -274,24 +319,13 @@ riemann.c]]. This solver generates the exact self-similar solution to the Rieman
 problem defined by piece-wise constant initial data along the characterstic in
 the self-similar variable $x/t$. This particular solver only works for the Euler
 equations with gamma-law equation of state, with arbitrary adiabatic constant
-$\Gamma$.
-
-The exact Riemann solver may be used in any of the Godunov schemes (the ones
-which require a Riemann solver). From C code, a =Fish= scheme may be configured
-to use the exact Riemann solver:
-
-#+BEGIN_SRC C
-fish_setparami(scheme, FLUIDS_RIEMANN_EXACT, FISH_RIEMANN_SOLVER)
-#+END_SRC
-
-When configured this way, the scheme will call the exact Riemann solver in each
-of the internal =fish_intercellflux= calls. The solver can also be queried
-directly from Lua code using the higher level front-end:
+$\Gamma$. The solver can also be queried directly from Lua code using the higher
+level front-end:
 
 #+BEGIN_SRC Lua
 local FishCls = require 'FishClasses'
 local D = FishCls.FluidDescriptor{gamma=1.4, fluid='nrhyd'}
-local R = FishCls.RiemannSolver()
+local R = FishCls.RiemannSolver('exact')
 local SL = FishCls.FluidState(D)
 local SR = FishCls.FluidState(D)
 
