@@ -14,7 +14,7 @@ body {
 }
 
 img {
-    border: 2px solid black;;
+    border: 2px solid black;
     max-width: 650px;
 }
 
@@ -41,6 +41,11 @@ h1.title {
     text-shadow: 2px 2px 4px #999;
     font-size: 24pt;
     font-family: Courier New;
+}
+
+img.thumbnail {
+    border: 0px;
+    width: 220px;
 }
 
 h1 { font-family: Courier New; }
