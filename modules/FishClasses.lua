@@ -56,8 +56,9 @@ function FluidState:__gc__()
    fluids.state_del(self._c)
 end
 
-function RiemannSolver:__init__()
+function RiemannSolver:__init__(kind)
    self._c = fluids.riemn_new()
+   fluids.riemn_setsolver (self._c, fluids['RIEMANN_'..(kind or 'exact'):upper()])
 end
 
 function RiemannSolver:__gc__()
@@ -66,7 +67,6 @@ end
 
 function RiemannSolver:solve(SL, SR, x)
    local S = FluidState(SL.descr)
-   fluids.riemn_setsolver (self._c, fluids.RIEMANN_EXACT)
    fluids.riemn_setdim    (self._c, 0)
    fluids.riemn_setstateL (self._c, SL._c)
    fluids.riemn_setstateR (self._c, SR._c)

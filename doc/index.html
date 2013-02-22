@@ -144,7 +144,6 @@
 <ul>
 <li><a href="#sec-2-1">2.1 DensityWave</a></li>
 <li><a href="#sec-2-2">2.2 SoundWave</a></li>
-<li><a href="#sec-2-3">2.3 Collapse1d</a></li>
 </ul>
 </li>
 <li><a href="#sec-3">3 One dimensional two-state problems</a>
@@ -165,7 +164,12 @@
 <li><a href="#sec-4-1">4.1 Kelvin-Helmholtz instability</a></li>
 </ul>
 </li>
-<li><a href="#sec-5">5 Using the exact Riemann solver</a></li>
+<li><a href="#sec-5">5 Self-gravity</a>
+<ul>
+<li><a href="#sec-5-1">5.1 Collapse1d</a></li>
+</ul>
+</li>
+<li><a href="#sec-6">6 Using the exact Riemann solver</a></li>
 </ul>
 </div>
 </div>
@@ -368,16 +372,6 @@
 
 
 </div>
-</div>
-
-</div>
-
-<div id="outline-container-2-3" class="outline-3">
-<h3 id="sec-2-3"><span class="section-number-3">2.3</span> Collapse1d</h3>
-<div class="outline-text-3" id="text-2-3">
-
-<p>   This problem tests the collapse of a cold dust cloud in one dimension.
-</p>
 </div>
 </div>
 
@@ -709,8 +703,91 @@
 </div>
 
 <div id="outline-container-5" class="outline-2">
-<h2 id="sec-5"><span class="section-number-2">5</span> Using the exact Riemann solver</h2>
+<h2 id="sec-5"><span class="section-number-2">5</span> Self-gravity</h2>
 <div class="outline-text-2" id="text-5">
+
+
+</div>
+
+<div id="outline-container-5-1" class="outline-3">
+<h3 id="sec-5-1"><span class="section-number-3">5.1</span> Collapse1d</h3>
+<div class="outline-text-3" id="text-5-1">
+
+
+</div>
+
+<div id="outline-container-5-1-1" class="outline-4">
+<h4 id="sec-5-1-1"><span class="section-number-4">5.1.1</span> Problem description</h4>
+<div class="outline-text-4" id="text-5-1-1">
+
+<p>   This problem tests the collapse of a cold dust cloud in one dimension. The
+   initial density field is a uniform-density region of width \(\delta\) with a
+   low-density "atmosphere":
+</p>
+<p>
+   $$ \rho(x) = \begin{cases} \rho_0 &amp; |x|&lt;\delta/2 \\ \rho_{atm} &amp;
+   \text{otherwise} \end{cases} $$
+
+   The problem domain is \([-L/2, L/2]\) with periodic boundaries so that the
+   total mass \(M = \delta \rho_0\) is a constant. The exact potential can easily
+   be written down for this density field. In periodic boundaries, solutions
+   only exist when the net charge is zero, so we solve the Poisson equation
+</p>
+<p>
+   $$ \nabla^2 \phi = \rho - \bar{\rho} $$
+</p>
+<p>
+   for deviations away from the mean density \(\bar{\rho} = M/L\). Letting
+   \(\phi(\pm \delta/2) = 0\), we can immediately write down the potential.
+</p>
+<p>
+   $$ \phi(x) = \begin{cases}
+   -\frac{\rho_0}{2} (x+\delta/2)(x+3\delta/2+L) & x < -\delta/2 \\
+   -\frac{\rho_0}{2} (x-\delta/2)(x-3\delta/2-L) & x >  \delta/2 \\
+    \frac{\rho_0(1-\delta/L)}{2} (x-\delta/2)(x+\delta/2) & \text{otherwise} \\
+   \end{cases} $$
+
+   Under the influence of gravity, all fluid elements experience an acceleration
+   \(a(x) = -\phi'(x) = -\rho_0 (1 - \delta/L) x\). As the dust cloud collapses,
+   the density \(\rho_0(t)\) increases while \(\delta(t)\) decreases so as to hold
+   \(M\) fixed. By following the location of the density jump \(\delta(t)/2\), we
+   can write down the following ODE for \(\delta(t)\).
+</p>
+<p>
+   $$ \ddot{\delta} + M(1 - \frac{\delta}{L}) = 0 $$
+</p>
+<p>
+   which has the solution \(\delta(t) = L - (L - \delta_0) \cosh(t/\tau)\), where
+   \(\tau = (M/L)^{-1/2}\) is the Jeans time.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-1-2" class="outline-4">
+<h4 id="sec-5-1-2"><span class="section-number-4">5.1.2</span> Code performance</h4>
+<div class="outline-text-4" id="text-5-1-2">
+
+<p>    The code performs well on this problem, provided the atmosphere \(\rho_{atm}\)
+    is sufficiently large, \(10^{-6}\) works fine. The density profile remains
+    reasonably square, but with some slight artifact at the density jump. In
+    order to compare with the exact solution, the maximum density on the grid is
+    recorded at each time step, and compared against the true solution
+</p>
+<p>
+    $$ \rho_0(t) = \frac{M/L}{1 - (1-\delta_0/L) \cosh(t/\tau)} $$
+    <a href="Collapse1d-rhox.pdf"><img src="Collapse1d-rhox.png" alt="Collapse1d-rhox.png"/></a>
+    <a href="Collapse1d-rhot.pdf"><img src="Collapse1d-rhot.png" alt="Collapse1d-rhot.png"/></a>
+</p>
+</div>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-6" class="outline-2">
+<h2 id="sec-6"><span class="section-number-2">6</span> Using the exact Riemann solver</h2>
+<div class="outline-text-2" id="text-6">
 
 
 <p>
@@ -718,31 +795,15 @@ The exact Riemann solver of Toro (1997) is implemented in <a href="https://githu
 problem defined by piece-wise constant initial data along the characterstic in
 the self-similar variable \(x/t\). This particular solver only works for the Euler
 equations with gamma-law equation of state, with arbitrary adiabatic constant
-\(\Gamma\).
-</p>
-<p>
-The exact Riemann solver may be used in any of the Godunov schemes (the ones
-which require a Riemann solver). From C code, a <code>Fish</code> scheme may be configured
-to use the exact Riemann solver:
-</p>
-
-
-
-<pre class="example">fish_setparami(scheme, FLUIDS_RIEMANN_EXACT, FISH_RIEMANN_SOLVER)
-</pre>
-
-
-<p>
-When configured this way, the scheme will call the exact Riemann solver in each
-of the internal <code>fish_intercellflux</code> calls. The solver can also be queried
-directly from Lua code using the higher level front-end:
+\(\Gamma\). The solver can also be queried directly from Lua code using the higher
+level front-end:
 </p>
 
 
 
 <pre class="example">local FishCls = require 'FishClasses'
 local D = FishCls.FluidDescriptor{gamma=1.4, fluid='nrhyd'}
-local R = FishCls.RiemannSolver()
+local R = FishCls.RiemannSolver('exact')
 local SL = FishCls.FluidState(D)
 local SR = FishCls.FluidState(D)
 

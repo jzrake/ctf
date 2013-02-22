@@ -154,11 +154,12 @@ function problems.collapse1d:user_work_iteration()
    local sim = self.simulation
    local D = sim.Primitive[{nil,{0,1}}]:vector()
    local Dmax = 0.0
+   local Dcen = D[#D/2]
 
    for i=0,#D-1 do
       if D[i] > Dmax then Dmax = D[i] end
    end
-   self.max_density[sim.status.simulation_time] = Dmax
+   table.insert(self.max_density, {sim.status.simulation_time, Dcen, Dmax})
 end
 
 function problems.collapse1d:user_work_finish()
@@ -169,7 +170,9 @@ function problems.collapse1d:user_work_finish()
    local tau = (M/L)^(-0.5)
 
    local f = io.open('central-density.dat', 'w')
-   for t,rho in pairs(self.max_density) do
+   for i,val in ipairs(self.max_density) do
+      local t = val[1]
+      local rho = val[2]
       local real_d = L - (L - d) * math.cosh(t/tau) -- width of the density peak
       local real_rho = M / real_d
       f:write(string.format("%f %f %f\n", t, rho, real_rho))

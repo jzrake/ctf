@@ -1,7 +1,7 @@
 
 local FishCls = require 'FishClasses'
 local D = FishCls.FluidDescriptor{gamma=1.4, fluid='nrhyd'}
-local R = FishCls.RiemannSolver()
+local R = FishCls.RiemannSolver('exact')
 local SL = FishCls.FluidState(D)
 local SR = FishCls.FluidState(D)
 
