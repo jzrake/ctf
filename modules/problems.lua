@@ -138,9 +138,10 @@ end
 
 function problems.collapse1d:solution(x,y,z,t)
    local p0 = 1e-6
+   local d = 0.5
    local P = { }
 
-   P[1] = math.abs(x - 0.5) < 0.25 and 1.0 or 1e-6
+   P[1] = math.abs(x - 0.5) < d/2 and 1.0 or 1e-6
    P[2] = p0
    P[3] = 0.0
    P[4] = 0.0
@@ -154,8 +155,6 @@ function problems.collapse1d:user_work_iteration()
    local D = sim.Primitive[{nil,{0,1}}]:vector()
    local Dmax = 0.0
 
-   if not self.max_density then self.max_density = { } end
-
    for i=0,#D-1 do
       if D[i] > Dmax then Dmax = D[i] end
    end
@@ -163,9 +162,17 @@ function problems.collapse1d:user_work_iteration()
 end
 
 function problems.collapse1d:user_work_finish()
+   local rho0 = 1.0
+   local d = 0.5
+   local L = 1.0
+   local M = d * rho0
+   local tau = (M/L)^(-0.5)
+
    local f = io.open('central-density.dat', 'w')
-   for k,v in pairs(self.max_density) do
-      f:write(k..' '..v,'\n')
+   for t,rho in pairs(self.max_density) do
+      local real_d = L - (L - d) * math.cosh(t/tau) -- width of the density peak
+      local real_rho = M / real_d
+      f:write(string.format("%f %f %f\n", t, rho, real_rho))
    end
    f:close()
 end
