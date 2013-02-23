@@ -486,6 +486,11 @@ local function test4()
    assert(mesh.gravity:shape()[2] == 4)
 end
 
+local function test5()
+   local descr = FishCls.FluidDescriptor()
+   local block0 = Block{ descr=descr, size={128,128,16}, guard=2 }
+end
+
 if ... then -- if __name__ == "__main__"
    return {Block=Block}
 else
@@ -493,5 +498,6 @@ else
    test2()
    test3()
    test4()
+   test5()
    print(debug.getinfo(1).source, ": All tests passed")
 end
