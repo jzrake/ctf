@@ -560,10 +560,11 @@ int fish_block_fillguard(fish_block *B)
   else if (B->bcL[0] != FISH_NONE) { // fill with physical BC
     switch (B->bcL[0]) {
     case FISH_OUTFLOW:
-      fluids_state_getattr(B->fluid[Ng], P, FLUIDS_PRIMITIVE);
+
       for (int i=0; i<Ng; ++i) {
-        fluids_state_setattr(B->fluid[i], P, FLUIDS_PRIMITIVE);
+	fluids_state_copy(B->fluid[i], B->fluid[Ng]);
       }
+
       break;
     default:
       CHECK(0, "only outflow BC currently supported");
@@ -607,10 +608,11 @@ int fish_block_fillguard(fish_block *B)
   else if (B->bcR[0] != FISH_NONE) { // fill with physical BC
     switch (B->bcR[0]) {
     case FISH_OUTFLOW:
-      fluids_state_getattr(B->fluid[Nx+Ng-1], P, FLUIDS_PRIMITIVE);
+
       for (int i=0; i<Ng; ++i) {
-        fluids_state_setattr(B->fluid[Nx+Ng+i], P, FLUIDS_PRIMITIVE);
+	fluids_state_copy(B->fluid[Nx+Ng+i], B->fluid[Nx+Ng-1]);
       }
+
       break;
     default:
       CHECK(0, "only outflow BC currently supported");
