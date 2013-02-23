@@ -297,23 +297,26 @@ function Block:max_wavespeed()
    return Amax
 end
 
-function Block:map(f, opts)
+function Block:map(f)
    --
    -- Map the function f(x,y,z) over the coordinates of the block, filling in
    -- the primitive data values
    --
-   local Nx, Ny, Nz = table.unpack(self:size())
-   local Ng = self:guard()
-   local Pvec = self._primitive:vector()
-   for i=0,Nx+2*Ng-1 do
-      local x = fish.block_positionatindex(self._block, 0, i)
-      local Pi = f(x,0,0)
-      Pvec[5*i + 0] = Pi[1]
-      Pvec[5*i + 1] = Pi[2]
-      Pvec[5*i + 2] = Pi[3]
-      Pvec[5*i + 3] = Pi[4]
-      Pvec[5*i + 4] = Pi[5]
-   end
+
+   fish.block_map(self._block, f)
+
+   -- local Nx, Ny, Nz = table.unpack(self:size())
+   -- local Ng = self:guard()
+   -- local Pvec = self._primitive:vector()
+   -- for i=0,Nx+2*Ng-1 do
+   --    local x = fish.block_positionatindex(self._block, 0, i)
+   --    local Pi = f(x,0,0)
+   --    Pvec[5*i + 0] = Pi[1]
+   --    Pvec[5*i + 1] = Pi[2]
+   --    Pvec[5*i + 2] = Pi[3]
+   --    Pvec[5*i + 3] = Pi[4]
+   --    Pvec[5*i + 4] = Pi[5]
+   -- end
 end
 
 function Block:table(q, T, opts)
@@ -377,6 +380,9 @@ local function test1()
    local block1 = block0:add_child_block(0)
    local block2 = block1:add_child_block(0)
    local block3 = block1:add_child_block(1)
+
+   block0:set_boundary_flag(0, 'L', 'outflow')
+   block0:set_boundary_flag(0, 'R', 'outflow')
 
    block3:add_child_block(0):add_child_block(0)
    assert(block2:neighbor_block(0, 'R') == block3)

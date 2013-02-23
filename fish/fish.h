@@ -116,6 +116,9 @@ double fish_block_maxwavespeed(fish_block *B);
 char *fish_block_geterror(fish_block *B);
 fluids_state **fish_block_getfluid(fish_block *B);
 
+#ifdef LUA_BLOCK // Functions only called from Lua code
+void fish_block_map();
+#endif
 
 #ifdef FISH_PRIVATE_DEFS
 

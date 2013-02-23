@@ -20,7 +20,8 @@ wrapped = [ ]
 enums = [ ]
 byhand = ['fish_block_neighbor',
           'fish_block_getboundaryblock',
-          'fish_block_getboundaryflag']
+          'fish_block_getboundaryflag',
+          'fish_block_map']
 
 for line in fishh:
     if line.startswith('typedef') or line.startswith('struct'): continue
