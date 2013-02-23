@@ -8,6 +8,11 @@
 #define FISH_PRIVATE_DEFS
 #include "fish.h"
 
+/* Externally defined Fortran functions */
+void outflow_1d_x0_(double *data, int *nx, int *ng, int *nc);
+void outflow_1d_x1_(double *data, int *nx, int *ng, int *nc);
+
+
 #define CHECK(c,m) do{if(!(c)){B->error=m;return -1;}B->error=NULL;}while(0)
 #define CHECK2(c,m,e) do{if(!(c)){B->error=m;return e;}B->error=NULL;}while(0)
 
@@ -568,6 +573,7 @@ int fish_block_fillguard(fish_block *B)
 
   int Ng = B->guard;
   int Nx = B->size[0];
+  int Np = 5;
 
   fish_block *B0 = B->parent;
   fish_block *BL = B->boundaryL[0];
@@ -585,14 +591,11 @@ int fish_block_fillguard(fish_block *B)
       fluids_state_copy(B->fluid[ic], BL->fluid[Nx+ic]);
     }
   }
-
   else if (B->bcL[0] != FISH_NONE) { // fill with physical BC
     switch (B->bcL[0]) {
     case FISH_OUTFLOW:
 
-      for (int i=0; i<Ng; ++i) {
-	fluids_state_copy(B->fluid[i], B->fluid[Ng]);
-      }
+      outflow_1d_x0_(B->primitive, &Nx, &Ng, &Np);
 
       break;
     default:
@@ -638,9 +641,7 @@ int fish_block_fillguard(fish_block *B)
     switch (B->bcR[0]) {
     case FISH_OUTFLOW:
 
-      for (int i=0; i<Ng; ++i) {
-	fluids_state_copy(B->fluid[Nx+Ng+i], B->fluid[Nx+Ng-1]);
-      }
+      outflow_1d_x1_(B->primitive, &Nx, &Ng, &Np);
 
       break;
     default:
@@ -715,5 +716,3 @@ int fish_block_allocated(fish_block *B)
   CHECK(1, NULL);
   return B->allocated;
 }
-
-  
