@@ -11,6 +11,30 @@
 #define CHECK(c,m) do{if(!(c)){B->error=m;return -1;}B->error=NULL;}while(0)
 #define CHECK2(c,m,e) do{if(!(c)){B->error=m;return e;}B->error=NULL;}while(0)
 
+#define ITERATE_INTERIOR			\
+  int Nd = B->rank;				\
+  int Ng = B->guard;				\
+  int Nx = B->size[0];				\
+  int Ny = B->size[1];				\
+  int Nz = B->size[2];				\
+						\
+  int i0 = Nd >= 1 ? Ng : 0;			\
+  int j0 = Nd >= 2 ? Ng : 0;			\
+  int k0 = Nd >= 3 ? Ng : 0;			\
+  int i1 = i0 + Nx;				\
+  int j1 = j0 + Ny;				\
+  int k1 = k0 + Nz;				\
+						\
+  int sz = Nd >= 3 ?            : 1;		\
+  int sy = Nd >= 2 ? sz*(k1-k0) : 1;		\
+  int sx = Nd >= 1 ? sy*(j1-j0) : 1;		\
+						\
+  for (int i=i0; i<i1; ++i) 			\
+    for (int j=j0; j<j1; ++j) 			\
+      for (int k=k0; k<k1; ++k) 		\
+						\
+
+
 fish_block *fish_block_new()
 {
   fish_block *B = (fish_block*) malloc(sizeof(fish_block));
@@ -396,13 +420,12 @@ double fish_block_maxwavespeed(fish_block *B)
   CHECK(B->allocated, "block needs to be allocated");
   CHECK(B->descr, "block needs a fluid descriptor");
 
-  int Ng = B->guard;
-  int Nx = B->size[0];
   double a = 0.0;
 
-  for (int n=Ng; n<Nx+Ng; ++n) {
+  ITERATE_INTERIOR {
+    int m = i*sx+j*sy+k*sz;
     double A[5];
-    fluids_state_derive(B->fluid[n], A, FLUIDS_EVAL0);
+    fluids_state_derive(B->fluid[m], A, FLUIDS_EVAL0);
     for (int q=0; q<5; ++q) {
       a = fabs(A[q]) > a ? fabs(A[q]) : a;
     }
@@ -418,9 +441,17 @@ int fish_block_timederivative(fish_block *B, fish_state *scheme)
   int TotalZones = fish_block_totalstates(B, FISH_INCLUDING_GUARD);
   double *L = B->time_derivative;
   fluids_state **fluid = B->fluid;
-  double dx = fish_block_gridspacing(B, 0);
+  double dx[3];
+  int Ntot[3];
+
+  for (int n=0; n<B->rank; ++n) {
+    dx[n] = fish_block_gridspacing(B, n);
+    Ntot[n] = B->size[n] + 2 * B->guard;
+  }
+
   for (int m=0; m<5*TotalZones; ++m) L[m] = 0.0;
-  fish_timederivative(scheme, fluid, 1, &TotalZones, &dx, L);
+
+  fish_timederivative(scheme, fluid, B->rank, Ntot, dx, L);
 
   return 0;
 }
@@ -436,16 +467,15 @@ int fish_block_sourceterms(fish_block *B)
   CHECK(B->allocated, "block needs to be allocated");
   CHECK(B->descr, "block needs a fluid descriptor");
 
-  int Ng = B->guard;
-  int Nx = B->size[0];
   double *L = B->time_derivative;
-  double dx = fish_block_gridspacing(B, 0);
   double S[5];
+  //  double dx = fish_block_gridspacing(B, 0);
 
-  for (int n=Ng; n<Nx+Ng; ++n) {
-    fluids_state_derive(B->fluid[n], S, FLUIDS_SOURCETERMS);
+  ITERATE_INTERIOR {
+    int m = i*sx+j*sy+k*sz;
+    fluids_state_derive(B->fluid[m], S, FLUIDS_SOURCETERMS);
     for (int q=0; q<5; ++q) {
-      L[5*n + q] += S[q];
+      L[5*m + q] += S[q];
     }
   }
 
@@ -466,24 +496,22 @@ int fish_block_evolve(fish_block *B, double *W, double dt)
   CHECK(B->allocated, "block needs to be allocated");
   CHECK(B->descr, "block needs a fluid descriptor");
 
-  int Ng = B->guard;
-  int Nx = B->size[0];
   double *U = B->temp_conserved; // U^n
   double *L = B->time_derivative;
   double U1[5];
 
-  for (int n=Ng; n<Nx+Ng; ++n) {
-    fluids_state_derive(B->fluid[n], U1, FLUIDS_CONSERVED);
+  ITERATE_INTERIOR {
+    int m = i*sx+j*sy+k*sz;
+    fluids_state_derive(B->fluid[m], U1, FLUIDS_CONSERVED);
+
     for (int q=0; q<5; ++q) {
-      double u0 = U[5*n + q]; // beginning of the time-step
-      double u1 = U1[q] + L[5*n + q] * dt;
+      double u0 = U[5*m + q]; // beginning of the time-step
+      double u1 = U1[q] + L[5*m + q] * dt;
       U1[q] = W[0]*u0 + W[1]*u1;
     }
-    int err = fluids_state_fromcons(B->fluid[n], U1, FLUIDS_CACHE_DEFAULT);
-    //    printf("%d %d: %f %f %f %f %f\n", n, err, U1[0], U1[1], U1[2], U1[3], U1[4]);
+    int err = fluids_state_fromcons(B->fluid[m], U1, FLUIDS_CACHE_DEFAULT);
     CHECK2(!err, "conserved to primitive conversion failed", err);
   }
-
   return 0;
 }
 
@@ -492,14 +520,15 @@ int fish_block_fillconserved(fish_block *B)
   CHECK(B->allocated, "block needs to be allocated");
   CHECK(B->descr, "block needs a fluid descriptor");
 
-  int TotalZones = fish_block_totalstates(B, FISH_INCLUDING_GUARD);
-  int Nq = fluids_descr_getncomp(B->descr, FLUIDS_PRIMITIVE);
   double *U = B->temp_conserved;
   fluids_state **fluid = B->fluid;
-  for (int n=0; n<TotalZones; ++n) {
-    int err = fluids_state_derive(fluid[n], &U[Nq*n], FLUIDS_CONSERVED);
+
+  ITERATE_INTERIOR {
+    int m = i*sx+j*sy+k*sz;
+    int err = fluids_state_derive(fluid[m], &U[5*m], FLUIDS_CONSERVED);
     CHECK(!err, "found unphysical state");
   }
+
   return 0;
 }
 
@@ -686,3 +715,5 @@ int fish_block_allocated(fish_block *B)
   CHECK(1, NULL);
   return B->allocated;
 }
+
+  
