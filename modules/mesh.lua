@@ -38,23 +38,32 @@ function Block:__init__(args)
       totsize[i] = N + 2 * guard
    end
 
+
    if not args.dummy then
-      totsize[rank + 1] = descr:get_ncomp('primitive')
-      local primitive = array.array(totsize)
+      for _,field in pairs{'primitive', 'gravity', 'passive', 'magnetic',
+			   'location'} do
 
-      totsize[rank + 1] = descr:get_ncomp('gravity')
-      local gravity = array.array(totsize)
+	 totsize[rank + 1] = descr:get_ncomp(field)
 
+	 if totsize[rank + 1] ~= 0 then
+	    local arr = array.array(totsize)
+	    self['_'..field] = arr
+	    fish.block_mapbuffer (block, arr:buffer(), flui[field:upper()])
+	 else
+	    self['_'..field] = { }	    
+	 end
+
+      end
       fish.block_allocate  (block)
-      fish.block_mapbuffer (block, primitive:buffer(), flui.PRIMITIVE)
-      fish.block_mapbuffer (block, gravity:buffer(), flui.GRAVITY)
-
-      self._primitive = primitive
-      self._gravity = gravity
    else
-      self._primitive = { }
-      self._gravity = { }
+      for _,field in pairs{'primitive', 'gravity', 'passive', 'magnetic',
+			   'location'} do
+
+	 self['_'..field] = { }
+
+      end
    end
+
 
    self._block = block
    self._descr = descr
@@ -489,6 +498,13 @@ end
 local function test5()
    local descr = FishCls.FluidDescriptor()
    local block0 = Block{ descr=descr, size={128,128,16}, guard=2 }
+
+   local err, msg = pcall(block0.fill_guard, block0)
+   assert(not err)
+
+   block0:set_boundary_flag(0, 'L', 'outflow')
+   block0:set_boundary_flag(0, 'R', 'outflow')
+   block0:fill_guard()
 end
 
 if ... then -- if __name__ == "__main__"

@@ -155,6 +155,13 @@ struct fish_block {
   struct fish_block *boundaryR[3];
   struct fluids_state **fluid;
   struct fluids_descr *descr;
+
+  double *primitive;
+  double *gravity;
+  double *passive;
+  double *magnetic;
+  double *location;
+
   double *temp_conserved;
   double *time_derivative;
   char *error;

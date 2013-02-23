@@ -30,6 +30,13 @@ fish_block *fish_block_new()
                   NULL, NULL, NULL, NULL },
     .fluid = NULL,
     .descr = NULL,
+
+    .primitive = NULL,
+    .gravity = NULL,
+    .passive = NULL,
+    .magnetic = NULL,
+    .location = NULL,
+
     .error = NULL,
     .pid = 0,
     .pstart = { 0, 0, 0 },
@@ -166,23 +173,43 @@ int fish_block_totalstates(fish_block *B, int mode)
 
 int fish_block_allocate(fish_block *B)
 {
+#define MB fluids_state_mapbuffer
   CHECK(!B->allocated, NULL); // will return if allocated, leave no message
   CHECK(B->descr, "block needs a fluid descriptor");
 
-  int ntot = fish_block_totalstates(B, FISH_INCLUDING_GUARD);
-  int nprm = fluids_descr_getncomp(B->descr, FLUIDS_PRIMITIVE);
+  int nz = fish_block_totalstates(B, FISH_INCLUDING_GUARD);
+  int np = fluids_descr_getncomp(B->descr, FLUIDS_PRIMITIVE);
+  int ng = fluids_descr_getncomp(B->descr, FLUIDS_GRAVITY);
+  int ns = fluids_descr_getncomp(B->descr, FLUIDS_PASSIVE);
+  int nm = fluids_descr_getncomp(B->descr, FLUIDS_MAGNETIC);
+  int nl = fluids_descr_getncomp(B->descr, FLUIDS_LOCATION);
 
-  B->time_derivative = (double*) malloc(ntot * nprm * sizeof(double));
-  B->temp_conserved  = (double*) malloc(ntot * nprm * sizeof(double));
-  B->fluid = (fluids_state**) malloc(ntot * sizeof(fluids_state*));
+  CHECK(!np || B->primitive, "primitive not mapped to a buffer");
+  CHECK(!ng || B->gravity, "gravity not mapped to a buffer");
+  CHECK(!ns || B->passive, "passive not mapped to a buffer");
+  CHECK(!nm || B->magnetic, "magnetic not mapped to a buffer");
+  CHECK(!nl || B->location, "location not mapped to a buffer");
 
-  for (int n=0; n<ntot; ++n) {
+  B->time_derivative = (double*) malloc(nz * np * sizeof(double));
+  B->temp_conserved  = (double*) malloc(nz * np * sizeof(double));
+  B->fluid = (fluids_state**) malloc(nz * sizeof(fluids_state*));
+
+  for (int n=0; n<nz; ++n) {
     B->fluid[n] = fluids_state_new();
     fluids_state_setdescr(B->fluid[n], B->descr);
   }
 
+  for (int n=0; n<nz; ++n) {
+    if (np) MB(B->fluid[n], &B->primitive[np*n], FLUIDS_PRIMITIVE);
+    if (ng) MB(B->fluid[n], &B->gravity[ng*n], FLUIDS_GRAVITY);
+    if (ns) MB(B->fluid[n], &B->passive[ns*n], FLUIDS_PASSIVE);
+    if (nm) MB(B->fluid[n], &B->magnetic[nm*n], FLUIDS_MAGNETIC);
+    if (nl) MB(B->fluid[n], &B->location[nl*n], FLUIDS_LOCATION);
+  }
+
   B->allocated = 1;
   return 0;
+#undef MB
 }
 
 int fish_block_deallocate(fish_block *B)
@@ -207,14 +234,18 @@ int fish_block_deallocate(fish_block *B)
 
 int fish_block_mapbuffer(fish_block *B, double *x, long flag)
 {
-  CHECK(B->allocated, "block must already be allocated");
+  //  CHECK(B->allocated, "block must already be allocated");
   CHECK(B->descr, "block needs a fluid descriptor");
 
-  int nz = fish_block_totalstates(B, FISH_INCLUDING_GUARD);
-  int nq = fluids_descr_getncomp(B->descr, flag);
-  for (int n=0; n<nz; ++n) {
-    fluids_state_mapbuffer(B->fluid[n], &x[nq*n], flag);
+  switch (flag) {
+  case FLUIDS_PRIMITIVE: B->primitive = x; break;
+  case FLUIDS_GRAVITY  : B->gravity = x; break;
+  case FLUIDS_PASSIVE  : B->passive = x; break;
+  case FLUIDS_MAGNETIC : B->magnetic = x; break;
+  case FLUIDS_LOCATION : B->location = x; break;
+  default: CHECK(0, "bad buffer class");
   }
+
   return 0;
 }
 
