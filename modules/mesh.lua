@@ -297,13 +297,17 @@ function Block:max_wavespeed()
    return Amax
 end
 
-function Block:map(f)
+function Block:map(f, attr)
    --
    -- Map the function f(x,y,z) over the coordinates of the block, filling in
-   -- the primitive data values
+   -- the data values of `attr` (default: 'primitive') with the resulting
+   -- table. The table returned by `f` must have the same length as the number
+   -- of components in the corresponding attribute: primitive, gravity, scalar,
+   -- etc.
    --
 
-   fish.block_map(self._block, f)
+   local attrflag = flui[(attr or 'primitive'):upper()]
+   fish.block_map(self._block, f, attrflag)
 
    -- local Nx, Ny, Nz = table.unpack(self:size())
    -- local Ng = self:guard()
@@ -389,7 +393,7 @@ local function test1()
 
    block0:fill_guard()
    block2:fill_guard()
-   block2:map(function(x) return {x+1,1,0,0,0} end)
+   block2:map(function(x) return {x+1,1,0,0,0} end, 'primitive')
 
    assert(block2:total_states() == 20)
    assert(block2:total_states{mode='interior'} == 16)

@@ -1,6 +1,7 @@
 
-#define FISH_PRIVATE_DEFS
+#include <stdlib.h>
 
+#define FISH_PRIVATE_DEFS
 #include "fish.h"
 #include "lua.h"
 #include "lualib.h"
@@ -99,6 +100,7 @@ static int _fish_block_map(lua_State *L)
 {
   fish_block *B = *((fish_block**) luaL_checkudata(L, 1, "fish::block"));
   luaL_checktype(L, 2, LUA_TFUNCTION);
+  int attrflag = luaL_checkinteger(L, 3);
 
   fluids_state **fluid = B->fluid;
   int Nd = B->rank;
@@ -106,6 +108,7 @@ static int _fish_block_map(lua_State *L)
   int Nx = B->size[0];
   int Ny = B->size[1];
   int Nz = B->size[2];
+  int Nc = fluids_descr_getncomp(B->descr, attrflag);
 
   int i0 = Nd >= 1 ? Ng : 0;
   int j0 = Nd >= 2 ? Ng : 0;
@@ -117,7 +120,7 @@ static int _fish_block_map(lua_State *L)
   int sz = Nd >= 3 ?            : 1;
   int sy = Nd >= 2 ? sz*(k1-k0) : 1;
   int sx = Nd >= 1 ? sy*(j1-j0) : 1;
-  double P[5];
+  double *P = (double*) malloc(Nc * sizeof(double));
 
   //  printf("your sizes   are [%d %d %d]\n", Nx, Ny, Nz);
   //  printf("your strides are [%d %d %d]\n", sx, sy, sz);
@@ -142,7 +145,7 @@ static int _fish_block_map(lua_State *L)
 	  luaL_error(L, "function must return a table");
 	}
 
-	for (int n=0; n<5; ++n) {
+	for (int n=0; n<Nc; ++n) {
 	  lua_rawgeti(L, -1, n+1);
 	  if (lua_type(L, -1) != LUA_TNUMBER) {
 	    luaL_error(L, "all table values must be numbers");
@@ -151,7 +154,7 @@ static int _fish_block_map(lua_State *L)
 	  lua_pop(L, 1);
 	}
 
-	fluids_state_setattr(fluid[i*sx+j*sy+k*sz], P, FLUIDS_PRIMITIVE);
+	fluids_state_setattr(fluid[i*sx+j*sy+k*sz], P, attrflag);
       }
     }
   }
