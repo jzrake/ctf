@@ -48,8 +48,13 @@ function FishSimulation:initialize_physics()
    local function primitive_init(x,y,z)
       return self.problem:solution(x,y,z,0)
    end
+
    for b in self.grid:walk() do
       b:map(primitive_init)
+   end
+
+   for block in self.grid:walk() do
+      block:fill_guard(block)
    end
 end
 
