@@ -158,7 +158,7 @@ static int _fish_block_map(lua_State *L)
       }
     }
   }
-
+  free(P);
   return 0;
 }
 
