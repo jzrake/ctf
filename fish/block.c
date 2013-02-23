@@ -573,7 +573,8 @@ int fish_block_fillguard(fish_block *B)
 
   int Ng = B->guard;
   int Nx = B->size[0];
-  int Np = 5;
+  int np = fluids_descr_getncomp(B->descr, FLUIDS_PRIMITIVE);
+  int ng = fluids_descr_getncomp(B->descr, FLUIDS_GRAVITY);
 
   fish_block *B0 = B->parent;
   fish_block *BL = B->boundaryL[0];
@@ -595,7 +596,8 @@ int fish_block_fillguard(fish_block *B)
     switch (B->bcL[0]) {
     case FISH_OUTFLOW:
 
-      outflow_1d_x0_(B->primitive, &Nx, &Ng, &Np);
+      if (np != 0) outflow_1d_x0_(B->primitive, &Nx, &Ng, &np);
+      if (ng != 0) outflow_1d_x0_(B->gravity, &Nx, &Ng, &ng);
 
       break;
     default:
@@ -641,7 +643,8 @@ int fish_block_fillguard(fish_block *B)
     switch (B->bcR[0]) {
     case FISH_OUTFLOW:
 
-      outflow_1d_x1_(B->primitive, &Nx, &Ng, &Np);
+      if (np != 0) outflow_1d_x1_(B->primitive, &Nx, &Ng, &np);
+      if (ng != 0) outflow_1d_x1_(B->gravity, &Nx, &Ng, &ng);
 
       break;
     default:

@@ -132,6 +132,10 @@ function problems.collapse1d:fluid()
    return'gravs'
 end
 
+function problems.collapse1d:boundary_conditions()
+   return 'periodic'
+end
+
 function problems.collapse1d:initialize_problem()
    self.max_density = { }
 end
