@@ -1,6 +1,8 @@
 
 local optparse = require 'optparse'
 local MaraSim  = require 'MaraSim'
+local FishSim  = require 'FishSim'
+local FishCls  = require 'FishClasses'
 local util     = require 'util'
 local oo       = require 'class'
 local sim      = require 'simulation'
@@ -11,9 +13,11 @@ local cow      = require 'cow'
 local MPI      = require 'MPI'
 local Mara     = require 'Mara'
 local problems = require 'problems'
+local mesh     = require 'mesh'
 
 local MyBase = oo.class('MyBase', sim.SimulationBase)
 local MyMara = oo.class('MyMara', MaraSim.MaraSimulation)
+local MyFish = oo.class('MyFish', FishSim.FishSimulation)
 
 
 function MyMara:initialize_physics()
@@ -32,8 +36,6 @@ function MyMara:initialize_solver()
    self.Nx = opts.resolution or 128
    self.Ny = opts.resolution or 128
    self.Nz = 1
-   self.dx = 1.0 / self.Nx
-   self.dy = 1.0 / self.Ny
 
 
    MPI.Init()
@@ -82,6 +84,7 @@ function MyMara:initialize_solver()
    local prim_names = Mara.fluid.GetPrimNames()
    local Nq = #prim_names
 
+   self.domain_comm = domain_comm
    self.domain = domain
    self.prim_manager = unigrid.DataManagerHDF5(domain, prim_names, {mpio=nil})
    self.Primitive = self.prim_manager.array
@@ -133,6 +136,130 @@ function MyMara:finalize_solver()
 end
 
 
+
+
+
+
+function MyFish:initialize_solver()
+   local opts = self.user_opts
+   self.CFL = opts.CFL or 0.4
+   self.Ng = 3
+   self.Nx = opts.resolution or 128
+   self.Ny = opts.resolution or 128
+   self.Nz = 1
+
+   MPI.Init()
+   cow.init(0, nil, 0) -- to reopen stdout to dev/null
+
+   local domain = cow.domain_new()
+   local domain_comm = MPI.Comm()
+
+   cow.domain_setndim(domain, 2)
+   cow.domain_setsize(domain, 0, self.Nx)
+   cow.domain_setsize(domain, 1, self.Ny)
+   cow.domain_setsize(domain, 2, self.Nz)
+   cow.domain_setguard(domain, self.Ng)
+   cow.domain_commit(domain)
+   cow.domain_getcomm(domain, domain_comm)
+
+   local prim_names = {'rho', 'pre', 'vx', 'vy', 'vz'}
+
+   self.domain_comm = domain_comm
+   self.domain = domain
+   self.prim_manager = unigrid.DataManagerHDF5(domain, prim_names, {mpio=nil})
+   self.Primitive = self.prim_manager.array
+
+   --
+   -- MPI boundaries done here
+   -- 
+   local function synchronize_callback(block)
+      self.prim_manager:synchronize()
+   end
+
+   local bcflag = self.problem:boundary_conditions()
+   local descr = FishCls.FluidDescriptor{ fluid=self.problem:fluid() }
+   local scheme = FishCls.FishScheme { bc=bcflag,
+				       riemann=self.user_opts.riemann,
+				       reconstruction=self.user_opts.reconstruction,
+				       solver=self.user_opts.solver,
+				       advance=self.user_opts.advance }
+
+   local lower, upper = self.prim_manager:local_extent()
+   local grid = mesh.Block { descr=descr,
+			     size=self.prim_manager:local_mesh_size('shape'),
+			     guard=self.Ng,
+			     lower=lower,
+			     upper=upper,
+			     primitive=self.Primitive,
+			     synchronize=synchronize_callback }
+
+   if bcflag == 'periodic' then
+      grid:set_boundary_block(0, 'L', grid)
+      grid:set_boundary_block(0, 'R', grid)
+      grid:set_boundary_block(1, 'L', grid)
+      grid:set_boundary_block(1, 'R', grid)
+   else
+      grid:set_boundary_flag(0, 'L', bcflag)
+      grid:set_boundary_flag(0, 'R', bcflag)
+      grid:set_boundary_flag(1, 'L', bcflag)
+      grid:set_boundary_flag(1, 'R', bcflag)
+   end
+
+   self.grid   = grid
+   self.scheme = scheme
+   self.descr  = descr
+end
+
+function MyFish:initialize_behavior()
+   local opts = self.user_opts
+   local cpi = opts.cpi or 0.1
+   local tmax = opts.tmax or self.problem:finish_time()
+   self.behavior.message_cadence = opts.message_cadence or 1
+   self.behavior.checkpoint_cadence = tonumber(cpi)
+   self.behavior.max_simulation_time = tonumber(tmax)
+end
+
+function MyFish:set_time_increment()
+   local Amax = self.grid:max_wavespeed()
+   local Dmin = self.grid:grid_spacing{ mode='smallest' }
+   local dt = self.CFL * Dmin / Amax
+   local mydt = array.vector(1, 'double')
+   local mndt = array.vector(1, 'double')
+   mydt[0] = dt
+   MPI.Allreduce(mydt:buffer(), mndt:buffer(), 1, MPI.DOUBLE, MPI.MIN,
+   		 self.domain_comm)
+   self.status.time_increment = mndt[0]
+end
+
+function MyFish:checkpoint_write(fname)
+   local base = self.user_opts.id or 'chkpt'
+   local n = self.status.checkpoint_number
+   local fname = fname or string.format('data/%s.%04d.h5', base, n)
+   self.prim_manager:write(fname, {group='prim'})
+end
+
+function MyFish:user_work_finish()
+   local output = self.user_opts.output
+   if output then
+      self:checkpoint_write(output)
+   end
+   self.problem:user_work_finish()
+end
+
+function MyFish:user_work_iteration()
+   self.problem:user_work_iteration()
+end
+
+function MyFish:finalize_solver()
+   cow.domain_del(self.domain)
+   MPI.Finalize()
+end
+
+
+
+
+
+
 local function main()
    local usage = "tests-1d <problem> [<options>]"
    local parser = optparse.OptionParser{usage=usage,
@@ -165,9 +292,10 @@ local function main()
    local opts, args = parser.parse_args()
    local problem_class = problems[arg[2]]
 
-   local sim = MyMara(opts)
-   --local problem = problems.SmoothKelvinHelmholtz(opts)
-   local problem = problems.ThrowBlobs(opts)
+   --local sim = MyMara(opts)
+   local sim = MyFish(opts)
+   local problem = problems.SmoothKelvinHelmholtz(opts)
+   --local problem = problems.ThrowBlobs(opts)
    sim:run(problem)
 end
 

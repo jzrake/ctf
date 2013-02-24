@@ -19,6 +19,22 @@ function Block:__init__(args)
    --  + parent: block, if nil create new root block
    --  + id: number, needed if parent is given
    --  + dummy: boolean, false by default: block will not be allocated
+   --  + lower: lower physical coordinates (only used for root blocks)
+   --  + upper: upper physical coordinates
+   --
+   --  [user buffer names] If given, the block's corresponding data register
+   --                      will be mapped over the user buffer.
+   --
+   --  + primitive
+   --  + gravity
+   --  + passive
+   --  + magnetic
+   --  + location
+   --
+   --  [synchronize callback function] If given, will be called just before
+   --                                  fill_guard. Meant for MPI boundaries to
+   --                                  be set if needed.
+   --  + synchronize
    --
    -- **************************************************************************
    local block = fish.block_new()
@@ -27,6 +43,8 @@ function Block:__init__(args)
    local parent = args.parent
    local descr = parent and parent._descr or args.descr
    local totsize = { }
+   local lower = args.lower or {0,0,0}
+   local upper = args.upper or {1,1,1}
 
    fish.block_setdescr (block, descr._c)
    fish.block_setrank  (block, rank)
@@ -34,36 +52,32 @@ function Block:__init__(args)
 
    for i,N in ipairs(args.size) do
       fish.block_setsize  (block, i-1, N)
-      fish.block_setrange (block, i-1, 0.0, 1.0)
+      fish.block_setrange (block, i-1, lower[i] or 0, upper[i] or 1)
       totsize[i] = N + 2 * guard
    end
-
+   local fields = {'primitive', 'gravity', 'passive', 'magnetic', 'location'}
 
    if not args.dummy then
-      for _,field in pairs{'primitive', 'gravity', 'passive', 'magnetic',
-			   'location'} do
-
+      for _,field in pairs(fields) do
 	 totsize[rank + 1] = descr:get_ncomp(field)
-
 	 if totsize[rank + 1] ~= 0 then
-	    local arr = array.array(totsize)
+	    local arr = args[field] or array.array(totsize)
+	    local shp = arr:shape()
+	    for i,v in ipairs(totsize) do
+	       assert(shp[i] == totsize[i])
+	    end
 	    self['_'..field] = arr
 	    fish.block_mapbuffer (block, arr:buffer(), flui[field:upper()])
 	 else
-	    self['_'..field] = { }	    
+	    self['_'..field] = { }
 	 end
-
       end
       fish.block_allocate  (block)
    else
-      for _,field in pairs{'primitive', 'gravity', 'passive', 'magnetic',
-			   'location'} do
-
+      for _,field in pairs(fields) do
 	 self['_'..field] = { }
-
       end
    end
-
 
    self._block = block
    self._descr = descr
@@ -71,6 +85,7 @@ function Block:__init__(args)
    self._boundaryL = { }
    self._boundaryR = { }
    self._rank = rank
+   self._synchronize = args.synchronize
 
    if parent then
       if not args.id then
@@ -217,6 +232,12 @@ end
 
 function Block:fill_guard()
    fish.block_fillguard(self._block)
+end
+
+function Block:call_synchronize()
+   if self._synchronize then
+      self:_synchronize()
+   end
 end
 
 function Block:evolve(W, dt)
@@ -455,7 +476,7 @@ local function test3()
    local err, msg = pcall(mesh.set_boundary_block, mesh, 0, 'L', mesh[0])
    assert(not err)
 
-   local dummy = Block { descr=descr, size={32,32}, dummy=true }
+   local dummy = Block { descr=descr, size={32}, dummy=true }
    dummy      :add_child_block(0, {dummy=true})
    dummy[0]   :add_child_block(0, {dummy=false})
    dummy[0][0]:add_child_block(0, {dummy=false})

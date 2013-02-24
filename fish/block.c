@@ -11,6 +11,10 @@
 /* Externally defined Fortran functions */
 void outflow_1d_x0_(double *data, int *nx, int *ng, int *nc);
 void outflow_1d_x1_(double *data, int *nx, int *ng, int *nc);
+void outflow_2d_x0_(double *data, int *nx, int *ny, int *ng, int *nc);
+void outflow_2d_x1_(double *data, int *nx, int *ny, int *ng, int *nc);
+void outflow_2d_y0_(double *data, int *nx, int *ny, int *ng, int *nc);
+void outflow_2d_y1_(double *data, int *nx, int *ny, int *ng, int *nc);
 
 
 #define CHECK(c,m) do{if(!(c)){B->error=m;return -1;}B->error=NULL;}while(0)
@@ -548,6 +552,32 @@ int fish_block_fillconserved(fish_block *B)
   return 0;
 }
 
+int _block_fillguard_2d(fish_block *B)
+{
+  if (B->bcL[0] != FISH_OUTFLOW ||
+      B->bcR[0] != FISH_OUTFLOW ||
+      B->bcL[1] != FISH_OUTFLOW ||
+      B->bcR[1] != FISH_OUTFLOW) return 0;
+  /*
+  CHECK(B->bcL[0] == FISH_OUTFLOW, "only outflow boundaries supported");
+  CHECK(B->bcR[0] == FISH_OUTFLOW, "only outflow boundaries supported");
+  CHECK(B->bcL[1] == FISH_OUTFLOW, "only outflow boundaries supported");
+  CHECK(B->bcR[1] == FISH_OUTFLOW, "only outflow boundaries supported");
+  */
+
+  int Ng = B->guard;
+  int Nx = B->size[0];
+  int Ny = B->size[1];
+  int np = fluids_descr_getncomp(B->descr, FLUIDS_PRIMITIVE);
+
+  outflow_2d_x0_(B->primitive, &Nx, &Ny, &Ng, &np);
+  outflow_2d_x1_(B->primitive, &Nx, &Ny, &Ng, &np);
+  outflow_2d_y0_(B->primitive, &Nx, &Ny, &Ng, &np);
+  outflow_2d_y1_(B->primitive, &Nx, &Ny, &Ng, &np);
+
+  return 0;
+}
+
 int fish_block_fillguard(fish_block *B)
 /* -----------------------------------------------------------------------------
  *
@@ -581,6 +611,10 @@ int fish_block_fillguard(fish_block *B)
 {
   CHECK(B->allocated, "block must be allocated");
   CHECK(B->descr, "block needs a fluid descriptor");
+
+  if (B->rank == 2) {
+    return _block_fillguard_2d(B);
+  }
 
   int Ng = B->guard;
   int Nx = B->size[0];
@@ -702,6 +736,7 @@ int fish_block_project(fish_block *B)
   CHECK(B->descr, "block needs a fluid descriptor");
   CHECK(B->parent, "block needs a parent to project onto");
   CHECK(B->parent->allocated, "block needs an allocated parent");
+  CHECK(B->rank == 1, "projection only implemented in 1d");
 
   int Ng = B->guard;
   int Nx = B->size[0];

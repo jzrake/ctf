@@ -54,6 +54,7 @@ function FishSimulation:initialize_physics()
    end
 
    for block in self.grid:walk() do
+      block:call_synchronize()
       block:fill_guard(block)
    end
 end
@@ -82,7 +83,8 @@ function FishSimulation:advance_physics()
       end
       self.grid:fill()
       for block in self.grid:walk() do
-	 block:fill_guard(block)
+	 block:call_synchronize()
+	 block:fill_guard()
       end
    end
 

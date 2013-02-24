@@ -277,33 +277,6 @@ function problems.SmoothKelvinHelmholtz:finish_time()
    return 2.5
 end
 
-function problems.SmoothKelvinHelmholtz:solution_old(x,y,z,t)
-   local P0    =  2.5
-   local rho1  =  1.0
-   local rho2  =  2.0
-   local L     =  0.025
-   local U1    =  0.5
-   local U2    = -0.5
-   local w0    =  0.01
-   local vy    =  w0 * math.sin(4*math.pi*x)
-
-   local rho,vx
-   if y < 0.25 then
-      rho = rho1 - 0.5*(rho1-rho2)*math.exp( (y-0.25)/L)
-      vx  = U1   - 0.5*( U1 - U2 )*math.exp( (y-0.25)/L)
-   elseif y < 0.5 then
-      rho = rho2 + 0.5*(rho1-rho2)*math.exp(-(y-0.25)/L)
-      vx  = U2   + 0.5*( U1 - U2 )*math.exp(-(y-0.25)/L)
-   elseif y < 0.75 then
-      rho = rho2 + 0.5*(rho1-rho2)*math.exp( (y-0.75)/L)
-      vx  = U2   + 0.5*( U1 - U2 )*math.exp( (y-0.75)/L)
-   else
-      rho = rho1 - 0.5*(rho1-rho2)*math.exp(-(y-0.75)/L)
-      vx  = U1   - 0.5*( U1 - U2 )*math.exp(-(y-0.75)/L)
-   end
-   return { rho, P0, vx, vy, 0.0 }
-end
-
 function problems.SmoothKelvinHelmholtz:solution(x,y,z,t)
    local P0   =  2.5
    local D1   =  1.0
@@ -330,13 +303,12 @@ function problems.SmoothKelvinHelmholtz:user_work_iteration()
       E = E + 0.5 * rho * vy^2
       n = n + 1
    end
-
    self.vertical_Ek[t] = E / n
 end
 
 function problems.SmoothKelvinHelmholtz:user_work_finish()
-   local util = require 'util'
-   util.pretty_print(self.vertical_Ek)
+   --local util = require 'util'
+   --util.pretty_print(self.vertical_Ek)
 end
 
 

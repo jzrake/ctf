@@ -67,6 +67,18 @@ function DataManagerHDF5:__init__(domain, dataset_names, opts)
    self.dset_opts.mpio = opts.mpio
 end
 
+function DataManagerHDF5:synchronize()
+   local field = cow.dfield_new()
+   for _,v in ipairs(self.dataset_names) do
+      cow.dfield_addmember(field, v)
+   end
+   cow.dfield_setdomain(field, self.domain)
+   cow.dfield_setdatabuffer(field, self.array:buffer())
+   cow.dfield_commit(field)
+   cow.dfield_syncguard(field)
+   cow.dfield_del(field)
+end
+
 function DataManagerHDF5:local_mesh_size(which)
    local which = which or 'total'
    if which == 'total' then
@@ -80,6 +92,16 @@ function DataManagerHDF5:local_mesh_size(which)
    else
       error("argument 'which' must be ['total', 'shape']")
    end
+end
+
+function DataManagerHDF5:local_extent(which)
+   local lower = { }
+   local upper = { }
+   for i=1,self.ndim do
+      lower[i] = cow.domain_getlowercoord(self.domain, i-1)
+      upper[i] = cow.domain_getuppercoord(self.domain, i-1)
+   end
+   return lower, upper
 end
 
 function DataManagerHDF5:write(filename, opts)
