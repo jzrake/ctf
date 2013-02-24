@@ -314,22 +314,8 @@ function Block:map(f, attr)
    -- of components in the corresponding attribute: primitive, gravity, scalar,
    -- etc.
    --
-
    local attrflag = flui[(attr or 'primitive'):upper()]
    fish.block_map(self._block, f, attrflag)
-
-   -- local Nx, Ny, Nz = table.unpack(self:size())
-   -- local Ng = self:guard()
-   -- local Pvec = self._primitive:vector()
-   -- for i=0,Nx+2*Ng-1 do
-   --    local x = fish.block_positionatindex(self._block, 0, i)
-   --    local Pi = f(x,0,0)
-   --    Pvec[5*i + 0] = Pi[1]
-   --    Pvec[5*i + 1] = Pi[2]
-   --    Pvec[5*i + 2] = Pi[3]
-   --    Pvec[5*i + 3] = Pi[4]
-   --    Pvec[5*i + 4] = Pi[5]
-   -- end
 end
 
 function Block:table(q, T, opts)
@@ -471,6 +457,10 @@ local function test3()
 end
 
 local function test4()
+   --
+   -- Check that the fill function (recursive projection form child to parent
+   -- grids) works
+   --
    local descr = FishCls.FluidDescriptor{ fluid='gravs' }
    local mesh = Block{ descr=descr, size={64}, guard=3 }
    local block1 = mesh:add_child_block(0)
@@ -483,8 +473,6 @@ local function test4()
    assert(not block1:has_children())
 
    mesh:fill()
-   --block1:project()
-   --block2:project()
 
    local P = mesh.primitive[{{3,-3},{0,1}}]:vector()
    for i=0,#P-1 do
