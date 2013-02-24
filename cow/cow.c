@@ -203,8 +203,9 @@ void cow_domain_commit(cow_domain *d)
       for (int j=0; j<d->proc_index[i]; ++j) {
         d->G_strt[i] += (j<R) ? augmnt_size : normal_size;
       }
-      d->loc_lower[i] = d->glb_lower[i] + dx *  d->G_strt[i];
-      d->loc_upper[i] = d->glb_upper[i] + dx * (d->G_strt[i] + thisdm_size);
+      d->loc_lower[i] = d->glb_lower[i] + dx * d->G_strt[i];
+      d->loc_upper[i] = d->loc_lower[i] + dx * thisdm_size;
+
       d->L_ntot[i] = d->L_nint[i] + 2 * d->n_ghst;
       d->L_strt[i] = d->n_ghst;
     }
@@ -327,6 +328,19 @@ int cow_domain_subgridatposition(cow_domain *d, double x, double y, double z)
   return 0;
 #endif
 }
+
+double cow_domain_getlowercoord(cow_domain *d, int dim)
+{
+  if (dim >= 3 || !d->committed) return 0.0;
+  return d->loc_lower[dim];
+}
+
+double cow_domain_getuppercoord(cow_domain *d, int dim)
+{
+  if (dim >= 3 || !d->committed) return 0.0;
+  return d->loc_upper[dim];
+}
+
 int cow_domain_indexatposition(cow_domain *d, int dim, double x)
 // -----------------------------------------------------------------------------
 // dim: 0,1,2 for x,y,z
