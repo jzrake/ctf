@@ -116,20 +116,34 @@ static int _fish_block_map(lua_State *L)
   int i1 = i0 + Nx;
   int j1 = j0 + Ny;
   int k1 = k0 + Nz;
+  int sx=1,sy=1,sz=1;
 
-  int sz = Nd >= 3 ?            : 1;
-  int sy = Nd >= 2 ? sz*(k1-k0) : 1;
-  int sx = Nd >= 1 ? sy*(j1-j0) : 1;
+  switch (Nd) {
+  case 1:
+    sx = 1;
+    break;
+  case 2:
+    sx = (Ny + 2*Ng);
+    sy = 1;
+    break;
+  case 3:
+    sx = (Ny + 2*Ng) * (Nz + 2*Ng);
+    sy = (Nz + 2*Ng);
+    sz = 1;
+    break;
+  }
   double *P = (double*) malloc(Nc * sizeof(double));
-
-  //  printf("your sizes   are [%d %d %d]\n", Nx, Ny, Nz);
-  //  printf("your strides are [%d %d %d]\n", sx, sy, sz);
+  /*
+  printf("your rank is %d\n", Nd);
+  printf("your starts  are [%d %d %d]\n", i0, j0, k0);
+  printf("your stops   are [%d %d %d]\n", i1, j1, k1);
+  printf("your sizes   are [%d %d %d]\n", Nx, Ny, Nz);
+  printf("your strides are [%d %d %d]\n", sx, sy, sz);
+  */
 
   for (int i=i0; i<i1; ++i) {
     for (int j=j0; j<j1; ++j) {
       for (int k=k0; k<k1; ++k) {
-
-	//	printf("%d %d %d\n", i, j, k );
 
 	double x = fish_block_positionatindex(B, 0, i);
 	double y = fish_block_positionatindex(B, 1, j);
@@ -153,6 +167,9 @@ static int _fish_block_map(lua_State *L)
 	  P[n] = lua_tonumber(L, -1);
 	  lua_pop(L, 1);
 	}
+
+	//	printf("%d %d %d\n", i, j, k );
+	//	printf("%f %f %f %f %f\n", P[0], P[1], P[2], P[3], P[4]);
 
 	fluids_state_setattr(fluid[i*sx+j*sy+k*sz], P, attrflag);
       }

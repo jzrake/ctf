@@ -24,15 +24,26 @@
   int i1 = i0 + Nx;				\
   int j1 = j0 + Ny;				\
   int k1 = k0 + Nz;				\
+  int sx=1,sy=1,sz=1;				\
 						\
-  int sz = Nd >= 3 ?            : 1;		\
-  int sy = Nd >= 2 ? sz*(k1-k0) : 1;		\
-  int sx = Nd >= 1 ? sy*(j1-j0) : 1;		\
+  switch (Nd) {					\
+  case 1:					\
+    sx = 1;					\
+    break;					\
+  case 2:					\
+    sx = (Ny + 2*Ng);				\
+    sy = 1;					\
+    break;					\
+  case 3:					\
+    sx = (Ny + 2*Ng) * (Nz + 2*Ng);		\
+    sy = (Nz + 2*Ng);				\
+    sz = 1;					\
+    break;					\
+  }						\
 						\
   for (int i=i0; i<i1; ++i) 			\
     for (int j=j0; j<j1; ++j) 			\
       for (int k=k0; k<k1; ++k) 		\
-						\
 
 
 fish_block *fish_block_new()
