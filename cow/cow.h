@@ -67,6 +67,8 @@ long long cow_domain_getnumlocalzonesincguard(cow_domain *d, int dim);
 long long cow_domain_getnumlocalzonesinterior(cow_domain *d, int dim);
 long long cow_domain_getnumglobalzones(cow_domain *d, int dim);
 int cow_domain_getglobalstartindex(cow_domain *d, int dim);
+double cow_domain_getlowercoord(cow_domain *d, int dim); // local physical extent
+double cow_domain_getuppercoord(cow_domain *d, int dim);
 double cow_domain_getgridspacing(cow_domain *d, int dim);
 int cow_domain_getcartrank(cow_domain *d);
 int cow_domain_getcartsize(cow_domain *d);
