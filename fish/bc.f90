@@ -66,3 +66,41 @@ SUBROUTINE OUTFLOW_2D_Y1(DATA, NX, NY, NG, NC)
      DATA(:,NY+NG+I,:) = DATA(:,NY+NG,:)
   END DO
 END SUBROUTINE OUTFLOW_2D_Y1
+
+
+! ******************************************************************************
+! 3D PROLONGATION
+! ******************************************************************************
+SUBROUTINE PROLONG3D_GENERAL( &
+     DATA0, EXTENT0, START0, COUNT0, &
+     DATA1, EXTENT1, START1, COUNT1, NC)
+  IMPLICIT NONE
+  INTEGER, INTENT(IN) :: START0(3), EXTENT0(3), COUNT0(3)
+  INTEGER, INTENT(IN) :: START1(3), EXTENT1(3), COUNT1(3)
+  INTEGER, INTENT(IN) :: NC
+  REAL*8, INTENT(OUT) :: DATA0(NC, EXTENT0(3), EXTENT0(2), EXTENT0(1))
+  REAL*8, INTENT(IN)  :: DATA1(NC, EXTENT1(3), EXTENT1(2), EXTENT1(1))
+
+END SUBROUTINE PROLONG3D_GENERAL
+
+
+SUBROUTINE PROLONG3D(DATA0, DATA1, EXTENT, NC)
+  ! ----------------------------------------------------------------------------
+  ! DATA0: FINE ARRAY (OUTPUT)
+  ! DATA1: COURSE ARRAY (INPUT)
+  ! EXTENT: SIZE OF THE COURSE ARRAY
+  ! NC: NUMBER OF COMPONENTS
+  ! ----------------------------------------------------------------------------
+  IMPLICIT NONE
+  INTEGER, INTENT(IN) :: NC, EXTENT(3)
+  REAL*8, INTENT(OUT) :: DATA0(NC, EXTENT(3)*2, EXTENT(2)*2, EXTENT(1)*2)
+  REAL*8, INTENT(IN)  :: DATA1(NC, EXTENT(3)*1, EXTENT(2)*1, EXTENT(1)*1)
+  INTEGER :: I,J,K,L,M,N
+  FORALL (K=1:EXTENT(3), J=1:EXTENT(2), I=1:EXTENT(1))
+
+     FORALL (N=0:1, M=0:1, L=0:1)
+        DATA0(:,K+N,J+M,I+L) = 0.0
+     END FORALL
+
+  END FORALL
+END SUBROUTINE PROLONG3D
