@@ -29,12 +29,25 @@ static int _image_write_ppm(lua_State *L)
   int Nx = luaL_checkinteger(L, 2);
   int Ny = luaL_checkinteger(L, 3);
   const char *fname = luaL_checkstring(L, 4);
+  int cmap = luaL_optinteger(L, 5, 0);
+
   unsigned N_have = lua_rawlen(L, 1) / sizeof(double);
   unsigned N_needed = Nx * Ny;
+
   if (N_have != N_needed) {
     luaL_error(L, "[visual] input buffer must be (Nx, Ny)");
   }
-  image_write_ppm(A, Nx, Ny, 0, NULL, fname);
+
+  if (lua_isnumber(L, 6) && lua_isnumber(L, 7)) {
+    double range[2];
+    range[0] = lua_tonumber(L, 6);
+    range[1] = lua_tonumber(L, 7);
+    image_write_ppm(A, Nx, Ny, cmap, range, fname);
+  }
+  else {
+    image_write_ppm(A, Nx, Ny, cmap, NULL, fname);
+  }
+
   return 0;
 }
 

@@ -310,7 +310,7 @@ function problems.SmoothKelvinHelmholtz:user_work_finish()
 end
 
 
-function problems.TwoDimensionalImplosion:finish_time() return 0.5 end
+function problems.TwoDimensionalImplosion:finish_time() return 5.0 end
 function problems.TwoDimensionalImplosion:boundary_conditions() return 'reflect2d' end
 function problems.TwoDimensionalImplosion:solution(x,y,z,t)
    -- http://www.astro.princeton.edu/~jstone/Athena/tests/implode/Implode.html

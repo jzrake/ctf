@@ -60,6 +60,9 @@ void image_write_ppm(double *data, int Nx, int Ny, int cmap, double *range,
 
   if (cmap < 0 || cmap > 6) cmap = 0; // don't allow invalid color map index
 
+  printf("[ppm-writer] data range: [%3.2e, %3.2e]\n", min, max);
+  printf("[ppm-writer] using color map: %d\n", cmap);
+
   // take input array in row-major format and convert to image format
   for (i=0; i<Nx; ++i) {
     for (j=0; j<Ny; ++j) {
@@ -74,7 +77,7 @@ void image_write_ppm(double *data, int Nx, int Ny, int cmap, double *range,
 
   FILE *outf = fopen(fname, "wb");
   if (!outf) {
-    printf("[image] error: failed to open %s\n", fname);
+    printf("[ppm-writer] error: failed to open %s\n", fname);
     free(pixels);
     return;
   }
