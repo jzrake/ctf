@@ -28,11 +28,14 @@
       <div class="span11 offset1">
         <div class="navbar">
           <div class="navbar-inner">
-            <a class="brand" href="#">Title</a>
             <ul class="nav">
-              <li               ><a href="#">Home</a></li>
-              <li class="active"><a href="#">Test Page</a></li>
-              <li               ><a href="#">Source</a></li>
+              <li  class="active" >
+		<a href="index.html">Home</a>
+	      </li>
+              <li >
+		<a href="test-page.html">Test Page</a>
+	      </li>
+              <li><a href="https://github.com/jzrake/ctf">Source</a></li>
             </ul>
           </div>
         </div>
@@ -41,137 +44,48 @@
 
     <div class="row">
       <div class="span11 offset1">
-        <div class="hero-unit">
-          <h1><bold>Mara</bold> <small>computational turbulence framework</small></h1>
+        <div class="page-header">
+	  <h1><bold>Mara  </bold><small> magnetized, relativistic astrophysics </small></h1>
         </div>
+	
       </div>
     </div>
 
     
 
-    <div class="row"><div class="span10 offset1"><h2>DensityWave</h2></div></div>
+    <div class="row"><div class="span10 offset1"><h2></h2></div></div>
     <div class="row">
+
       <div class="span6 offset1">
-        <h3 id="problem-description">Problem description</h3>
-<p>This problem sets up a smooth density wave advecting with a uniform velocity
-and periodic boundaries. This is probably the easiest problem for a code
-which solves the Euler equations, as all the non-linear features are absent,
-and the behavior is only that of the scalar conservation law <mathjax>$\dot \rho + u_0
-\rho' = 0$</mathjax>. The problem is described by the following parameters:</p>
-<ul>
-<li>sound speed: <mathjax>$c_s$</mathjax></li>
-<li>advection velocity: <mathjax>$u_0$</mathjax></li>
-<li>background density: <mathjax>$\rho_0$</mathjax></li>
-<li>wave amplitude: <mathjax>$\rho_1$</mathjax></li>
-<li>background pressure: <mathjax>$p_0 = \rho_0 c_s^2 / \Gamma$</mathjax></li>
-<li>
-<p>wave-number: <mathjax>$k_0 = 2\pi / L$</mathjax></p>
-<p><mathjax>$$ \left(\begin{array}{c} \rho(x,t) \\ p(x,t) \\ u(x,t) \end{array}\right) =
-\left(\begin{array}{c} \rho_0 + \rho_1 \cos{k_0 (x - u_0 t)} \\ p_0 \\ 0 \\
-\end{array}\right) $$</mathjax></p>
-</li>
-</ul>
-<p>Because of its smoothness and simplicity, this problem is ideal for gauging
-the convergence order of a scheme. Any scheme claiming to converge at order
-<mathjax>$n$</mathjax> must absolutely pass this test before any other. For the convergence
-test, the problem is run for half of the domain-crossing time at resolutions
-<mathjax>$2^n$</mathjax> for <mathjax>$n$</mathjax> between 3 and 10. Five different reference schemes are used:</p>
-<ol>
-<li><code>HLLC-PLM-MUSCL</code></li>
-<li><code>HLLC-PLM-RK3</code></li>
-<li><code>HLLC-WENO5-RK3</code></li>
-<li><code>CHAR-WENO5-RK3</code></li>
-<li><code>CHAR-WENO5-RK4</code></li>
-</ol>
-<h3 id="performance-of-the-schemes">Performance of the schemes</h3>
-<p>For the formally 5th order <code>WENO5</code> reconstruction schemes, it is evident that
-the truncation error introduced by the 3rd order temporal update comes to
-dominate the error by resolution <mathjax>$64^3$</mathjax>. At higher resolutions, the classic 4th
-order Runge-Kutta update preserves 5th order convergence. Since this problem
-does not involve any non-linear waves, it is not surprising that the Godunov
-scheme <code>HLLC-WENO5-RK3</code> accomplishes the same convergence order as the
-characteristic decomposition scheme <code>CHAR-WENO5-RK3</code>.</p>
-<table class="tftable">
-<thead>
-<tr>
-<th><mathjax>$N$</mathjax></th>
-<th>HLLC-PLM-MUSCL</th>
-<th>HLLC-PLM-RK3</th>
-<th>HLLC-WENO5-RK3</th>
-<th>CHAR-WENO5-RK3</th>
-<th>CHAR-WENO5-RK4</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>16</td>
-<td>2.07</td>
-<td>2.27</td>
-<td>4.52</td>
-<td>4.46</td>
-<td>4.53</td>
-</tr>
-<tr>
-<td>32</td>
-<td>2.23</td>
-<td>2.04</td>
-<td>4.42</td>
-<td>4.69</td>
-<td>4.95</td>
-</tr>
-<tr>
-<td>64</td>
-<td>2.25</td>
-<td>2.08</td>
-<td>3.97</td>
-<td>4.33</td>
-<td>5.04</td>
-</tr>
-<tr>
-<td>128</td>
-<td>2.27</td>
-<td>2.00</td>
-<td>3.40</td>
-<td>3.66</td>
-<td>5.04</td>
-</tr>
-<tr>
-<td>256</td>
-<td>2.36</td>
-<td>2.01</td>
-<td>3.13</td>
-<td>3.23</td>
-<td>5.13</td>
-</tr>
-<tr>
-<td>512</td>
-<td>2.28</td>
-<td>1.98</td>
-<td>3.04</td>
-<td>3.06</td>
-<td>5.28</td>
-</tr>
-<tr>
-<td>1024</td>
-<td>2.35</td>
-<td>2.00</td>
-<td>3.01</td>
-<td>3.02</td>
-<td>5.44</td>
-</tr>
-</tbody>
-</table>
+        <h2>Welcome</h2>
+<p>Mara is a tubulence code for astrophysical hydrodynamics and relativistic MHD.</p>
       </div>
+
       <div class="span4 offset1">
+        <h2> &zwnj; </h2>
         <ul class="thumbnails">
-	  
+          
           <li class="span4">
-            <a href="DensityWave-L1.pdf" class="thumbnail">
-              <img src="DensityWave-L1.png" alt="">
+            <a href="http://zrake.webfactional.com/static/images/turbulent-bndlayer-KH-mara.png" class="thumbnail">
+              <img src="turbulent-bndlayer-KH-mara-small.png" alt="Kelvin-Helmholtz instability: a turbulent boundary layer in 2d">
             </a>
-            <p>L1 Error</p>
+            <p></p>
           </li>
-	  
+          
+          <li class="span4">
+            <a href="chkpt.0022-z_face-vz-gray.png" class="thumbnail">
+              <img src="chkpt.0022-z_face-vz-gray.png" alt="">
+            </a>
+            <p></p>
+          </li>
+          
+          <li class="span4">
+            <a href="SRG-2048.0017-x_face-log10vort_v-afmhot.png" class="thumbnail">
+              <img src="SRG-2048.0017-x_face-log10vort_v-afmhot.png" alt="">
+            </a>
+            <p></p>
+          </li>
+          
       </div>
     </div>
 
