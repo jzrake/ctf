@@ -68,7 +68,7 @@ characteristic decomposition scheme `CHAR-WENO5-RK3`.
 
 ---
 
-## SoundWave
+## Sound Wave
 
 
 ### Problem description
