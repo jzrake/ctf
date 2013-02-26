@@ -237,3 +237,31 @@ the intermediate state in order to capture the contact discontinuity.
 | $v_z$  | 0.200000 | 0.200000 |
 
 ---
+
+
+## Kelvin-Helmholtz instability
+
+### Problem description
+#+ {'figures': [{'src': 'KH-hllc-plm-rk3.png', 'url': 'KH-hllc-plm-rk3.png',
+#+  'caption': 'Performance at various resolutions for the '
+#+             '<code>HLLC-PLM-RK3</code> scheme'}]}
+
+This problem uses a smooth shearing profile to capture the linear growth rate of
+Kelvin-Helmholtz instability. The vertical velocity is given a sinusoidal
+perturbation with 4 wave-lengths over the domain. The resulting flow, when
+properly resolved, contains a single vortex for each wave-length of the
+perturbation. The domain is $[0,L]^2$.
+
++ background pressure: $p_0 = 2.5$
++ outer density: $\rho_1 = 1.0$
++ inner density: $\rho_2 = 2.0$
++ outer velocity: $u_1 = -0.5$
++ inner velocity: $u_2 =  0.5$
++ shearing layer width: $\delta = 0.035$
++ perturbation amplitude: $w_0 = 10^{-2}$
+
+ $$ \left(\begin{array}{c} \rho \\ p \\ u \\ v \\ \end{array}\right) =
+ \left(\begin{array}{c} \frac{\rho_2 - \rho_1}{2} (\tanh{\frac{y-L/4}{\delta}} -
+ \tanh{\frac{y-3L/4}{\delta}}) + \rho_1 \\ p_0 \\ \frac{u_2 - u_1}{2}
+ (\tanh{\frac{y-L/4}{\delta}} - \tanh{\frac{y-3L/4}{\delta}} - 1) \\ w_0 \sin(4
+ \pi x) \\ \end{array}\right) $$

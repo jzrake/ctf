@@ -33,7 +33,10 @@
 		<a href="index.html">Home</a>
 	      </li>
               <li  class="active" >
-		<a href="test-page.html">Test Page</a>
+		<a href="test-page.html">Tests</a>
+	      </li>
+              <li >
+		<a href="doc-page.html">Doc</a>
 	      </li>
               <li><a href="https://github.com/jzrake/ctf">Source</a></li>
             </ul>
@@ -774,6 +777,64 @@ the intermediate state in order to capture the contact discontinuity.</p>
               <img src="ContactWave.png" alt="">
             </a>
             <p></p>
+          </li>
+          
+      </div>
+    </div>
+
+    
+
+    <div class="row"><div class="span10 offset1"><h2></h2></div></div>
+    <div class="row">
+
+      <div class="span6 offset1">
+        <h2>Kelvin-Helmholtz instability</h2>
+      </div>
+
+      <div class="span4 offset1">
+        <h2> &zwnj; </h2>
+        <ul class="thumbnails">
+          
+      </div>
+    </div>
+
+    
+
+    <div class="row"><div class="span10 offset1"><h2></h2></div></div>
+    <div class="row">
+
+      <div class="span6 offset1">
+        <h3>Problem description</h3>
+<p>This problem uses a smooth shearing profile to capture the linear growth rate of
+Kelvin-Helmholtz instability. The vertical velocity is given a sinusoidal
+perturbation with 4 wave-lengths over the domain. The resulting flow, when
+properly resolved, contains a single vortex for each wave-length of the
+perturbation. The domain is <mathjax>$[0,L]^2$</mathjax>.</p>
+<ul>
+<li>background pressure: <mathjax>$p_0 = 2.5$</mathjax></li>
+<li>outer density: <mathjax>$\rho_1 = 1.0$</mathjax></li>
+<li>inner density: <mathjax>$\rho_2 = 2.0$</mathjax></li>
+<li>outer velocity: <mathjax>$u_1 = -0.5$</mathjax></li>
+<li>inner velocity: <mathjax>$u_2 =  0.5$</mathjax></li>
+<li>shearing layer width: <mathjax>$\delta = 0.035$</mathjax></li>
+<li>perturbation amplitude: <mathjax>$w_0 = 10^{-2}$</mathjax></li>
+</ul>
+<p><mathjax>$$ \left(\begin{array}{c} \rho \\ p \\ u \\ v \\ \end{array}\right) =
+ \left(\begin{array}{c} \frac{\rho_2 - \rho_1}{2} (\tanh{\frac{y-L/4}{\delta}} -
+ \tanh{\frac{y-3L/4}{\delta}}) + \rho_1 \\ p_0 \\ \frac{u_2 - u_1}{2}
+ (\tanh{\frac{y-L/4}{\delta}} - \tanh{\frac{y-3L/4}{\delta}} - 1) \\ w_0 \sin(4
+ \pi x) \\ \end{array}\right) $$</mathjax></p>
+      </div>
+
+      <div class="span4 offset1">
+        <h3> &zwnj; </h3>
+        <ul class="thumbnails">
+          
+          <li class="span4">
+            <a href="KH-hllc-plm-rk3.png" class="thumbnail">
+              <img src="KH-hllc-plm-rk3.png" alt="">
+            </a>
+            <p>Performance at various resolutions for the <code>HLLC-PLM-RK3</code> scheme</p>
           </li>
           
       </div>
