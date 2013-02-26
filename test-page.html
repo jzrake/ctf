@@ -57,6 +57,22 @@
     <div class="row">
 
       <div class="span6 offset1">
+        <h2>Density Wave</h2>
+      </div>
+
+      <div class="span4 offset1">
+        <h2> &zwnj; </h2>
+        <ul class="thumbnails">
+          
+      </div>
+    </div>
+
+    
+
+    <div class="row"><div class="span10 offset1"><h2></h2></div></div>
+    <div class="row">
+
+      <div class="span6 offset1">
         <h3>Problem description</h3>
 <p>This problem sets up a smooth density wave advecting with a uniform velocity
 and periodic boundaries. This is probably the easiest problem for a code
@@ -69,13 +85,11 @@ and the behavior is only that of the scalar conservation law <mathjax>$\dot \rho
 <li>background density: <mathjax>$\rho_0$</mathjax></li>
 <li>wave amplitude: <mathjax>$\rho_1$</mathjax></li>
 <li>background pressure: <mathjax>$p_0 = \rho_0 c_s^2 / \Gamma$</mathjax></li>
-<li>
-<p>wave-number: <mathjax>$k_0 = 2\pi / L$</mathjax></p>
+<li>wave-number: <mathjax>$k_0 = 2\pi / L$</mathjax></li>
+</ul>
 <p><mathjax>$$ \left(\begin{array}{c} \rho(x,t) \\ p(x,t) \\ u(x,t) \end{array}\right) =
 \left(\begin{array}{c} \rho_0 + \rho_1 \cos{k_0 (x - u_0 t)} \\ p_0 \\ 0 \\
 \end{array}\right) $$</mathjax></p>
-</li>
-</ul>
 <p>Because of its smoothness and simplicity, this problem is ideal for gauging
 the convergence order of a scheme. Any scheme claiming to converge at order
 <mathjax>$n$</mathjax> must absolutely pass this test before any other. For the convergence
@@ -188,6 +202,7 @@ characteristic decomposition scheme <code>CHAR-WENO5-RK3</code>.</p>
 </tr>
 </tbody>
 </table>
+<hr />
       </div>
 
       <div class="span4 offset1">
@@ -199,6 +214,566 @@ characteristic decomposition scheme <code>CHAR-WENO5-RK3</code>.</p>
               <img src="DensityWave-L1.png" alt="">
             </a>
             <p>L1 Error of various schemes</p>
+          </li>
+          
+      </div>
+    </div>
+
+    
+
+    <div class="row"><div class="span10 offset1"><h2></h2></div></div>
+    <div class="row">
+
+      <div class="span6 offset1">
+        <h2>SoundWave</h2>
+      </div>
+
+      <div class="span4 offset1">
+        <h2> &zwnj; </h2>
+        <ul class="thumbnails">
+          
+      </div>
+    </div>
+
+    
+
+    <div class="row"><div class="span10 offset1"><h2></h2></div></div>
+    <div class="row">
+
+      <div class="span6 offset1">
+        <h3>Problem description</h3>
+<p>This problem sets up a smooth and small-amplitude perturbation to create a
+left-going sound wave. It is only slightly more challenging as a convergence
+test than the density wave. The problem is described by the following
+parameters:</p>
+<ul>
+<li>sound speed: <mathjax>$c_s$</mathjax></li>
+<li>background density: <mathjax>$\rho_0$</mathjax></li>
+<li>background pressure: <mathjax>$p_0 = \rho_0 c_s^2 / \Gamma$</mathjax></li>
+<li>density wave amplitude: <mathjax>$\rho_1 = 10^{-6} \rho_0$</mathjax></li>
+<li>pressure wave amplitude: <mathjax>$p_1 = c_s^2 \rho_1$</mathjax></li>
+<li>velocity wave amplitude: <mathjax>$u_1 = c_s \rho_1 / \rho_0$</mathjax></li>
+<li>wave-number: <mathjax>$k_0 = 8\pi / L$</mathjax></li>
+<li>frequence: <mathjax>$\omega_0 = c_s k_0$</mathjax></li>
+</ul>
+<p><mathjax>$$ \left(\begin{array}{c} \rho(x,t) \\ p(x,t) \\ u(x,t) \end{array}\right) =
+\left(\begin{array}{c} \rho_0 + \rho_1 \cos{(k_0 x - \omega_0 t)} \\ p_0 + p_1
+\cos{(k_0 x - \omega_0 t)} \\ u_0 + u_1 \cos{(k_0 x - \omega_0 t)} \\
+\end{array}\right) $$</mathjax></p>
+      </div>
+
+      <div class="span4 offset1">
+        <h3> &zwnj; </h3>
+        <ul class="thumbnails">
+          
+      </div>
+    </div>
+
+    
+
+    <div class="row"><div class="span10 offset1"><h2></h2></div></div>
+    <div class="row">
+
+      <div class="span6 offset1">
+        <h3>Performance of the schemes</h3>
+<p>The need for higher temporal order is highlighted by this problem. While RK4
+accomplishes 5th order convergence, there is no resolution for which RK3
+converges faster than 3rd order. Notice that the error saturates at <mathjax>$10^{-12}$</mathjax>,
+which is slightly larger than the roundoff error. This is because the solution
+is only exact to linear order, so errors introduced at second order in <mathjax>$\rho_1$</mathjax>
+are at around the <mathjax>$10^{-12}$</mathjax> level.</p>
+<table class="tftable">
+<thead>
+<tr>
+<th><mathjax>$N$</mathjax></th>
+<th>HLLC-PLM-MUSCL</th>
+<th>HLLC-PLM-RK3</th>
+<th>HLLC-WENO5-RK3</th>
+<th>CHAR-WENO5-RK3</th>
+<th>CHAR-WENO5-RK4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>16</td>
+<td>0.81</td>
+<td>0.36</td>
+<td>0.61</td>
+<td>0.61</td>
+<td>0.78</td>
+</tr>
+<tr>
+<td>32</td>
+<td>2.14</td>
+<td>0.47</td>
+<td>2.40</td>
+<td>2.40</td>
+<td>3.45</td>
+</tr>
+<tr>
+<td>64</td>
+<td>2.06</td>
+<td>2.29</td>
+<td>3.39</td>
+<td>3.39</td>
+<td>4.85</td>
+</tr>
+<tr>
+<td>128</td>
+<td>1.75</td>
+<td>1.72</td>
+<td>3.18</td>
+<td>3.18</td>
+<td>4.71</td>
+</tr>
+<tr>
+<td>256</td>
+<td>1.95</td>
+<td>1.69</td>
+<td>3.07</td>
+<td>3.07</td>
+<td>3.71</td>
+</tr>
+<tr>
+<td>512</td>
+<td>2.09</td>
+<td>1.85</td>
+<td>3.12</td>
+<td>3.12</td>
+<td>0.23</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>2.13</td>
+<td>1.95</td>
+<td>2.08</td>
+<td>2.08</td>
+<td>0.01</td>
+</tr>
+</tbody>
+</table>
+<hr />
+      </div>
+
+      <div class="span4 offset1">
+        <h3> &zwnj; </h3>
+        <ul class="thumbnails">
+          
+          <li class="span4">
+            <a href="SoundWave-L1.pdf" class="thumbnail">
+              <img src="SoundWave-L1.png" alt="">
+            </a>
+            <p>L1 Error of various schemes</p>
+          </li>
+          
+      </div>
+    </div>
+
+    
+
+    <div class="row"><div class="span10 offset1"><h2></h2></div></div>
+    <div class="row">
+
+      <div class="span6 offset1">
+        <h2>One dimensional two-state problems</h2>
+<p>The two-state problems in this section demonstrate the <code>Mara</code>'s shock-capturing
+capability. Each problem sets up a piecewise-constant initial data, defined by a
+different pressure, density, and velocity to either side of the midpoint of the
+domain at <mathjax>$x=0.5$</mathjax>. Around discontinuities, the code will not converge at higher
+order. Instead, we expect better schemes to introduce a smaller degree of
+numerical dissipation around the discontinuity.</p>
+<p>These problems show the solution as generated by a reference scheme,
+<code>HLLC-PLM-RK3</code> on 128 grid points, compared against the exact
+solution. <a href="https://github.com/jzrake/ctf/blob/fd5d576ad7af8cd3d5f0e295d274e7390f039ff6/fish/riemann.c#L352">The exact Riemann solver for the Euler equation</a> is implemented
+according to the algorithm of Toro (1997).</p>
+      </div>
+
+      <div class="span4 offset1">
+        <h2> &zwnj; </h2>
+        <ul class="thumbnails">
+          
+      </div>
+    </div>
+
+    
+
+    <div class="row"><div class="span10 offset1"><h2></h2></div></div>
+    <div class="row">
+
+      <div class="span6 offset1">
+        <h3>Shocktube1</h3>
+<p>This is the classic Brio-Wu shocktube problem. The solution consists of a
+right-going shock wave and contact discontinuity, and a left-going rarefaction
+wave. This problem is not challenging, but is excellent for debugging new
+schemes because the correct solution is so familiar. Things to look for:</p>
+<ul>
+<li>The presence of post-shock oscillations- there should be none</li>
+<li>Smearing of the contact- second order (and higher) schemes will capture the
+  contact in 4-6 zones</li>
+</ul>
+<table class="tftable">
+<thead>
+<tr>
+<th></th>
+<th><mathjax>$x&lt;0.5$</mathjax></th>
+<th><mathjax>$x&gt;0.5$</mathjax></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><mathjax>$\rho$</mathjax></td>
+<td>1.000000</td>
+<td>0.125000</td>
+</tr>
+<tr>
+<td><mathjax>$p$</mathjax></td>
+<td>1.000000</td>
+<td>0.100000</td>
+</tr>
+<tr>
+<td><mathjax>$v_x$</mathjax></td>
+<td>0.000000</td>
+<td>0.000000</td>
+</tr>
+<tr>
+<td><mathjax>$v_y$</mathjax></td>
+<td>0.000000</td>
+<td>0.000000</td>
+</tr>
+<tr>
+<td><mathjax>$v_z$</mathjax></td>
+<td>0.000000</td>
+<td>0.000000</td>
+</tr>
+</tbody>
+</table>
+      </div>
+
+      <div class="span4 offset1">
+        <h3> &zwnj; </h3>
+        <ul class="thumbnails">
+          
+          <li class="span4">
+            <a href="Shocktube1.pdf" class="thumbnail">
+              <img src="Shocktube1.png" alt="">
+            </a>
+            <p></p>
+          </li>
+          
+      </div>
+    </div>
+
+    
+
+    <div class="row"><div class="span10 offset1"><h2></h2></div></div>
+    <div class="row">
+
+      <div class="span6 offset1">
+        <h3>Shocktube2</h3>
+<p>Double rarefeaction wave: in this setup, the density and pressure are the same
+across the midline. The velocity is discontinuous, with both halves of the
+domainmoving away from midline. This problem is helpful for finding asymmetries
+in the code. It should be run on both an even and odd number of zones, to
+confirm that the solution is always left-right symmetric.</p>
+<table class="tftable">
+<thead>
+<tr>
+<th></th>
+<th><mathjax>$x&lt;0.5$</mathjax></th>
+<th><mathjax>$x&gt;0.5$</mathjax></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><mathjax>$\rho$</mathjax></td>
+<td>1.000000</td>
+<td>1.000000</td>
+</tr>
+<tr>
+<td><mathjax>$p$</mathjax></td>
+<td>0.400000</td>
+<td>0.400000</td>
+</tr>
+<tr>
+<td><mathjax>$v_x$</mathjax></td>
+<td>-2.000000</td>
+<td>2.000000</td>
+</tr>
+<tr>
+<td><mathjax>$v_y$</mathjax></td>
+<td>0.000000</td>
+<td>0.000000</td>
+</tr>
+<tr>
+<td><mathjax>$v_z$</mathjax></td>
+<td>0.000000</td>
+<td>0.000000</td>
+</tr>
+</tbody>
+</table>
+      </div>
+
+      <div class="span4 offset1">
+        <h3> &zwnj; </h3>
+        <ul class="thumbnails">
+          
+          <li class="span4">
+            <a href="Shocktube2.pdf" class="thumbnail">
+              <img src="Shocktube2.png" alt="">
+            </a>
+            <p></p>
+          </li>
+          
+      </div>
+    </div>
+
+    
+
+    <div class="row"><div class="span10 offset1"><h2></h2></div></div>
+    <div class="row">
+
+      <div class="span6 offset1">
+        <h3>Shocktube3</h3>
+<p>This setup creates a strong right-going shock wave by initializing a pressure
+jump of 5 orders of magnitude. The quality of the solution can be gauged by the
+percentage of the true maximal density behind the shock. In the example solution
+given, with <mathjax>$128$</mathjax> zones, there are two zones which reach roughly 80% the
+maximal density.</p>
+<table class="tftable">
+<thead>
+<tr>
+<th></th>
+<th><mathjax>$x&lt;0.5$</mathjax></th>
+<th><mathjax>$x&gt;0.5$</mathjax></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><mathjax>$\rho$</mathjax></td>
+<td>1.000000</td>
+<td>1.000000</td>
+</tr>
+<tr>
+<td><mathjax>$p$</mathjax></td>
+<td>1000.000000</td>
+<td>0.010000</td>
+</tr>
+<tr>
+<td><mathjax>$v_x$</mathjax></td>
+<td>0.000000</td>
+<td>0.000000</td>
+</tr>
+<tr>
+<td><mathjax>$v_y$</mathjax></td>
+<td>0.000000</td>
+<td>0.000000</td>
+</tr>
+<tr>
+<td><mathjax>$v_z$</mathjax></td>
+<td>0.000000</td>
+<td>0.000000</td>
+</tr>
+</tbody>
+</table>
+      </div>
+
+      <div class="span4 offset1">
+        <h3> &zwnj; </h3>
+        <ul class="thumbnails">
+          
+          <li class="span4">
+            <a href="Shocktube3.pdf" class="thumbnail">
+              <img src="Shocktube3.png" alt="">
+            </a>
+            <p></p>
+          </li>
+          
+      </div>
+    </div>
+
+    
+
+    <div class="row"><div class="span10 offset1"><h2></h2></div></div>
+    <div class="row">
+
+      <div class="span6 offset1">
+        <h3>Shocktube4</h3>
+<p>This setup creates a strong left-going shock wave by initializing a pressure
+jump of 4 orders of magnitude.</p>
+<table class="tftable">
+<thead>
+<tr>
+<th></th>
+<th><mathjax>$x&lt;0.5$</mathjax></th>
+<th><mathjax>$x&gt;0.5$</mathjax></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><mathjax>$\rho$</mathjax></td>
+<td>1.000000</td>
+<td>1.000000</td>
+</tr>
+<tr>
+<td><mathjax>$p$</mathjax></td>
+<td>0.010000</td>
+<td>100.000000</td>
+</tr>
+<tr>
+<td><mathjax>$v_x$</mathjax></td>
+<td>0.000000</td>
+<td>0.000000</td>
+</tr>
+<tr>
+<td><mathjax>$v_y$</mathjax></td>
+<td>0.000000</td>
+<td>0.000000</td>
+</tr>
+<tr>
+<td><mathjax>$v_z$</mathjax></td>
+<td>0.000000</td>
+<td>0.000000</td>
+</tr>
+</tbody>
+</table>
+      </div>
+
+      <div class="span4 offset1">
+        <h3> &zwnj; </h3>
+        <ul class="thumbnails">
+          
+          <li class="span4">
+            <a href="Shocktube4.pdf" class="thumbnail">
+              <img src="Shocktube4.png" alt="">
+            </a>
+            <p></p>
+          </li>
+          
+      </div>
+    </div>
+
+    
+
+    <div class="row"><div class="span10 offset1"><h2></h2></div></div>
+    <div class="row">
+
+      <div class="span6 offset1">
+        <h3>Shocktube5</h3>
+<p>This setup yields a two-shock solution by creating a colliding supersonic
+flow. The velocities are adjusted so that the left shock is stationary.</p>
+<table class="tftable">
+<thead>
+<tr>
+<th></th>
+<th><mathjax>$x&lt;0.5$</mathjax></th>
+<th><mathjax>$x&gt;0.5$</mathjax></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><mathjax>$\rho$</mathjax></td>
+<td>5.999240</td>
+<td>5.999240</td>
+</tr>
+<tr>
+<td><mathjax>$p$</mathjax></td>
+<td>460.894000</td>
+<td>46.095000</td>
+</tr>
+<tr>
+<td><mathjax>$v_x$</mathjax></td>
+<td>19.597500</td>
+<td>-6.196330</td>
+</tr>
+<tr>
+<td><mathjax>$v_y$</mathjax></td>
+<td>0.000000</td>
+<td>0.000000</td>
+</tr>
+<tr>
+<td><mathjax>$v_z$</mathjax></td>
+<td>0.000000</td>
+<td>0.000000</td>
+</tr>
+</tbody>
+</table>
+      </div>
+
+      <div class="span4 offset1">
+        <h3> &zwnj; </h3>
+        <ul class="thumbnails">
+          
+          <li class="span4">
+            <a href="Shocktube5.pdf" class="thumbnail">
+              <img src="Shocktube5.png" alt="">
+            </a>
+            <p></p>
+          </li>
+          
+      </div>
+    </div>
+
+    
+
+    <div class="row"><div class="span10 offset1"><h2></h2></div></div>
+    <div class="row">
+
+      <div class="span6 offset1">
+        <h3>ContactWave</h3>
+<p>This problem consists of only a stationary jump in the density. Since the Euler
+equations do not model any diffusive processes, the jump should remain
+undisturbed. However, the <code>HLL</code> riemann solver will, in fact create anomalous
+diffusion across the contact. The contact wave problem is useful at verifying an
+<code>HLLC</code> solver, which uses a two-state rather than a one-state approximation to
+the intermediate state in order to capture the contact discontinuity.</p>
+<table class="tftable">
+<thead>
+<tr>
+<th></th>
+<th><mathjax>$x&lt;0.5$</mathjax></th>
+<th><mathjax>$x&gt;0.5$</mathjax></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><mathjax>$\rho$</mathjax></td>
+<td>1.000000</td>
+<td>0.100000</td>
+</tr>
+<tr>
+<td><mathjax>$p$</mathjax></td>
+<td>1.000000</td>
+<td>1.000000</td>
+</tr>
+<tr>
+<td><mathjax>$v_x$</mathjax></td>
+<td>0.000000</td>
+<td>0.000000</td>
+</tr>
+<tr>
+<td><mathjax>$v_y$</mathjax></td>
+<td>0.700000</td>
+<td>0.700000</td>
+</tr>
+<tr>
+<td><mathjax>$v_z$</mathjax></td>
+<td>0.200000</td>
+<td>0.200000</td>
+</tr>
+</tbody>
+</table>
+<hr />
+      </div>
+
+      <div class="span4 offset1">
+        <h3> &zwnj; </h3>
+        <ul class="thumbnails">
+          
+          <li class="span4">
+            <a href="ContactWave.pdf" class="thumbnail">
+              <img src="ContactWave.png" alt="">
+            </a>
+            <p></p>
           </li>
           
       </div>
