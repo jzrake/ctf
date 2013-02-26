@@ -33,7 +33,10 @@
 		<a href="index.html">Home</a>
 	      </li>
               <li {%if title == 'test-page' %} class="active" {% endif %}>
-		<a href="test-page.html">Test Page</a>
+		<a href="test-page.html">Tests</a>
+	      </li>
+              <li {%if title == 'doc-page' %} class="active" {% endif %}>
+		<a href="doc-page.html">Doc</a>
 	      </li>
               <li><a href="https://github.com/jzrake/ctf">Source</a></li>
             </ul>
@@ -44,7 +47,7 @@
 
     <div class="row">
       <div class="span11 offset1">
-        <div class="page-header">
+        <div class={%if title == 'index' %}"hero-unit"{% else %}"page-header"{% endif %}>
 	  <h1><bold>Mara  </bold><small> {{ page_tag }} </small></h1>
         </div>
 	{{ welcome }}

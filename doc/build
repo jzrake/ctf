@@ -60,3 +60,4 @@ def render_to_file(page, tag):
 
 render_to_file('index', 'magnetized, relativistic astrophysics')
 render_to_file('test-page', 'test problems page')
+render_to_file('doc-page', 'code use documentation (coming soon)')
