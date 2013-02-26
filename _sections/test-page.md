@@ -1,10 +1,9 @@
+### Problem description
 #+
-#+{'figures': [{'src': 'DensityWave-L1.png',
-#+              'url': 'DensityWave-L1.pdf',
-#+              'caption': 'L1 Error'}]}
+#+{'figures': [{'src': 'DensityWave.png',
+#+              'url': 'DensityWave.pdf'}]}
 #+
 
-### Problem description
 
 This problem sets up a smooth density wave advecting with a uniform velocity
 and periodic boundaries. This is probably the easiest problem for a code
@@ -37,6 +36,11 @@ $2^n$ for $n$ between 3 and 10. Five different reference schemes are used:
 
 
 ### Performance of the schemes
+#+
+#+{'figures': [{'src': 'DensityWave-L1.png',
+#+              'url': 'DensityWave-L1.pdf',
+#+              'caption': 'L1 Error of various schemes'}]}
+#+
 
 For the formally 5th order `WENO5` reconstruction schemes, it is evident that
 the truncation error introduced by the 3rd order temporal update comes to

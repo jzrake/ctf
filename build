@@ -4,11 +4,6 @@ import jinja2
 import markdown
 
 
-loader = jinja2.FileSystemLoader('_layouts')
-env = jinja2.Environment(loader=loader)
-layout = env.get_template('layout.html')
-
-
 class MathJaxPattern(markdown.inlinepatterns.Pattern):
     def __init__(self):
         markdown.inlinepatterns.Pattern.__init__(self, r'(?<!\\)(\$\$?)(.+?)\2')
@@ -23,34 +18,45 @@ class MathJaxExtension(markdown.Extension):
         md.inlinePatterns.add('mathjax', MathJaxPattern(), '<escape')
 
 
+loader = jinja2.FileSystemLoader('_layouts')
+env = jinja2.Environment(loader=loader)
+layout = env.get_template('layout.html')
+extensions = ['tables', MathJaxExtension()]
+
 def read_file(fname):
-    md = ""
     py = ""
-    attr = {'figures': [ ]}
-    py_evaled = False
+    mode = None
+    sections = [ ]
     for line in open(fname):
-        if line.startswith('#+'):
-            py += line.replace('#+', '')
-        else:
-            if not py_evaled:
-                attr.update(eval(py))
-                py_evaled = True
-            md += line
-    return md, attr
+        if mode == 'section-header':
+            if line.startswith('#+'):
+                py +=  line.replace('#+', '')
+            else:
+                if py:
+                    sections[-1].update(eval(py))
+                    py = ""
+                mode = None
+        elif line.startswith('#'):
+            hl = line.count('#')
+            sections.append({'md': "",
+                             'figures_header': "<h%d> &zwnj; </h%d>" % (hl, hl)})
+            mode = 'section-header'
+            sections[-1]['md'] += line
+        elif sections:
+            sections[-1]['md'] += line
+    return sections
 
 
-def make_section(title):
-    fname = '_sections/%s.md' % title
-    md, attr = read_file(fname)
-    E = ['tables', 'toc', 'attr_list', MathJaxExtension()]
-    attr['content'] = markdown.markdown(md, extensions=E)
-    attr['title'] = title
-    return attr
+def render_to_file(page, tag):
+    sections = read_file("_sections/%s.md" % page)
 
+    for section in sections:
+        section['content'] = markdown.markdown(section['md'],
+                                               extensions=extensions)
+    html = layout.render(sections=sections, title=page, page_tag=tag)
+    html = html.replace('<table>', '<table class="tftable">')
+    outf = open('%s.html' % page, 'w')
+    outf.write(html)
 
-sections = [make_section('DensityWave')]
-html = layout.render(sections=sections)
-
-html = html.replace('<table>', '<table class="tftable">')
-outf = open('index.html', 'w')
-outf.write(html)
+render_to_file('index', 'magnetized, relativistic astrophysics')
+render_to_file('test-page', 'test problems page')
