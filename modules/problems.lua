@@ -29,6 +29,7 @@ local problems = {
    SrhdHardTransverseRAM = oo.class('SrhdHardTransverseRAM', TwoStateProblem),
 
    SmoothKelvinHelmholtz = oo.class('SmoothKelvinHelmholtz', TestProblem),
+   TwoDimensionalImplosion = oo.class('TwoDimensionalImplosion', TestProblem),
    ThrowBlobs = oo.class('ThrowBlobs', TestProblem),
 }
 for k,v in pairs(problems) do
@@ -273,33 +274,6 @@ function problems.SmoothKelvinHelmholtz:finish_time()
    return 2.5
 end
 
-function problems.SmoothKelvinHelmholtz:solution_old(x,y,z,t)
-   local P0    =  2.5
-   local rho1  =  1.0
-   local rho2  =  2.0
-   local L     =  0.025
-   local U1    =  0.5
-   local U2    = -0.5
-   local w0    =  0.01
-   local vy    =  w0 * math.sin(4*math.pi*x)
-
-   local rho,vx
-   if y < 0.25 then
-      rho = rho1 - 0.5*(rho1-rho2)*math.exp( (y-0.25)/L)
-      vx  = U1   - 0.5*( U1 - U2 )*math.exp( (y-0.25)/L)
-   elseif y < 0.5 then
-      rho = rho2 + 0.5*(rho1-rho2)*math.exp(-(y-0.25)/L)
-      vx  = U2   + 0.5*( U1 - U2 )*math.exp(-(y-0.25)/L)
-   elseif y < 0.75 then
-      rho = rho2 + 0.5*(rho1-rho2)*math.exp( (y-0.75)/L)
-      vx  = U2   + 0.5*( U1 - U2 )*math.exp( (y-0.75)/L)
-   else
-      rho = rho1 - 0.5*(rho1-rho2)*math.exp(-(y-0.75)/L)
-      vx  = U1   - 0.5*( U1 - U2 )*math.exp(-(y-0.75)/L)
-   end
-   return { rho, P0, vx, vy, 0.0 }
-end
-
 function problems.SmoothKelvinHelmholtz:solution(x,y,z,t)
    local P0   =  2.5
    local D1   =  1.0
@@ -331,10 +305,21 @@ function problems.SmoothKelvinHelmholtz:user_work_iteration()
 end
 
 function problems.SmoothKelvinHelmholtz:user_work_finish()
-   local util = require 'util'
-   util.pretty_print(self.vertical_Ek)
+   --local util = require 'util'
+   --util.pretty_print(self.vertical_Ek)
 end
 
+
+function problems.TwoDimensionalImplosion:finish_time() return 0.5 end
+function problems.TwoDimensionalImplosion:boundary_conditions() return 'reflect2d' end
+function problems.TwoDimensionalImplosion:solution(x,y,z,t)
+   -- http://www.astro.princeton.edu/~jstone/Athena/tests/implode/Implode.html
+   if x + y > 0.5 then
+      return { 1.000, 1.00, 0.0, 0.0, 0.0 }
+   else
+      return { 0.125, 0.14, 0.0, 0.0, 0.0 }
+   end
+end
 
 
 function problems.ThrowBlobs:initialize_problem()

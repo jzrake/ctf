@@ -77,7 +77,7 @@ function MyMara:initialize_solver()
    Mara.set_riemann(self.user_opts.riemann or 'hllc')
    Mara.config_solver({theta  =  opts.plm_theta or 2.0,
 		       IS     =  opts.IS or 'js96',
-		       sz10A  =  100.0 or opts.sz10A}, false)
+		       sz10A  =  opts.sz10A or 100.0}, false)
 
    local prim_names = Mara.fluid.GetPrimNames()
    local Nq = #prim_names
@@ -167,7 +167,8 @@ local function main()
 
    local sim = MyMara(opts)
    --local problem = problems.SmoothKelvinHelmholtz(opts)
-   local problem = problems.ThrowBlobs(opts)
+   --local problem = problems.ThrowBlobs(opts)
+   local problem = problems.TwoDimensionalImplosion(opts)
    sim:run(problem)
 end
 

@@ -850,8 +850,8 @@ int luaC_set_boundary(lua_State *L)
     new_f = new PeriodicXOutflowY2d;
   }
   else if (strcmp(key, "reflect2d") == 0) {
-    int revx = luaL_checkinteger(L, 2);
-    int revy = luaL_checkinteger(L, 3);
+    int revx = 2;//luaL_checkinteger(L, 2);
+    int revy = 3;//luaL_checkinteger(L, 3);
     new_f = new ReflectingBoundary2d(revx, revy);
   }
 
