@@ -3,7 +3,6 @@
 ## Density Wave
 
 ### Problem description
-#+
 #+{'figures': [{'src': 'DensityWave.png',
 #+              'url': 'DensityWave.pdf'}]}
 #+
@@ -135,7 +134,7 @@ according to the algorithm of Toro (1997).
 [1]: https://github.com/jzrake/ctf/blob/fd5d576ad7af8cd3d5f0e295d274e7390f039ff6/fish/riemann.c#L352
 
 
-### Shocktube1
+### Shocktube 1
 #+ {'figures': [{'src': 'Shocktube1.png', 'url':'Shocktube1.pdf'}]}
 
 This is the classic Brio-Wu shocktube problem. The solution consists of a
@@ -155,7 +154,9 @@ schemes because the correct solution is so familiar. Things to look for:
 | $v_y$  | 0.000000 | 0.000000 |
 | $v_z$  | 0.000000 | 0.000000 |
 
-### Shocktube2
+---
+
+### Shocktube 2
 #+ {'figures': [{'src': 'Shocktube2.png', 'url':'Shocktube2.pdf'}]}
 
 Double rarefeaction wave: in this setup, the density and pressure are the same
@@ -172,8 +173,9 @@ confirm that the solution is always left-right symmetric.
 | $v_y$  |  0.000000 | 0.000000 |
 | $v_z$  |  0.000000 | 0.000000 |
 
+---
 
-### Shocktube3
+### Shocktube 3
 #+ {'figures': [{'src': 'Shocktube3.png', 'url':'Shocktube3.pdf'}]}
 
 This setup creates a strong right-going shock wave by initializing a pressure
@@ -190,7 +192,9 @@ maximal density.
 | $v_y$  |    0.000000 | 0.000000 |
 | $v_z$  |    0.000000 | 0.000000 |
 
-### Shocktube4
+---
+
+### Shocktube 4
 #+ {'figures': [{'src': 'Shocktube4.png', 'url':'Shocktube4.pdf'}]}
 
 This setup creates a strong left-going shock wave by initializing a pressure
@@ -204,7 +208,9 @@ jump of 4 orders of magnitude.
 | $v_y$  | 0.000000 |   0.000000 |
 | $v_z$  | 0.000000 |   0.000000 |
 
-### Shocktube5
+---
+
+### Shocktube 5
 #+ {'figures': [{'src': 'Shocktube5.png', 'url':'Shocktube5.pdf'}]}
 
 This setup yields a two-shock solution by creating a colliding supersonic
@@ -218,7 +224,9 @@ flow. The velocities are adjusted so that the left shock is stationary.
 | $v_y$  |   0.000000 |  0.000000 |
 | $v_z$  |   0.000000 |  0.000000 |
 
-### ContactWave
+---
+
+### Isolated Contact Wave
 #+ {'figures': [{'src': 'ContactWave.png', 'url':'ContactWave.pdf'}]}
 
 This problem consists of only a stationary jump in the density. Since the Euler
@@ -266,8 +274,10 @@ perturbation. The domain is $[0,L]^2$.
  (\tanh{\frac{y-L/4}{\delta}} - \tanh{\frac{y-3L/4}{\delta}} - 1) \\ w_0 \sin(4
  \pi x) \\ \end{array}\right) $$
 
+---
+
 ### Implosion with reflecting walls
-#+ {'custom_figures_html': 'Implosion2d-media.html'}
+#+ {'custom_html': 'Implosion2d-media.html'}
 
 This setup involves similar conditions as in the `Shocktube1` problem, except
 that the discontinuity is placed at a $45^{\circ}$ angle on a 2d grid, and the
@@ -280,11 +290,99 @@ the code's x-y symmetry. If the problem is run sufficiently long, any bug which
 breaks the reflectional symmetry will show up by skewing the features above or
 below the diagonal.
 
-
 $$ \left(\begin{array}{c} \rho \\ p \\ u \\ v\end{array}\right) =
 \begin{cases}
 \left(\begin{array}{c} 1.000 \\ 1.000 \\ 0 \\ 0 \end{array}\right) & x + y > L/2 \\
 \left(\begin{array}{c} 0.125 \\ 0.140 \\ 0 \\ 0 \end{array}\right) & \text{otherwise}
 \end{cases} $$
 
+This problem is also documented on the [Athena test page][1].
 
+[1]: http://www.astro.princeton.edu/~jstone/Athena/tests/implode/Implode.html
+
+---
+
+## Self-gravity
+
+### Sound wave with gravity
+
+#### Problem description
+#+ {'figures': [{'src': 'SoundWaveGrav.png', 'url': 'SoundWaveGrav.pdf',
+#+  'caption': 'Gravitating sound wave evolved for slightly less than '
+#+              'one sound crossing time'}]}
+
+The presence of gravity adds a correction at linear order to the acoustic
+dispersion relation. The linearized Euler equations for the mass and momentum
+conservation, respectively read
+
+$$ \rho_0 \dot u + p' + \rho_0 \phi' = 0 \\ \dot \rho + \rho_0 u' = 0 $$
+
+Together with the linearized equation of state $p' = c_s^2 \rho'$, where $c_s^2
+= \Gamma p_0 / \rho_0$ is the sound speed, and the Poisson equatio, $\phi'' =
+\rho - \rho_0$ this system can be written as
+
+$$ c_s^2 \rho'' - \ddot \rho + \rho_0 (\rho - \rho_0) = 0 $$
+
+Assuming $\rho -\rho_0 \propto \cos{kx - \omega t}$, the dispersion relation
+falls out:
+
+$$ \omega^2 = c_s^2 k^2 - \rho_0 $$
+
+Here, it may be helpful to re-dimensionalize by replacing $4 \pi G$, which until
+now has been set to unity. Then the dispersion relation in terms of the Jeans
+$\tau_J = 1/\sqrt{G \rho}$ time is $ \omega^2 = c_s^2 k^2 - 4\pi / \tau^2 $. The
+wave is marginally stable against gravitational collapse when the right hand
+side is zero. This occurs for density perturbations at the Jeans length
+$\lambda_J = c_s \sqrt{\pi / G \rho_0}$.
+
+
+### Collapse of a cold dust cloud
+
+#### Problem description
+#+ {'figures': [{'src': 'Collapse1d-rhox.png', 'url': 'Collapse1d-rhox.pdf'}]}
+
+This problem tests the collapse of a cold dust cloud in one dimension. The
+initial density field is a uniform-density region of width $\delta$ with a
+low-density "atmosphere":
+
+$$ \rho(x) = \begin{cases} \rho_0 & |x|<\delta/2 \\ \rho_\rm{atm} &
+\text{otherwise} \end{cases} $$
+
+The problem domain is $[-L/2, L/2]$ with periodic boundaries so that the total
+mass $M = \delta \rho_0$ is a constant. The exact potential can easily be
+written down for this density field. In periodic boundaries, solutions only
+exist when the net charge is zero, so we solve the Poisson equation
+
+$$ \nabla^2 \phi = \rho - \bar{\rho} $$
+
+for deviations away from the mean density $\bar{\rho} = M/L$. Letting
+$\phi(\pm \delta/2) = 0$, we can immediately write down the potential.
+
+$$ \phi(x) = \begin{cases} -\frac{\rho_0}{2} (x+\delta/2)(x+3\delta/2+L) & x <
+-\delta/2 \\ -\frac{\rho_0}{2} (x-\delta/2)(x-3\delta/2-L) & x > \delta/2 \\
+\frac{\rho_0(1-\delta/L)}{2} (x-\delta/2)(x+\delta/2) & \text{otherwise} \\
+\end{cases} $$
+
+Under the influence of gravity, all fluid elements experience an acceleration
+$a(x) = -\phi'(x) = -\rho_0 (1 - \delta/L) x$. As the dust cloud collapses, the
+density $\rho_0(t)$ increases while $\delta(t)$ decreases so as to hold $M$
+fixed. By following the location of the density jump $\delta(t)/2$, we can write
+down the following ODE for $\delta(t)$.
+
+$$ \ddot{\delta} + M(1 - \frac{\delta}{L}) = 0 $$
+
+which has the solution $\delta(t) = L - (L - \delta_0) \cosh(t/\tau)$, where
+$\tau = (M/L)^{-1/2}$ is the Jeans time.
+
+#### Code performance
+#+ {'figures': [{'src': 'Collapse1d-rhot.png', 'url': 'Collapse1d-rhot.pdf'}]}
+
+The code performs well on this problem, provided the atmosphere $\rho_{atm}$ is
+sufficiently large, $10^{-6} \times \rho_0$ works fine. The density profile
+remains reasonably square, but with some slight artifact at the density jump. In
+order to compare with the exact solution, the maximum density on the grid is
+recorded at each time step, and compared against the true solution
+
+$$ \rho_0(t) = \frac{M/L}{1 - (1-\delta_0/L) \cosh(t/\tau)} $$
+
+---
