@@ -3,6 +3,7 @@
 import jinja2
 import markdown
 
+MediaServe = "http://www.cosmo.nyu.edu/zrake/Mara-media"
 
 class MathJaxPattern(markdown.inlinepatterns.Pattern):
     def __init__(self):
@@ -18,7 +19,7 @@ class MathJaxExtension(markdown.Extension):
         md.inlinePatterns.add('mathjax', MathJaxPattern(), '<escape')
 
 
-loader = jinja2.FileSystemLoader('_layouts')
+loader = jinja2.FileSystemLoader(['_layouts', '_sections'])
 env = jinja2.Environment(loader=loader)
 layout = env.get_template('layout.html')
 extensions = ['tables', MathJaxExtension()]
@@ -53,7 +54,8 @@ def render_to_file(page, tag):
     for section in sections:
         section['content'] = markdown.markdown(section['md'],
                                                extensions=extensions)
-    html = layout.render(sections=sections, title=page, page_tag=tag)
+    html = layout.render(sections=sections, title=page, page_tag=tag,
+                         media_serve=MediaServe)
     html = html.replace('<table>', '<table class="tftable">')
     outf = open('%s.html' % page, 'w')
     outf.write(html)

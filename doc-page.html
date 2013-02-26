@@ -31,13 +31,13 @@
         <div class="navbar">
           <div class="navbar-inner">
             <ul class="nav">
-              <li {%if title == 'index' %} class="active" {% endif %}>
+              <li >
                 <a href="index.html">Home</a>
               </li>
-              <li {%if title == 'test-page' %} class="active" {% endif %}>
+              <li >
                 <a href="test-page.html">Tests</a>
               </li>
-              <li {%if title == 'doc-page' %} class="active" {% endif %}>
+              <li  class="active" >
                 <a href="doc-page.html">Doc</a>
               </li>
               <li><a href="https://github.com/jzrake/ctf">Source</a></li>
@@ -49,48 +49,37 @@
 
     <div class="row">
       <div class="span11 offset1">
-        <div class={%if title == 'index' %}"hero-unit"{% else %}"page-header"{% endif %}>
-          <h1><bold>Mara  </bold><small> {{ page_tag }} </small></h1>
+        <div class="page-header">
+          <h1><bold>Mara  </bold><small> code use documentation (coming soon) </small></h1>
         </div>
-        {{ welcome }}
+        
       </div>
     </div>
 
-    {% for section in sections %}
+    
 
-    <div class="row"><div class="span10 offset1"><h2>{{ section.title }}</h2></div></div>
+    <div class="row"><div class="span10 offset1"><h2></h2></div></div>
     <div class="row">
 
       <div class="span6 offset1">
-        {{ section.content }}
+        <h3>Not here yet...</h3>
       </div>
 
       <div class="span4 offset1">
 
-        {{ section.figures_header }}
+        <h3> &zwnj; </h3>
 
-        {% if section.custom_figures_html %}
-
-        {% include section.custom_figures_html %}
-
-        {% else %}
+        
 
         <ul class="thumbnails">
-          {% for fig in section.figures %}
-          <li class="span4">
-            <a href="{{ fig.url }}" class="thumbnail">
-              <img src="{{ fig.src }}" alt="{{ fig.alt }}">
-            </a>
-            <p>{{ fig.caption }}</p>
-          </li>
-          {% endfor %}
+          
         </ul>
       </div>
 
-      {% endif %}
+      
     </div>
 
-    {% endfor %}
+    
 
   </body>
 </html>

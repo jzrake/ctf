@@ -239,9 +239,9 @@ the intermediate state in order to capture the contact discontinuity.
 ---
 
 
-## Kelvin-Helmholtz instability
+## Two-dimensional test problems
 
-### Problem description
+### Kelvin-Helmholtz instability
 #+ {'figures': [{'src': 'KH-hllc-plm-rk3.png', 'url': 'KH-hllc-plm-rk3.png',
 #+  'caption': 'Performance at various resolutions for the '
 #+             '<code>HLLC-PLM-RK3</code> scheme'}]}
@@ -265,3 +265,26 @@ perturbation. The domain is $[0,L]^2$.
  \tanh{\frac{y-3L/4}{\delta}}) + \rho_1 \\ p_0 \\ \frac{u_2 - u_1}{2}
  (\tanh{\frac{y-L/4}{\delta}} - \tanh{\frac{y-3L/4}{\delta}} - 1) \\ w_0 \sin(4
  \pi x) \\ \end{array}\right) $$
+
+### Implosion with reflecting walls
+#+ {'custom_figures_html': 'Implosion2d-media.html'}
+
+This setup involves similar conditions as in the `Shocktube1` problem, except
+that the discontinuity is placed at a $45^{\circ}$ angle on a 2d grid, and the
+boundary conditions are reflecting. The higher pressure region (above the
+diagonal) causes a shock to propagate toward the lower left corner, which then
+reflects off the other walls multiple times. The interaction of the shock with
+various contact discontinuities helps diagnose the ability of various schemes to
+limit artificial dissipation of contacts. This test is also a stringent test of
+the code's x-y symmetry. If the problem is run sufficiently long, any bug which
+breaks the reflectional symmetry will show up by skewing the features above or
+below the diagonal.
+
+
+$$ \left(\begin{array}{c} \rho \\ p \\ u \\ v\end{array}\right) =
+\begin{cases}
+\left(\begin{array}{c} 1.000 \\ 1.000 \\ 0 \\ 0 \end{array}\right) & x + y > L/2 \\
+\left(\begin{array}{c} 0.125 \\ 0.140 \\ 0 \\ 0 \end{array}\right) & \text{otherwise}
+\end{cases} $$
+
+
