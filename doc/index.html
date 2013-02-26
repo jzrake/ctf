@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
     <link href="css/tables.css" rel="stylesheet" media="screen">
-    <link href="css/video-default.css" rel="stylesheet" media="screen">
+    <!-- <link href="css/video-default.css" rel="stylesheet" media="screen"> -->
     <script src="http://code.jquery.com/jquery.js"></script>
     <script type="text/javascript" src="js/jquery.video-ui.js"></script>
     <script src="js/bootstrap.min.js"></script>
@@ -63,9 +63,27 @@
 
       <div class="span6 offset1">
         <h3>Overview</h3>
+<hr />
 <p>Mara is a tubulence code for astrophysical hydrodynamics and relativistic MHD.</p>
 <p>It is the result of its author's graduate study at New York Univerity between
 Summer 2008 and Spring 2013, under Andrew MacFadyen.</p>
+<p><em>Overview of capabilities</em>:</p>
+<ul>
+<li>robust second-order Godunov solvers for relativistic magnetohydrodynamics</li>
+<li>fifth order conservative finite-difference <code>WENO</code> schemes for the relativistic
+  hydrodynamic equations</li>
+<li>well-tested modules for massively parallel execution on world-class computing
+  clusters, such as <a href="http://www.nas.nasa.gov/hecc/resources/pleiades.html">Pleiades</a>, efficient use of the parallel HDF5 routines</li>
+<li>turbulence driving modules</li>
+<li>support for arbitrary, tabulated equations of state</li>
+<li>static and self-gravity coupled to the Euler equations</li>
+<li>static mesh refinement, currently in 1d only</li>
+</ul>
+<p><em>In progress</em>:</p>
+<ul>
+<li>static and adaptive mesh refinement for 2d and 3d</li>
+<li>momentum and energy conserving self-gravity in 3d</li>
+</ul>
       </div>
 
       <div class="span4 offset1">
@@ -82,36 +100,6 @@ Summer 2008 and Spring 2013, under Andrew MacFadyen.</p>
             </a>
             <p></p>
           </li>
-          
-        </ul>
-      </div>
-
-      
-    </div>
-
-    
-
-    <div class="row"><div class="span10 offset1"><h2></h2></div></div>
-    <div class="row">
-
-      <div class="span6 offset1">
-        <h3>Author</h3>
-<p><address>
-    <strong>Jonathan Zrake</strong><br>
-    <a href="mailto:#">zrake (at) nyu (dot) edu</a><br>
-    New York University<br>
-    4 Washington Place<br>
-    New York, NY 10003<br>
-</address></p>
-      </div>
-
-      <div class="span4 offset1">
-
-        <h3> &zwnj; </h3>
-
-        
-
-        <ul class="thumbnails">
           
           <li class="span4">
             <a href="chkpt.0022-z_face-vz-gray.png" class="thumbnail">
@@ -133,6 +121,15 @@ Summer 2008 and Spring 2013, under Andrew MacFadyen.</p>
 
       <div class="span6 offset1">
         <h3>Contributors</h3>
+<hr />
+<p>Mara is maintained by</p>
+<p><address>
+    <strong>Jonathan Zrake</strong><br>
+    <a href="mailto:#">zrake .at. nyu .dot. edu</a><br>
+    New York University<br>
+    4 Washington Place<br>
+    New York, NY 10003<br>
+</address></p>
 <p>Valuable code and intellectual contributions have been made by</p>
 <ul>
 <li>Andrew MacFadyen</li>
@@ -140,6 +137,18 @@ Summer 2008 and Spring 2013, under Andrew MacFadyen.</p>
 <li>Paul Duffell</li>
 <li>Bez Laderman</li>
 <li>Micha Gorelick</li>
+</ul>
+<p>I also owe a great deal to</p>
+<ul>
+<li>conversations with James Stone, and to reading parts of the <a href="https://trac.princeton.edu/Athena">Athena code</a></li>
+<li>talks with <a href="https://physics.stanford.edu/people/faculty/tom-abel">Tom Abel</a> at Stanford, in particular concerning mesh
+  refinement</li>
+<li>the <a href="http://plutocode.ph.unito.it">Pluto code</a>, and its author Andrea Mignone</li>
+<li>the excellent site <a href="http://cococubed.asu.edu">cococubed</a> maintained by Frank Timmes, in particular
+  for implementing the equation of state</li>
+<li>materials made available by <a href="http://www.tapir.caltech.edu/~cott">Christian Ott</a></li>
+<li>folks at the <a href="http://www.nas.nasa.gov/hecc/resources/pleiades.html">Pleiades</a> help desk, who have patiently helped me to tune the
+  code's parallelism and disk interaction</li>
 </ul>
       </div>
 

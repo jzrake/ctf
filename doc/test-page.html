@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
     <link href="css/tables.css" rel="stylesheet" media="screen">
-    <link href="css/video-default.css" rel="stylesheet" media="screen">
+    <!-- <link href="css/video-default.css" rel="stylesheet" media="screen"> -->
     <script src="http://code.jquery.com/jquery.js"></script>
     <script type="text/javascript" src="js/jquery.video-ui.js"></script>
     <script src="js/bootstrap.min.js"></script>
@@ -455,7 +455,7 @@ according to the algorithm of Toro (1997).</p>
     <div class="row">
 
       <div class="span6 offset1">
-        <h3>Shocktube1</h3>
+        <h3>Shocktube 1</h3>
 <p>This is the classic Brio-Wu shocktube problem. The solution consists of a
 right-going shock wave and contact discontinuity, and a left-going rarefaction
 wave. This problem is not challenging, but is excellent for debugging new
@@ -501,6 +501,7 @@ schemes because the correct solution is so familiar. Things to look for:</p>
 </tr>
 </tbody>
 </table>
+<hr />
       </div>
 
       <div class="span4 offset1">
@@ -530,7 +531,7 @@ schemes because the correct solution is so familiar. Things to look for:</p>
     <div class="row">
 
       <div class="span6 offset1">
-        <h3>Shocktube2</h3>
+        <h3>Shocktube 2</h3>
 <p>Double rarefeaction wave: in this setup, the density and pressure are the same
 across the midline. The velocity is discontinuous, with both halves of the
 domainmoving away from midline. This problem is helpful for finding asymmetries
@@ -572,6 +573,7 @@ confirm that the solution is always left-right symmetric.</p>
 </tr>
 </tbody>
 </table>
+<hr />
       </div>
 
       <div class="span4 offset1">
@@ -601,7 +603,7 @@ confirm that the solution is always left-right symmetric.</p>
     <div class="row">
 
       <div class="span6 offset1">
-        <h3>Shocktube3</h3>
+        <h3>Shocktube 3</h3>
 <p>This setup creates a strong right-going shock wave by initializing a pressure
 jump of 5 orders of magnitude. The quality of the solution can be gauged by the
 percentage of the true maximal density behind the shock. In the example solution
@@ -643,6 +645,7 @@ maximal density.</p>
 </tr>
 </tbody>
 </table>
+<hr />
       </div>
 
       <div class="span4 offset1">
@@ -672,7 +675,7 @@ maximal density.</p>
     <div class="row">
 
       <div class="span6 offset1">
-        <h3>Shocktube4</h3>
+        <h3>Shocktube 4</h3>
 <p>This setup creates a strong left-going shock wave by initializing a pressure
 jump of 4 orders of magnitude.</p>
 <table class="tftable">
@@ -711,6 +714,7 @@ jump of 4 orders of magnitude.</p>
 </tr>
 </tbody>
 </table>
+<hr />
       </div>
 
       <div class="span4 offset1">
@@ -740,7 +744,7 @@ jump of 4 orders of magnitude.</p>
     <div class="row">
 
       <div class="span6 offset1">
-        <h3>Shocktube5</h3>
+        <h3>Shocktube 5</h3>
 <p>This setup yields a two-shock solution by creating a colliding supersonic
 flow. The velocities are adjusted so that the left shock is stationary.</p>
 <table class="tftable">
@@ -779,6 +783,7 @@ flow. The velocities are adjusted so that the left shock is stationary.</p>
 </tr>
 </tbody>
 </table>
+<hr />
       </div>
 
       <div class="span4 offset1">
@@ -808,7 +813,7 @@ flow. The velocities are adjusted so that the left shock is stationary.</p>
     <div class="row">
 
       <div class="span6 offset1">
-        <h3>ContactWave</h3>
+        <h3>Isolated Contact Wave</h3>
 <p>This problem consists of only a stationary jump in the density. Since the Euler
 equations do not model any diffusive processes, the jump should remain
 undisturbed. However, the <code>HLL</code> riemann solver will, in fact create anomalous
@@ -924,6 +929,7 @@ perturbation. The domain is <mathjax>$[0,L]^2$</mathjax>.</p>
  \tanh{\frac{y-3L/4}{\delta}}) + \rho_1 \\ p_0 \\ \frac{u_2 - u_1}{2}
  (\tanh{\frac{y-L/4}{\delta}} - \tanh{\frac{y-3L/4}{\delta}} - 1) \\ w_0 \sin(4
  \pi x) \\ \end{array}\right) $$</mathjax></p>
+<hr />
       </div>
 
       <div class="span4 offset1">
@@ -969,6 +975,8 @@ below the diagonal.</p>
 \left(\begin{array}{c} 1.000 \\ 1.000 \\ 0 \\ 0 \end{array}\right) &amp; x + y &gt; L/2 \\
 \left(\begin{array}{c} 0.125 \\ 0.140 \\ 0 \\ 0 \end{array}\right) &amp; \text{otherwise}
 \end{cases} $$</mathjax></p>
+<p>This problem is also documented on the <a href="http://www.astro.princeton.edu/~jstone/Athena/tests/implode/Implode.html">Athena test page</a>.</p>
+<hr />
       </div>
 
       <div class="span4 offset1">
@@ -980,18 +988,224 @@ below the diagonal.</p>
         
 <ul class="thumbnails">
   <li class="span4">
-    <video class="videoUiPlayer thumbnail" id="demo1" width="100%">
+    <video class="thumbnail" id="demo1" width="100%">
       <source src="http://www.cosmo.nyu.edu/zrake/Mara-media/Implosion2d-HLLC-PLM-MUSCL.mp4" type="video/mp4">
         Your browser does not support the video format.
     </video>
     <script type="text/javascript">
       $('#demo1').videoUI();
     </script>
-    Click to see the animation.
   </li>
 </ul>
 
         
+    </div>
+
+    
+
+    <div class="row"><div class="span10 offset1"><h2></h2></div></div>
+    <div class="row">
+
+      <div class="span6 offset1">
+        <h2>Self-gravity</h2>
+      </div>
+
+      <div class="span4 offset1">
+
+        <h2> &zwnj; </h2>
+
+        
+
+        <ul class="thumbnails">
+          
+        </ul>
+      </div>
+
+      
+    </div>
+
+    
+
+    <div class="row"><div class="span10 offset1"><h2></h2></div></div>
+    <div class="row">
+
+      <div class="span6 offset1">
+        <h3>Sound wave with gravity</h3>
+      </div>
+
+      <div class="span4 offset1">
+
+        <h3> &zwnj; </h3>
+
+        
+
+        <ul class="thumbnails">
+          
+        </ul>
+      </div>
+
+      
+    </div>
+
+    
+
+    <div class="row"><div class="span10 offset1"><h2></h2></div></div>
+    <div class="row">
+
+      <div class="span6 offset1">
+        <h4>Problem description</h4>
+<p>The presence of gravity adds a correction at linear order to the acoustic
+dispersion relation. The linearized Euler equations for the mass and momentum
+conservation, respectively read</p>
+<p><mathjax>$$ \rho_0 \dot u + p' + \rho_0 \phi' = 0 \\ \dot \rho + \rho_0 u' = 0 $$</mathjax></p>
+<p>Together with the linearized equation of state <mathjax>$p' = c_s^2 \rho'$</mathjax>, where <mathjax>$c_s^2
+= \Gamma p_0 / \rho_0$</mathjax> is the sound speed, and the Poisson equatio, <mathjax>$\phi'' =
+\rho - \rho_0$</mathjax> this system can be written as</p>
+<p><mathjax>$$ c_s^2 \rho'' - \ddot \rho + \rho_0 (\rho - \rho_0) = 0 $$</mathjax></p>
+<p>Assuming <mathjax>$\rho -\rho_0 \propto \cos{kx - \omega t}$</mathjax>, the dispersion relation
+falls out:</p>
+<p><mathjax>$$ \omega^2 = c_s^2 k^2 - \rho_0 $$</mathjax></p>
+<p>Here, it may be helpful to re-dimensionalize by replacing <mathjax>$4 \pi G$</mathjax>, which until
+now has been set to unity. Then the dispersion relation in terms of the Jeans
+<mathjax>$\tau_J = 1/\sqrt{G \rho}$</mathjax> time is <mathjax>$ \omega^2 = c_s^2 k^2 - 4\pi / \tau^2 $</mathjax>. The
+wave is marginally stable against gravitational collapse when the right hand
+side is zero. This occurs for density perturbations at the Jeans length
+<mathjax>$\lambda_J = c_s \sqrt{\pi / G \rho_0}$</mathjax>.</p>
+      </div>
+
+      <div class="span4 offset1">
+
+        <h4> &zwnj; </h4>
+
+        
+
+        <ul class="thumbnails">
+          
+          <li class="span4">
+            <a href="SoundWaveGrav.pdf" class="thumbnail">
+              <img src="SoundWaveGrav.png" alt="">
+            </a>
+            <p>Gravitating sound wave evolved for slightly less than one sound crossing time</p>
+          </li>
+          
+        </ul>
+      </div>
+
+      
+    </div>
+
+    
+
+    <div class="row"><div class="span10 offset1"><h2></h2></div></div>
+    <div class="row">
+
+      <div class="span6 offset1">
+        <h3>Collapse of a cold dust cloud</h3>
+      </div>
+
+      <div class="span4 offset1">
+
+        <h3> &zwnj; </h3>
+
+        
+
+        <ul class="thumbnails">
+          
+        </ul>
+      </div>
+
+      
+    </div>
+
+    
+
+    <div class="row"><div class="span10 offset1"><h2></h2></div></div>
+    <div class="row">
+
+      <div class="span6 offset1">
+        <h4>Problem description</h4>
+<p>This problem tests the collapse of a cold dust cloud in one dimension. The
+initial density field is a uniform-density region of width <mathjax>$\delta$</mathjax> with a
+low-density "atmosphere":</p>
+<p><mathjax>$$ \rho(x) = \begin{cases} \rho_0 &amp; |x|&lt;\delta/2 \\ \rho_\rm{atm} &amp;
+\text{otherwise} \end{cases} $$</mathjax></p>
+<p>The problem domain is <mathjax>$[-L/2, L/2]$</mathjax> with periodic boundaries so that the total
+mass <mathjax>$M = \delta \rho_0$</mathjax> is a constant. The exact potential can easily be
+written down for this density field. In periodic boundaries, solutions only
+exist when the net charge is zero, so we solve the Poisson equation</p>
+<p><mathjax>$$ \nabla^2 \phi = \rho - \bar{\rho} $$</mathjax></p>
+<p>for deviations away from the mean density <mathjax>$\bar{\rho} = M/L$</mathjax>. Letting
+<mathjax>$\phi(\pm \delta/2) = 0$</mathjax>, we can immediately write down the potential.</p>
+<p><mathjax>$$ \phi(x) = \begin{cases} -\frac{\rho_0}{2} (x+\delta/2)(x+3\delta/2+L) &amp; x &lt;
+-\delta/2 \\ -\frac{\rho_0}{2} (x-\delta/2)(x-3\delta/2-L) &amp; x &gt; \delta/2 \\
+\frac{\rho_0(1-\delta/L)}{2} (x-\delta/2)(x+\delta/2) &amp; \text{otherwise} \\
+\end{cases} $$</mathjax></p>
+<p>Under the influence of gravity, all fluid elements experience an acceleration
+<mathjax>$a(x) = -\phi'(x) = -\rho_0 (1 - \delta/L) x$</mathjax>. As the dust cloud collapses, the
+density <mathjax>$\rho_0(t)$</mathjax> increases while <mathjax>$\delta(t)$</mathjax> decreases so as to hold <mathjax>$M$</mathjax>
+fixed. By following the location of the density jump <mathjax>$\delta(t)/2$</mathjax>, we can write
+down the following ODE for <mathjax>$\delta(t)$</mathjax>.</p>
+<p><mathjax>$$ \ddot{\delta} + M(1 - \frac{\delta}{L}) = 0 $$</mathjax></p>
+<p>which has the solution <mathjax>$\delta(t) = L - (L - \delta_0) \cosh(t/\tau)$</mathjax>, where
+<mathjax>$\tau = (M/L)^{-1/2}$</mathjax> is the Jeans time.</p>
+      </div>
+
+      <div class="span4 offset1">
+
+        <h4> &zwnj; </h4>
+
+        
+
+        <ul class="thumbnails">
+          
+          <li class="span4">
+            <a href="Collapse1d-rhox.pdf" class="thumbnail">
+              <img src="Collapse1d-rhox.png" alt="">
+            </a>
+            <p></p>
+          </li>
+          
+        </ul>
+      </div>
+
+      
+    </div>
+
+    
+
+    <div class="row"><div class="span10 offset1"><h2></h2></div></div>
+    <div class="row">
+
+      <div class="span6 offset1">
+        <h4>Code performance</h4>
+<p>The code performs well on this problem, provided the atmosphere <mathjax>$\rho_{atm}$</mathjax> is
+sufficiently large, <mathjax>$10^{-6} \times \rho_0$</mathjax> works fine. The density profile
+remains reasonably square, but with some slight artifact at the density jump. In
+order to compare with the exact solution, the maximum density on the grid is
+recorded at each time step, and compared against the true solution</p>
+<p><mathjax>$$ \rho_0(t) = \frac{M/L}{1 - (1-\delta_0/L) \cosh(t/\tau)} $$</mathjax></p>
+<hr />
+      </div>
+
+      <div class="span4 offset1">
+
+        <h4> &zwnj; </h4>
+
+        
+
+        <ul class="thumbnails">
+          
+          <li class="span4">
+            <a href="Collapse1d-rhot.pdf" class="thumbnail">
+              <img src="Collapse1d-rhot.png" alt="">
+            </a>
+            <p></p>
+          </li>
+          
+        </ul>
+      </div>
+
+      
     </div>
 
     
