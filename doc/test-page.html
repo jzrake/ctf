@@ -1,8 +1,11 @@
+
+
 <!DOCTYPE html>
 <html>
   <head>
+
     
-<title> test-page </title>
+<title> Mara: Test Problems </title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
 <link href="css/tables.css" rel="stylesheet" media="screen">
@@ -24,6 +27,7 @@
 </script>
 <script type="text/javascript"
         src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script>
+
   </head>
   <body>
 
@@ -60,9 +64,11 @@
     
 
     
+
+    
 <div class="row">
   <div class="span6 offset1">
-    <h2>Density Wave</h2>
+    <h2>One dimensional smooth problems</h2>
   </div>
   <div class="span4 offset1">
     <h2> &zwnj; </h2>
@@ -75,7 +81,20 @@
     
 <div class="row">
   <div class="span6 offset1">
-    <h3>Problem description</h3>
+    <h3>Density wave</h3>
+  </div>
+  <div class="span4 offset1">
+    <h3> &zwnj; </h3>
+    
+  </div>
+</div>
+
+    
+
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h4>Problem description</h4>
 <p>This problem sets up a smooth density wave advecting with a uniform velocity
 and periodic boundaries. This is probably the easiest problem for a code
 which solves the Euler equations, as all the non-linear features are absent,
@@ -106,7 +125,7 @@ test, the problem is run for half of the domain-crossing time at resolutions
 </ol>
   </div>
   <div class="span4 offset1">
-    <h3> &zwnj; </h3>
+    <h4> &zwnj; </h4>
     
 <ul class="thumbnails">
   
@@ -126,7 +145,7 @@ test, the problem is run for half of the domain-crossing time at resolutions
     
 <div class="row">
   <div class="span6 offset1">
-    <h3>Performance of the schemes</h3>
+    <h4>Performance of the schemes</h4>
 <p>For the formally 5th order <code>WENO5</code> reconstruction schemes, it is evident that
 the truncation error introduced by the 3rd order temporal update comes to
 dominate the error by resolution <mathjax>$64^3$</mathjax>. At higher resolutions, the classic 4th
@@ -207,7 +226,7 @@ characteristic decomposition scheme <code>CHAR-WENO5-RK3</code>.</p>
 <hr />
   </div>
   <div class="span4 offset1">
-    <h3> &zwnj; </h3>
+    <h4> &zwnj; </h4>
     
 <ul class="thumbnails">
   
@@ -227,10 +246,10 @@ characteristic decomposition scheme <code>CHAR-WENO5-RK3</code>.</p>
     
 <div class="row">
   <div class="span6 offset1">
-    <h2>Sound Wave</h2>
+    <h3>Sound Wave</h3>
   </div>
   <div class="span4 offset1">
-    <h2> &zwnj; </h2>
+    <h3> &zwnj; </h3>
     
   </div>
 </div>
@@ -240,7 +259,7 @@ characteristic decomposition scheme <code>CHAR-WENO5-RK3</code>.</p>
     
 <div class="row">
   <div class="span6 offset1">
-    <h3>Problem description</h3>
+    <h4>Problem description</h4>
 <p>This problem sets up a smooth and small-amplitude perturbation to create a
 left-going sound wave. It is only slightly more challenging as a convergence
 test than the density wave. The problem is described by the following
@@ -261,7 +280,7 @@ parameters:</p>
 \end{array}\right) $$</mathjax></p>
   </div>
   <div class="span4 offset1">
-    <h3> &zwnj; </h3>
+    <h4> &zwnj; </h4>
     
   </div>
 </div>
@@ -271,7 +290,7 @@ parameters:</p>
     
 <div class="row">
   <div class="span6 offset1">
-    <h3>Performance of the schemes</h3>
+    <h4>Performance of the schemes</h4>
 <p>The need for higher temporal order is highlighted by this problem. While RK4
 accomplishes 5th order convergence, there is no resolution for which RK3
 converges faster than 3rd order. Notice that the error saturates at <mathjax>$10^{-12}$</mathjax>,
@@ -351,7 +370,7 @@ are at around the <mathjax>$10^{-12}$</mathjax> level.</p>
 <hr />
   </div>
   <div class="span4 offset1">
-    <h3> &zwnj; </h3>
+    <h4> &zwnj; </h4>
     
 <ul class="thumbnails">
   

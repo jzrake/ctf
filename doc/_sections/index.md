@@ -1,3 +1,4 @@
+#+ dict(title='Mara', tagline='relativistic MHD code for astrophysical turbulence')
 
 
 ### Overview
@@ -60,14 +61,14 @@ Summer 2008 and Spring 2013, under Andrew MacFadyen.
 + Bez Laderman
 + Micha Gorelick
 
-*I am also grateful to*
+*I am also grateful for*
 
-+ conversations with James Stone, and to reading parts of the [Athena code][1]
-+ talks with [Tom Abel][2] at Stanford, in particular concerning mesh
-  refinement
++ conversations with James Stone at Princeton about the design of the
+  [Athena code][1]
++ excellent talks with [Tom Abel][2] at Stanford regarding mesh refinement
 + the [Pluto code][3], and its author Andrea Mignone
-+ the excellent site [cococubed][4] maintained by Frank Timmes, in particular
-  for implementing the equation of state
++ the excellent site [cococubed][4] maintained by Frank Timmes, which was
+  invaluable for implementing parts of the neutron star equation of state
 + materials made available by [Christian Ott][5]
 + folks at the [Pleiades][6] help desk, who have patiently helped me to tune the
   code's parallelism and disk interaction
