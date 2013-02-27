@@ -1,0 +1,28 @@
+{#
+-------------------
+TEMPLATE ATTRIBUTES
+-------------------
+
+items: a list of links [ href, text ]
+label: something like 'contents'
+#}
+
+
+<div class="row">
+  <div class="span6 offset1">
+    <div class="well">
+      <ul class="nav nav-list">
+        <li class="nav-header">{{ label }}</li>
+
+        {% for item in items %}
+
+        <li {% if loop.index == 1 %}class="active"{% endif %}>
+          <a href="{{ item[0] }}">{{ item[1] }}</a>
+        </li>
+
+        {% endfor %}
+
+      </ul>
+    </div>
+  </div>
+</div>

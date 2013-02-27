@@ -103,60 +103,75 @@ class Section(Element):
     def render(self):
         main = self.main.render()
         supp = self.supp.render()
-        return self._template.render(
-            {'main': main, 'supp': supp, 'level': self.level}).replace(
+        return self._template.render(main=main,
+                                     supp=supp,
+                                     level=self.level).replace(
             '<table>', '<table class="tftable">')
+
+
+class SubNavigation(Element):
+    _template = Element._env.get_template('SubNavigation.html')
+    def __init__(self, items, label=""):
+        self.items = items
+        self.label = label
+
+    def render(self):
+        return self._template.render(items=self.items, label=self.label)
 
 
 class Page(Element):
     _template = Element._env.get_template('Page.html')
-    def __init__(self, sections, tagline="", title=""):
+    def __init__(self, sections, title="", page="", tagline="", subnav=None):
         self.sections = sections
-        self.tagline = tagline
+        self.subnav = subnav
         self.title = title
+        self.page = page
+        self.tagline = tagline
 
     def render(self):
         return self._template.render(sections=[s.render() for s in self.sections],
-                                     tagline=self.tagline,
-                                     title=self.title)
+                                     subnav=self.subnav.render() if self.subnav else "",
+                                     title=self.title,
+                                     page=self.page,
+                                     tagline=self.tagline)
 
 
 def get_sections_from_markdown(fname):
     py = ""
-    mode = None
+    mode = 'process_py'
     sections = [ ]
+    page_kwargs = { }
     for line in open(fname):
-        if mode == 'section-header':
+        if mode == 'process_py':
             if line.startswith('#+'):
                 py +=  line.replace('#+', '')
             else:
                 if py:
                     try:
-                        sections[-1].supp = eval(py)
+                        if sections:
+                            sections[-1].supp = eval(py)
+                        else:
+                            page_kwargs.update(eval(py))
                     except:
                         print py
                         raise
                     py = ""
                 else:
-                    sections[-1].supp = HTML()
+                    if sections: sections[-1].supp = HTML()
                 mode = None
         elif line.startswith('#'):
             hl = line.count('#')
             sections.append(Section(main=Markdown(), level=hl))
-            mode = 'section-header'
+            mode = 'process_py'
             sections[-1].main.markdown += line
         elif sections:
             sections[-1].main.markdown += line
-    return sections
+    return sections, page_kwargs
 
-
-taglines = {'index': 'relativistic MHD code for astrophysical turbulence',
-            'test-page': 'test problems',
-            'doc-page': ''}
 
 for page in ['index', 'test-page', 'doc-page']:
     outf = open(page+'.html', 'w')
-    secs = get_sections_from_markdown('_sections/%s.md'%page)
-    elem = Page(secs, tagline=taglines[page], title=page)
+    secs, kwargs = get_sections_from_markdown('_sections/%s.md'%page)
+    elem = Page(secs, page=page, **kwargs)
     html = elem.render()
     outf.write(html)

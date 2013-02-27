@@ -1,12 +1,27 @@
+{#
+-------------------
+TEMPLATE ATTRIBUTES
+-------------------
+
+title: used by 'head.html' to set the meta-data title
+page: used by topnav to infer the active tab
+subnav: content that goes below the 'topnav' bar
+sections: a list of content for sections
+#}
+
 <!DOCTYPE html>
 <html>
   <head>
+
     {% include 'head.html' %}
+
   </head>
   <body>
 
     {% include 'topnav.html' %}
     {% include 'topunit.html' %}
+
+    {{ subnav }}
 
     {% for section in sections %}
 

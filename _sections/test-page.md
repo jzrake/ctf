@@ -1,8 +1,12 @@
+#+ dict(title='Mara: Test Problems', tagline='test problems')
+#+ # subnav=SubNavigation([('test-1d', '1d Problems'),
+#+ #                       ('test-2d', '2d Problems')], label='Contents'))
 
+## One dimensional smooth problems
 
-## Density Wave
+### Density wave
 
-### Problem description
+#### Problem description
 #+ SingleImage(src='DensityWave.png',
 #+             url='DensityWave.pdf')
 
@@ -36,7 +40,7 @@ $2^n$ for $n$ between 3 and 10. Five different reference schemes are used:
 5. `CHAR-WENO5-RK4`
 
 
-### Performance of the schemes
+#### Performance of the schemes
 #+SingleImage(src='DensityWave-L1.png',
 #+            url='DensityWave-L1.pdf',
 #+        caption='L1 Error of various schemes')
@@ -63,10 +67,10 @@ characteristic decomposition scheme `CHAR-WENO5-RK3`.
 
 ---
 
-## Sound Wave
+### Sound Wave
 
 
-### Problem description
+#### Problem description
 
 This problem sets up a smooth and small-amplitude perturbation to create a
 left-going sound wave. It is only slightly more challenging as a convergence
@@ -87,12 +91,10 @@ $$ \left(\begin{array}{c} \rho(x,t) \\ p(x,t) \\ u(x,t) \end{array}\right) =
 \cos{(k_0 x - \omega_0 t)} \\ u_0 + u_1 \cos{(k_0 x - \omega_0 t)} \\
 \end{array}\right) $$
 
-### Performance of the schemes
-#+
+#### Performance of the schemes
 #+SingleImage(src='SoundWave-L1.png',
 #+            url='SoundWave-L1.pdf',
 #+        caption='L1 Error of various schemes')
-#+
 
 The need for higher temporal order is highlighted by this problem. While RK4
 accomplishes 5th order convergence, there is no resolution for which RK3
