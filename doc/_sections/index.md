@@ -1,12 +1,12 @@
 
 
 ### Overview
-#+{'figures':
-#+[{'src': 'turbulent-bndlayer-KH-mara-small.png',
-#+  'url': 'http://zrake.webfactional.com/static/images/turbulent-bndlayer-KH-mara.png',
-#+  'alt': 'Kelvin-Helmholtz instability: a turbulent boundary layer in 2d'},
-#+ {'url': 'chkpt.0022-z_face-vz-gray.png',
-#+  'src': 'chkpt.0022-z_face-vz-gray.png'}]}
+#+ StackedImages(
+#+ [{'src': 'turbulent-bndlayer-KH-mara-small.png',
+#+   'url': 'http://zrake.webfactional.com/static/images/turbulent-bndlayer-KH-mara.png',
+#+   'alt': 'Kelvin-Helmholtz instability: a turbulent boundary layer in 2d'},
+#+  {'url': 'chkpt.0022-z_face-vz-gray.png',
+#+   'src': 'chkpt.0022-z_face-vz-gray.png'}])
 
 ---
 
@@ -36,9 +36,9 @@ _In progress_:
 [1]: http://www.nas.nasa.gov/hecc/resources/pleiades.html
 
 ### Contributors
-#+{'figures':
-#+[{'src': 'SRG-2048.0017-x_face-log10vort_v-afmhot.png',
-#+  'url': 'SRG-2048.0017-x_face-log10vort_v-afmhot.png'}]}
+#+ StackedImages(
+#+  [{'src': 'SRG-2048.0017-x_face-log10vort_v-afmhot.png',
+#+    'url': 'SRG-2048.0017-x_face-log10vort_v-afmhot.png'}])
 
 ---
 
@@ -60,7 +60,7 @@ Valuable code and intellectual contributions have been made by
 + Bez Laderman
 + Micha Gorelick
 
-I also owe a great deal to
+I am also grateful to
 
 + conversations with James Stone, and to reading parts of the [Athena code][1]
 + talks with [Tom Abel][2] at Stanford, in particular concerning mesh
