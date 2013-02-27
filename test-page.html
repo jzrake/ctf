@@ -1,89 +1,81 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Mara test problems page</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
-    <link href="css/tables.css" rel="stylesheet" media="screen">
-    <!-- <link href="css/video-default.css" rel="stylesheet" media="screen"> -->
-    <script src="http://code.jquery.com/jquery.js"></script>
-    <script type="text/javascript" src="js/jquery.video-ui.js"></script>
-    <script src="js/bootstrap.min.js"></script>
-    <script type="text/x-mathjax-config">
-      MathJax.Hub.Config({
-      extensions: ["tex2jax.js"],
-      jax: ["input/TeX", "output/HTML-CSS"],
-      tex2jax: {
-      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
-      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
-      processEscapes: true
-      },
-      "HTML-CSS": { availableFonts: ["TeX"] }
-      });
-    </script>
-    <script type="text/javascript"
-            src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script>
+    
+<title> test-page </title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
+<link href="css/tables.css" rel="stylesheet" media="screen">
+<!-- <link href="css/video-default.css" rel="stylesheet" media="screen"> -->
+<script src="http://code.jquery.com/jquery.js"></script>
+<script type="text/javascript" src="js/jquery.video-ui.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX", "output/HTML-CSS"],
+  tex2jax: {
+  inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+  displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+  processEscapes: true
+  },
+  "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+<script type="text/javascript"
+        src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script>
   </head>
   <body>
 
-    <div class="row">
-      <div class="span11 offset1">
-        <div class="navbar">
-          <div class="navbar-inner">
-            <ul class="nav">
-              <li >
-                <a href="index.html">Home</a>
-              </li>
-              <li  class="active" >
-                <a href="test-page.html">Tests</a>
-              </li>
-              <li >
-                <a href="doc-page.html">Doc</a>
-              </li>
-              <li><a href="https://github.com/jzrake/ctf">Source</a></li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="span11 offset1">
-        <div class="page-header">
-          <h1><bold>Mara  </bold><small> test problems page </small></h1>
-        </div>
-        
-      </div>
-    </div>
-
     
-
-    <div class="row">
-
-      <div class="span6 offset1">
-        <h2>Density Wave</h2>
-      </div>
-
-      <div class="span4 offset1">
-
-        <h2> &zwnj; </h2>
-
-        
-
-        <ul class="thumbnails">
-          
+<div class="row">
+  <div class="span11 offset1">
+    <div class="navbar">
+      <div class="navbar-inner">
+        <ul class="nav">
+          <li >
+            <a href="index.html">Home</a>
+          </li>
+          <li  class="active" >
+            <a href="test-page.html">Tests</a>
+          </li>
+          <li >
+            <a href="doc-page.html">Doc</a>
+          </li>
+          <li><a href="https://github.com/jzrake/ctf">Source</a></li>
         </ul>
       </div>
-
-      
     </div>
+  </div>
+</div>
+    
+<div class="row">
+  <div class="span11 offset1">
+    <div class="page-header">
+      <h1><bold>Mara : </bold><small> test problems </small></h1>
+    </div>
+  </div>
+</div>
 
     
 
-    <div class="row">
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h2>Density Wave</h2>
+  </div>
+  <div class="span4 offset1">
+    <h2> &zwnj; </h2>
+    
+  </div>
+</div>
 
-      <div class="span6 offset1">
-        <h3>Problem description</h3>
+    
+
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h3>Problem description</h3>
 <p>This problem sets up a smooth density wave advecting with a uniform velocity
 and periodic boundaries. This is probably the easiest problem for a code
 which solves the Euler equations, as all the non-linear features are absent,
@@ -112,35 +104,29 @@ test, the problem is run for half of the domain-crossing time at resolutions
 <li><code>CHAR-WENO5-RK3</code></li>
 <li><code>CHAR-WENO5-RK4</code></li>
 </ol>
-      </div>
-
-      <div class="span4 offset1">
-
-        <h3> &zwnj; </h3>
-
-        
-
-        <ul class="thumbnails">
-          
-          <li class="span4">
-            <a href="DensityWave.pdf" class="thumbnail">
-              <img src="DensityWave.png" alt="">
-            </a>
-            <p></p>
-          </li>
-          
-        </ul>
-      </div>
-
-      
-    </div>
+  </div>
+  <div class="span4 offset1">
+    <h3> &zwnj; </h3>
+    
+<ul class="thumbnails">
+  
+  <li class="span4">
+    <a href="DensityWave.pdf" class="thumbnail">
+      <img src="DensityWave.png" alt="None">
+    </a>
+    <p></p>
+  </li>
+  
+</ul>
+  </div>
+</div>
 
     
 
-    <div class="row">
-
-      <div class="span6 offset1">
-        <h3>Performance of the schemes</h3>
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h3>Performance of the schemes</h3>
 <p>For the formally 5th order <code>WENO5</code> reconstruction schemes, it is evident that
 the truncation error introduced by the 3rd order temporal update comes to
 dominate the error by resolution <mathjax>$64^3$</mathjax>. At higher resolutions, the classic 4th
@@ -219,57 +205,42 @@ characteristic decomposition scheme <code>CHAR-WENO5-RK3</code>.</p>
 </tbody>
 </table>
 <hr />
-      </div>
-
-      <div class="span4 offset1">
-
-        <h3> &zwnj; </h3>
-
-        
-
-        <ul class="thumbnails">
-          
-          <li class="span4">
-            <a href="DensityWave-L1.pdf" class="thumbnail">
-              <img src="DensityWave-L1.png" alt="">
-            </a>
-            <p>L1 Error of various schemes</p>
-          </li>
-          
-        </ul>
-      </div>
-
-      
-    </div>
+  </div>
+  <div class="span4 offset1">
+    <h3> &zwnj; </h3>
+    
+<ul class="thumbnails">
+  
+  <li class="span4">
+    <a href="DensityWave-L1.pdf" class="thumbnail">
+      <img src="DensityWave-L1.png" alt="None">
+    </a>
+    <p>L1 Error of various schemes</p>
+  </li>
+  
+</ul>
+  </div>
+</div>
 
     
 
-    <div class="row">
-
-      <div class="span6 offset1">
-        <h2>Sound Wave</h2>
-      </div>
-
-      <div class="span4 offset1">
-
-        <h2> &zwnj; </h2>
-
-        
-
-        <ul class="thumbnails">
-          
-        </ul>
-      </div>
-
-      
-    </div>
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h2>Sound Wave</h2>
+  </div>
+  <div class="span4 offset1">
+    <h2> &zwnj; </h2>
+    
+  </div>
+</div>
 
     
 
-    <div class="row">
-
-      <div class="span6 offset1">
-        <h3>Problem description</h3>
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h3>Problem description</h3>
 <p>This problem sets up a smooth and small-amplitude perturbation to create a
 left-going sound wave. It is only slightly more challenging as a convergence
 test than the density wave. The problem is described by the following
@@ -288,28 +259,19 @@ parameters:</p>
 \left(\begin{array}{c} \rho_0 + \rho_1 \cos{(k_0 x - \omega_0 t)} \\ p_0 + p_1
 \cos{(k_0 x - \omega_0 t)} \\ u_0 + u_1 \cos{(k_0 x - \omega_0 t)} \\
 \end{array}\right) $$</mathjax></p>
-      </div>
-
-      <div class="span4 offset1">
-
-        <h3> &zwnj; </h3>
-
-        
-
-        <ul class="thumbnails">
-          
-        </ul>
-      </div>
-
-      
-    </div>
+  </div>
+  <div class="span4 offset1">
+    <h3> &zwnj; </h3>
+    
+  </div>
+</div>
 
     
 
-    <div class="row">
-
-      <div class="span6 offset1">
-        <h3>Performance of the schemes</h3>
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h3>Performance of the schemes</h3>
 <p>The need for higher temporal order is highlighted by this problem. While RK4
 accomplishes 5th order convergence, there is no resolution for which RK3
 converges faster than 3rd order. Notice that the error saturates at <mathjax>$10^{-12}$</mathjax>,
@@ -387,35 +349,29 @@ are at around the <mathjax>$10^{-12}$</mathjax> level.</p>
 </tbody>
 </table>
 <hr />
-      </div>
-
-      <div class="span4 offset1">
-
-        <h3> &zwnj; </h3>
-
-        
-
-        <ul class="thumbnails">
-          
-          <li class="span4">
-            <a href="SoundWave-L1.pdf" class="thumbnail">
-              <img src="SoundWave-L1.png" alt="">
-            </a>
-            <p>L1 Error of various schemes</p>
-          </li>
-          
-        </ul>
-      </div>
-
-      
-    </div>
+  </div>
+  <div class="span4 offset1">
+    <h3> &zwnj; </h3>
+    
+<ul class="thumbnails">
+  
+  <li class="span4">
+    <a href="SoundWave-L1.pdf" class="thumbnail">
+      <img src="SoundWave-L1.png" alt="None">
+    </a>
+    <p>L1 Error of various schemes</p>
+  </li>
+  
+</ul>
+  </div>
+</div>
 
     
 
-    <div class="row">
-
-      <div class="span6 offset1">
-        <h2>One dimensional two-state problems</h2>
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h2>One dimensional two-state problems</h2>
 <p>The two-state problems in this section demonstrate the <code>Mara</code>'s shock-capturing
 capability. Each problem sets up a piecewise-constant initial data, defined by a
 different pressure, density, and velocity to either side of the midpoint of the
@@ -426,28 +382,19 @@ numerical dissipation around the discontinuity.</p>
 <code>HLLC-PLM-RK3</code> on 128 grid points, compared against the exact
 solution. <a href="https://github.com/jzrake/ctf/blob/fd5d576ad7af8cd3d5f0e295d274e7390f039ff6/fish/riemann.c#L352">The exact Riemann solver for the Euler equation</a> is implemented
 according to the algorithm of Toro (1997).</p>
-      </div>
-
-      <div class="span4 offset1">
-
-        <h2> &zwnj; </h2>
-
-        
-
-        <ul class="thumbnails">
-          
-        </ul>
-      </div>
-
-      
-    </div>
+  </div>
+  <div class="span4 offset1">
+    <h2> &zwnj; </h2>
+    
+  </div>
+</div>
 
     
 
-    <div class="row">
-
-      <div class="span6 offset1">
-        <h3>Shocktube 1</h3>
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h3>Shocktube 1</h3>
 <p>This is the classic Brio-Wu shocktube problem. The solution consists of a
 right-going shock wave and contact discontinuity, and a left-going rarefaction
 wave. This problem is not challenging, but is excellent for debugging new
@@ -468,61 +415,55 @@ schemes because the correct solution is so familiar. Things to look for:</p>
 <tbody>
 <tr>
 <td><mathjax>$\rho$</mathjax></td>
-<td>1.000000</td>
-<td>0.125000</td>
+<td>1.000</td>
+<td>0.125</td>
 </tr>
 <tr>
 <td><mathjax>$p$</mathjax></td>
-<td>1.000000</td>
-<td>0.100000</td>
+<td>1.000</td>
+<td>0.100</td>
 </tr>
 <tr>
 <td><mathjax>$v_x$</mathjax></td>
-<td>0.000000</td>
-<td>0.000000</td>
+<td>0.000</td>
+<td>0.000</td>
 </tr>
 <tr>
 <td><mathjax>$v_y$</mathjax></td>
-<td>0.000000</td>
-<td>0.000000</td>
+<td>0.000</td>
+<td>0.000</td>
 </tr>
 <tr>
 <td><mathjax>$v_z$</mathjax></td>
-<td>0.000000</td>
-<td>0.000000</td>
+<td>0.000</td>
+<td>0.000</td>
 </tr>
 </tbody>
 </table>
 <hr />
-      </div>
-
-      <div class="span4 offset1">
-
-        <h3> &zwnj; </h3>
-
-        
-
-        <ul class="thumbnails">
-          
-          <li class="span4">
-            <a href="Shocktube1.pdf" class="thumbnail">
-              <img src="Shocktube1.png" alt="">
-            </a>
-            <p></p>
-          </li>
-          
-        </ul>
-      </div>
-
-      
-    </div>
+  </div>
+  <div class="span4 offset1">
+    <h3> &zwnj; </h3>
+    
+<ul class="thumbnails">
+  
+  <li class="span4">
+    <a href="Shocktube1.pdf" class="thumbnail">
+      <img src="Shocktube1.png" alt="None">
+    </a>
+    <p></p>
+  </li>
+  
+</ul>
+  </div>
+</div>
 
     
 
-    <div class="row">
-
-      <div class="span6 offset1">
-        <h3>Shocktube 2</h3>
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h3>Shocktube 2</h3>
 <p>Double rarefeaction wave: in this setup, the density and pressure are the same
 across the midline. The velocity is discontinuous, with both halves of the
 domainmoving away from midline. This problem is helpful for finding asymmetries
@@ -539,61 +480,55 @@ confirm that the solution is always left-right symmetric.</p>
 <tbody>
 <tr>
 <td><mathjax>$\rho$</mathjax></td>
-<td>1.000000</td>
-<td>1.000000</td>
+<td>1.000</td>
+<td>1.000</td>
 </tr>
 <tr>
 <td><mathjax>$p$</mathjax></td>
-<td>0.400000</td>
-<td>0.400000</td>
+<td>0.400</td>
+<td>0.400</td>
 </tr>
 <tr>
 <td><mathjax>$v_x$</mathjax></td>
-<td>-2.000000</td>
-<td>2.000000</td>
+<td>-2.000</td>
+<td>2.000</td>
 </tr>
 <tr>
 <td><mathjax>$v_y$</mathjax></td>
-<td>0.000000</td>
-<td>0.000000</td>
+<td>0.000</td>
+<td>0.000</td>
 </tr>
 <tr>
 <td><mathjax>$v_z$</mathjax></td>
-<td>0.000000</td>
-<td>0.000000</td>
+<td>0.000</td>
+<td>0.000</td>
 </tr>
 </tbody>
 </table>
 <hr />
-      </div>
-
-      <div class="span4 offset1">
-
-        <h3> &zwnj; </h3>
-
-        
-
-        <ul class="thumbnails">
-          
-          <li class="span4">
-            <a href="Shocktube2.pdf" class="thumbnail">
-              <img src="Shocktube2.png" alt="">
-            </a>
-            <p></p>
-          </li>
-          
-        </ul>
-      </div>
-
-      
-    </div>
+  </div>
+  <div class="span4 offset1">
+    <h3> &zwnj; </h3>
+    
+<ul class="thumbnails">
+  
+  <li class="span4">
+    <a href="Shocktube2.pdf" class="thumbnail">
+      <img src="Shocktube2.png" alt="None">
+    </a>
+    <p></p>
+  </li>
+  
+</ul>
+  </div>
+</div>
 
     
 
-    <div class="row">
-
-      <div class="span6 offset1">
-        <h3>Shocktube 3</h3>
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h3>Shocktube 3</h3>
 <p>This setup creates a strong right-going shock wave by initializing a pressure
 jump of 5 orders of magnitude. The quality of the solution can be gauged by the
 percentage of the true maximal density behind the shock. In the example solution
@@ -610,61 +545,55 @@ maximal density.</p>
 <tbody>
 <tr>
 <td><mathjax>$\rho$</mathjax></td>
-<td>1.000000</td>
-<td>1.000000</td>
+<td>1.000</td>
+<td>1.000</td>
 </tr>
 <tr>
 <td><mathjax>$p$</mathjax></td>
-<td>1000.000000</td>
-<td>0.010000</td>
+<td>1000</td>
+<td>0.010</td>
 </tr>
 <tr>
 <td><mathjax>$v_x$</mathjax></td>
-<td>0.000000</td>
-<td>0.000000</td>
+<td>0.000</td>
+<td>0.000</td>
 </tr>
 <tr>
 <td><mathjax>$v_y$</mathjax></td>
-<td>0.000000</td>
-<td>0.000000</td>
+<td>0.000</td>
+<td>0.000</td>
 </tr>
 <tr>
 <td><mathjax>$v_z$</mathjax></td>
-<td>0.000000</td>
-<td>0.000000</td>
+<td>0.000</td>
+<td>0.000</td>
 </tr>
 </tbody>
 </table>
 <hr />
-      </div>
-
-      <div class="span4 offset1">
-
-        <h3> &zwnj; </h3>
-
-        
-
-        <ul class="thumbnails">
-          
-          <li class="span4">
-            <a href="Shocktube3.pdf" class="thumbnail">
-              <img src="Shocktube3.png" alt="">
-            </a>
-            <p></p>
-          </li>
-          
-        </ul>
-      </div>
-
-      
-    </div>
+  </div>
+  <div class="span4 offset1">
+    <h3> &zwnj; </h3>
+    
+<ul class="thumbnails">
+  
+  <li class="span4">
+    <a href="Shocktube3.pdf" class="thumbnail">
+      <img src="Shocktube3.png" alt="None">
+    </a>
+    <p></p>
+  </li>
+  
+</ul>
+  </div>
+</div>
 
     
 
-    <div class="row">
-
-      <div class="span6 offset1">
-        <h3>Shocktube 4</h3>
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h3>Shocktube 4</h3>
 <p>This setup creates a strong left-going shock wave by initializing a pressure
 jump of 4 orders of magnitude.</p>
 <table class="tftable">
@@ -678,61 +607,55 @@ jump of 4 orders of magnitude.</p>
 <tbody>
 <tr>
 <td><mathjax>$\rho$</mathjax></td>
-<td>1.000000</td>
-<td>1.000000</td>
+<td>1.000</td>
+<td>1.000</td>
 </tr>
 <tr>
 <td><mathjax>$p$</mathjax></td>
-<td>0.010000</td>
-<td>100.000000</td>
+<td>0.010</td>
+<td>100.0</td>
 </tr>
 <tr>
 <td><mathjax>$v_x$</mathjax></td>
-<td>0.000000</td>
-<td>0.000000</td>
+<td>0.000</td>
+<td>0.000</td>
 </tr>
 <tr>
 <td><mathjax>$v_y$</mathjax></td>
-<td>0.000000</td>
-<td>0.000000</td>
+<td>0.000</td>
+<td>0.000</td>
 </tr>
 <tr>
 <td><mathjax>$v_z$</mathjax></td>
-<td>0.000000</td>
-<td>0.000000</td>
+<td>0.000</td>
+<td>0.000</td>
 </tr>
 </tbody>
 </table>
 <hr />
-      </div>
-
-      <div class="span4 offset1">
-
-        <h3> &zwnj; </h3>
-
-        
-
-        <ul class="thumbnails">
-          
-          <li class="span4">
-            <a href="Shocktube4.pdf" class="thumbnail">
-              <img src="Shocktube4.png" alt="">
-            </a>
-            <p></p>
-          </li>
-          
-        </ul>
-      </div>
-
-      
-    </div>
+  </div>
+  <div class="span4 offset1">
+    <h3> &zwnj; </h3>
+    
+<ul class="thumbnails">
+  
+  <li class="span4">
+    <a href="Shocktube4.pdf" class="thumbnail">
+      <img src="Shocktube4.png" alt="None">
+    </a>
+    <p></p>
+  </li>
+  
+</ul>
+  </div>
+</div>
 
     
 
-    <div class="row">
-
-      <div class="span6 offset1">
-        <h3>Shocktube 5</h3>
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h3>Shocktube 5</h3>
 <p>This setup yields a two-shock solution by creating a colliding supersonic
 flow. The velocities are adjusted so that the left shock is stationary.</p>
 <table class="tftable">
@@ -751,8 +674,8 @@ flow. The velocities are adjusted so that the left shock is stationary.</p>
 </tr>
 <tr>
 <td><mathjax>$p$</mathjax></td>
-<td>460.894000</td>
-<td>46.095000</td>
+<td>460.89400</td>
+<td>46.0950</td>
 </tr>
 <tr>
 <td><mathjax>$v_x$</mathjax></td>
@@ -761,46 +684,40 @@ flow. The velocities are adjusted so that the left shock is stationary.</p>
 </tr>
 <tr>
 <td><mathjax>$v_y$</mathjax></td>
-<td>0.000000</td>
-<td>0.000000</td>
+<td>0.000</td>
+<td>0.000</td>
 </tr>
 <tr>
 <td><mathjax>$v_z$</mathjax></td>
-<td>0.000000</td>
-<td>0.000000</td>
+<td>0.000</td>
+<td>0.000</td>
 </tr>
 </tbody>
 </table>
 <hr />
-      </div>
-
-      <div class="span4 offset1">
-
-        <h3> &zwnj; </h3>
-
-        
-
-        <ul class="thumbnails">
-          
-          <li class="span4">
-            <a href="Shocktube5.pdf" class="thumbnail">
-              <img src="Shocktube5.png" alt="">
-            </a>
-            <p></p>
-          </li>
-          
-        </ul>
-      </div>
-
-      
-    </div>
+  </div>
+  <div class="span4 offset1">
+    <h3> &zwnj; </h3>
+    
+<ul class="thumbnails">
+  
+  <li class="span4">
+    <a href="Shocktube5.pdf" class="thumbnail">
+      <img src="Shocktube5.png" alt="None">
+    </a>
+    <p></p>
+  </li>
+  
+</ul>
+  </div>
+</div>
 
     
 
-    <div class="row">
-
-      <div class="span6 offset1">
-        <h3>Isolated Contact Wave</h3>
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h3>Isolated Contact Wave</h3>
 <p>This problem consists of only a stationary jump in the density. Since the Euler
 equations do not model any diffusive processes, the jump should remain
 undisturbed. However, the <code>HLL</code> riemann solver will, in fact create anomalous
@@ -818,83 +735,68 @@ the intermediate state in order to capture the contact discontinuity.</p>
 <tbody>
 <tr>
 <td><mathjax>$\rho$</mathjax></td>
-<td>1.000000</td>
-<td>0.100000</td>
+<td>1.000</td>
+<td>0.100</td>
 </tr>
 <tr>
 <td><mathjax>$p$</mathjax></td>
-<td>1.000000</td>
-<td>1.000000</td>
+<td>1.000</td>
+<td>1.000</td>
 </tr>
 <tr>
 <td><mathjax>$v_x$</mathjax></td>
-<td>0.000000</td>
-<td>0.000000</td>
+<td>0.000</td>
+<td>0.000</td>
 </tr>
 <tr>
 <td><mathjax>$v_y$</mathjax></td>
-<td>0.700000</td>
-<td>0.700000</td>
+<td>0.700</td>
+<td>0.700</td>
 </tr>
 <tr>
 <td><mathjax>$v_z$</mathjax></td>
-<td>0.200000</td>
-<td>0.200000</td>
+<td>0.200</td>
+<td>0.200</td>
 </tr>
 </tbody>
 </table>
 <hr />
-      </div>
-
-      <div class="span4 offset1">
-
-        <h3> &zwnj; </h3>
-
-        
-
-        <ul class="thumbnails">
-          
-          <li class="span4">
-            <a href="ContactWave.pdf" class="thumbnail">
-              <img src="ContactWave.png" alt="">
-            </a>
-            <p></p>
-          </li>
-          
-        </ul>
-      </div>
-
-      
-    </div>
+  </div>
+  <div class="span4 offset1">
+    <h3> &zwnj; </h3>
+    
+<ul class="thumbnails">
+  
+  <li class="span4">
+    <a href="ContactWave.pdf" class="thumbnail">
+      <img src="ContactWave.png" alt="None">
+    </a>
+    <p></p>
+  </li>
+  
+</ul>
+  </div>
+</div>
 
     
 
-    <div class="row">
-
-      <div class="span6 offset1">
-        <h2>Two-dimensional test problems</h2>
-      </div>
-
-      <div class="span4 offset1">
-
-        <h2> &zwnj; </h2>
-
-        
-
-        <ul class="thumbnails">
-          
-        </ul>
-      </div>
-
-      
-    </div>
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h2>Two-dimensional test problems</h2>
+  </div>
+  <div class="span4 offset1">
+    <h2> &zwnj; </h2>
+    
+  </div>
+</div>
 
     
 
-    <div class="row">
-
-      <div class="span6 offset1">
-        <h3>Kelvin-Helmholtz instability</h3>
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h3>Kelvin-Helmholtz instability</h3>
 <p>This problem uses a smooth shearing profile to capture the linear growth rate of
 Kelvin-Helmholtz instability. The vertical velocity is given a sinusoidal
 perturbation with 4 wave-lengths over the domain. The resulting flow, when
@@ -915,35 +817,29 @@ perturbation. The domain is <mathjax>$[0,L]^2$</mathjax>.</p>
  (\tanh{\frac{y-L/4}{\delta}} - \tanh{\frac{y-3L/4}{\delta}} - 1) \\ w_0 \sin(4
  \pi x) \\ \end{array}\right) $$</mathjax></p>
 <hr />
-      </div>
-
-      <div class="span4 offset1">
-
-        <h3> &zwnj; </h3>
-
-        
-
-        <ul class="thumbnails">
-          
-          <li class="span4">
-            <a href="KH-hllc-plm-rk3.png" class="thumbnail">
-              <img src="KH-hllc-plm-rk3.png" alt="">
-            </a>
-            <p>Performance at various resolutions for the <code>HLLC-PLM-RK3</code> scheme</p>
-          </li>
-          
-        </ul>
-      </div>
-
-      
-    </div>
+  </div>
+  <div class="span4 offset1">
+    <h3> &zwnj; </h3>
+    
+<ul class="thumbnails">
+  
+  <li class="span4">
+    <a href="KH-hllc-plm-rk3.png" class="thumbnail">
+      <img src="KH-hllc-plm-rk3.png" alt="None">
+    </a>
+    <p>Performance at various resolutions for the <code>HLLC-PLM-RK3</code> scheme</p>
+  </li>
+  
+</ul>
+  </div>
+</div>
 
     
 
-    <div class="row">
-
-      <div class="span6 offset1">
-        <h3>Implosion with reflecting walls</h3>
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h3>Implosion with reflecting walls</h3>
 <p>This setup involves similar conditions as in the <code>Shocktube1</code> problem, except
 that the discontinuity is placed at a <mathjax>$45^{\circ}$</mathjax> angle on a 2d grid, and the
 boundary conditions are reflecting. The higher pressure region (above the
@@ -951,9 +847,9 @@ diagonal) causes a shock to propagate toward the lower left corner, which then
 reflects off the other walls multiple times. The interaction of the shock with
 various contact discontinuities helps diagnose the ability of various schemes to
 limit artificial dissipation of contacts. This test is also a stringent test of
-the code's x-y symmetry. If the problem is run sufficiently long, any bug which
-breaks the reflectional symmetry will show up by skewing the features above or
-below the diagonal.</p>
+the code's <mathjax>$x-y$</mathjax> symmetry. If the problem is run sufficiently long, any bug
+which breaks the reflectional symmetry will show up by skewing the features
+above or below the diagonal.</p>
 <p><mathjax>$$ \left(\begin{array}{c} \rho \\ p \\ u \\ v\end{array}\right) =
 \begin{cases}
 \left(\begin{array}{c} 1.000 \\ 1.000 \\ 0 \\ 0 \end{array}\right) &amp; x + y &gt; L/2 \\
@@ -961,80 +857,56 @@ below the diagonal.</p>
 \end{cases} $$</mathjax></p>
 <p>This problem is also documented on the <a href="http://www.astro.princeton.edu/~jstone/Athena/tests/implode/Implode.html">Athena test page</a>.</p>
 <hr />
-      </div>
-
-      <div class="span4 offset1">
-
-        <h3> &zwnj; </h3>
-
-        
-
-        
+  </div>
+  <div class="span4 offset1">
+    <h3> &zwnj; </h3>
+    
 <ul class="thumbnails">
   <li class="span4">
-    <video class="thumbnail" id="demo1" width="100%">
+    <video class="thumbnail" id="1b99896552c6f0949ee399d917670a0be7ae6ec9" width="100%">
       <source src="http://www.cosmo.nyu.edu/zrake/Mara-media/Implosion2d-HLLC-PLM-MUSCL.mp4" type="video/mp4">
         Your browser does not support the video format.
     </video>
     <script type="text/javascript">
-      $('#demo1').videoUI();
+      $('#1b99896552c6f0949ee399d917670a0be7ae6ec9').videoUI();
     </script>
   </li>
 </ul>
-
-        
-    </div>
-
-    
-
-    <div class="row">
-
-      <div class="span6 offset1">
-        <h2>Self-gravity</h2>
-      </div>
-
-      <div class="span4 offset1">
-
-        <h2> &zwnj; </h2>
-
-        
-
-        <ul class="thumbnails">
-          
-        </ul>
-      </div>
-
-      
-    </div>
+  </div>
+</div>
 
     
 
-    <div class="row">
-
-      <div class="span6 offset1">
-        <h3>Sound wave with gravity</h3>
-      </div>
-
-      <div class="span4 offset1">
-
-        <h3> &zwnj; </h3>
-
-        
-
-        <ul class="thumbnails">
-          
-        </ul>
-      </div>
-
-      
-    </div>
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h2>Self-gravity</h2>
+  </div>
+  <div class="span4 offset1">
+    <h2> &zwnj; </h2>
+    
+  </div>
+</div>
 
     
 
-    <div class="row">
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h3>Sound wave with gravity</h3>
+  </div>
+  <div class="span4 offset1">
+    <h3> &zwnj; </h3>
+    
+  </div>
+</div>
 
-      <div class="span6 offset1">
-        <h4>Problem description</h4>
+    
+
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h4>Problem description</h4>
 <p>The presence of gravity adds a correction at linear order to the acoustic
 dispersion relation. The linearized Euler equations for the mass and momentum
 conservation, respectively read</p>
@@ -1052,57 +924,42 @@ now has been set to unity. Then the dispersion relation in terms of the Jeans
 wave is marginally stable against gravitational collapse when the right hand
 side is zero. This occurs for density perturbations at the Jeans length
 <mathjax>$\lambda_J = c_s \sqrt{\pi / G \rho_0}$</mathjax>.</p>
-      </div>
-
-      <div class="span4 offset1">
-
-        <h4> &zwnj; </h4>
-
-        
-
-        <ul class="thumbnails">
-          
-          <li class="span4">
-            <a href="SoundWaveGrav.pdf" class="thumbnail">
-              <img src="SoundWaveGrav.png" alt="">
-            </a>
-            <p>Gravitating sound wave evolved for slightly less than one sound crossing time</p>
-          </li>
-          
-        </ul>
-      </div>
-
-      
-    </div>
+  </div>
+  <div class="span4 offset1">
+    <h4> &zwnj; </h4>
+    
+<ul class="thumbnails">
+  
+  <li class="span4">
+    <a href="SoundWaveGrav.pdf" class="thumbnail">
+      <img src="SoundWaveGrav.png" alt="None">
+    </a>
+    <p>Gravitating sound wave evolved for slightly less than one sound crossing time</p>
+  </li>
+  
+</ul>
+  </div>
+</div>
 
     
 
-    <div class="row">
-
-      <div class="span6 offset1">
-        <h3>Collapse of a cold dust cloud</h3>
-      </div>
-
-      <div class="span4 offset1">
-
-        <h3> &zwnj; </h3>
-
-        
-
-        <ul class="thumbnails">
-          
-        </ul>
-      </div>
-
-      
-    </div>
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h3>Collapse of a cold dust cloud</h3>
+  </div>
+  <div class="span4 offset1">
+    <h3> &zwnj; </h3>
+    
+  </div>
+</div>
 
     
 
-    <div class="row">
-
-      <div class="span6 offset1">
-        <h4>Problem description</h4>
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h4>Problem description</h4>
 <p>This problem tests the collapse of a cold dust cloud in one dimension. The
 initial density field is a uniform-density region of width <mathjax>$\delta$</mathjax> with a
 low-density "atmosphere":</p>
@@ -1127,64 +984,52 @@ down the following ODE for <mathjax>$\delta(t)$</mathjax>.</p>
 <p><mathjax>$$ \ddot{\delta} + M(1 - \frac{\delta}{L}) = 0 $$</mathjax></p>
 <p>which has the solution <mathjax>$\delta(t) = L - (L - \delta_0) \cosh(t/\tau)$</mathjax>, where
 <mathjax>$\tau = (M/L)^{-1/2}$</mathjax> is the Jeans time.</p>
-      </div>
-
-      <div class="span4 offset1">
-
-        <h4> &zwnj; </h4>
-
-        
-
-        <ul class="thumbnails">
-          
-          <li class="span4">
-            <a href="Collapse1d-rhox.pdf" class="thumbnail">
-              <img src="Collapse1d-rhox.png" alt="">
-            </a>
-            <p></p>
-          </li>
-          
-        </ul>
-      </div>
-
-      
-    </div>
+  </div>
+  <div class="span4 offset1">
+    <h4> &zwnj; </h4>
+    
+<ul class="thumbnails">
+  
+  <li class="span4">
+    <a href="Collapse1d-rhox.pdf" class="thumbnail">
+      <img src="Collapse1d-rhox.png" alt="None">
+    </a>
+    <p></p>
+  </li>
+  
+</ul>
+  </div>
+</div>
 
     
 
-    <div class="row">
-
-      <div class="span6 offset1">
-        <h4>Code performance</h4>
-<p>The code performs well on this problem, provided the atmosphere <mathjax>$\rho_{atm}$</mathjax> is
-sufficiently large, <mathjax>$10^{-6} \times \rho_0$</mathjax> works fine. The density profile
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h4>Code performance</h4>
+<p>The code performs well on this problem, provided the atmosphere <mathjax>$\rho_\rm{atm}$</mathjax>
+is sufficiently large, <mathjax>$10^{-6} \times \rho_0$</mathjax> works fine. The density profile
 remains reasonably square, but with some slight artifact at the density jump. In
 order to compare with the exact solution, the maximum density on the grid is
 recorded at each time step, and compared against the true solution</p>
 <p><mathjax>$$ \rho_0(t) = \frac{M/L}{1 - (1-\delta_0/L) \cosh(t/\tau)} $$</mathjax></p>
 <hr />
-      </div>
-
-      <div class="span4 offset1">
-
-        <h4> &zwnj; </h4>
-
-        
-
-        <ul class="thumbnails">
-          
-          <li class="span4">
-            <a href="Collapse1d-rhot.pdf" class="thumbnail">
-              <img src="Collapse1d-rhot.png" alt="">
-            </a>
-            <p></p>
-          </li>
-          
-        </ul>
-      </div>
-
-      
-    </div>
+  </div>
+  <div class="span4 offset1">
+    <h4> &zwnj; </h4>
+    
+<ul class="thumbnails">
+  
+  <li class="span4">
+    <a href="Collapse1d-rhot.pdf" class="thumbnail">
+      <img src="Collapse1d-rhot.png" alt="None">
+    </a>
+    <p></p>
+  </li>
+  
+</ul>
+  </div>
+</div>
 
     
 

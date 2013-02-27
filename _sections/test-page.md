@@ -3,10 +3,8 @@
 ## Density Wave
 
 ### Problem description
-#+{'figures': [{'src': 'DensityWave.png',
-#+              'url': 'DensityWave.pdf'}]}
-#+
-
+#+ SingleImage(src='DensityWave.png',
+#+             url='DensityWave.pdf')
 
 This problem sets up a smooth density wave advecting with a uniform velocity
 and periodic boundaries. This is probably the easiest problem for a code
@@ -39,11 +37,9 @@ $2^n$ for $n$ between 3 and 10. Five different reference schemes are used:
 
 
 ### Performance of the schemes
-#+
-#+{'figures': [{'src': 'DensityWave-L1.png',
-#+              'url': 'DensityWave-L1.pdf',
-#+              'caption': 'L1 Error of various schemes'}]}
-#+
+#+SingleImage(src='DensityWave-L1.png',
+#+            url='DensityWave-L1.pdf',
+#+        caption='L1 Error of various schemes')
 
 For the formally 5th order `WENO5` reconstruction schemes, it is evident that
 the truncation error introduced by the 3rd order temporal update comes to
@@ -93,9 +89,9 @@ $$ \left(\begin{array}{c} \rho(x,t) \\ p(x,t) \\ u(x,t) \end{array}\right) =
 
 ### Performance of the schemes
 #+
-#+{'figures': [{'src': 'SoundWave-L1.png',
-#+              'url': 'SoundWave-L1.pdf',
-#+              'caption': 'L1 Error of various schemes'}]}
+#+SingleImage(src='SoundWave-L1.png',
+#+            url='SoundWave-L1.pdf',
+#+        caption='L1 Error of various schemes')
 #+
 
 The need for higher temporal order is highlighted by this problem. While RK4
@@ -135,7 +131,7 @@ according to the algorithm of Toro (1997).
 
 
 ### Shocktube 1
-#+ {'figures': [{'src': 'Shocktube1.png', 'url':'Shocktube1.pdf'}]}
+#+ SingleImage(src='Shocktube1.png', url='Shocktube1.pdf')
 
 This is the classic Brio-Wu shocktube problem. The solution consists of a
 right-going shock wave and contact discontinuity, and a left-going rarefaction
@@ -148,16 +144,16 @@ schemes because the correct solution is so familiar. Things to look for:
 
 |        |  $x<0.5$ |  $x>0.5$ |
 |--------|----------|----------|
-| $\rho$ | 1.000000 | 0.125000 |
-| $p$    | 1.000000 | 0.100000 |
-| $v_x$  | 0.000000 | 0.000000 |
-| $v_y$  | 0.000000 | 0.000000 |
-| $v_z$  | 0.000000 | 0.000000 |
+| $\rho$ | 1.000 | 0.125 |
+| $p$    | 1.000 | 0.100 |
+| $v_x$  | 0.000 | 0.000 |
+| $v_y$  | 0.000 | 0.000 |
+| $v_z$  | 0.000 | 0.000 |
 
 ---
 
 ### Shocktube 2
-#+ {'figures': [{'src': 'Shocktube2.png', 'url':'Shocktube2.pdf'}]}
+#+ SingleImage(src='Shocktube2.png', url='Shocktube2.pdf')
 
 Double rarefeaction wave: in this setup, the density and pressure are the same
 across the midline. The velocity is discontinuous, with both halves of the
@@ -167,16 +163,16 @@ confirm that the solution is always left-right symmetric.
 
 |        |   $x<0.5$ |  $x>0.5$ |
 |--------|-----------|----------|
-| $\rho$ |  1.000000 | 1.000000 |
-   | $p$ |  0.400000 | 0.400000 |
-| $v_x$  | -2.000000 | 2.000000 |
-| $v_y$  |  0.000000 | 0.000000 |
-| $v_z$  |  0.000000 | 0.000000 |
+| $\rho$ |  1.000 | 1.000 |
+   | $p$ |  0.400 | 0.400 |
+| $v_x$  | -2.000 | 2.000 |
+| $v_y$  |  0.000 | 0.000 |
+| $v_z$  |  0.000 | 0.000 |
 
 ---
 
 ### Shocktube 3
-#+ {'figures': [{'src': 'Shocktube3.png', 'url':'Shocktube3.pdf'}]}
+#+ SingleImage(src='Shocktube3.png', url='Shocktube3.pdf')
 
 This setup creates a strong right-going shock wave by initializing a pressure
 jump of 5 orders of magnitude. The quality of the solution can be gauged by the
@@ -186,32 +182,32 @@ maximal density.
 
 |        |     $x<0.5$ |  $x>0.5$ |
 |--------|-------------|----------|
-| $\rho$ |    1.000000 | 1.000000 |
-| $p$    | 1000.000000 | 0.010000 |
-| $v_x$  |    0.000000 | 0.000000 |
-| $v_y$  |    0.000000 | 0.000000 |
-| $v_z$  |    0.000000 | 0.000000 |
+| $\rho$ |    1.000 | 1.000 |
+| $p$    |     1000 | 0.010 |
+| $v_x$  |    0.000 | 0.000 |
+| $v_y$  |    0.000 | 0.000 |
+| $v_z$  |    0.000 | 0.000 |
 
 ---
 
 ### Shocktube 4
-#+ {'figures': [{'src': 'Shocktube4.png', 'url':'Shocktube4.pdf'}]}
+#+ SingleImage(src='Shocktube4.png', url='Shocktube4.pdf')
 
 This setup creates a strong left-going shock wave by initializing a pressure
 jump of 4 orders of magnitude.
 
 |        |  $x<0.5$ |    $x>0.5$ |
 |--------|----------|------------|
-| $\rho$ | 1.000000 |   1.000000 |
-| $p$    | 0.010000 | 100.000000 |
-| $v_x$  | 0.000000 |   0.000000 |
-| $v_y$  | 0.000000 |   0.000000 |
-| $v_z$  | 0.000000 |   0.000000 |
+| $\rho$ | 1.000 |   1.000 |
+| $p$    | 0.010 |   100.0 |
+| $v_x$  | 0.000 |   0.000 |
+| $v_y$  | 0.000 |   0.000 |
+| $v_z$  | 0.000 |   0.000 |
 
 ---
 
 ### Shocktube 5
-#+ {'figures': [{'src': 'Shocktube5.png', 'url':'Shocktube5.pdf'}]}
+#+ SingleImage(src='Shocktube5.png', url='Shocktube5.pdf')
 
 This setup yields a two-shock solution by creating a colliding supersonic
 flow. The velocities are adjusted so that the left shock is stationary.
@@ -219,15 +215,15 @@ flow. The velocities are adjusted so that the left shock is stationary.
 |        |    $x<0.5$ |   $x>0.5$ |
 |--------|------------|-----------|
 | $\rho$ |   5.999240 |  5.999240 |
-| $p$    | 460.894000 | 46.095000 |
+| $p$    | 460.89400  | 46.0950   |
 | $v_x$  |  19.597500 | -6.196330 |
-| $v_y$  |   0.000000 |  0.000000 |
-| $v_z$  |   0.000000 |  0.000000 |
+| $v_y$  |   0.000    |  0.000    |
+| $v_z$  |   0.000    |  0.000    |
 
 ---
 
 ### Isolated Contact Wave
-#+ {'figures': [{'src': 'ContactWave.png', 'url':'ContactWave.pdf'}]}
+#+ SingleImage(src='ContactWave.png', url='ContactWave.pdf')
 
 This problem consists of only a stationary jump in the density. Since the Euler
 equations do not model any diffusive processes, the jump should remain
@@ -238,11 +234,11 @@ the intermediate state in order to capture the contact discontinuity.
 
 |        |  $x<0.5$ |  $x>0.5$ |
 |--------|----------|----------|
-| $\rho$ | 1.000000 | 0.100000 |
-| $p$    | 1.000000 | 1.000000 |
-| $v_x$  | 0.000000 | 0.000000 |
-| $v_y$  | 0.700000 | 0.700000 |
-| $v_z$  | 0.200000 | 0.200000 |
+| $\rho$ | 1.000 | 0.100 |
+| $p$    | 1.000 | 1.000 |
+| $v_x$  | 0.000 | 0.000 |
+| $v_y$  | 0.700 | 0.700 |
+| $v_z$  | 0.200 | 0.200 |
 
 ---
 
@@ -250,9 +246,10 @@ the intermediate state in order to capture the contact discontinuity.
 ## Two-dimensional test problems
 
 ### Kelvin-Helmholtz instability
-#+ {'figures': [{'src': 'KH-hllc-plm-rk3.png', 'url': 'KH-hllc-plm-rk3.png',
-#+  'caption': 'Performance at various resolutions for the '
-#+             '<code>HLLC-PLM-RK3</code> scheme'}]}
+#+ SingleImage(src='KH-hllc-plm-rk3.png',
+#+             url='KH-hllc-plm-rk3.png',
+#+         caption='Performance at various resolutions for the '
+#+                 '<code>HLLC-PLM-RK3</code> scheme')
 
 This problem uses a smooth shearing profile to capture the linear growth rate of
 Kelvin-Helmholtz instability. The vertical velocity is given a sinusoidal
@@ -277,7 +274,7 @@ perturbation. The domain is $[0,L]^2$.
 ---
 
 ### Implosion with reflecting walls
-#+ {'custom_html': 'Implosion2d-media.html'}
+#+ Movie('Implosion2d-HLLC-PLM-MUSCL.mp4')
 
 This setup involves similar conditions as in the `Shocktube1` problem, except
 that the discontinuity is placed at a $45^{\circ}$ angle on a 2d grid, and the
@@ -286,9 +283,9 @@ diagonal) causes a shock to propagate toward the lower left corner, which then
 reflects off the other walls multiple times. The interaction of the shock with
 various contact discontinuities helps diagnose the ability of various schemes to
 limit artificial dissipation of contacts. This test is also a stringent test of
-the code's x-y symmetry. If the problem is run sufficiently long, any bug which
-breaks the reflectional symmetry will show up by skewing the features above or
-below the diagonal.
+the code's $x-y$ symmetry. If the problem is run sufficiently long, any bug
+which breaks the reflectional symmetry will show up by skewing the features
+above or below the diagonal.
 
 $$ \left(\begin{array}{c} \rho \\ p \\ u \\ v\end{array}\right) =
 \begin{cases}
@@ -307,9 +304,10 @@ This problem is also documented on the [Athena test page][1].
 ### Sound wave with gravity
 
 #### Problem description
-#+ {'figures': [{'src': 'SoundWaveGrav.png', 'url': 'SoundWaveGrav.pdf',
-#+  'caption': 'Gravitating sound wave evolved for slightly less than '
-#+              'one sound crossing time'}]}
+#+ SingleImage(src='SoundWaveGrav.png',
+#+             url='SoundWaveGrav.pdf',
+#+         caption='Gravitating sound wave evolved for slightly less than '
+#+                 'one sound crossing time')
 
 The presence of gravity adds a correction at linear order to the acoustic
 dispersion relation. The linearized Euler equations for the mass and momentum
@@ -335,11 +333,11 @@ wave is marginally stable against gravitational collapse when the right hand
 side is zero. This occurs for density perturbations at the Jeans length
 $\lambda_J = c_s \sqrt{\pi / G \rho_0}$.
 
-
+	
 ### Collapse of a cold dust cloud
 
 #### Problem description
-#+ {'figures': [{'src': 'Collapse1d-rhox.png', 'url': 'Collapse1d-rhox.pdf'}]}
+#+ SingleImage(src='Collapse1d-rhox.png', url='Collapse1d-rhox.pdf')
 
 This problem tests the collapse of a cold dust cloud in one dimension. The
 initial density field is a uniform-density region of width $\delta$ with a
@@ -375,10 +373,10 @@ which has the solution $\delta(t) = L - (L - \delta_0) \cosh(t/\tau)$, where
 $\tau = (M/L)^{-1/2}$ is the Jeans time.
 
 #### Code performance
-#+ {'figures': [{'src': 'Collapse1d-rhot.png', 'url': 'Collapse1d-rhot.pdf'}]}
+#+ SingleImage(src='Collapse1d-rhot.png', url='Collapse1d-rhot.pdf')
 
-The code performs well on this problem, provided the atmosphere $\rho_{atm}$ is
-sufficiently large, $10^{-6} \times \rho_0$ works fine. The density profile
+The code performs well on this problem, provided the atmosphere $\rho_\rm{atm}$
+is sufficiently large, $10^{-6} \times \rho_0$ works fine. The density profile
 remains reasonably square, but with some slight artifact at the density jump. In
 order to compare with the exact solution, the maximum density on the grid is
 recorded at each time step, and compared against the true solution

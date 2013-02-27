@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    {% include 'head.html' %}
+  </head>
+  <body>
+
+    {% include 'topnav.html' %}
+    {% include 'topunit.html' %}
+
+    {% for section in sections %}
+
+    {{ section }}
+
+    {% endfor %}
+
+  </body>
+</html>
