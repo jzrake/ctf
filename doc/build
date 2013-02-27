@@ -43,7 +43,7 @@ class SingleImage(Element):
     _template = Element._env.get_template('ImageHolder.html')
     def __init__(self, src=None, url=None, alt=None, caption=""):
         self.src = src
-        self.url = url
+        self.url = url if url else src
         self.title = alt
         self.caption = caption
 

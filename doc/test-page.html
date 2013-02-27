@@ -840,6 +840,19 @@ perturbation. The domain is <mathjax>$[0,L]^2$</mathjax>.</p>
 <div class="row">
   <div class="span6 offset1">
     <h3>Implosion with reflecting walls</h3>
+  </div>
+  <div class="span4 offset1">
+    <h3> &zwnj; </h3>
+    
+  </div>
+</div>
+
+    
+
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h4>Problem description</h4>
 <p>This setup involves similar conditions as in the <code>Shocktube1</code> problem, except
 that the discontinuity is placed at a <mathjax>$45^{\circ}$</mathjax> angle on a 2d grid, and the
 boundary conditions are reflecting. The higher pressure region (above the
@@ -856,10 +869,9 @@ above or below the diagonal.</p>
 \left(\begin{array}{c} 0.125 \\ 0.140 \\ 0 \\ 0 \end{array}\right) &amp; \text{otherwise}
 \end{cases} $$</mathjax></p>
 <p>This problem is also documented on the <a href="http://www.astro.princeton.edu/~jstone/Athena/tests/implode/Implode.html">Athena test page</a>.</p>
-<hr />
   </div>
   <div class="span4 offset1">
-    <h3> &zwnj; </h3>
+    <h4> &zwnj; </h4>
     
 <ul class="thumbnails">
   <li class="span4">
@@ -872,6 +884,129 @@ above or below the diagonal.</p>
     </script>
   </li>
 </ul>
+  </div>
+</div>
+
+    
+
+    
+<div class="row">
+  <div class="span6 offset1">
+    <h4>Performance of the schemes</h4>
+<p>The suite of schemes chosen for this problem is: two which use the HLLC
+approximate Riemann solver with a 2nd order Godunov scheme based on the
+piecewise linear method, and two characteristic-wise WENO schemes.</p>
+<p>Of the Godunov schemes, one is <code>HLLC-PLM-MUSCL</code>, which is 2nd order in time and
+uses an <em>unsplit</em> integration scheme with corner-transport while the other,
+<code>HLLC-PLM-RK3</code>, uses an unplit method-of-lines approach with a three-stage,
+third order single-register (low storage) Runge-Kutta
+integration. <code>HLLC-PLM-MUSCL</code> is particuarly robust for relatistic MHD
+turbulence problems with moderate <mathjax>$\sigma$</mathjax>. One reason for this is apparent from
+the figures at the right: the <code>MUSCL</code> scheme is more diffusive. Still, as shown
+in the smooth problems, that scheme is formally 2nd order accurate.</p>
+<p>The other two schemes are dimensionally-split, characteristic-wise conservative
+finite-difference schemes based on the method of lines and the same 3rd order
+Runge-Kutta integrator. These schemes are both formally 5th order accurate
+(although with RK3, they transition to 3rd order at around 128 zones) but differ
+in the <em>smoothness indicators</em> they utilize. <code>CHAR-WENO5-RK3</code> uses the older
+smoothness indicators (<mathjax>$IS_k$</mathjax>) of Jiang and Shu (1996), whereas
+<code>CHAR-WENO5SZ-RK3</code> uses the improved <mathjax>$IS_k$</mathjax> of Zhang and Shen (2010). The
+performance of the updated <mathjax>$IS_k$</mathjax> is so superior to the older ones that these
+schemes are the most, and least diffusive of those tested here.</p>
+<hr />
+  </div>
+  <div class="span4 offset1">
+    <h4> &zwnj; </h4>
+    
+<div class="tabbable"> <!-- Only required for left/right tabs -->
+  <ul class="nav nav-tabs nav-stacked">
+    
+
+    <li 
+	class="active"
+	>
+      <a href="#tab1" data-toggle="tab">HLLC-PLM-MUSCL</a>
+    </li>
+
+    
+
+    <li >
+      <a href="#tab2" data-toggle="tab">HLLC-PLM-RK3</a>
+    </li>
+
+    
+
+    <li >
+      <a href="#tab3" data-toggle="tab">CHAR-WENO5-RK3</a>
+    </li>
+
+    
+
+    <li >
+      <a href="#tab4" data-toggle="tab">CHAR-WENO5SZ-RK3</a>
+    </li>
+
+    
+  </ul>
+
+  <div class="tab-content">
+
+    
+
+    <div class=
+         "tab-pane active"
+          id="tab1">
+
+      <a href="HLLC-PLM-MUSCL.0480.png" class="thumbnail">
+	<img src="HLLC-PLM-MUSCL.0480.png" alt="HLLC-PLM-MUSCL">
+      </a>
+      <p></p>
+
+    </div>
+
+    
+
+    <div class=
+         "tab-pane"
+          id="tab2">
+
+      <a href="HLLC-PLM-RK3.0480.png" class="thumbnail">
+	<img src="HLLC-PLM-RK3.0480.png" alt="HLLC-PLM-RK3">
+      </a>
+      <p></p>
+
+    </div>
+
+    
+
+    <div class=
+         "tab-pane"
+          id="tab3">
+
+      <a href="CHAR-WENO5-RK3.0480.png" class="thumbnail">
+	<img src="CHAR-WENO5-RK3.0480.png" alt="CHAR-WENO5-RK3">
+      </a>
+      <p></p>
+
+    </div>
+
+    
+
+    <div class=
+         "tab-pane"
+          id="tab4">
+
+      <a href="CHAR-WENO5SZ-RK3.0480.png" class="thumbnail">
+	<img src="CHAR-WENO5SZ-RK3.0480.png" alt="CHAR-WENO5SZ-RK3">
+      </a>
+      <p></p>
+
+    </div>
+
+    
+
+  </div>
+</div>
   </div>
 </div>
 

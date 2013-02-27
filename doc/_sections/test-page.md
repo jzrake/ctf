@@ -274,6 +274,8 @@ perturbation. The domain is $[0,L]^2$.
 ---
 
 ### Implosion with reflecting walls
+
+#### Problem description
 #+ Movie('Implosion2d-HLLC-PLM-MUSCL.mp4')
 
 This setup involves similar conditions as in the `Shocktube1` problem, except
@@ -296,6 +298,35 @@ $$ \left(\begin{array}{c} \rho \\ p \\ u \\ v\end{array}\right) =
 This problem is also documented on the [Athena test page][1].
 
 [1]: http://www.astro.princeton.edu/~jstone/Athena/tests/implode/Implode.html
+
+#### Performance of the schemes
+#+ TabbedImages([dict(src='HLLC-PLM-MUSCL.0480.png', alt='HLLC-PLM-MUSCL'),
+#+               dict(src='HLLC-PLM-RK3.0480.png', alt='HLLC-PLM-RK3'),
+#+               dict(src='CHAR-WENO5-RK3.0480.png', alt='CHAR-WENO5-RK3'),
+#+               dict(src='CHAR-WENO5SZ-RK3.0480.png', alt='CHAR-WENO5SZ-RK3')])
+
+The suite of schemes chosen for this problem is: two which use the HLLC
+approximate Riemann solver with a 2nd order Godunov scheme based on the
+piecewise linear method, and two characteristic-wise WENO schemes.
+
+Of the Godunov schemes, one is `HLLC-PLM-MUSCL`, which is 2nd order in time and
+uses an _unsplit_ integration scheme with corner-transport while the other,
+`HLLC-PLM-RK3`, uses an unplit method-of-lines approach with a three-stage,
+third order single-register (low storage) Runge-Kutta
+integration. `HLLC-PLM-MUSCL` is particuarly robust for relatistic MHD
+turbulence problems with moderate $\sigma$. One reason for this is apparent from
+the figures at the right: the `MUSCL` scheme is more diffusive. Still, as shown
+in the smooth problems, that scheme is formally 2nd order accurate.
+
+The other two schemes are dimensionally-split, characteristic-wise conservative
+finite-difference schemes based on the method of lines and the same 3rd order
+Runge-Kutta integrator. These schemes are both formally 5th order accurate
+(although with RK3, they transition to 3rd order at around 128 zones) but differ
+in the _smoothness indicators_ they utilize. `CHAR-WENO5-RK3` uses the older
+smoothness indicators ($IS_k$) of Jiang and Shu (1996), whereas
+`CHAR-WENO5SZ-RK3` uses the improved $IS_k$ of Zhang and Shen (2010). The
+performance of the updated $IS_k$ is so superior to the older ones that these
+schemes are the most, and least diffusive of those tested here.
 
 ---
 
