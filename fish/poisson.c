@@ -81,7 +81,7 @@ int fish_block_solvepoisson(fish_block *B)
   fftw_execute(revgph);
 
   for (int i=0; i<Nx; ++i) {
-    double G[4];
+    double G[4] = { 0, 0, 0, 0 };
     G[phi] = Phix[i][0] / Nx;
     G[gph] = Gphx[i][0] / Nx;
     fluids_state_setattr(B->fluid[i+Ng], G, FLUIDS_GRAVITY);
