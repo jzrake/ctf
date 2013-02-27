@@ -15,7 +15,7 @@ Mara is a tubulence code for astrophysical hydrodynamics and relativistic MHD.
 It is the result of its author's graduate study at New York Univerity between
 Summer 2008 and Spring 2013, under Andrew MacFadyen.
 
-_Overview of capabilities_:
+*Overview of capabilities*:
 
 + robust second-order Godunov solvers for relativistic magnetohydrodynamics
 + fifth order conservative finite-difference `WENO` schemes for the relativistic
@@ -27,7 +27,7 @@ _Overview of capabilities_:
 + static and self-gravity coupled to the Euler equations
 + static mesh refinement, currently in 1d only
 
-_In progress_:
+*In progress*:
 
 + static and adaptive mesh refinement for 2d and 3d
 + momentum and energy conserving self-gravity in 3d
@@ -42,7 +42,7 @@ _In progress_:
 
 ---
 
-Mara is maintained by
+*Mara is maintained by*
 
 <address>
 	<strong>Jonathan Zrake</strong><br>
@@ -52,7 +52,7 @@ Mara is maintained by
     New York, NY 10003<br>
 </address>
 
-Valuable code and intellectual contributions have been made by
+*Valuable code and intellectual contributions have been made by*
 
 + Andrew MacFadyen
 + Weiqun Zhang
@@ -60,7 +60,7 @@ Valuable code and intellectual contributions have been made by
 + Bez Laderman
 + Micha Gorelick
 
-I am also grateful to
+*I am also grateful to*
 
 + conversations with James Stone, and to reading parts of the [Athena code][1]
 + talks with [Tom Abel][2] at Stanford, in particular concerning mesh
