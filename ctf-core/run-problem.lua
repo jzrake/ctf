@@ -133,7 +133,7 @@ end
 
 
 local function main()
-   local usage = "tests-1d <problem> [<options>]"
+   local usage = "ctf run-problem <problem-name> [<options>]"
    local parser = optparse.OptionParser{usage=usage,
                                         version="CTF version 1.0"}
    parser.add_option{"--cpi", dest="cpi", help="checkpoint interval"}

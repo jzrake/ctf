@@ -34,7 +34,7 @@ local function write_frames(opts, fnames)
 end
 
 local function main()
-   local usage = "h52png <problem> [<options>]"
+   local usage = "ctf h52png <filenames> [<options>]"
    local parser = optparse.OptionParser{usage=usage,
                                         version="CTF version 1.0"}
    parser.add_option{"--dmin", dest="dmin", help="data range minimum"}
@@ -47,6 +47,7 @@ local function main()
 
    local opts, args = parser.parse_args()
    local fnames = { }
+
    if opts.format then
       local i=0
       while true do
@@ -65,17 +66,22 @@ local function main()
          end
       end
    end
+
+   if not next(fnames) then
+      parser:print_help()
+   end
+
    write_frames(opts, fnames)
 
    if opts.movie then
       if not opts.format then
-	 error("format option required: something like --format=data/myrun.%04d")
+         error("format option required: something like --format=data/myrun.%04d")
       end
       if not util.endswith(opts.movie, '.mp4') then
-	 error("the movie extension should be mp4")
+         error("the movie extension should be mp4")
       end
       os.execute(string.format("ffmpeg -f image2 -i %s.png -vcodec mpeg4 -b:v 1600k %s",
-			       opts.format, opts.movie))
+                               opts.format, opts.movie))
    end
 
    if opts.cleanup then

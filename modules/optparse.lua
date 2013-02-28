@@ -177,7 +177,7 @@ local function OptionParser(t)
    end
 
    function o.print_help()
-      io.stdout:write("usage: " .. usage:gsub('%%prog', arg[0]) .. "\n")
+      io.stdout:write("usage: " .. usage:gsub('%%prog', arg[1]) .. "\n")
       io.stdout:write("\n")
       io.stdout:write("Options:\n")
       local maxwidth = 0
