@@ -1,4 +1,9 @@
 
+if arg[2] == '--explain' then
+   print "Convert 2d HDF5 data to images, optionally make a movie with ffmpeg"
+   return
+end
+
 local hdf5     = require 'lua-hdf5.LuaHDF5'
 local array    = require 'array'
 local visual   = require 'visual'
@@ -32,8 +37,6 @@ local function main()
    local usage = "h52png <problem> [<options>]"
    local parser = optparse.OptionParser{usage=usage,
                                         version="CTF version 1.0"}
-   parser.add_option{"--explain", dest="explain", action="store_true",
-		     help="what this script does"}
    parser.add_option{"--dmin", dest="dmin", help="data range minimum"}
    parser.add_option{"--dmax", dest="dmax", help="data range maximum"}
    parser.add_option{"--cmap", dest="cmap", help="color map index"}
@@ -43,13 +46,6 @@ local function main()
    parser.add_option{"--cleanup", dest="cleanup", help="remove the images after finished"}
 
    local opts, args = parser.parse_args()
-
-   local opts, args = parser.parse_args()
-   if opts.explain then
-      print "Convert 2d HDF5 data to images, optionally make a movie with ffmpeg"
-      return
-   end
-
    local fnames = { }
    if opts.format then
       local i=0

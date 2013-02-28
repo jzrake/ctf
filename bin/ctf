@@ -4,7 +4,7 @@ if [ -z $1 ]; then
     echo "usage: ctf <command> [<args>]"
     echo "Available commands are:"
     for i in $(ls ctf-core/*.lua); do
-	printf "%15s   $(./bin/ctf-main $i --explain)\n" $(basename $i .lua)
+	printf "%15s   $(./bin/ctf-main --no-modules $i --explain)\n" $(basename $i .lua)
     done
 else
     if [ -f ctf-core/$1.lua ]; then
