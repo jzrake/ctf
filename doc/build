@@ -1,0 +1,177 @@
+#!/usr/bin/env python
+
+import sha
+import jinja2
+import markdown
+
+
+MediaServe = "http://www.cosmo.nyu.edu/zrake/Mara-media"
+
+
+class MathJaxPattern(markdown.inlinepatterns.Pattern):
+    def __init__(self):
+        markdown.inlinepatterns.Pattern.__init__(self, r'(?<!\\)(\$\$?)(.+?)\2')
+
+    def handleMatch(self, m):
+        node = markdown.util.etree.Element('mathjax')
+        node.text = markdown.util.AtomicString(m.group(2) + m.group(3) + m.group(2))
+        return node
+
+
+class MathJaxExtension(markdown.Extension):
+    def extendMarkdown(self, md, md_globals):
+        md.inlinePatterns.add('mathjax', MathJaxPattern(), '<escape')
+
+
+class Element(object):
+    """ Base class for page elements """
+    _loader = jinja2.FileSystemLoader(['_layouts'])
+    _env = jinja2.Environment(loader=_loader)
+
+
+class Movie(Element):
+    _template = Element._env.get_template('Movie.html')
+    def __init__(self, src=None):
+        self.src = src
+
+    def render(self):
+        id = sha.sha(self.src).hexdigest()
+        return self._template.render(media_serve=MediaServe, src=self.src, id=id)
+
+
+class SingleImage(Element):
+    _template = Element._env.get_template('ImageHolder.html')
+    def __init__(self, src=None, url=None, alt=None, caption=""):
+        self.src = src
+        self.url = url if url else src
+        self.title = alt
+        self.caption = caption
+
+    def render(self):
+        return self._template.render(images=[self])
+
+
+class ImageHolder(Element):
+    _template = Element._env.get_template('ImageHolder.html')
+    def __init__(self, image_list):
+        self.image_elements = [ ]
+        for img in image_list:
+            if type(img) == dict:
+                newimg = SingleImage(**img)
+            elif type(img) == list:
+                newimg = SingleImage(*img)
+            elif type(img) == str:
+                newimg = SingleImage(src=img)
+            self.image_elements.append(newimg)
+
+    def render(self):
+        return self._template.render(images=self.image_elements)
+
+
+class StackedImages(ImageHolder):
+    pass
+
+
+class TabbedImages(ImageHolder):
+    _template = Element._env.get_template('TabbedImages.html')
+
+
+class HTML(Element):
+    def __init__(self, html=""):
+        self.html = html
+
+    def render(self):
+        return self.html
+
+
+class Markdown(Element):
+    E = ['tables', MathJaxExtension()]
+    def __init__(self, markdown=""):
+        self.markdown = markdown
+
+    def render(self):
+        return markdown.markdown(self.markdown, extensions=self.E)
+
+
+class Section(Element):
+    _template = Element._env.get_template('Section.html')
+    def __init__(self, main=None, supp=None, level=None):
+        self.main = main
+        self.supp = supp
+        self.level = level
+
+    def render(self):
+        main = self.main.render()
+        supp = self.supp.render()
+        return self._template.render(main=main,
+                                     supp=supp,
+                                     level=self.level).replace(
+            '<table>', '<table class="tftable">')
+
+
+class SubNavigation(Element):
+    _template = Element._env.get_template('SubNavigation.html')
+    def __init__(self, items, label=""):
+        self.items = items
+        self.label = label
+
+    def render(self):
+        return self._template.render(items=self.items, label=self.label)
+
+
+class Page(Element):
+    _template = Element._env.get_template('Page.html')
+    def __init__(self, sections, title="", page="", tagline="", subnav=None):
+        self.sections = sections
+        self.subnav = subnav
+        self.title = title
+        self.page = page
+        self.tagline = tagline
+
+    def render(self):
+        return self._template.render(sections=[s.render() for s in self.sections],
+                                     subnav=self.subnav.render() if self.subnav else "",
+                                     title=self.title,
+                                     page=self.page,
+                                     tagline=self.tagline)
+
+
+def get_sections_from_markdown(fname):
+    py = ""
+    mode = 'process_py'
+    sections = [ ]
+    page_kwargs = { }
+    for line in open(fname):
+        if mode == 'process_py':
+            if line.startswith('#+'):
+                py +=  line.replace('#+', '')
+            else:
+                if py:
+                    try:
+                        if sections:
+                            sections[-1].supp = eval(py)
+                        else:
+                            page_kwargs.update(eval(py))
+                    except:
+                        print py
+                        raise
+                    py = ""
+                else:
+                    if sections: sections[-1].supp = HTML()
+                mode = None
+        elif line.startswith('#'):
+            hl = line.count('#')
+            sections.append(Section(main=Markdown(), level=hl))
+            mode = 'process_py'
+            sections[-1].main.markdown += line
+        elif sections:
+            sections[-1].main.markdown += line
+    return sections, page_kwargs
+
+
+for page in ['index', 'test-page', 'doc-page']:
+    outf = open(page+'.html', 'w')
+    secs, kwargs = get_sections_from_markdown('_sections/%s.md'%page)
+    elem = Page(secs, page=page, **kwargs)
+    html = elem.render()
+    outf.write(html)

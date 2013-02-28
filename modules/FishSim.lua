@@ -4,125 +4,108 @@ local oo       = require 'class'
 local array    = require 'array'
 local fish     = require 'fish'
 local fluids   = require 'fluids'
-local hdf5     = require 'lua-hdf5.LuaHDF5'
 local util     = require 'util'
+local mesh     = require 'mesh'
+local FishCls  = require 'FishClasses'
 
 local FishSimulation = oo.class('FishSimulation', sim.SimulationBase)
+
 
 function FishSimulation:initialize_solver()
    local opts = self.user_opts
    self.CFL = opts.CFL or 0.8
    self.Ng = 3
    self.N = opts.resolution or 128
-   self.dx = 1.0 / self.N
+   local bcflag = self.problem:boundary_conditions()
+   local descr = FishCls.FluidDescriptor{ fluid=self.problem:fluid() }
+   local scheme = FishCls.FishScheme { bc=bcflag,
+				       riemann=self.user_opts.riemann,
+				       reconstruction=self.user_opts.reconstruction,
+				       solver=self.user_opts.solver,
+				       advance=self.user_opts.advance }
+   local grid = mesh.Block { descr=descr,
+			     size={self.N},
+			     guard=self.Ng }
 
-   local FL = self.problem:fluid():upper()
-   local descr = fluids.descr_new()
-   fluids.descr_setfluid(descr, fluids[FL])
-   fluids.descr_setgamma(descr, 1.4)
-   fluids.descr_seteos(descr, fluids.EOS_GAMMALAW)
+   if bcflag == 'periodic' then
+      grid:set_boundary_block(0, 'L', grid)
+      grid:set_boundary_block(0, 'R', grid)
+   else
+      grid:set_boundary_flag(0, 'L', bcflag)
+      grid:set_boundary_flag(0, 'R', bcflag)
+   end
 
-   local RS = ('riemann_'..(self.user_opts.riemann or 'hllc')):upper()
-   local RC = (self.user_opts.reconstruction or 'plm'):upper()
-   local ST = (self.user_opts.solver or 'godunov'):upper()
-   local UP = ({midpoint='midpoint',
-		rk3='shuosher_rk3'})[self.user_opts.advance or 'rk3']:upper()
-   local BC = self.problem:boundary_conditions():upper()
-
-   local scheme = fish.state_new()
-   fish.setparami(scheme, fluids[RS], fish.RIEMANN_SOLVER)
-   fish.setparami(scheme, fish[RC], fish.RECONSTRUCTION)
-   fish.setparami(scheme, fish[ST], fish.SOLVER_TYPE)
-   fish.setparami(scheme, fish[BC], fish.BOUNDARY_CONDITIONS)
-   fish.setparami(scheme, fish[UP], fish.TIME_UPDATE)
-   fish.setparamd(scheme, 2.0, fish.PLM_THETA)
-
-   fish.grav1d_init(descr, self.N)
-   fish.grav1d_setscheme(scheme)
-
-   self.descr = descr
+   self.grid   = grid
    self.scheme = scheme
+   self.descr  = descr
 end
 
 function FishSimulation:report_configuration()
-   local scheme = self.scheme
-   local enum = array.vector(1, 'int')
-   local cfg = { }
-
-   local FishEnums   = { } -- Register the constants for string lookup later on
-   for k,v in pairs(fish) do
-      if type(v)=='number' then FishEnums[v]=k end
-   end
-   local FluidsEnums = { }
-   for k,v in pairs(fluids) do
-      if type(v)=='number' then FluidsEnums[v]=k end
-   end
-
-   for _,k in pairs{'RIEMANN_SOLVER',
-		    'RECONSTRUCTION',
-		    'SOLVER_TYPE',
-		    'BOUNDARY_CONDITIONS',
-		    'TIME_UPDATE'} do
-      fish.getparami(scheme, enum:buffer(), fish[k])
-      local val = FishEnums[enum[0]] or FluidsEnums[enum[0]]
-      cfg[k:lower()] = val:lower()
-   end
-
-   fluids.descr_getfluid(self.descr, enum:buffer())
-   cfg['fluid'] = FluidsEnums[enum[0]]:lower()
-   cfg['resolution'] = self.N
-   cfg['CFL'] = self.CFL
-
-   print('\t***********************************')
-   print('\t*      Solver configuration       *')
-   print('\t***********************************')
-   util.pretty_print(cfg, '\t+ ')
-   print('\t***********************************')
-end
-
-function FishSimulation:finalize_solver()
-   fish.grav1d_finalize()
-   fish.state_del(self.scheme)
-   fluids.descr_del(self.descr)
+   self.scheme:report_configuration{ fluid=self.descr:fluid() }
 end
 
 function FishSimulation:initialize_physics()
-   local N  = self.N
-   local Ng = self.Ng
-   local dx = self.dx
-
-   local P = array.array{N + 2*Ng, 5}
-   local G = array.array{N + 2*Ng, 4}
-   local Pvec = P:vector()
-
-   for n=0,#Pvec/5-1 do
-      local x  = (n - Ng) * dx
-      local Pi = self.problem:solution(x,0,0,0)
-      Pvec[5*n + 0] = Pi[1]
-      Pvec[5*n + 1] = Pi[2]
-      Pvec[5*n + 2] = Pi[3]
-      Pvec[5*n + 3] = Pi[4]
-      Pvec[5*n + 4] = Pi[5]
+   local function primitive_init(x,y,z)
+      return self.problem:solution(x,y,z,0)
    end
 
-   fish.grav1d_mapbuffer(P:buffer(), fluids.PRIMITIVE)
-   fish.grav1d_mapbuffer(G:buffer(), fluids.GRAVITY)
-   self.Primitive = P
-   self.Gravity = G
+   for b in self.grid:walk() do
+      b:map(primitive_init)
+   end
+
+   for block in self.grid:walk() do
+      block:fill_guard(block)
+   end
 end
 
 function FishSimulation:set_time_increment()
-   local Amax = fish.grav1d_maxwavespeed()
-   local dt = self.CFL * self.dx / Amax
+   local Amax = self.grid:max_wavespeed()
+   local Dmin = self.grid:grid_spacing{ mode='smallest' }
+   local dt = self.CFL * Dmin / Amax
    self.status.time_increment = dt
 end
 
 function FishSimulation:advance_physics()
-   fish.grav1d_advance(self.status.time_increment)
+   local dt = self.status.time_increment
+   local enum = array.vector(1, 'int')
+   fish.getparami(self.scheme._c, enum:buffer(), fish.TIME_UPDATE)
+
+   local function step(w0, w1)
+      local W = array.vector{ w0, w1 }
+      for block in self.grid:walk() do
+	 block:time_derivative(self.scheme._c)
+	 block:source_terms()
+	 if self.descr:fluid() == 'gravs' then
+	    block:solve_poisson()
+	 end
+	 block:evolve(W, dt)
+      end
+      self.grid:fill()
+      for block in self.grid:walk() do
+	 block:fill_guard(block)
+      end
+   end
+
+   for block in self.grid:walk() do
+      block:fill_conserved()
+   end
+
+   if enum[0] == fish.SINGLE then
+      step(0.0, 1.0)
+
+   elseif enum[0] == fish.TVD_RK2 then
+      step(0.0, 1.0)
+      step(0.5, 0.5)
+
+   elseif enum[0] == fish.SHUOSHER_RK3 then
+      step(0.0, 1.0)
+      step(3/4, 1/4)
+      step(1/3, 2/3)
+   end
 end
 
 function FishSimulation:local_mesh_size()
-   return self.N
+   return self.grid:total_states{recurse=true, mode='interior'}
 end
 
 return {FishSimulation=FishSimulation}

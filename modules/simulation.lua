@@ -10,7 +10,7 @@ end
 function SimulationBase:initialize_behavior() end
 function SimulationBase:initialize_solver() self:_notimplemented() end
 function SimulationBase:initialize_physics() self:_notimplemented() end
-function SimulationBase:finalize_solver() self:_notimplemented() end
+function SimulationBase:finalize_solver() end
 function SimulationBase:advance_physics() self:_notimplemented() end
 function SimulationBase:local_mesh_size() self:_notimplemented() end
 function SimulationBase:set_time_increment() self:_notimplemented() end
@@ -53,8 +53,8 @@ function SimulationBase:main_loop()
 	 self.status.checkpoint_number = self.status.checkpoint_number + 1
 	 self.status.last_checkpoint_time = self.status.simulation_time
       end
-      self:user_work_iteration()
-      self:set_time_increment()
+      self:time('user_work_iteration')
+      self:time('set_time_increment')
       self:time('advance_physics')
       self:advance_status()
       self:iteration_message()
@@ -70,6 +70,12 @@ function SimulationBase:run(problem)
    self:main_loop()
    self:user_work_finish()
    self:finalize_solver()
+   print('\nProfiler output:')
+   print(string.format("%30s     %s", 'function name', 'cumulative time'))
+   print(string.format("%30s     %s", '-------------', '---------------'))
+   for k,v in pairs(self.profiler) do
+      print(string.format("%30s ... %3.2es", k,v))
+   end
 end
 function SimulationBase:__init__(user_opts)
    self.status   = { iteration_number     = 0,

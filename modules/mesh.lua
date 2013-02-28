@@ -1,45 +1,19 @@
 
-local oo     = require 'class'
-local array  = require 'array'
-local fish   = require 'fish'
-local flui   = require 'fluids'
+local oo      = require 'class'
+local array   = require 'array'
+local fish    = require 'fish'
+local flui    = require 'fluids'
+local FishCls = require 'FishClasses'
 
 local Block = oo.class('Block')
 local FluidDescriptor = oo.class('FluidDescriptor')
 
 
-function FluidDescriptor:__init__()
-   local descr = flui.descr_new()
-   flui.descr_setfluid(descr, flui.NRHYD)
-   flui.descr_setgamma(descr, 1.4)
-   flui.descr_seteos(descr, flui.EOS_GAMMALAW)
-   self._descr = descr
-end
-
-function FluidDescriptor:__gc__()
-   flui.descr_del(self._descr)
-end
-
-function FluidDescriptor:get_ncomp(which)
-   return flui.descr_getncomp(self._descr, flui[which:upper()])
-end
-
-function FluidDescriptor:fluid()
-   local E = { }
-   for k,v in pairs(flui) do
-      if type(v) == 'number' then
-	 E[v] = k
-      end
-   end
-   local F = array.vector(1, 'int')
-   flui.descr_getfluid(self._descr, F:buffer())
-   return E[F[0]]:lower()
-end
-
 function Block:__init__(args)
    -- **************************************************************************
    -- args: {table}
    --
+   --  + descr: a fluid descriptor to use, ignored unless root block
    --  + size: table, e.g. {16,32,32}
    --  + guard: number, of guard zones
    --  + parent: block, if nil create new root block
@@ -51,10 +25,10 @@ function Block:__init__(args)
    local rank = #args.size
    local guard = args.guard or 0
    local parent = args.parent
-   local descr = parent and parent._descr or FluidDescriptor()
+   local descr = parent and parent._descr or args.descr
    local totsize = { }
 
-   fish.block_setdescr (block, descr._descr)
+   fish.block_setdescr (block, descr._c)
    fish.block_setrank  (block, rank)
    fish.block_setguard (block, guard)
 
@@ -64,16 +38,32 @@ function Block:__init__(args)
       totsize[i] = N + 2 * guard
    end
 
-   table.insert(totsize, descr:get_ncomp('primitive'))
 
    if not args.dummy then
-      local primitive = array.array(totsize)
+      for _,field in pairs{'primitive', 'gravity', 'passive', 'magnetic',
+			   'location'} do
+
+	 totsize[rank + 1] = descr:get_ncomp(field)
+
+	 if totsize[rank + 1] ~= 0 then
+	    local arr = array.array(totsize)
+	    self['_'..field] = arr
+	    fish.block_mapbuffer (block, arr:buffer(), flui[field:upper()])
+	 else
+	    self['_'..field] = { }	    
+	 end
+
+      end
       fish.block_allocate  (block)
-      fish.block_mapbuffer (block, primitive:buffer(), flui.PRIMITIVE)
-      self._primitive = primitive
    else
-      self._primitive = { }
+      for _,field in pairs{'primitive', 'gravity', 'passive', 'magnetic',
+			   'location'} do
+
+	 self['_'..field] = { }
+
+      end
    end
+
 
    self._block = block
    self._descr = descr
@@ -98,9 +88,6 @@ function Block:__init__(args)
       self._root                = self
       self._registry            = { }
       self._id                  = 0
-
-      self:set_boundary_block(0, 'L', self) -- periodic BC's on root
-      self:set_boundary_block(0, 'R', self)
    end
 
    self._registry[fish.block_light(block)] = self
@@ -120,7 +107,8 @@ function Block:__index__(key)
    if type(key) == 'string' then
       return ( -- These are the class read-only attribute
 	 {descr=self._descr,
-	  primitive=self._primitive})[key] or oo.getattrib(self, key)
+	  primitive=self._primitive,
+	  gravity=self._gravity})[key] or oo.getattrib(self, key)
    else
       return self:child_block(key)
    end
@@ -207,12 +195,20 @@ end
 
 function Block:set_boundary_block(dim, dir, block)
    --
-   -- Get the boundary block. Arguments are the same as Block:neighbor_block,
+   -- Set the boundary block. Arguments are the same as Block:neighbor_block,
    -- but with the boundary block given as the third argument.
    --
    local d = ({L=fish.LEFT, R=fish.RIGHT})[dir]
    self['_boundary'..dir][dim] = block
    fish.block_setboundaryblock(self._block, dim, d, block._block)
+end
+
+function Block:set_boundary_flag(dim, dir, flag)
+   --
+   -- Set a physical boundary conditions flag.
+   --
+   local d = ({L=fish.LEFT, R=fish.RIGHT})[dir]
+   fish.block_setboundaryflag(self._block, dim, d, fish[flag:upper()])
 end
 
 function Block:fill_conserved()
@@ -229,6 +225,14 @@ end
 
 function Block:time_derivative(scheme)
    fish.block_timederivative(self._block, scheme)
+end
+
+function Block:source_terms(scheme)
+   fish.block_sourceterms(self._block)
+end
+
+function Block:solve_poisson(scheme)
+   fish.block_solvepoisson(self._block)
 end
 
 function Block:project()
@@ -302,23 +306,16 @@ function Block:max_wavespeed()
    return Amax
 end
 
-function Block:map(f, opts)
+function Block:map(f, attr)
    --
    -- Map the function f(x,y,z) over the coordinates of the block, filling in
-   -- the primitive data values
+   -- the data values of `attr` (default: 'primitive') with the resulting
+   -- table. The table returned by `f` must have the same length as the number
+   -- of components in the corresponding attribute: primitive, gravity, scalar,
+   -- etc.
    --
-   local Nx, Ny, Nz = table.unpack(self:size())
-   local Ng = self:guard()
-   local Pvec = self._primitive:vector()
-   for i=0,Nx+2*Ng-1 do
-      local x = fish.block_positionatindex(self._block, 0, i)
-      local Pi = f(x,0,0)
-      Pvec[5*i + 0] = Pi[1]
-      Pvec[5*i + 1] = Pi[2]
-      Pvec[5*i + 2] = Pi[3]
-      Pvec[5*i + 3] = Pi[4]
-      Pvec[5*i + 4] = Pi[5]
-   end
+   local attrflag = flui[(attr or 'primitive'):upper()]
+   fish.block_map(self._block, f, attrflag)
 end
 
 function Block:table(q, T, opts)
@@ -377,25 +374,30 @@ function Block:walk(opts)
 end
 
 local function test1()
-   local block0 = Block{ size={16}, guard=2 }
+   local descr = FishCls.FluidDescriptor()
+   local block0 = Block{ descr=descr, size={16}, guard=2 }
    local block1 = block0:add_child_block(0)
    local block2 = block1:add_child_block(0)
    local block3 = block1:add_child_block(1)
+
+   block0:set_boundary_flag(0, 'L', 'outflow')
+   block0:set_boundary_flag(0, 'R', 'outflow')
 
    block3:add_child_block(0):add_child_block(0)
    assert(block2:neighbor_block(0, 'R') == block3)
 
    block0:fill_guard()
    block2:fill_guard()
-   block2:map(function(x) return {x+1,1,0,0,0} end)
+   block2:map(function(x) return {x+1,1,0,0,0} end, 'primitive')
 
    assert(block2:total_states() == 20)
    assert(block2:total_states{mode='interior'} == 16)
-   assert(math.abs(block2:max_wavespeed() - 1.1973303637677) < 1e-10)
+   assert(math.abs(block2:max_wavespeed() - 1.1786209258374) < 1e-10)
 end
 
 local function test2()
-   local mesh = Block{ size={16}, guard=2 }
+   local descr = FishCls.FluidDescriptor()
+   local mesh = Block{ descr=descr, size={16}, guard=2 }
    local N = 2
    for i=0,N-1 do
       mesh:add_child_block(i)
@@ -426,7 +428,8 @@ local function test2()
 end
 
 local function test3()
-   local mesh = Block { size={32} }
+   local descr = FishCls.FluidDescriptor()
+   local mesh = Block { descr=descr, size={32} }
    assert(mesh.descr:fluid() == 'nrhyd')
 
    mesh:set_boundary_block(0, 'L', mesh)
@@ -438,7 +441,7 @@ local function test3()
    local err, msg = pcall(mesh.set_boundary_block, mesh, 0, 'L', mesh[0])
    assert(not err)
 
-   local dummy = Block { size={32,32}, dummy=true }
+   local dummy = Block { descr=descr, size={32,32}, dummy=true }
    dummy      :add_child_block(0, {dummy=true})
    dummy[0]   :add_child_block(0, {dummy=false})
    dummy[0][0]:add_child_block(0, {dummy=false})
@@ -454,7 +457,12 @@ local function test3()
 end
 
 local function test4()
-   local mesh = Block{ size={64}, guard=3 }
+   --
+   -- Check that the fill function (recursive projection form child to parent
+   -- grids) works
+   --
+   local descr = FishCls.FluidDescriptor{ fluid='gravs' }
+   local mesh = Block{ descr=descr, size={64}, guard=3 }
    local block1 = mesh:add_child_block(0)
    local block2 = mesh:add_child_block(1)
 
@@ -465,14 +473,26 @@ local function test4()
    assert(not block1:has_children())
 
    mesh:fill()
-   --block1:project()
-   --block2:project()
 
    local P = mesh.primitive[{{3,-3},{0,1}}]:vector()
    for i=0,#P-1 do
       local x = fish.block_positionatindex(mesh._block, 0, i+3)
       assert(P[i] == F(x)[1])
    end
+
+   assert(mesh.gravity:shape()[2] == 4)
+end
+
+local function test5()
+   local descr = FishCls.FluidDescriptor()
+   local block0 = Block{ descr=descr, size={128,128,16}, guard=2 }
+
+   local err, msg = pcall(block0.fill_guard, block0)
+   assert(not err)
+
+   block0:set_boundary_flag(0, 'L', 'outflow')
+   block0:set_boundary_flag(0, 'R', 'outflow')
+   block0:fill_guard()
 end
 
 if ... then -- if __name__ == "__main__"
@@ -482,5 +502,6 @@ else
    test2()
    test3()
    test4()
+   test5()
    print(debug.getinfo(1).source, ": All tests passed")
 end

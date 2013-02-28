@@ -4,6 +4,13 @@ local array = { }
 local vector = { }
 local view = { }
 
+local function tcopy(arr)
+   -- Return a deep copy of a simple numeric table
+   local ret = { }
+   for i=1,#(arr or { }) do ret[i] = arr[i] end
+   return ret
+end
+
 function array.sizeof(T)
    return buffer.sizeof(buffer[T])
 end
@@ -176,10 +183,11 @@ function view:__len()
 end
 
 function array.view(buf, dtype, extent, start, count, stride)
-   local sz =  array.sizeof(dtype)
-   local start = start or { }
-   local count = count or { }
-   local stride = stride or { }
+   local sz = array.sizeof(dtype)
+   local extent = tcopy(extent)
+   local start = tcopy(start)
+   local count = tcopy(count)
+   local stride = tcopy(stride)
    local block = { }
    local rank = #extent
    for i=1,rank do

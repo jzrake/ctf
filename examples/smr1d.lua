@@ -4,10 +4,10 @@ local oo       = require 'class'
 local array    = require 'array'
 local fish     = require 'fish'
 local fluids   = require 'fluids'
-local hdf5     = require 'lua-hdf5.LuaHDF5'
 local util     = require 'util'
 local mesh     = require 'mesh'
 local problems = require 'problems'
+local FishCls  = require 'FishClasses'
 
 
 local function TiledUniformLevelMesh(args)
@@ -25,7 +25,9 @@ local function TiledUniformLevelMesh(args)
    --
    -- **************************************************************************
    --
-   local mesh = mesh.Block { size={args.N},
+   local descr = FishCls.FluidDescriptor{fluid='nrhyd'}
+   local root = mesh.Block { descr=descr,
+			     size={args.N},
 			     guard=args.guard,
 			     dummy=args.level ~= 0 }
 
@@ -36,11 +38,11 @@ local function TiledUniformLevelMesh(args)
       expand_block(b[0], level - 1)
       expand_block(b[1], level - 1)
    end
-   expand_block(mesh, args.level)
+   expand_block(root, args.level)
 
    local left_most, right_most
 
-   for b in mesh:walk() do
+   for b in root:walk() do
       if not b:neighbor_block(0, 'L') then
 	 left_most = b
       end
@@ -50,8 +52,8 @@ local function TiledUniformLevelMesh(args)
    end
 
    if args.bc == 'outflow' then
-      left_most :set_boundary_block(0, 'L', left_most)
-      right_most:set_boundary_block(0, 'R', right_most)
+      left_most :set_boundary_flag(0, 'L', 'outflow')
+      right_most:set_boundary_flag(0, 'R', 'outflow')
    elseif args.bc == 'periodic' then
       left_most :set_boundary_block(0, 'L', right_most)
       right_most:set_boundary_block(0, 'R', left_most)
@@ -59,7 +61,7 @@ local function TiledUniformLevelMesh(args)
       error("must give bc='periodic or bc='outflow', got "..tostring(bc))
    end
 
-   return mesh
+   return root
 end
 
 
@@ -69,10 +71,9 @@ function StaticMeshRefinement:initialize_behavior()
    local opts = self.user_opts
    local cpi = opts.cpi or 1.0
    local tmax = opts.tmax or self.problem:finish_time()
-   local dynamical_time = self.problem:dynamical_time()
    self.behavior.message_cadence = opts.message_cadence or 1
-   self.behavior.checkpoint_cadence = cpi * dynamical_time
-   self.behavior.max_simulation_time = tmax * dynamical_time
+   self.behavior.checkpoint_cadence = cpi
+   self.behavior.max_simulation_time = tmax
 end
 
 function StaticMeshRefinement:initialize_solver()
@@ -80,71 +81,25 @@ function StaticMeshRefinement:initialize_solver()
    self.CFL = opts.CFL or 0.8
    self.Ng = 3
    self.N = opts.resolution or 16
-
-   local BC = self.problem:boundary_conditions():upper()
-   local FL = self.problem:fluid():upper()
-   local RS = ('riemann_'..(self.user_opts.riemann or 'hllc')):upper()
-   local RC = (self.user_opts.reconstruction or 'plm'):upper()
-   local ST = (self.user_opts.solver or 'godunov'):upper()
-   local UP = ({ single  = 'single',
-		 rk2     = 'tvd_rk2',
-		 rk3     = 'shuosher_rk3'
-	       })[self.user_opts.advance or 'rk3']:upper()
-
-   local scheme = fish.state_new()
-   fish.setparami(scheme, fluids[RS], fish.RIEMANN_SOLVER)
-   fish.setparami(scheme, fish[RC], fish.RECONSTRUCTION)
-   fish.setparami(scheme, fish[ST], fish.SOLVER_TYPE)
-   fish.setparami(scheme, fish[BC], fish.BOUNDARY_CONDITIONS)
-   fish.setparami(scheme, fish[UP], fish.TIME_UPDATE)
-   fish.setparamd(scheme, 2.0, fish.PLM_THETA)
-
-   local mesh = TiledUniformLevelMesh{ N=self.N,
-				       level=3,
-				       guard=self.Ng,
-				       bc=self.problem.boundary_conditions() }
-
+   local scheme = FishCls.FishScheme { bc=self.problem:boundary_conditions(),
+				       riemann=self.user_opts.riemann,
+				       reconstruction=self.user_opts.reconstruction,
+				       solver=self.user_opts.solver,
+				       advance=self.user_opts.advance }
+   local mesh = TiledUniformLevelMesh { N=self.N,
+					level=3,
+					guard=self.Ng,
+					bc=self.problem:boundary_conditions() }
    self.mesh   = mesh
    self.scheme = scheme
 end
 
 function StaticMeshRefinement:report_configuration()
-   local scheme = self.scheme
-   local enum = array.vector(1, 'int')
-   local cfg = { }
-
-   local FishEnums   = { } -- Register the constants for string lookup later on
-   for k,v in pairs(fish) do
-      if type(v)=='number' then FishEnums[v]=k end
-   end
-   local FluidsEnums = { }
-   for k,v in pairs(fluids) do
-      if type(v)=='number' then FluidsEnums[v]=k end
-   end
-
-   for _,k in pairs{'RIEMANN_SOLVER',
-		    'RECONSTRUCTION',
-		    'SOLVER_TYPE',
-		    'BOUNDARY_CONDITIONS',
-		    'TIME_UPDATE'} do
-      fish.getparami(scheme, enum:buffer(), fish[k])
-      local val = FishEnums[enum[0]] or FluidsEnums[enum[0]]
-      cfg[k:lower()] = val:lower()
-   end
-
-   cfg['fluid'] = self.mesh.descr:fluid()
-   cfg['resolution'] = self.N
-   cfg['CFL'] = self.CFL
-
-   print('\t***********************************')
-   print('\t*      Solver configuration       *')
-   print('\t***********************************')
-   util.pretty_print(cfg, '\t+ ')
-   print('\t***********************************')
+   self.scheme:report_configuration()
 end
 
 function StaticMeshRefinement:finalize_solver()
-   fish.state_del(self.scheme)
+
 end
 
 function StaticMeshRefinement:initialize_physics()
@@ -166,12 +121,16 @@ end
 function StaticMeshRefinement:advance_physics()
    local dt = self.status.time_increment
    local enum = array.vector(1, 'int')
-   fish.getparami(self.scheme, enum:buffer(), fish.TIME_UPDATE)
+   fish.getparami(self.scheme._c, enum:buffer(), fish.TIME_UPDATE)
 
    local function step(w0, w1)
       local W = array.vector{ w0, w1 }
       for block in self.mesh:walk() do
-	 block:time_derivative(self.scheme)
+	 block:time_derivative(self.scheme._c)
+	 block:source_terms()
+	 if self.mesh.descr:fluid() == 'gravs' then
+	    block:solve_poisson()
+	 end
 	 block:evolve(W, dt)
       end
       self.mesh:fill()
@@ -231,7 +190,7 @@ function StaticMeshRefinement:user_work_finish()
 end
 
 local opts = {plot=true,
-	      resolution=32,
+	      resolution=16,
 	      CFL=0.8,
 	      tmax=0.1,
 	      solver='spectral',

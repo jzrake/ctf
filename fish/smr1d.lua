@@ -14,6 +14,7 @@ end
 local function test2()
    local D = fluids.descr_new()
    local B = fish.block_new()
+   local P = array.array{128,256,5}
 
    fluids.descr_setfluid(D, fluids.NRHYD)
    fluids.descr_setgamma(D, 1.4)
@@ -32,6 +33,7 @@ local function test2()
    assert(err == false and
 	  msg == "block needs a fluid descriptor")
    fish.block_setdescr(B, D)
+   fish.block_mapbuffer(B, P:buffer(), fluids.PRIMITIVE)
    fish.block_allocate(B)
    fish.block_del(B)
    fluids.descr_del(D)
@@ -42,6 +44,7 @@ local function test3()
    local x1 = array.vector(1)
    local D = fluids.descr_new()
    local B = fish.block_new()
+   local P = array.array{20,5}
 
 
    fluids.descr_setfluid(D, fluids.NRHYD)
@@ -54,6 +57,7 @@ local function test3()
    fish.block_setrange(B, 0, -1.0, 1.0)
    fish.block_getrange(B, 0, x0:pointer(), x1:pointer())
    fish.block_setdescr(B, D)
+   fish.block_mapbuffer(B, P:buffer(), fluids.PRIMITIVE)
    fish.block_allocate(B)
    assert(x0[0] == -1.0)
    assert(x1[0] ==  1.0)
@@ -72,7 +76,10 @@ local function test4()
    fluids.descr_setgamma(D, 1.4)
    fluids.descr_seteos(D, fluids.EOS_GAMMALAW)
 
+   local bufs = { }
+
    for _,B in pairs{B0, BL, BR} do
+      bufs[B] = array.array{16,16,16,5}
       fish.block_setrank(B, 3)
       fish.block_setsize(B, 0, 16)
       fish.block_setsize(B, 1, 16)
@@ -81,6 +88,7 @@ local function test4()
       fish.block_setrange(B, 1, -1.0, 1.0)
       fish.block_setrange(B, 2, -1.0, 1.0)
       fish.block_setdescr(B, D)
+      fish.block_mapbuffer(B, bufs[B]:buffer(), fluids.PRIMITIVE)
       fish.block_allocate(B)
    end
 
@@ -123,7 +131,13 @@ local function test4()
    fluids.descr_del(D)
 end
 
-test1()
-test2()
-test3()
-test4()
+
+if ... then -- if __name__ == "__main__"
+   return {Block=Block}
+else
+   test1()
+   test2()
+   test3()
+   test4()
+   print(debug.getinfo(1).source, ": All tests passed")
+end

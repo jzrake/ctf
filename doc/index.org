@@ -1,0 +1,356 @@
+#+TITLE: Mara: Computational Turbulence Framework
+#+AUTHOR: Jonathan Zrake
+#+DATE: <2013-02-15 Fri>
+#+EMAIL: <jonathan.zrake@gmail.com>
+#+DESCRIPTION: Docs page for the Mara/CTF astrophysical gasdynamics code
+#+STYLE: <link rel="stylesheet" type="text/css" href="stylesheet.css">
+# #+INFOJS_OPT: view:info toc:nil
+#+OPTIONS: toc:2
+
+* Introduction
+  :PROPERTIES:
+  :HTML_CONTAINER_CLASS: introduction
+  :END:
+  [[http://zrake.webfactional.com/static/images/turbulent-bndlayer-KH-mara.png][turbulent-bndlayer-KH-mara-small.png]]
+
+* One dimensional smooth problems
+** DensityWave
+*** Problem description
+    This problem sets up a smooth density wave advecting with a uniform velocity
+    and periodic boundaries. This is probably the easiest problem for a code
+    which solves the Euler equations, as all the non-linear features are absent,
+    and the behavior is only that of the scalar conservation law $\dot \rho + u_0
+    \rho' = 0$. The problem is described by the following parameters:
+
+    + sound speed: $c_s$
+    + advection velocity: $u_0$
+    + background density: $\rho_0$
+    + wave amplitude: $\rho_1$
+    + background pressure: $p_0 = \rho_0 c_s^2 / \Gamma$
+    + wave-number: $k_0 = 2\pi / L$
+
+    $$ \left(\begin{array}{c} \rho(x,t) \\ p(x,t) \\ u(x,t) \end{array}\right) =
+    \left(\begin{array}{c} \rho_0 + \rho_1 \cos{k_0 (x - u_0 t)} \\ p_0 \\ 0
+    \\ \end{array}\right) $$
+
+    Because of its smoothness and simplicity, this problem is ideal for gauging
+    the convergence order of a scheme. Any scheme claiming to converge at order
+    $n$ must absolutely pass this test before any other. For the convergence
+    test, the problem is run for half of the domain-crossing time at resolutions
+    $2^n$ for $n$ between 3 and 10. Five different reference schemes are used:
+
+    1. =HLLC-PLM-MUSCL=
+    2. =HLLC-PLM-RK3=
+    3. =HLLC-WENO5-RK3=
+    4. =CHAR-WENO5-RK3=
+    5. =CHAR-WENO5-RK4=
+
+*** Performance of the schemes
+    For the formally 5th order =WENO5= reconstruction schemes, it is evident
+    that the truncation error introduced by the 3rd order temporal update comes
+    to dominate the error by resolution $64^3$. At higher resolutions, the
+    classic 4th order Runge-Kutta update preserves 5th order convergence. Since
+    this problem does not involve any non-linear waves, it is not surprising
+    that the Godunov scheme =HLLC-WENO5-RK3= accomplishes the same convergence
+    order as the characteristic decomposition scheme =CHAR-WENO5-RK3=.
+
+    [[file:DensityWave-L1.pdf][file:DensityWave-L1.png]]
+
+
+    |------+------------------+----------------+------------------+------------------+------------------|
+    |  $N$ | =HLLC-PLM-MUSCL= | =HLLC-PLM-RK3= | =HLLC-WENO5-RK3= | =CHAR-WENO5-RK3= | =CHAR-WENO5-RK4= |
+    |------+------------------+----------------+------------------+------------------+------------------|
+    |   16 |             2.07 |           2.27 |             4.52 |             4.46 |             4.53 |
+    |   32 |             2.23 |           2.04 |             4.42 |             4.69 |             4.95 |
+    |   64 |             2.25 |           2.08 |             3.97 |             4.33 |             5.04 |
+    |  128 |             2.27 |           2.00 |             3.40 |             3.66 |             5.04 |
+    |  256 |             2.36 |           2.01 |             3.13 |             3.23 |             5.13 |
+    |  512 |             2.28 |           1.98 |             3.04 |             3.06 |             5.28 |
+    | 1024 |             2.35 |           2.00 |             3.01 |             3.02 |             5.44 |
+    |------+------------------+----------------+------------------+------------------+------------------|
+
+** SoundWave
+*** Problem description
+    This problem sets up a smooth and small-amplitude perturbation to create a
+    left-going sound wave. It is only slightly more challenging as a convergence
+    test than the density wave. The problem is described by the following
+    parameters:
+
+    + sound speed: $c_s$
+    + background density: $\rho_0$
+    + background pressure: $p_0 = \rho_0 c_s^2 / \Gamma$
+    + density wave amplitude: $\rho_1 = 10^{-6} \rho_0$
+    + pressure wave amplitude: $p_1 = c_s^2 \rho_1$
+    + velocity wave amplitude: $u_1 = c_s \rho_1 / \rho_0$
+    + wave-number: $k_0 = 8\pi / L$
+    + frequence: $\omega_0 = c_s k_0$
+
+    $$ \left(\begin{array}{c} \rho(x,t) \\ p(x,t) \\ u(x,t) \end{array}\right) =
+    \left(\begin{array}{c} \rho_0 + \rho_1 \cos{(k_0 x - \omega_0 t)} \\ p_0 +
+    p_1 \cos{(k_0 x - \omega_0 t)} \\ u_0 + u_1 \cos{(k_0 x - \omega_0 t)}
+    \\ \end{array}\right) $$
+
+*** Performance of the schemes
+    The need for higher temporal order is highlighted by this problem. While RK4
+    accomplishes 5th order convergence, there is no resolution for which RK3
+    converges faster than 3rd order. Since the problem uses a very
+    small-purturbation ($10^{-6}$) the absolute error is small, and round-off
+    error exceeds the truncation error quickly.
+
+    [[file:SoundWave-L1.pdf][file:SoundWave-L1.png]]
+
+    |------+------------------+----------------+------------------+------------------+------------------|
+    |  $N$ | =HLLC-PLM-MUSCL= | =HLLC-PLM-RK3= | =HLLC-WENO5-RK3= | =CHAR-WENO5-RK3= | =CHAR-WENO5-RK4= |
+    |------+------------------+----------------+------------------+------------------+------------------|
+    |   16 |             0.81 |           0.36 |             0.61 |             0.61 |             0.78 |
+    |   32 |             2.14 |           0.47 |             2.40 |             2.40 |             3.45 |
+    |   64 |             2.06 |           2.29 |             3.39 |             3.39 |             4.85 |
+    |  128 |             1.75 |           1.72 |             3.18 |             3.18 |             4.71 |
+    |  256 |             1.95 |           1.69 |             3.07 |             3.07 |             3.71 |
+    |  512 |             2.09 |           1.85 |             3.12 |             3.12 |             0.23 |
+    | 1024 |             2.13 |           1.95 |             2.08 |             2.08 |             0.01 |
+    |------+------------------+----------------+------------------+------------------+------------------|
+
+* One dimensional two-state problems
+  The two-state problems in this section demonstrate the =Mara='s
+  shock-capturing capability. Each problem sets up a piecewise-constant initial
+  data, defined by a different pressure, density, and velocity to either side of
+  the midpoint of the domain at $x=0.5$. Around discontinuities, the code will
+  not converge at higher order. Instead, we expect better schemes to introduce a
+  smaller degree of numerical dissipation around the discontinuity.
+
+  These problems show the solution as generated by a reference scheme,
+  =HLLC-PLM-RK3= on 128 grid points, compared against the exact solution. [[https://github.com/jzrake/ctf/blob/fd5d576ad7af8cd3d5f0e295d274e7390f039ff6/fish/riemann.c#L352][The
+  exact Riemann solver for the Euler equation]] is implemented according to the
+  algorithm of Toro (1997).
+
+  
+** Shocktube1
+   |--------+----------+----------|
+   |        |  $x<0.5$ |  $x>0.5$ |
+   |--------+----------+----------|
+   | $\rho$ | 1.000000 | 0.125000 |
+   | $p$    | 1.000000 | 0.100000 |
+   | $v_x$  | 0.000000 | 0.000000 |
+   | $v_y$  | 0.000000 | 0.000000 |
+   | $v_z$  | 0.000000 | 0.000000 |
+   |--------+----------+----------|
+   #+ATTR_HTML: class="thumbnail"
+   [[file:Shocktube1.png]]
+   file:Shocktube1.pdf
+
+** Shocktube2
+   |--------+-----------+----------|
+   |        |   $x<0.5$ |  $x>0.5$ |
+   |--------+-----------+----------|
+   | $\rho$ |  1.000000 | 1.000000 |
+   | $p$    |  0.400000 | 0.400000 |
+   | $v_x$  | -2.000000 | 2.000000 |
+   | $v_y$  |  0.000000 | 0.000000 |
+   | $v_z$  |  0.000000 | 0.000000 |
+   |--------+-----------+----------|
+   #+ATTR_HTML: class="thumbnail"
+   [[file:Shocktube2.png]]
+   file:Shocktube2.pdf
+
+** Shocktube3
+   |--------+-------------+----------|
+   |        |     $x<0.5$ |  $x>0.5$ |
+   |--------+-------------+----------|
+   | $\rho$ |    1.000000 | 1.000000 |
+   | $p$    | 1000.000000 | 0.010000 |
+   | $v_x$  |    0.000000 | 0.000000 |
+   | $v_y$  |    0.000000 | 0.000000 |
+   | $v_z$  |    0.000000 | 0.000000 |
+   |--------+-------------+----------|
+   #+ATTR_HTML: class="thumbnail"
+   [[file:Shocktube3.png]]
+   file:Shocktube3.pdf
+
+** Shocktube4
+   |--------+----------+------------|
+   |        |  $x<0.5$ |    $x>0.5$ |
+   |--------+----------+------------|
+   | $\rho$ | 1.000000 |   1.000000 |
+   | $p$    | 0.010000 | 100.000000 |
+   | $v_x$  | 0.000000 |   0.000000 |
+   | $v_y$  | 0.000000 |   0.000000 |
+   | $v_z$  | 0.000000 |   0.000000 |
+   |--------+----------+------------|
+   #+ATTR_HTML: class="thumbnail"
+   [[file:Shocktube4.png]]
+   file:Shocktube4.pdf
+
+** Shocktube5
+   |--------+------------+-----------|
+   |        |    $x<0.5$ |   $x>0.5$ |
+   |--------+------------+-----------|
+   | $\rho$ |   5.999240 |  5.999240 |
+   | $p$    | 460.894000 | 46.095000 |
+   | $v_x$  |  19.597500 | -6.196330 |
+   | $v_y$  |   0.000000 |  0.000000 |
+   | $v_z$  |   0.000000 |  0.000000 |
+   |--------+------------+-----------|
+   #+ATTR_HTML: class="thumbnail"
+   [[file:Shocktube5.png]]
+   file:Shocktube5.pdf
+
+** ContactWave
+   |--------+----------+----------|
+   |        |  $x<0.5$ |  $x>0.5$ |
+   |--------+----------+----------|
+   | $\rho$ | 1.000000 | 0.100000 |
+   | $p$    | 1.000000 | 1.000000 |
+   | $v_x$  | 0.000000 | 0.000000 |
+   | $v_y$  | 0.700000 | 0.700000 |
+   | $v_z$  | 0.200000 | 0.200000 |
+   |--------+----------+----------|
+   #+ATTR_HTML: class="thumbnail"
+   [[file:ContactWave.png]]
+   file:ContactWave.pdf
+
+** SrhdCase1DFIM98
+   |--------+-----------+----------|
+   |        |   $x<0.5$ |  $x>0.5$ |
+   |--------+-----------+----------|
+   | $\rho$ | 10.000000 | 1.000000 |
+   | $p$    | 13.300000 | 0.000001 |
+   | $v_x$  |  0.000000 | 0.000000 |
+   | $v_y$  |  0.000000 | 0.000000 |
+   | $v_z$  |  0.000000 | 0.000000 |
+   |--------+-----------+----------|
+
+** SrhdCase2DFIM98
+   |--------+-------------+----------|
+   |        |     $x<0.5$ |  $x>0.5$ |
+   |--------+-------------+----------|
+   | $\rho$ |    1.000000 | 1.000000 |
+   | $p$    | 1000.000000 | 0.010000 |
+   | $v_x$  |    0.000000 | 0.000000 |
+   | $v_y$  |    0.000000 | 0.000000 |
+   | $v_z$  |    0.000000 | 0.000000 |
+   |--------+-------------+----------|
+
+** SrhdHardTransverseRAM
+   |--------+-------------+----------|
+   |        |     $x<0.5$ |  $x>0.5$ |
+   |--------+-------------+----------|
+   | $\rho$ |    1.000000 | 1.000000 |
+   | $p$    | 1000.000000 | 0.010000 |
+   | $v_x$  |    0.000000 | 0.000000 |
+   | $v_y$  |    0.900000 | 0.900000 |
+   | $v_z$  |    0.000000 | 0.000000 |
+   |--------+-------------+----------|
+   
+* Two dimensional problems
+** Kelvin-Helmholtz instability
+*** Problem description
+    This problem uses a smooth shearing profile to capture the linear growth
+    rate of Kelvin-Helmholtz instability. The vertical velocity is given a
+    sinusoidal perturbation with 4 wave-lengths over the domain. The resulting
+    flow, when properly resolved, contains a single vortex for each wave-length
+    of the perturbation. The domain is $[0,L]^2$.
+
+    + background pressure: $p_0 = 2.5$
+    + outer density: $\rho_1 = 1.0$
+    + inner density: $\rho_2 = 2.0$
+    + outer velocity: $u_1 = -0.5$
+    + inner velocity: $u_2 =  0.5$
+    + shearing layer width: $\delta = 0.035$
+    + perturbation amplitude: $w_0 = 10^{-2}$
+
+    $$ \left(\begin{array}{c}
+    \rho \\
+    p \\
+    u \\
+    v \\
+    \end{array}\right) =
+    \left(\begin{array}{c}
+    \frac{\rho_2 - \rho_1}{2} (\tanh{\frac{y-L/4}{\delta}} - \tanh{\frac{y-3L/4}{\delta}}) +
+    \rho_1 \\
+    p_0 \\
+    \frac{u_2 - u_1}{2} (\tanh{\frac{y-L/4}{\delta}} - \tanh{\frac{y-3L/4}{\delta}} - 1) \\
+    w_0 \sin(4 \pi x) \\
+    \end{array}\right) $$
+
+*** Performance at different resolutions
+    [[file:KH-hllc-plm-rk3.pdf][file:KH-hllc-plm-rk3.png]]
+
+* Self-gravity
+** Collapse1d
+*** Problem description
+   This problem tests the collapse of a cold dust cloud in one dimension. The
+   initial density field is a uniform-density region of width $\delta$ with a
+   low-density "atmosphere":
+
+   $$ \rho(x) = \begin{cases} \rho_0 & |x|<\delta/2 \\ \rho_{atm} &
+   \text{otherwise} \end{cases} $$
+
+   The problem domain is $[-L/2, L/2]$ with periodic boundaries so that the
+   total mass $M = \delta \rho_0$ is a constant. The exact potential can easily
+   be written down for this density field. In periodic boundaries, solutions
+   only exist when the net charge is zero, so we solve the Poisson equation
+
+   $$ \nabla^2 \phi = \rho - \bar{\rho} $$
+
+   for deviations away from the mean density $\bar{\rho} = M/L$. Letting
+   $\phi(\pm \delta/2) = 0$, we can immediately write down the potential.
+
+   $$ \phi(x) = \begin{cases}
+   -\frac{\rho_0}{2} (x+\delta/2)(x+3\delta/2+L) & x < -\delta/2 \\
+   -\frac{\rho_0}{2} (x-\delta/2)(x-3\delta/2-L) & x >  \delta/2 \\
+    \frac{\rho_0(1-\delta/L)}{2} (x-\delta/2)(x+\delta/2) & \text{otherwise} \\
+   \end{cases} $$
+
+   Under the influence of gravity, all fluid elements experience an acceleration
+   $a(x) = -\phi'(x) = -\rho_0 (1 - \delta/L) x$. As the dust cloud collapses,
+   the density $\rho_0(t)$ increases while $\delta(t)$ decreases so as to hold
+   $M$ fixed. By following the location of the density jump $\delta(t)/2$, we
+   can write down the following ODE for $\delta(t)$.
+
+   $$ \ddot{\delta} + M(1 - \frac{\delta}{L}) = 0 $$
+
+   which has the solution $\delta(t) = L - (L - \delta_0) \cosh(t/\tau)$, where
+   $\tau = (M/L)^{-1/2}$ is the Jeans time.
+
+*** Code performance
+    The code performs well on this problem, provided the atmosphere $\rho_{atm}$
+    is sufficiently large, $10^{-6} \times \rho_0$ works fine. The density
+    profile remains reasonably square, but with some slight artifact at the
+    density jump. In order to compare with the exact solution, the maximum
+    density on the grid is recorded at each time step, and compared against the
+    true solution
+
+    $$ \rho_0(t) = \frac{M/L}{1 - (1-\delta_0/L) \cosh(t/\tau)} $$
+    [[file:Collapse1d-rhox.pdf][file:Collapse1d-rhox.png]]
+    [[file:Collapse1d-rhot.pdf][file:Collapse1d-rhot.png]]
+
+* Using the exact Riemann solver
+
+The exact Riemann solver of Toro (1997) is implemented in [[https://github.com/jzrake/ctf/blob/fd5d576ad7af8cd3d5f0e295d274e7390f039ff6/fish/riemann.c#L352][here, in
+riemann.c]]. This solver generates the exact self-similar solution to the Riemann
+problem defined by piece-wise constant initial data along the characterstic in
+the self-similar variable $x/t$. This particular solver only works for the Euler
+equations with gamma-law equation of state, with arbitrary adiabatic constant
+$\Gamma$. The solver can also be queried directly from Lua code using the higher
+level front-end:
+
+#+BEGIN_SRC Lua
+local FishCls = require 'FishClasses'
+local D = FishCls.FluidDescriptor{gamma=1.4, fluid='nrhyd'}
+local R = FishCls.RiemannSolver('exact')
+local SL = FishCls.FluidState(D)
+local SR = FishCls.FluidState(D)
+
+SL.primitive[0] = 1.000 -- density
+SR.primitive[0] = 0.125
+SL.primitive[1] = 1.0   -- pressure
+SR.primitive[1] = 0.1
+SL.primitive[2] = 0.0   -- velocity
+SR.primitive[2] = 0.0
+
+local x = 1.0
+local t = 0.5
+local P = R:solve(SL, SR, x/t)
+print(P)
+#+END_SRC

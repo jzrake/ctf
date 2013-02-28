@@ -64,10 +64,33 @@ function DataManagerHDF5:__init__(domain, dataset_names, opts)
 
    self.dset_opts = { }
    self.dset_opts.chunk = opts.chunk or false
-   self.dset_opts.mpio = opts.mpio or 'COLLECTIVE'
+   self.dset_opts.mpio = opts.mpio
+end
+
+function DataManagerHDF5:local_mesh_size(which)
+   local which = which or 'total'
+   if which == 'total' then
+      return cow.domain_getnumlocalzonesinterior(self.domain, cow.ALL_DIMS)
+   elseif which == 'shape' then
+      local size = { }   
+      for i=1,self.ndim do
+	 size[i] = cow.domain_getnumlocalzonesinterior(self.domain, i-1)
+      end
+      return size
+   else
+      error("argument 'which' must be ['total', 'shape']")
+   end
 end
 
 function DataManagerHDF5:write(filename, opts)
+   if not self.dset_opts.mpio then
+      return self:write_sequential(filename, opts)
+   else
+      return self:write_parallel(filename, opts)
+   end
+end
+
+function DataManagerHDF5:write_parallel(filename, opts)
    local opts = opts or { }
    local start = os.clock()
    local file = hdf5.File(filename, opts.file_mode or 'w', self.file_opts)
@@ -78,8 +101,10 @@ function DataManagerHDF5:write(filename, opts)
       dset_opts.chunk = self.sgrid_shape
    end
 
+   print("[HDF5-parallel] writing to file " .. filename)
+
    for i,name in ipairs(self.dataset_names) do
-      print("[Mara] writing " .. name)
+      print("[HDF5-parallel] writing data set " .. name)
       local dset = hdf5.DataSet(group, name, opts.dset_mode or 'w', dset_opts)
       local mspace = hdf5.DataSpace(self.array_shape)
       local fspace = dset:get_space()
@@ -89,15 +114,67 @@ function DataManagerHDF5:write(filename, opts)
       dset:write(self.array:buffer(), mspace, fspace)
 
       if i == #self.dataset_names  then
-	 print("[Mara] write stats:")
+	 print("[HDF5-parallel] write stats:")
 	 util.pretty_print(dset:get_mpio(), '\t# ')
       end
       dset:close()
    end
+
    file:close()
    MPI.Barrier(self.file_opts.mpi.comm)
+
    local dt = os.clock() - start
-   print("[Mara] write time: " .. dt .. ' seconds')
+   print(string.format("[HDF5-parallel] write time: %3.2f seconds", dt))
+
+   return dt
+end
+
+function DataManagerHDF5:write_sequential(filename, opts)
+   local start = os.clock()
+   local size = cow.domain_getcartsize(self.domain)
+   local rank = cow.domain_getcartrank(self.domain)
+   local dset_opts = {shape=self.ggrid_shape, dtype='double'}
+
+   if self.dset_opts.chunk then
+      dset_opts.chunk = self.sgrid_shape
+   end
+
+   if rank == 0 and (opts.file_mode or 'w') == 'w' then
+      local file = hdf5.File(filename, 'w')
+      if (opts.dset_mode or 'w') == 'w' then
+	 local group = opts.group and hdf5.Group(file, opts.group) or file
+	 for i,name in ipairs(self.dataset_names) do
+	    local dset = hdf5.DataSet(group, name, 'w', dset_opts)
+	 end
+      end
+      file:close()
+   end
+
+   for irank=0,size-1 do
+      if irank == rank then
+   	 local file = hdf5.File(filename, 'r+')
+   	 local group = opts.group and hdf5.Group(file, opts.group) or file
+
+   	 print("[HDF5-sequential] writing to file " .. filename)
+	 
+   	 for i,name in ipairs(self.dataset_names) do
+   	    print("[HDF5-sequential] writing data set " .. name)
+   	    local dset = hdf5.DataSet(group, name, 'r+', dset_opts)
+   	    local mspace = hdf5.DataSpace(self.array_shape)
+   	    local fspace = dset:get_space()
+	    
+   	    self:_setup_spaces(mspace, fspace, i)
+   	    dset:write(self.array:buffer(), mspace, fspace)
+   	    dset:close()
+   	 end
+   	 file:close()
+      end
+      MPI.Barrier(self.file_opts.mpi.comm)
+   end
+
+   local dt = os.clock() - start
+   print(string.format("[HDF5-sequential] write time: %3.2f seconds", dt))
+
    return dt
 end
 
@@ -107,8 +184,10 @@ function DataManagerHDF5:read(filename, opts)
    local file = hdf5.File(filename, 'r', self.file_opts)
    local group = opts.group and hdf5.Group(file, opts.group) or file
 
+   print("[HDF5] reading from file " .. filename)
+
    for i,name in ipairs(self.dataset_names) do
-      print("[Mara] reading " .. name)
+      print("[HDF5] reading data set " .. name)
       local dset = hdf5.DataSet(group, name, 'r+')
       local mspace = hdf5.DataSpace(self.array_shape)
       local fspace = dset:get_space()
@@ -118,21 +197,23 @@ function DataManagerHDF5:read(filename, opts)
       dset:read(self.array:buffer(), mspace, fspace)
 
       if i == #self.dataset_names then
-	 print("[Mara] read stats:")
+	 print("[HDF5] read stats:")
 	 util.pretty_print(dset:get_mpio(), '\t# ')
       end
       dset:close()
    end
+
    file:close()
    MPI.Barrier(self.file_opts.mpi.comm)
+
    local dt = os.clock() - start
-   print("[Mara] read time: " .. dt .. ' seconds')
+   print(string.format("[HDF5] read time: %3.2f seconds", dt))
    return dt
 end
 
 function DataManagerHDF5:power_spectrum(nbins)
    if #self.dataset_names ~= 3 then
-      error("[Mara] need a three-dimensional field to get a power spectrum")
+      error("[HDF5] need a three-dimensional field to get a power spectrum")
    end
 
    local nbins = nbins or 128

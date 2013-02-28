@@ -1,0 +1,11 @@
+
+<ul class="thumbnails">
+  {% for image in images %}
+  <li class="span4">
+    <a href="{{ image.url }}" class="thumbnail">
+      <img src="{{ image.src }}" alt="{{ image.title }}">
+    </a>
+    <p>{{ image.caption }}</p>
+  </li>
+  {% endfor %}
+</ul>

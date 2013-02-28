@@ -27,6 +27,14 @@ end
 
 
 -- *****************************************************************************
+-- Check if a string `s` end swith the string `send`
+-- .............................................................................
+function util.endswith(s, send)
+   return #s >= #send and s:find(send, #s-#send+1, true) and true or false
+end
+
+
+-- *****************************************************************************
 -- Utility to print tables
 -- .............................................................................
 function util.pretty_print(t, indent, compare)
@@ -66,7 +74,7 @@ end
 -- .............................................................................
 function util.plot(series, opts)
    local opts = opts or { }
-   local gp = io.popen("gnuplot", 'w')
+   local gp = io.popen("gnuplot -persist", 'w')
 
    if opts.output then
       gp:write("set terminal postscript enhanced color\n")
@@ -101,7 +109,8 @@ function util.plot(series, opts)
       gp:write("e\n")
    end
    if not opts.output then
-      gp:write(string.format(" pause %f\n", opts.tpause or 100.0))
+      -- persist deals with this (at least for term=X11)
+      -- gp:write(string.format(" pause %f\n", opts.tpause or 100))
    end
    gp:close()
 end

@@ -13,6 +13,7 @@ enum {
   // -------------------
   // boundary conditions
   // -------------------
+  FISH_NONE,
   FISH_PERIODIC,
   FISH_OUTFLOW,
 
@@ -93,11 +94,14 @@ int fish_block_getchild(fish_block *B, int id, fish_block **B1);
 int fish_block_setchild(fish_block *B, int id, fish_block *B1);
 int fish_block_getboundaryblock(fish_block *B, int dim, int LR, fish_block **B1);
 int fish_block_setboundaryblock(fish_block *B, int dim, int LR, fish_block *B1);
+int fish_block_getboundaryflag(fish_block *B, int dim, int LR, int *flag);
+int fish_block_setboundaryflag(fish_block *B, int dim, int LR, int flag);
 int fish_block_totalstates(fish_block *B, int mode);
 int fish_block_allocate(fish_block *B);
 int fish_block_deallocate(fish_block *B);
 int fish_block_mapbuffer(fish_block *B, double *x, long flag);
 int fish_block_timederivative(fish_block *B, fish_state *scheme);
+int fish_block_sourceterms(fish_block *B);
 int fish_block_evolve(fish_block *B, double *W, double dt);
 int fish_block_fillconserved(fish_block *B);
 int fish_block_fillguard(fish_block *B);
@@ -105,21 +109,16 @@ int fish_block_project(fish_block *B);
 int fish_block_allocated(fish_block *B);
 int fish_block_neighbor(fish_block *B, int dim, int LR, fish_block **B1);
 int fish_block_level(fish_block *B);
+int fish_block_solvepoisson(fish_block *B);
 double fish_block_gridspacing(fish_block *B, int dim);
 double fish_block_positionatindex(fish_block *B, int dim, int index);
 double fish_block_maxwavespeed(fish_block *B);
 char *fish_block_geterror(fish_block *B);
 fluids_state **fish_block_getfluid(fish_block *B);
 
-void fish_grav1d_init(fluids_descr *descr, int N);
-void fish_grav1d_finalize();
-void fish_grav1d_setscheme(fish_state *S);
-void fish_grav1d_advance(double dt);
-void fish_grav1d_getprim(double *prim, double *grav);
-void fish_grav1d_setprim(double *prim);
-void fish_grav1d_mapbuffer(double *x, long flag);
-double fish_grav1d_maxwavespeed();
-
+#ifdef LUA_BLOCK // Functions only called from Lua code
+void fish_block_map();
+#endif
 
 #ifdef FISH_PRIVATE_DEFS
 
@@ -142,18 +141,27 @@ struct fish_state {
 } ;
 
 struct fish_block {
-  int allocated;
-  int rank;
-  int guard;
-  int size[3];
-  double x0[3];
-  double x1[3];
+  int allocated; // whether the block holds data
+  int rank;      // dimensionality: 1, 2, or 3
+  int guard;     // number of guard zones
+  int bcL[3];    // boundary conditions flag (left)
+  int bcR[3];    // boundary conditions flag (right)
+  int size[3];   // number of zones (interior)
+  double x0[3];  // lower domain bounds
+  double x1[3];  // upper domain bounds
   struct fish_block *parent;
   struct fish_block *children[8];
   struct fish_block *boundaryL[3];
   struct fish_block *boundaryR[3];
   struct fluids_state **fluid;
   struct fluids_descr *descr;
+
+  double *primitive;
+  double *gravity;
+  double *passive;
+  double *magnetic;
+  double *location;
+
   double *temp_conserved;
   double *time_derivative;
   char *error;

@@ -29,7 +29,7 @@ default : $(MAR_A) mara.o
 	$(CXX) $(CFLAGS) -c $^ $(DEFINES)
 
 mara.o : mara.cpp
-	$(CXX) $(CFLAGS) -c $< $(LUA_I)
+	$(CXX) $(CFLAGS) -c $< $(LUA_I) $(DEFINES)
 
 $(MAR_A) : $(OBJ_C) $(OBJ_CPP)
 	$(ARSTATIC) $@ $?

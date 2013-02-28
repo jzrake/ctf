@@ -1,0 +1,12 @@
+
+<ul class="thumbnails">
+  <li class="span4">
+    <video class="thumbnail" id="{{ id }}" width="100%">
+      <source src="{{ media_serve }}/{{ src }}" type="video/mp4">
+        Your browser does not support the video format.
+    </video>
+    <script type="text/javascript">
+      $('#{{ id }}').videoUI();
+    </script>
+  </li>
+</ul>

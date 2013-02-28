@@ -10,86 +10,99 @@ local array    = require 'array'
 local hdf5     = require 'lua-hdf5.LuaHDF5'
 
 local MyBase = oo.class('MyBase', sim.SimulationBase)
-local MyMara = oo.class('MyMara', MaraSim.MaraSimulation)
-local MyFish = oo.class('MyFish', FishSim.FishSimulation)
+local MyMara = oo.class('MyMara', MyBase, MaraSim.MaraSimulation)
+local MyFish = oo.class('MyFish', MyBase, FishSim.FishSimulation)
 
-local function build_mysim(cls)
 
-   function cls:_map_solution(t)
-      local N  = self.N
-      local Ng = self.Ng
-      local dx = self.dx
+function MyFish:initialize_solver()
+   oo.super(self, FishSim.FishSimulation):initialize_solver()
+   self.Primitive = self.grid.primitive
+   self.Gravity = self.grid.gravity
+   self.dx = 1.0 / self.N
+end
 
-      local P = array.array{N + 2*Ng, 5}
-      local Pvec = P:vector()
+function MyBase:_map_solution(t)
+   local N  = self.N
+   local Ng = self.Ng
+   local dx = 1.0 / N
 
-      for n=0,#Pvec/5-1 do
-         local x  = (n - Ng) * dx
-         local Pi = self.problem:solution(x,0,0,t)
-         Pvec[5*n + 0] = Pi[1]
-         Pvec[5*n + 1] = Pi[2]
-         Pvec[5*n + 2] = Pi[3]
-         Pvec[5*n + 3] = Pi[4]
-         Pvec[5*n + 4] = Pi[5]
-      end
-      return P
+   local P = array.array{N + 2*Ng, 5}
+   local Pvec = P:vector()
+
+   for n=0,#Pvec/5-1 do
+      local x  = (n - Ng + 0.5) * dx
+      local Pi = self.problem:solution(x,0,0,t)
+      Pvec[5*n + 0] = Pi[1]
+      Pvec[5*n + 1] = Pi[2]
+      Pvec[5*n + 2] = Pi[3]
+      Pvec[5*n + 3] = Pi[4]
+      Pvec[5*n + 4] = Pi[5]
+   end
+   return P
+end
+
+function MyBase:initialize_behavior()
+   local opts = self.user_opts
+   local cpi = opts.cpi or 1.0
+   local tmax = opts.tmax or self.problem:finish_time()
+   self.behavior.message_cadence = opts.message_cadence or 10
+   self.behavior.checkpoint_cadence = tonumber(cpi)
+   self.behavior.max_simulation_time = tonumber(tmax)
+end
+
+function MyBase:checkpoint_write(fname)
+   if not next(hdf5) then -- next(t) is true when t is empty
+      print('warning! Could not write checkpoint, HDF5 not available')
+      return
    end
 
-   function cls:initialize_behavior()
-      local opts = self.user_opts
-      local cpi = opts.cpi or 1.0
-      local tmax = opts.tmax or self.problem:finish_time()
-      local dynamical_time = self.problem:dynamical_time()
-      self.behavior.message_cadence = opts.message_cadence or 10
-      self.behavior.checkpoint_cadence = cpi * dynamical_time
-      self.behavior.max_simulation_time = tmax * dynamical_time
+   local base = self.user_opts.id or 'chkpt'
+   local n = self.status.checkpoint_number
+   local t = self.status.simulation_time
+   local Pexact = self:_map_solution(t)
+   local Ng = self.Ng
+   local fname = fname or string.format('data/%s.%04d.h5', base, n)
+
+   os.execute('mkdir -p data')
+   print('writing checkpoint ' .. fname)
+
+   local outfile = hdf5.File(fname, 'w')
+   outfile['prim' ]   = self.Primitive[{{Ng,-Ng},nil}]
+   outfile['exact']   = Pexact        [{{Ng,-Ng},nil}]
+   outfile['id']      = base
+   outfile['time']    = t
+   outfile['problem'] = oo.classname(self.problem)
+   outfile:close()
+end
+
+function MyBase:user_work_finish()
+   local t  = self.status.simulation_time
+   local P  = self.Primitive
+   local Ng = self.Ng
+
+   local Pexact = self:_map_solution(t)
+   local dx = self.dx
+   local P0 = Pexact[{{Ng,-Ng},nil}]:vector()
+   local P1 = P     [{{Ng,-Ng},nil}]:vector()
+   local L1 = 0.0
+
+   for i=0,#P0/5-1,5 do
+      L1 = L1 + math.abs(P1[i] - P0[i]) * dx
+   end
+   self.L1error = L1
+
+   if self.user_opts.plot and not self.user_opts.convergence then
+      util.plot{['code' ]=P     [{{Ng,-Ng},{0,1}}]:table(),
+                ['exact']=Pexact[{{Ng,-Ng},{0,1}}]:table()}
    end
 
-   function cls:checkpoint_write()
-      if not hdf5.File then
-	 print('warning! Could not write checkpoint, HDF5 not available')
-	 return
-      end
+   local output = self.user_opts.output
 
-      local n = self.status.checkpoint_number
-      local t = self.status.simulation_time
-      local Ng = self.Ng
-
-      local Pexact = self:_map_solution(t)
-
-      os.execute('mkdir -p data')
-
-      local fname = string.format('data/chkpt.%04d.h5', n)
-      local outfile = hdf5.File(fname, 'w')
-      outfile['prim' ] = self.Primitive[{{Ng,-Ng},nil}]
-      outfile['grav' ] = self.Gravity  [{{Ng,-Ng},nil}]
-      outfile['exact'] = Pexact        [{{Ng,-Ng},nil}]
-      outfile:close()
-   end
-
-   function cls:user_work_finish()
-      local t  = self.status.simulation_time
-      local P  = self.Primitive
-      local Ng = self.Ng
-
-      local Pexact = self:_map_solution(t)
-      local dx = self.dx
-      local P0 = Pexact[{{Ng,-Ng},nil}]:vector()
-      local P1 = P     [{{Ng,-Ng},nil}]:vector()
-      local L1 = 0.0
-
-      for i=0,#P0/5-1,5 do
-         L1 = L1 + math.abs(P1[i] - P0[i]) * dx
-      end
-      self.L1error = L1
-
-      if self.user_opts.plot and not self.user_opts.convergence then
-         util.plot{['code' ]=P     [{{Ng,-Ng},{0,1}}]:table(),
-                   ['exact']=Pexact[{{Ng,-Ng},{0,1}}]:table()}
-      end
-
-      if self.user_opts.output and not self.user_opts.convergence then
-         local f = io.open(self.user_opts.output, 'w')
+   if output and not self.user_opts.convergence then
+      if util.endswith(output, '.h5') then
+         self:checkpoint_write(output)
+      else
+         local f = io.open(output, 'w')
          local P0 = P[{{Ng,-Ng},{0,1}}]:table()
          local P1 = P[{{Ng,-Ng},{1,2}}]:table()
          local P2 = P[{{Ng,-Ng},{2,3}}]:table()
@@ -103,30 +116,28 @@ local function build_mysim(cls)
          end
          f:close()
       end
-
-      self.problem:user_work_finish()
    end
 
-   function cls:user_work_iteration()
-      self.problem:user_work_iteration()
-   end
+   self.problem:user_work_finish()
 end
 
-build_mysim(MyMara)
-build_mysim(MyFish)
+function MyBase:user_work_iteration()
+   self.problem:user_work_iteration()
+end
+
 
 
 local function main()
-   local usage = "test-1d <problem> [<options>]"
+   local usage = "tests-1d <problem> [<options>]"
    local parser = optparse.OptionParser{usage=usage,
                                         version="CTF version 1.0"}
 
    parser.add_option{"--cpi", dest="cpi", help="checkpoint interval"}
+   parser.add_option{"--id", dest="id", help="problem ID: used for checkpoint names"}
    parser.add_option{"--cfl", dest="CFL",
-                     help="Courant-Freidrichs-Lewy time-step constrain"}
+                     help="Courant-Freidrichs-Lewy time-step constraint"}
    parser.add_option{"--tmax", dest="tmax", help="end simulation time"}
    parser.add_option{"--plot", dest="plot", action="store_true"}
-   parser.add_option{"--problem", dest="problem", help="problem name to run"}
    parser.add_option{"--reconstruction", dest="reconstruction"}
    parser.add_option{"--riemann", dest="riemann"}
    parser.add_option{"--advance", dest="advance",
@@ -179,16 +190,16 @@ local function main()
       util.pretty_print(ErrorTable)
 
       print("estimated convergence rate is",
-	    math.log10(ErrorTable[128]/ErrorTable[64]) / math.log10(128/64))
+            math.log10(ErrorTable[128]/ErrorTable[64]) / math.log10(128/64))
 
       --util.plot({['L1 error']=ErrorTable}, {cmds={'set logscale'}})
 
       if opts.output then
-	 local f = io.open(opts.output, 'w')
-	 for N,L in pairs(ErrorTable) do
-	    f:write(string.format('%d %8.6e\n', N, L))
-	 end
-	 f:close()
+         local f = io.open(opts.output, 'w')
+         for N,L in pairs(ErrorTable) do
+            f:write(string.format('%d %8.6e\n', N, L))
+         end
+         f:close()
       end
    else
       local sim = sim_class(opts)

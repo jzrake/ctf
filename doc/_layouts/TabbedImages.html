@@ -1,0 +1,34 @@
+
+<div class="tabbable"> <!-- Only required for left/right tabs -->
+  <ul class="nav nav-tabs nav-stacked">
+    {% for image in images %}
+
+    <li {% if loop.index == 1 %}
+	class="active"
+	{% endif %}>
+      <a href="#tab{{ loop.index }}" data-toggle="tab">{{ image.title }}</a>
+    </li>
+
+    {% endfor %}
+  </ul>
+
+  <div class="tab-content">
+
+    {% for image in images %}
+
+    <div class=
+         {% if loop.index == 1 %}"tab-pane active"
+         {% else %}"tab-pane"
+         {% endif %} id="tab{{ loop.index }}">
+
+      <a href="{{ image.url }}" class="thumbnail">
+	<img src="{{ image.src }}" alt="{{ image.title }}">
+      </a>
+      <p>{{ image.caption }}</p>
+
+    </div>
+
+    {% endfor %}
+
+  </div>
+</div>

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+./ctf | grep -q 'HDF5 ... yes\b' && ./ctf lua-hdf5/run.lua
+./ctf | grep -q 'HDF5 ... yes\b' && ./ctf lua-hdf5/LuaHDF5.lua
+./ctf | grep -q 'MPI ... yes\b' && ./ctf lua-mpi/run.lua
+
+./ctf fish/smr1d.lua
+
+./ctf modules/class.lua
+./ctf modules/array.lua
+./ctf modules/mesh.lua
+./ctf modules/FishClasses.lua
