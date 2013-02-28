@@ -42,10 +42,18 @@ function rmremotes() {
     done
 }
 
-if [[ $1 =~ ^(push|pull|addremotes|rmremotes)$ ]]; then
+function publish() {
+    if [[ $(git branch | grep '*' | cut -d' ' -f 2) != "thesis" ]]; then
+	echo "must be on thesis branch"
+	exit
+    fi
+    git subtree split -P doc --branch gh-pages; git push origin --all
+}
+
+if [[ $1 =~ ^(push|pull|addremotes|rmremotes|publish)$ ]]; then
     "$@"
 else
     echo "invalid subcommand $1" >&2
-    echo "push|pull|addremotes|rmremotes"
+    echo "push|pull|addremotes|rmremotes|publish"
     exit 1
 fi
