@@ -4,7 +4,12 @@ if [ -z $1 ]; then
     echo "usage: ctf <command> [<args>]"
     echo "Available commands are:"
     for i in $(ls ctf-core/*.lua); do
-	printf "%15s   $(bin/ctf-main --no-modules $i --explain)\n" $(basename $i .lua)
+        printf "%15s   $(bin/ctf-main --no-modules $i --explain)\n" $(basename $i .lua)
+    done
+    for i in $(ls ctf-core/ctf-*); do
+	if [ $(basename $i) != "ctf-main" ]; then
+            printf "%15s   $($i --explain)\n" $(basename $i | sed 's/ctf-//')
+	fi
     done
 elif [ $1 == "help" ]; then
     echo "Here's some help"
@@ -12,6 +17,10 @@ elif [ -f ctf-core/$1.lua ]; then
     progname=ctf-core/$1.lua
     shift
     bin/ctf-main $progname $@
+elif [ -f ctf-core/ctf-$1 ]; then
+    progname=ctf-core/ctf-$1
+    shift
+    $progname $@
 else
     echo "$1 is not a command, type 'help' to see available commands"
 fi
