@@ -278,7 +278,15 @@ perturbation. The domain is $[0,L]^2$.
 ### Implosion with reflecting walls
 
 #### Problem description
-#+ Movie('Implosion2d-HLLC-PLM-MUSCL.mp4')
+#+ Movie('Implosion2d-CHAR-WENO5SZ-RK3.mp4')
+
+<div class="well">
+
+The movie shown at right is a relief plot of the density field, increasing from
+blue ($0.3$) to red ($1.4$). The solution is evolved through $t=5L$ on a grid of
+resolution $512^2$.
+
+</div>
 
 This setup involves similar conditions as in the `Shocktube1` problem, except
 that the discontinuity is placed at a $45^{\circ}$ angle on a 2d grid, and the
@@ -320,6 +328,14 @@ turbulence problems with moderate $\sigma$. One reason for this is apparent from
 the figures at the right: the `MUSCL` scheme is more diffusive. Still, as shown
 in the smooth problems, that scheme is formally 2nd order accurate.
 
+<div class="well">
+
+The images shown at right are colormaps of the density field for the 4 reference
+schemes, increasing from blue($0.3$) to red($1.4$). The output time is $t=4L$,
+and the grid resolution is $512^2$.
+
+</div>
+
 The other two schemes are dimensionally-split, characteristic-wise conservative
 finite-difference schemes based on the method of lines and the same 3rd order
 Runge-Kutta integrator. These schemes are both formally 5th order accurate
@@ -349,7 +365,7 @@ conservation, respectively read
 $$ \rho_0 \dot u + p' + \rho_0 \phi' = 0 \\ \dot \rho + \rho_0 u' = 0 $$
 
 Together with the linearized equation of state $p' = c_s^2 \rho'$, where $c_s^2
-= \Gamma p_0 / \rho_0$ is the sound speed, and the Poisson equatio, $\phi'' =
+= \Gamma p_0 / \rho_0$ is the sound speed, and the Poisson equation, $\phi'' =
 \rho - \rho_0$ this system can be written as
 
 $$ c_s^2 \rho'' - \ddot \rho + \rho_0 (\rho - \rho_0) = 0 $$
