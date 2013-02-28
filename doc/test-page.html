@@ -872,6 +872,13 @@ perturbation. The domain is <mathjax>$[0,L]^2$</mathjax>.</p>
 <div class="row">
   <div class="span6 offset1">
     <h4>Problem description</h4>
+<div class="well">
+
+<p>The movie shown at right is a relief plot of the density field, increasing from
+blue (<mathjax>$0.3$</mathjax>) to red (<mathjax>$1.4$</mathjax>). The solution is evolved through <mathjax>$t=5L$</mathjax> on a grid of
+resolution <mathjax>$512^2$</mathjax>.</p>
+</div>
+
 <p>This setup involves similar conditions as in the <code>Shocktube1</code> problem, except
 that the discontinuity is placed at a <mathjax>$45^{\circ}$</mathjax> angle on a 2d grid, and the
 boundary conditions are reflecting. The higher pressure region (above the
@@ -923,6 +930,14 @@ integration. <code>HLLC-PLM-MUSCL</code> is particuarly robust for relatistic MH
 turbulence problems with moderate <mathjax>$\sigma$</mathjax>. One reason for this is apparent from
 the figures at the right: the <code>MUSCL</code> scheme is more diffusive. Still, as shown
 in the smooth problems, that scheme is formally 2nd order accurate.</p>
+<div class="well">
+
+The images shown at right are colormaps of the density field for the 4 reference
+schemes, increasing from blue($0.3$) to red($1.4$). The output time is $t=4L$,
+and the grid resolution is $512^2$.
+
+</div>
+
 <p>The other two schemes are dimensionally-split, characteristic-wise conservative
 finite-difference schemes based on the method of lines and the same 3rd order
 Runge-Kutta integrator. These schemes are both formally 5th order accurate
@@ -1066,7 +1081,7 @@ dispersion relation. The linearized Euler equations for the mass and momentum
 conservation, respectively read</p>
 <p><mathjax>$$ \rho_0 \dot u + p' + \rho_0 \phi' = 0 \\ \dot \rho + \rho_0 u' = 0 $$</mathjax></p>
 <p>Together with the linearized equation of state <mathjax>$p' = c_s^2 \rho'$</mathjax>, where <mathjax>$c_s^2
-= \Gamma p_0 / \rho_0$</mathjax> is the sound speed, and the Poisson equatio, <mathjax>$\phi'' =
+= \Gamma p_0 / \rho_0$</mathjax> is the sound speed, and the Poisson equation, <mathjax>$\phi'' =
 \rho - \rho_0$</mathjax> this system can be written as</p>
 <p><mathjax>$$ c_s^2 \rho'' - \ddot \rho + \rho_0 (\rho - \rho_0) = 0 $$</mathjax></p>
 <p>Assuming <mathjax>$\rho -\rho_0 \propto \cos{kx - \omega t}$</mathjax>, the dispersion relation

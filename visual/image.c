@@ -47,13 +47,18 @@ void image_write_ppm(double *data, int Nx, int Ny, int cmap, double *range,
   double min=+1e12;
   double max=-1e12;
 
-  if (range == NULL) {
-    for (m0=0; m0<Nx*Ny; ++m0) {
-      if (data[m0] < min) min = data[m0];
-      if (data[m0] > max) max = data[m0];
-    }
+  for (m0=0; m0<Nx*Ny; ++m0) {
+    if (data[m0] < min) min = data[m0];
+    if (data[m0] > max) max = data[m0];
   }
-  else {
+
+  if (range) {
+    if (range[0] > min) {
+      printf("[ppm-writer] warning! clipped lower data range: %3.2e\n", min);
+    }
+    if (range[1] < max) {
+      printf("[ppm-writer] warning! clipped upper data range: %3.2e\n", max);
+    }
     min = range[0];
     max = range[1];
   }
