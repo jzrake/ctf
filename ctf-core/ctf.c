@@ -2,10 +2,8 @@
 #include "lualib.h"
 #include "lauxlib.h"
 
-
-#ifndef INSTALL_DIR
-#define INSTALL_DIR "."
-#endif // INSTALL_DIR
+#define STR_EXPAND(tok) #tok
+#define STR(tok) STR_EXPAND(tok)
 
 
 static int traceback(lua_State *L);
@@ -104,7 +102,9 @@ int main(int argc, char **argv)
   // Set the Lua path
   // ---------------------------------------------------------------------------
   lua_getglobal(L, "package");
-  lua_pushfstring(L,"%s/?.lua;%s/modules/?.lua;", INSTALL_DIR, INSTALL_DIR);
+  lua_pushstring(L,
+		 STR(INSTALL_DIR)"/?.lua;"
+		 STR(INSTALL_DIR)"/modules/?.lua;");
   lua_setfield(L, -2, "path");
   lua_pop(L, 1);
 
@@ -112,7 +112,7 @@ int main(int argc, char **argv)
   // Set the Lua C path
   // ---------------------------------------------------------------------------
   lua_getglobal(L, "package");
-  lua_pushfstring(L,"%s/lua-glut/?.so;", INSTALL_DIR);
+  lua_pushstring(L, STR(INSTALL_DIR)"/lua-glut/?.so;");
   lua_setfield(L, -2, "cpath");
   lua_pop(L, 1);
 
@@ -120,7 +120,7 @@ int main(int argc, char **argv)
   // Provide some help or run the script
   // ---------------------------------------------------------------------------
   lua_pushcfunction(L, traceback);
-  if (argc == 1) {
+  if (0) {//argc == 1) {
     printf("**************************************************\n");
     printf("*       Computational Turbulence Framework       *\n");
     printf("*               Jonathan Zrake                   *\n");

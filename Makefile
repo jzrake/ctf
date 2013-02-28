@@ -29,12 +29,12 @@ LUA_FISH   = fish/lua-fish.o
 LUA_FLUIDS = fish/lua-fluids.o
 LUA_MPI    = lua-mpi/lua-mpi.o
 LUA_HDF5   = lua-hdf5/lua-hdf5.o
-LUA_BUFFER = lua-buffer/lua-buffer.o
 LUA_VIS    = visual/lua-visual.o
 LUA_GLUT   = lua-glut
 
-MODULES = $(LUA_BUFFER)
+MODULES = $(LUA_CTF)
 LOCLIBS = $(LUA_A)
+DEFINES = -DINSTALL_DIR=$(PWD)
 
 ifeq ($(strip $(USE_MPI)), 1)
 MODULES += $(LUA_MPI)
@@ -81,12 +81,19 @@ DEFINES += -DUSE_MPIO
 endif
 
 
-default : ctf
+default : bin/ctf-main
 
 $(LUA_A) :
 	$(CD) $(LVER); \
 	$(MAKE) $(OS) CC=$(CC); \
 	$(MAKE) install INSTALL_TOP=$(LUA_HOME)
+
+bin/ctf-main : ctf-core/libctf.a $(MODULES) $(LOCLIBS)
+	@mkdir -p bin
+	$(CXX) $(CFLAGS) -o $@ $^ $(LIBS)
+
+ctf-core/libctf.a : $(LUA_A) .FORCE
+	$(MAKE) -C ctf-core libctf.a MAKEFILE_IN=$(MAKEFILE_IN) DEFINES="$(DEFINES)"
 
 visual/libvisual.a : $(LUA_A) .FORCE
 	$(MAKE) -C visual libvisual.a MAKEFILE_IN=$(MAKEFILE_IN)
@@ -121,15 +128,6 @@ $(LUA_MPI) : $(LUA_A) .FORCE
 $(LUA_HDF5) : $(LUA_A) .FORCE
 	$(MAKE) -C lua-hdf5 lua-hdf5.o MAKEFILE_IN=$(MAKEFILE_IN)
 
-$(LUA_BUFFER) : $(LUA_A) .FORCE
-	$(MAKE) -C lua-buffer lua-buffer.o MAKEFILE_IN=$(MAKEFILE_IN)
-
-ctf.o : ctf.c $(LUA_A) $(MAKEFILE_IN)
-	$(CC) $(CFLAGS) -c -o $@ $< $(LUA_I) $(DEFINES) -DINSTALL_DIR=\"$(PWD)\"
-
-ctf : ctf.o $(MODULES) $(LOCLIBS)
-	$(CXX) $(CFLAGS) -o $@ $^ $(LIBS)
-
 $(LUA_GLUT) :
 	$(MAKE) -C lua-glut DEFS=$(LUA_I)
 
@@ -138,12 +136,12 @@ clean :
 	$(MAKE) -C cow clean MAKEFILE_IN=$(MAKEFILE_IN)
 	$(MAKE) -C fish clean MAKEFILE_IN=$(MAKEFILE_IN)
 	$(MAKE) -C Mara clean MAKEFILE_IN=$(MAKEFILE_IN)
-	$(MAKE) -C lua-buffer clean MAKEFILE_IN=$(MAKEFILE_IN)
+	$(MAKE) -C ctf-core clean MAKEFILE_IN=$(MAKEFILE_IN)
 	$(MAKE) -C lua-mpi clean MAKEFILE_IN=$(MAKEFILE_IN)
 	$(MAKE) -C lua-hdf5 clean MAKEFILE_IN=$(MAKEFILE_IN)
 	$(MAKE) -C lua-glut clean
 	$(MAKE) -C $(LVER) clean
-	$(RM) *.o ctf
+	$(RM) *.o bin/ctf-main
 
 show :
 	@echo $(MODULES)

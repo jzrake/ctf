@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ -z $1 ]; then
+    echo "usage: ctf <command> [<args>]"
+    echo "Available commands are:"
+    for i in $(ls ctf-core/*.lua); do
+	printf "%15s   $(./bin/ctf-main $i --explain)\n" $(basename $i .lua)
+    done
+else
+    if [ -f ctf-core/$1.lua ]; then
+	echo "$1 is a command!"
+    else
+	echo "$1 is not a command, type 'help' to see available commands"
+    fi
+fi

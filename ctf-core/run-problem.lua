@@ -131,7 +131,8 @@ local function main()
    local usage = "tests-1d <problem> [<options>]"
    local parser = optparse.OptionParser{usage=usage,
                                         version="CTF version 1.0"}
-
+   parser.add_option{"--explain", dest="explain", action="store_true",
+		     help="what this script does"}
    parser.add_option{"--cpi", dest="cpi", help="checkpoint interval"}
    parser.add_option{"--id", dest="id", help="problem ID: used for checkpoint names"}
    parser.add_option{"--cfl", dest="CFL",
@@ -156,6 +157,11 @@ local function main()
                      help="write an ASCII table of the final solution"}
 
    local opts, args = parser.parse_args()
+   if opts.explain then
+      print "Run a simulation problem"
+      return
+   end
+
    local problem_class = problems[arg[2]]
 
    if not problem_class then
