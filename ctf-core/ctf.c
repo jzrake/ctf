@@ -110,15 +110,17 @@ int main(int argc, char **argv)
       printf("*               Jonathan Zrake                   *\n");
       printf("*         New York University 2008-2013          *\n");
       printf("**************************************************\n");
-      printf("\nusage: ctf <script.lua> [<options>]\n");
       printf("\nCompiled with support for:\n");
-      printf("\tMPI  ... %s\n", HAVE_MPI);
-      printf("\tHDF5 ... %s\n", HAVE_HDF5);
-      printf("\tFFTW ... %s\n", HAVE_FFTW);
-      printf("\tMPIO ... %s\n", HAVE_MPIO);
-      printf("\tMARA ... %s\n", HAVE_MARA);
-      printf("\tFISH ... %s\n", HAVE_FISH);
-      printf("\tVIS  ... %s\n", HAVE_VIS);
+      printf("\tMPI    : %s\n", HAVE_MPI);
+      printf("\tHDF5   : %s\n", HAVE_HDF5);
+      printf("\tFFTW   : %s\n", HAVE_FFTW);
+      printf("\tMPIO   : %s\n", HAVE_MPIO);
+      printf("\tMARA   : %s\n", HAVE_MARA);
+      printf("\tFISH   : %s\n", HAVE_FISH);
+      printf("\tVIS    : %s\n", HAVE_VIS);
+      printf("\nBuild details:\n");
+      printf("\tpath   : %s\n", STR(INSTALL_DIR));
+      printf("\tcommit : %s\n", STR(GIT_SHA));
   }
 
   //  printf("args start on %d, there are %d args\n", args_start, argc);
@@ -130,20 +132,22 @@ int main(int argc, char **argv)
   if (!no_modules) {
     /* create a fully loaded Lua state */
     luaL_openlibs(L);
-    luaL_requiref(L, "buffer", luaopen_buffer, 0); lua_pop(L, 1);
-    luaL_requiref(L, "HDF5", luaopen_hdf5, 0); lua_pop(L, 1);
-    luaL_requiref(L, "MPI", luaopen_mpi, 0); lua_pop(L, 1);
-    luaL_requiref(L, "cow", luaopen_cow, 0); lua_pop(L, 1);
-    luaL_requiref(L, "Mara", luaopen_Mara, 0); lua_pop(L, 1);
-    luaL_requiref(L, "fish", luaopen_fish, 0); lua_pop(L, 1);
-    luaL_requiref(L, "fluids", luaopen_fluids, 0); lua_pop(L, 1);
-    luaL_requiref(L, "visual", luaopen_visual, 0); lua_pop(L, 1);
+    luaL_requiref(L, "buffer", luaopen_buffer, 0);
+    luaL_requiref(L, "HDF5", luaopen_hdf5, 0);
+    luaL_requiref(L, "MPI", luaopen_mpi, 0);
+    luaL_requiref(L, "cow", luaopen_cow, 0);
+    luaL_requiref(L, "Mara", luaopen_Mara, 0);
+    luaL_requiref(L, "fish", luaopen_fish, 0);
+    luaL_requiref(L, "fluids", luaopen_fluids, 0);
+    luaL_requiref(L, "visual", luaopen_visual, 0);
+    lua_pop(L, 8);
   }
   else {
     /* create a minimal Lua state (below is a piece of luaL_openlibs from
        linit.c) */
-    luaL_requiref(L, "_G", luaopen_base, 1); lua_pop(L, 1);
-    luaL_requiref(L, LUA_LOADLIBNAME, luaopen_package, 1); lua_pop(L, 1);
+    luaL_requiref(L, "_G", luaopen_base, 1);
+    luaL_requiref(L, LUA_LOADLIBNAME, luaopen_package, 1);
+    lua_pop(L, 2);
   }
 
   // Create the global `arg` table

@@ -1,26 +1,59 @@
 #!/bin/bash
 
-if [ -z $1 ]; then
-    echo "usage: ctf <command> [<args>]"
+
+luafile=
+
+while [ $# -gt 0 ]; do
+    [ "${1:0:1}" != "-" ] && break
+    opt="$1"
+    shift
+    case "$opt" in
+	-h) command=help ;;
+        -q) quiet=1 ;;
+        -d) debug=1 ;;
+        -f) luafile="$1"; shift ;;
+        *) echo "[ctf]: no such option $opt"; exit 2 ;;
+    esac
+done
+
+test -z $command && command=$1
+
+function list-cmds()
+{
     echo "Available commands are:"
     for i in $(ls ctf-core/*.lua); do
         printf "%15s   $(bin/ctf-main --no-modules $i --explain)\n" $(basename $i .lua)
     done
-    for i in $(ls ctf-core/ctf-*); do
-	if [ $(basename $i) != "ctf-main" ]; then
+    for i in $(ls ctf-core/*.sh); do
+        if [ $(basename $i) != "ctf-main" ]; then
             printf "%15s   $($i --explain)\n" $(basename $i | sed 's/ctf-//')
-	fi
+        fi
     done
-elif [ $1 == "help" ]; then
-    echo "Here's some help"
-elif [ -f ctf-core/$1.lua ]; then
-    progname=ctf-core/$1.lua
+}
+
+if [ $luafile ]; then
+    bin/ctf-main $luafile
+
+elif [ -z $command ]; then
+    echo "usage: ctf <command> [<args>]"
+    echo
+    list-cmds
+
+elif [ $command == "help" ]; then
+    bin/ctf-main --splash
+    echo
+    list-cmds
+
+elif [ -f ctf-core/$command.lua ]; then
+    progname=ctf-core/$command.lua
     shift
     bin/ctf-main $progname $@
-elif [ -f ctf-core/ctf-$1 ]; then
-    progname=ctf-core/ctf-$1
+
+elif [ -f ctf-core/ctf-$command ]; then
+    progname=ctf-core/$command.sh
     shift
     $progname $@
+
 else
-    echo "$1 is not a command, type 'help' to see available commands"
+    echo "[ctf]: $command is not a command, type 'help' to see available commands"
 fi

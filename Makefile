@@ -34,7 +34,7 @@ LUA_GLUT   = lua-glut
 
 MODULES = $(LUA_CTF)
 LOCLIBS = $(LUA_A)
-DEFINES = -DINSTALL_DIR=$(PWD)
+DEFINES = -DGIT_SHA=$(shell git rev-parse HEAD | cut -c 1-10) -DINSTALL_DIR=$(PWD)
 
 ifeq ($(strip $(USE_MPI)), 1)
 MODULES += $(LUA_MPI)

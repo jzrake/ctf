@@ -7,9 +7,9 @@ fi
 
 ctf=bin/ctf-main
 
-$ctf --splash | grep -q 'HDF5 ... yes\b' && $ctf lua-hdf5/run.lua
-$ctf --splash | grep -q 'HDF5 ... yes\b' && $ctf lua-hdf5/LuaHDF5.lua
-$ctf --splash | grep -q 'MPI ... yes\b' && $ctf lua-mpi/run.lua
+$ctf --splash | grep HDF5 | grep -q yes && $ctf lua-hdf5/run.lua
+$ctf --splash | grep HDF5 | grep -q yes && $ctf lua-hdf5/LuaHDF5.lua
+$ctf --splash | grep MPI  | grep -q yes && $ctf lua-mpi/run.lua
 
 $ctf fish/smr1d.lua
 
