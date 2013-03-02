@@ -26,7 +26,7 @@ function list-cmds()
     done
     for i in $(ls ctf-core/*.sh); do
         if [ $(basename $i) != "ctf-main" ]; then
-            printf "%15s   $($i --explain)\n" $(basename $i | sed 's/ctf-//')
+            printf "%15s   $($i --explain)\n" $(basename $i .sh)
         fi
     done
 }
