@@ -170,7 +170,7 @@ end
 -- Error handlers for different fluids
 -- .............................................................................
 local function HandleErrorsEuler(P, Status, attempt)
-   set_advance("rk4")
+   Mara.set_advance("rk4")
    if attempt == 0 then -- healthy time-step
       set_riemann("hllc")
       set_godunov("plm-split")
@@ -183,27 +183,27 @@ end
 
 local function HandleErrorsSrhd(P, Status, attempt)
    if attempt == 0 then -- healthy time-step
-      set_advance("rk3")
-      set_godunov("weno-split")
+      Mara.set_advance("rk3")
+      Mara.set_godunov("weno-split")
       Status.Timestep = 1.0 * Status.Timestep
       return 0
    elseif attempt == 1 then
       Status.Timestep = 0.5 * Status.Timestep
-      diffuse(P:buffer(), 0.2)
+      Mara.diffuse(P, 0.2)
       return 0
    elseif attempt == 2 then
       Status.Timestep = 0.5 * Status.Timestep
-      diffuse(P:buffer(), 0.2)
+      Mara.diffuse(P, 0.2)
       return 0
    elseif attempt == 3 then
-      set_godunov("plm-split")
-      set_riemann("hll")
+      Mara.set_godunov("plm-split")
+      Mara.set_riemann("hll")
       Status.Timestep = 0.5 * Status.Timestep
-      diffuse(P:buffer(), 0.2)
+      Mara.diffuse(P, 0.2)
       return 0
    elseif attempt == 4 then
       Status.Timestep = 0.5 * Status.Timestep
-      diffuse(P:buffer(), 0.2)
+      Mara.diffuse(P, 0.2)
       return 0
    else
       return 1
@@ -221,28 +221,28 @@ local function HandleErrorsRmhd(P, Status, attempt)
    elseif attempt == 1 then
       Mara.set_godunov("plm-muscl")
       Mara.config_solver({theta=1.5}, true)
-      Mara.diffuse(P:buffer(), 0.2)
+      Mara.diffuse(P, 0.2)
       Status.Timestep = 0.5 * Status.Timestep
       return 0
    elseif attempt == 2 then
       Mara.set_godunov("plm-muscl")
       Mara.config_solver({theta=1.0}, true)
-      Mara.diffuse(P:buffer(), 0.2)
+      Mara.diffuse(P, 0.2)
       Status.Timestep = 0.5 * Status.Timestep
       return 0
    elseif attempt == 3 then
       Mara.set_godunov("plm-muscl")
       Mara.config_solver({theta=0.0}, true)
       Mara.set_riemann("hll")
-      Mara.diffuse(P:buffer(), 0.2)
+      Mara.diffuse(P, 0.2)
       Status.Timestep = 0.5 * Status.Timestep
       return 0
    elseif attempt == 4 then
-      Mara.diffuse(P:buffer(), 0.2)
+      Mara.diffuse(P, 0.2)
       Status.Timestep = 0.5 * Status.Timestep
       return 0
    elseif attempt == 5 then
-      Mara.diffuse(P:buffer(), 0.2)
+      Mara.diffuse(P, 0.2)
       Status.Timestep = 0.5 * Status.Timestep
       return 0
    else
