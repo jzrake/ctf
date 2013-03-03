@@ -3,6 +3,7 @@
 *.o
 *.a
 *funcs.c
+*.h5
 /lua-5.2.1/bin/lua
 /lua-5.2.1/bin/luac
 /lua-5.2.1/include/lauxlib.h

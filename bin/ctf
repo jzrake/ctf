@@ -11,7 +11,7 @@ while [ $# -gt 0 ]; do
 	-h) command=help ;;
         -q) quiet=1 ;;
         -d) debug=1 ;;
-        -f) luafile="$1"; shift ;;
+        -f) luafile="$1"; shift; break ;;
         *) echo "[ctf]: no such option $opt"; exit 2 ;;
     esac
 done
@@ -25,17 +25,15 @@ function list-cmds()
         printf "%15s   $(bin/ctf-main --no-modules $i --explain)\n" $(basename $i .lua)
     done
     for i in $(ls ctf-core/*.sh); do
-        if [ $(basename $i) != "ctf-main" ]; then
-            printf "%15s   $($i --explain)\n" $(basename $i .sh)
-        fi
+        printf "%15s   $($i --explain)\n" $(basename $i .sh)
     done
 }
 
-if [ $luafile ]; then
-    bin/ctf-main $luafile
+if [ ! -z $luafile ]; then
+    bin/ctf-main $luafile $@
 
 elif [ -z $command ]; then
-    echo "usage: ctf <command> [<args>]"
+    echo "usage: ctf [-f <program.lua>] <command> [<args>]"
     echo
     list-cmds
 
@@ -49,7 +47,7 @@ elif [ -f ctf-core/$command.lua ]; then
     shift
     bin/ctf-main $progname $@
 
-elif [ -f ctf-core/ctf-$command ]; then
+elif [ -f ctf-core/$command.sh ]; then
     progname=ctf-core/$command.sh
     shift
     $progname $@
