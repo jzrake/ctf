@@ -44,7 +44,6 @@ end
 
 function TestProblem:__init__(user_opts)
    self.user_opts = user_opts or { }
-   self:initialize_problem()
 end
 function TestProblem:initialize_problem() end
 function TestProblem:dynamical_time() return 1.0 end

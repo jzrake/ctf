@@ -8,8 +8,15 @@ function SimulationBase:_notimplemented()
 	 " needs to be implemented")
 end
 function SimulationBase:initialize_behavior() end
-function SimulationBase:initialize_solver() self:_notimplemented() end
-function SimulationBase:initialize_physics() self:_notimplemented() end
+function SimulationBase:initialize_solver()
+   self:_notimplemented()
+end
+function SimulationBase:initialize_physics()
+   self:_notimplemented()
+end
+function SimulationBase:initialize_problem()
+   self.problem:initialize_problem()
+end
 function SimulationBase:finalize_solver() end
 function SimulationBase:advance_physics() self:_notimplemented() end
 function SimulationBase:local_mesh_size() self:_notimplemented() end
@@ -65,6 +72,7 @@ function SimulationBase:run(problem)
    problem.simulation = self
    self:initialize_behavior()
    self:initialize_solver()
+   self:initialize_problem()
    self:initialize_physics()
    self:report_configuration()
    self:main_loop()
