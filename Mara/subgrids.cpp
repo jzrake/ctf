@@ -1,4 +1,6 @@
 
+#include <cstring>
+
 #include "config.h"
 #if (__MARA_USE_MPI)
 
