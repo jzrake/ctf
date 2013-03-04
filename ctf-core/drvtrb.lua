@@ -516,7 +516,10 @@ local function main()
    cow.domain_commit(domain)
    cow.domain_getcomm(domain, domain_comm)
 
-   local primitive = unigrid.DataManagerHDF5(domain, prim_names)
+   io_opts = { }
+   if hdf5.have_mpio() then io_opts.mpio = 'collective' end
+
+   local primitive = unigrid.DataManagerHDF5(domain, prim_names, io_opts)
    local P = primitive.array
 
    math.randomseed(cow.domain_getcartrank(domain))
