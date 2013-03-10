@@ -65,7 +65,7 @@ for line in cowh:
         elif argtype == "int":
             ga = """int %s = luaL_checkinteger(L, %d);""" % (argname, narg)
         elif argtype == "double":
-            ga = """int %s = luaL_checknumber(L, %d);""" % (argname, narg)
+            ga = """double %s = luaL_checknumber(L, %d);""" % (argname, narg)
         elif argtype == "char *":
             ga = """char *%s = (char*)luaL_checkstring(L, %d);""" % (argname, narg)
         elif argtype == "int *":
