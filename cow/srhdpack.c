@@ -19,17 +19,22 @@ static void project3(double *dx, double *u, double *ulat, double *ulon);
 #define  vy args[0][3]
 #define  vz args[0][4]
 
-static void reduce_gammabeta(double *result, double **args, int **strides,
+static void reduce_gamma_rho(double *result, double **args, int **strides,
+			     void *udata)
+{
+  double v2 = vx*vx + vy*vy + vz*vz;
+  *result = rho / sqrt(1.0 - v2);
+}
+static void reduce_proper_rho(double *result, double **args, int **strides,
+			      void *udata)
+{
+  *result = rho;
+}
+static void reduce_gamma_beta(double *result, double **args, int **strides,
 			       void *udata)
 {
   double v2 = vx*vx + vy*vy + vz*vz;
   *result = sqrt(v2 / (1.0 - v2));
-}
-static void reduce_rhoW(double *result, double **args, int **strides,
-			void *udata)
-{
-  double v2 = vx*vx + vy*vy + vz*vz;
-  *result = rho / sqrt(1.0 - v2);
 }
 
 #undef rho
@@ -49,14 +54,17 @@ char *srhdpack_onepointpdfs(cow_dfield *prim,
   double mms[3]; // min, max, sum
   cow_transform op;
 
-  if (strcmp(which, "gammabeta") == 0) {
-    op = reduce_gammabeta;
+  if (strcmp(which, "proper-rho") == 0) {
+    op = reduce_proper_rho;
   }
-  else if (strcmp(which, "rhoW") == 0) {
-    op = reduce_rhoW;
+  else if (strcmp(which, "gamma-rho") == 0) {
+    op = reduce_gamma_rho;
+  }
+  else if (strcmp(which, "gamma-beta") == 0) {
+    op = reduce_gamma_beta;
   }
   else {
-    return "'which' not in [gammabeta, rhoW]";
+    return "'which' not in [proper-rho, gamma-rho, gamma-beta]";
   }
 
   cow_dfield_settransform(prim, op);
