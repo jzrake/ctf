@@ -19,3 +19,8 @@
 /images
 /ctf
 /doc/_site
+
+# project-specific ignores
+/srt-tools
+/misc
+/bin/ctf-main
