@@ -1,6 +1,7 @@
 
-
+#include <string.h>
 #include "cow.h"
+#include "srhdpack.h"
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
@@ -47,6 +48,20 @@ static int _cow_init(lua_State *L)
 
 #include "cowfuncs.c"
 
+int _srhdpack_onepointpdfs(lua_State *L)
+{
+  cow_dfield *f = *((cow_dfield**) luaL_checkudata(L, 1, "cow::dfield"));
+  char *which   = (char*) luaL_checkstring(L, 2);
+  char *h5fname = (char*) luaL_checkstring(L, 3);
+  char *h5gname = (char*) luaL_optstring(L, 4, NULL);
+  char *res = srhdpack_onepointpdfs(f, which, h5fname, h5gname);
+  if (res) {
+    luaL_error(L, res);
+  }
+  return 0;
+}
+
+
 int luaopen_cow(lua_State *L)
 {
   luaL_Reg cow_aux[] = {
@@ -59,6 +74,10 @@ int luaopen_cow(lua_State *L)
     {"histogram_light", _cow_histogram_light},
     {NULL, NULL}};
 
+  luaL_Reg cow_srhdpack[] = {
+    {"onepointpdfs", _srhdpack_onepointpdfs},
+    {NULL, NULL}};
+
   luaL_newmetatable(L, "cow::domain"); lua_pop(L, 1);
   luaL_newmetatable(L, "cow::dfield"); lua_pop(L, 1);
   luaL_newmetatable(L, "cow::histogram"); lua_pop(L, 1);
@@ -68,6 +87,10 @@ int luaopen_cow(lua_State *L)
   luaL_setfuncs(L, cow_aux, 0);
   luaL_setfuncs(L, cow_module_funcs, 0);
   register_constants(L);
+
+  lua_newtable(L);
+  luaL_setfuncs(L, cow_srhdpack, 0);
+  lua_setfield(L, -2, "srhdpack");
 
   lua_newtable(L);
   luacow_push_cow_transform(L, cow_trans_rot5); lua_setfield(L, -2, "rot5");

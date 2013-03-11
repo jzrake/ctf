@@ -23,6 +23,12 @@ typedef struct srhdpack_samplemode
   int projmode; // SRHDPACK_PROJECTION
 } srhdpack_samplemode;
 
+
+char *srhdpack_onepointpdfs(cow_dfield *prim,
+			    char *which,
+			    char *h5fname,
+			    char *h5gname);
+
 void srhdpack_shelevequescaling(cow_dfield *vel,
 				cow_histogram *hist,
 				int velmode,

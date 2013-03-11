@@ -26,7 +26,7 @@ OPT = \
 	-DCOW_HDF5_MPI=$(USE_MPIO) \
 	-DCOW_FFTW=$(USE_FFTW)
 
-OBJ = cow.o samp.o hist.o io.o fft.o fft_3d.o pack_3d.o remap_3d.o
+OBJ = cow.o samp.o hist.o io.o fft.o fft_3d.o pack_3d.o remap_3d.o srhdpack.o
 
 default : $(COW_A) lua-cow.o
 

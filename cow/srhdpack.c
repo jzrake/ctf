@@ -6,12 +6,6 @@
 #include "srhdpack.h"
 #define MODULE "srhdpack"
 
-static void sl94(cow_dfield *vel, cow_histogram *hist,
-                 int velmode,
-                 int sepmode,
-                 int projmode,
-                 int N,
-                 double exponent);
 static void boost(double u[4], double x[4], double xp[4]);
 static double len3(double *x);
 static double gamm(double *x);
@@ -19,216 +13,70 @@ static double dot3(double *u, double *v);
 static double dot4(double *u, double *v);
 static void project3(double *dx, double *u, double *ulat, double *ulon);
 
-void srhdpack_shelevequescaling(cow_dfield *vel,
-                                cow_histogram *hist,
-                                int velmode,
-                                int sepmode,
-                                int projmode,
-                                int nbatch,
-                                int nperbatch,
-                                int seed,
-                                double exponent)
-// -----------------------------------------------------------------------------
-// This function computes the pairwise relative Lorentz factor between many
-// points in the 3-velocity field `vel`. The user needs to supply two
-// half-initialized histograms, which have not yet been committed. This function
-// will commit, populate, and seal the histograms before returning them. The
-// supplies the fields like in the example below, all other will be
-// over-written.
-//
-//  cow_histogram_setnbins(hist, 0, 256);
-//  cow_histogram_setspacing(hist, COW_HIST_SPACING_LINEAR); // or LOG
-//  cow_histogram_setnickname(hist, "myhist"); // optional
-//  cow_histogram_setlower(histpro, 0, 0.1); // good values for most cases
-//  cow_histogram_setupper(histpro, 0, 1.5);
-//
-// The histogram `histpro` bins the pairs in terms of their proper space-like
-// separation, while `histlab` uses their lab-frame separations.
-//
-// NOTE: this function generates its own sample points by calling the math.h
-// rand() function. If running in parallel, the user is responsible for making
-// sure to seed the ranks differently, unless `seed` is set to 1, in which case
-// srand will be called with the domain's cartesian communicator rank.
-//
-// Modes:
-//
-// Velocity options: GAMMA, BETA, GAMMABETA
-// Separation vector: LAB, PROPER
-// Projection options: NONE, LONGITUDINAL, TRANSVERSE
-// Exponent options: p=0.5,1.0,2.0,...
-// -----------------------------------------------------------------------------
+#define rho args[0][0]
+#define pre args[0][1]
+#define  vx args[0][2]
+#define  vy args[0][3]
+#define  vz args[0][4]
+
+static void reduce_gammabeta(double *result, double **args, int **strides,
+			       void *udata)
 {
-  cow_domain *d = cow_dfield_getdomain(vel);
-  if (seed) {
-    printf("[%s] seed=%d, seeding the random number generator\n", MODULE, seed);
-    srand(cow_domain_getcartrank(d));
+  double v2 = vx*vx + vy*vy + vz*vz;
+  *result = sqrt(v2 / (1.0 - v2));
+}
+static void reduce_rhoW(double *result, double **args, int **strides,
+			void *udata)
+{
+  double v2 = vx*vx + vy*vy + vz*vz;
+  *result = rho / sqrt(1.0 - v2);
+}
+
+#undef rho
+#undef pre
+#undef vx
+#undef vy
+#undef vz
+
+
+
+char *srhdpack_onepointpdfs(cow_dfield *prim,
+			    char *which,
+			    char *h5fname,
+			    char *h5gname)
+{
+  int nbin = 512;
+  double mms[3]; // min, max, sum
+  cow_transform op;
+
+  if (strcmp(which, "gammabeta") == 0) {
+    op = reduce_gammabeta;
+  }
+  else if (strcmp(which, "rhoW") == 0) {
+    op = reduce_rhoW;
   }
   else {
-    printf("[%s] seed=%d\n", MODULE, seed);
+    return "'which' not in [gammabeta, rhoW]";
   }
-  cow_histogram_setdomaincomm(hist, d);
-  cow_histogram_setbinmode(hist, COW_HIST_BINMODE_AVERAGE);
-  cow_histogram_commit(hist);
 
-  for (int n=0; n<nbatch; ++n) {
-    sl94(vel, hist, velmode, sepmode, projmode, nperbatch, exponent);
-    printf("[%s] running batch %d/%d of size %d\n", MODULE, n, nbatch,
-           nperbatch);
-  }
-  cow_histogram_seal(hist);
+  cow_dfield_settransform(prim, op);
+  cow_dfield_reduce(prim, mms);
+
+  cow_histogram *h = cow_histogram_new();
+  cow_histogram_setnbins(h, 0, nbin);
+  cow_histogram_setlower(h, 0, mms[0]);
+  cow_histogram_setupper(h, 0, mms[1]);
+  cow_histogram_setspacing(h, COW_HIST_SPACING_LOG);
+  cow_histogram_setbinmode(h, COW_HIST_BINMODE_DENSITY);
+  cow_histogram_commit(h);
+  cow_histogram_populate(h, prim, op);
+  cow_histogram_seal(h);
+  cow_histogram_setnickname(h, which);
+  cow_histogram_dumphdf5(h, h5fname, h5gname);
+  cow_histogram_del(h);
+
+  return NULL;
 }
-
-
-void sl94(cow_dfield *vel, cow_histogram *hist,
-          int velmode,
-          int sepmode,
-          int projmode,
-          int N,
-          double exponent)
-{
-  int npair = N;
-  int nsamp = N*2;
-
-  double *x = (double*) malloc(nsamp * 3 * sizeof(double));
-  double *v;
-
-  for (int n=0; n<nsamp; ++n) {
-    x[3*n + 0] = (double) rand() / RAND_MAX;
-    x[3*n + 1] = (double) rand() / RAND_MAX;
-    x[3*n + 2] = (double) rand() / RAND_MAX;
-  }
-
-  cow_dfield_setsamplemode(vel, COW_SAMPLE_LINEAR);
-  int err = cow_dfield_setsamplecoords(vel, x, nsamp, 3);
-  if (err) {
-    printf("[%s] Error! setsamplecoords returned %d\n", MODULE, err);
-    return;
-  }
-  free(x);
-
-  int nout1, nout2;
-  cow_dfield_sampleexecute(vel);
-  cow_dfield_getsamplecoords(vel, &x, &nout1, NULL);
-  cow_dfield_getsampleresult(vel, &v, &nout2, NULL);
-
-  double x1[3];
-  double x2[3];
-
-  for (int n=0; n<npair; ++n) {
-    int i1 = rand() % nsamp;
-    int i2 = rand() % nsamp;
-    memcpy(x1, &x[3*i1], 3*sizeof(double));
-    memcpy(x2, &x[3*i2], 3*sizeof(double));
-    // -------------------------------------------------------------------------
-    // With periodic BC's on the unit cube, points are never actually more than
-    // 1/2 away from one another along a given axis. Of the two possible
-    // orderings of points x1 and x2 along axis `d`, we choose the one which
-    // keeps them closer together.
-    // -------------------------------------------------------------------------
-    for (int d=0; d<3; ++d) {
-      if (x1[d] - x2[d] > 0.5) {
-        x1[d] -= 1.0;
-      }
-      else if (x1[d] - x2[d] < -0.5) {
-        x1[d] += 1.0;
-      }
-    }
-    double *v1 = &v[3*i1];
-    double *v2 = &v[3*i2];
-    double g1 = gamm(v1);
-    double g2 = gamm(v2);
-    double umu1[4] = { g1, g1*v1[0], g1*v1[1], g1*v1[2] };
-    double umu2[4] = { g2, g2*v2[0], g2*v2[1], g2*v2[2] };
-    double dumu[4] = { umu2[0] - umu1[0],
-		       umu2[1] - umu1[1],
-		       umu2[2] - umu1[2],
-		       umu2[3] - umu1[3] };
-    double dxlab[4] = { 0.0, x2[0] - x1[0], x2[1] - x1[1], x2[2] - x1[2] };
-    double dvlab[4] = { 0.0, v2[0] - v1[0], v2[1] - v1[1], v2[2] - v1[2] };
-    double dxpro[4];
-    double dupro[4];
-
-    boost(umu1, umu2, dupro);
-    boost(umu1, dxlab, dxpro);
-
-    double drlab = len3(&dxlab[1]);
-    double drpro = len3(&dxpro[1]);
-    double dvlat[4];
-    double dvlon[4];
-    double dulat[4];
-    double dulon[4];
-
-    project3(dxlab, &dvlab[1], &dvlat[1], &dvlon[1]);
-    project3(dxpro, &dupro[1], &dulat[1], &dulon[1]);
-
-    dvlat[0] = len3(&dvlat[1]);
-    dvlon[0] = len3(&dvlon[1]);
-    dulat[0] = gamm(&dulat[1]);
-    dulon[0] = gamm(&dulon[1]);
-
-    double xvalue;
-    double yvalue;
-    double gammarel;
-    double betarel;
-    double gammabetarel;
-
-    switch (sepmode) {
-    case SRHDPACK_SEPARATION_PROPER:
-      xvalue = drpro;
-      break;
-    case SRHDPACK_SEPARATION_LAB:
-      xvalue = drlab;
-      break;
-    default:
-      printf("[%s] Error! invalid argument: sepmode\n", MODULE);
-      return;
-    }
-
-    switch (projmode) {
-    case SRHDPACK_PROJECTION_NONE:
-      gammarel = dupro[0];
-      betarel = len3(&dvlab[1]);
-      gammabetarel = len3(&dupro[1]);
-      break;
-    case SRHDPACK_PROJECTION_TRANSVERSE:
-      gammarel = dulat[0];
-      betarel = len3(&dvlat[1]);
-      gammabetarel = len3(&dulat[1]);
-      break;
-    case SRHDPACK_PROJECTION_LONGITUDINAL:
-      gammarel = dulon[0];
-      betarel = len3(&dvlon[1]);
-      gammabetarel = len3(&dulon[1]);
-      break;
-    default:
-      printf("[%s] Error! invalid argument: projmode\n", MODULE);
-      return;
-    }
-
-    switch (velmode) {
-    case SRHDPACK_VELOCITY_GAMMA:
-      yvalue = gammarel;
-      break;
-    case SRHDPACK_VELOCITY_BETA:
-      yvalue = betarel;
-      break;
-    case SRHDPACK_VELOCITY_GAMMABETA:
-      yvalue = gammabetarel;
-      break;
-    case SRHDPACK_VELOCITY_DUMUDXMU:
-      yvalue = dot4(dumu, dxlab) / sqrt(dot4(dxlab, dxlab));
-      break;
-    case SRHDPACK_VELOCITY_DUMUDUMU:
-      yvalue = dot4(dumu, dumu);
-      break;
-    default:
-      printf("[%s] Error! invalid argument: velmode\n", MODULE);
-      return;
-    }
-    cow_histogram_addsample1(hist, xvalue, pow(fabs(yvalue), exponent));
-  }
-}
-
 
 void srhdpack_collectpairs(cow_dfield *vel,
 			   srhdpack_samplemode *modes,
