@@ -41,7 +41,7 @@ static void luacow_push_cow_transform(lua_State *L, cow_transform ini)
 
 static int _cow_init(lua_State *L)
 {
-  int modes = luaL_checkinteger(L, 1);
+  int modes = luaL_optinteger(L, 1, 0);
   cow_init(0, NULL, modes);
   return 0;
 }
