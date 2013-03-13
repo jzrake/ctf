@@ -31,6 +31,7 @@ local RunArgs = {
    shen    = false,
    eosfile = "none",   -- i.e. nseos.h5
    fluid   = "rmhd",   -- euler, srhd, rmhd
+   gamma   = 4/3,      -- adiabatic gamma (1.001 for isothermal)
    pspec   = 0,        -- pspec > 0 take power spectra every that many iterations
    problem = "drvtrb", -- or KH
    drive   = true,     -- set to false to disable driving
@@ -448,7 +449,7 @@ local function main()
 
    MakeNeutronStarUnits() -- must come before loading the EOS
    if RunArgs.eosfile == "none" then
-      Mara.set_eos('gamma-law', 4.0/3.0)
+      Mara.set_eos('gamma-law', RunArgs.gamma)
    else
       LoadMicroPh('nseos.h5')
    end
