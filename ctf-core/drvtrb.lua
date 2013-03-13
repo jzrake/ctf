@@ -34,7 +34,8 @@ local RunArgs = {
    gamma   = 4/3,      -- adiabatic gamma (1.001 for isothermal)
    pspec   = 0,        -- pspec > 0 take power spectra every that many iterations
    problem = "drvtrb", -- or KH
-   drive   = true,     -- set to false to disable driving
+   drive   = true,     -- set to false to disable driving,
+   scheme  = 'weno',   -- weno or hllc
 }
 
 local PowerSpectrumFile = "power_spectrum.h5"
@@ -185,7 +186,14 @@ end
 local function HandleErrorsSrhd(P, Status, attempt)
    if attempt == 0 then -- healthy time-step
       Mara.set_advance("rk3")
-      Mara.set_godunov("weno-split")
+      if RunArgs.scheme == 'weno' then
+	 Mara.set_godunov("weno-split")
+      elseif RunArgs.scheme == 'hllc' then
+	 Mara.set_godunov("plm-split")
+	 Mara.set_riemann("hllc")
+      else
+	 error('no such scheme: '..RunArgs.scheme)
+      end
       Status.Timestep = 1.0 * Status.Timestep
       return 0
    elseif attempt == 1 then
