@@ -428,8 +428,8 @@ void cow_histogram_dumphdf5(cow_histogram *h, char *fn, char *gn)
   double *binlocX = h->binlocx;
   double *binlocY = h->binlocy;
   double *binvalV = h->binvalv;
-  hsize_t sizeX[2] = { h->nbinsx };
-  hsize_t sizeY[2] = { h->nbinsy };
+  hsize_t sizeX[1] = { h->nbinsx };
+  hsize_t sizeY[1] = { h->nbinsy };
   hsize_t sizeZ[2] = { h->nbinsx, h->nbinsy };
   hid_t fspcZ = H5Screate_simple(h->n_dims, sizeZ, NULL);
   if (h->n_dims >= 1) {
