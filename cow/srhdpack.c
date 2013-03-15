@@ -48,7 +48,8 @@ static void reduce_gamma_beta(double *result, double **args, int **strides,
 char *srhdpack_onepointpdfs(cow_dfield *prim,
 			    char *which,
 			    char *h5fname,
-			    char *h5gname)
+			    char *h5gname,
+			    double *interval)
 {
   int nbin = 512;
   double mms[3]; // min, max, sum
@@ -68,14 +69,21 @@ char *srhdpack_onepointpdfs(cow_dfield *prim,
   }
 
   cow_dfield_settransform(prim, op);
-  cow_dfield_reduce(prim, mms);
+
+  if (interval) { // use manual interval if given
+    mms[0] = interval[0];
+    mms[1] = interval[1];
+  }
+  else { // otherwise set the interval automatically
+    cow_dfield_reduce(prim, mms);
+  }
 
   cow_histogram *h = cow_histogram_new();
   cow_histogram_setnbins(h, 0, nbin);
   cow_histogram_setlower(h, 0, mms[0]);
   cow_histogram_setupper(h, 0, mms[1]);
   cow_histogram_setspacing(h, COW_HIST_SPACING_LOG);
-  cow_histogram_setbinmode(h, COW_HIST_BINMODE_DENSITY);
+  cow_histogram_setbinmode(h, COW_HIST_BINMODE_COUNTS);
   cow_histogram_commit(h);
   cow_histogram_populate(h, prim, op);
   cow_histogram_seal(h);

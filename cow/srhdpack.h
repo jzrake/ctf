@@ -27,7 +27,8 @@ typedef struct srhdpack_samplemode
 char *srhdpack_onepointpdfs(cow_dfield *prim,
 			    char *which,
 			    char *h5fname,
-			    char *h5gname);
+			    char *h5gname,
+			    double *interval);
 
 void srhdpack_shelevequescaling(cow_dfield *vel,
 				cow_histogram *hist,

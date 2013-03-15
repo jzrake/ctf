@@ -54,7 +54,16 @@ int _srhdpack_onepointpdfs(lua_State *L)
   char *which   = (char*) luaL_checkstring(L, 2);
   char *h5fname = (char*) luaL_checkstring(L, 3);
   char *h5gname = (char*) luaL_optstring(L, 4, NULL);
-  char *res = srhdpack_onepointpdfs(f, which, h5fname, h5gname);
+  char *res;
+  if (lua_gettop(L) >= 5) {
+    double interval[2] = {
+      luaL_checknumber(L, 5),
+      luaL_checknumber(L, 6) };
+    res = srhdpack_onepointpdfs(f, which, h5fname, h5gname, interval);
+  }
+  else {
+    res = srhdpack_onepointpdfs(f, which, h5fname, h5gname, NULL);
+  }
   if (res) {
     luaL_error(L, res);
   }
