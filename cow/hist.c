@@ -430,22 +430,34 @@ void cow_histogram_dumphdf5(cow_histogram *h, char *fn, char *gn)
   double *binvalV = h->binvalv;
   hsize_t sizeX[1] = { h->nbinsx };
   hsize_t sizeY[1] = { h->nbinsy };
+  hsize_t SizeX[1] = { h->nbinsx + 1 }; // to hold bin edges
+  hsize_t SizeY[1] = { h->nbinsy + 1 }; // below, cap S/F refers to bin edges
   hsize_t sizeZ[2] = { h->nbinsx, h->nbinsy };
   hid_t fspcZ = H5Screate_simple(h->n_dims, sizeZ, NULL);
   if (h->n_dims >= 1) {
     hid_t fspcX = H5Screate_simple(1, sizeX, NULL);
+    hid_t FspcX = H5Screate_simple(1, SizeX, NULL);
     hid_t dsetbinX = H5Dcreate(grp, "binlocX", H5T_NATIVE_DOUBLE, fspcX,
 			       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    hid_t dsetedgX = H5Dcreate(grp, "binedgX", H5T_NATIVE_DOUBLE, FspcX,
+			       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     H5Dwrite(dsetbinX, H5T_NATIVE_DOUBLE, fspcX, fspcX, H5P_DEFAULT, binlocX);
+    H5Dwrite(dsetedgX, H5T_NATIVE_DOUBLE, FspcX, FspcX, H5P_DEFAULT, h->bedgesx);
     H5Dclose(dsetbinX);
+    H5Sclose(FspcX);
     H5Sclose(fspcX);
   }
   if (h->n_dims >= 2) {
     hid_t fspcY = H5Screate_simple(1, sizeY, NULL);
+    hid_t FspcY = H5Screate_simple(1, SizeY, NULL);
     hid_t dsetbinY = H5Dcreate(grp, "binlocY", H5T_NATIVE_DOUBLE, fspcY,
 			       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    hid_t dsetedgY = H5Dcreate(grp, "binedgY", H5T_NATIVE_DOUBLE, FspcY,
+			       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     H5Dwrite(dsetbinY, H5T_NATIVE_DOUBLE, fspcY, fspcY, H5P_DEFAULT, binlocY);
+    H5Dwrite(dsetedgY, H5T_NATIVE_DOUBLE, FspcY, FspcY, H5P_DEFAULT, h->bedgesy);
     H5Dclose(dsetbinY);
+    H5Sclose(FspcY);
     H5Sclose(fspcY);
   }
   hid_t dsetvalV = H5Dcreate(grp, "binval", H5T_NATIVE_DOUBLE, fspcZ,
