@@ -14,7 +14,15 @@ std::valarray<double> Deriv::dUdt(const std::valarray<double> &Uin)
   std::valarray<double> L(U.size());
   std::valarray<double> &P = Mara->PrimitiveArray;
 
-  ConsToPrim(U, P);
+  //  ConsToPrim(U, P);
+
+  int err = ConsToPrim(U, P);
+
+  if (err != 0) {
+    printf("c2p failed on %d zones\n", err);
+    throw IntermediateFailure();
+  }
+
   DriveSweeps(P, L);
 
   return L;
@@ -22,11 +30,11 @@ std::valarray<double> Deriv::dUdt(const std::valarray<double> &Uin)
 void Deriv::DriveSweeps(const std::valarray<double> &P,
                         std::valarray<double> &L)
 {
-   switch (ND) {
-   case 1: drive_sweeps_1d(&P[0], &L[0]); break;
-   case 2: drive_sweeps_2d(&P[0], &L[0]); break;
-   case 3: drive_sweeps_3d(&P[0], &L[0]); break;
-   }
+  switch (ND) {
+  case 1: drive_sweeps_1d(&P[0], &L[0]); break;
+  case 2: drive_sweeps_2d(&P[0], &L[0]); break;
+  case 3: drive_sweeps_3d(&P[0], &L[0]); break;
+  }
 }
 void Deriv::intercell_flux_sweep(const double *P, double *F, int dim)
 {
@@ -40,17 +48,17 @@ void Deriv::intercell_flux_sweep(const double *P, double *F, int dim)
 
       switch (GodunovOperator::reconstruct_method) {
       case RECONSTRUCT_PCM:
-	Pl[q] = v[2];
-	Pr[q] = v[3];
-	break;
+        Pl[q] = v[2];
+        Pr[q] = v[3];
+        break;
       case RECONSTRUCT_PLM:
-	Pl[q] = reconstruct(&v[2], PLM_C2R);
-	Pr[q] = reconstruct(&v[3], PLM_C2L);
-	break;
+        Pl[q] = reconstruct(&v[2], PLM_C2R);
+        Pr[q] = reconstruct(&v[3], PLM_C2L);
+        break;
       case RECONSTRUCT_WENO5:
-	Pl[q] = reconstruct(&v[2], WENO5_FV_C2R);
-	Pr[q] = reconstruct(&v[3], WENO5_FV_C2L);
-	break;
+        Pl[q] = reconstruct(&v[2], WENO5_FV_C2R);
+        Pr[q] = reconstruct(&v[3], WENO5_FV_C2L);
+        break;
       }
     }
     int error = Mara->riemann->IntercellFlux(Pl, Pr, 0, &F[i], 0.0, dim);
