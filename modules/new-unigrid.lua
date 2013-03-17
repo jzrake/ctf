@@ -113,6 +113,20 @@ function UnigridDataField:array()
    return self._buffer
 end
 
+function UnigridDataField:domain()
+   return self._domain
+end
+
+function UnigridDataField:members()
+   local mem = { }
+   local d = cow.dfield_iteratemembers(self._dfield)
+   while d do
+      table.insert(mem, d)
+      d = cow.dfield_nextmember(self._dfield)
+   end
+   return mem
+end
+
 function UnigridDataField:read(fname, gname)
    cow.dfield_setname(self._dfield, gname)
    cow.dfield_read(self._dfield, fname)
@@ -121,6 +135,29 @@ end
 function UnigridDataField:write(fname, gname)
    cow.dfield_setname(self._dfield, gname)
    cow.dfield_write(self._dfield, fname)
+end
+
+function UnigridDataField:power_spectrum(nbins)
+
+   local members = self:members()
+   if #members ~= 3 then
+      error("need a three-dimensional field to get a power spectrum")
+   end
+
+   local nbins = nbins or 128
+   local binloc = array.vector(nbins)
+   local binval = array.vector(nbins)
+   local field = self._dfield
+   local pspec = cow.histogram_new()
+
+   cow.histogram_setnbins(pspec, 0, nbins)
+   cow.histogram_setspacing(pspec, cow.HIST_SPACING_LINEAR)
+   cow.fft_pspecvecfield(field, pspec)
+   cow.histogram_getbinlocx(pspec, binloc:buffer())
+   cow.histogram_getbinvalv(pspec, binval:buffer())
+   cow.histogram_del(pspec)
+
+   return binloc, binval
 end
 
 return { UnigridDomain=UnigridDomain,

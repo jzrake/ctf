@@ -51,7 +51,7 @@ char *srhdpack_onepointpdfs(cow_dfield *prim,
 			    char *h5gname,
 			    double *interval)
 {
-  int nbin = 512;
+  int nbin = 4096;
   double mms[3]; // min, max, sum
   cow_transform op;
 

@@ -33,12 +33,14 @@ local RunArgs = {
    fluid   = "rmhd",   -- euler, srhd, rmhd
    gamma   = 4/3,      -- adiabatic gamma (1.001 for isothermal)
    pspec   = 0,        -- pspec > 0 take power spectra every that many iterations
+   pdfs    = 0,        -- pdfs > 0 take PDF's ' '
    problem = "drvtrb", -- or KH
    drive   = true,     -- set to false to disable driving,
-   scheme  = 'weno',   -- weno or hllc
+   scheme  = 'weno',   -- weno or hllc,
 }
 
-local PowerSpectrumFile = "power_spectrum.h5"
+local PowerSpectrumFile = ""
+local DistributionsFile = ""
 
 -- *****************************************************************************
 -- Process command line options
@@ -63,6 +65,27 @@ local function process_cmdline()
 end
 
 
+
+
+-- *****************************************************************************
+-- Take power spectrum
+-- .............................................................................
+local function Distributions(primitive, gname)
+   local fname = DistributionsFile
+
+   if primitive:domain():get_rank() == 0 then
+      if not util.file_exists(fname) then
+	 local h5f = hdf5.File(fname, 'w')
+	 h5f:close()
+      end
+   end
+
+   local P = primitive._dfield
+   cow.srhdpack.onepointpdfs(P, 'proper-rho', fname, gname, 1e-6, 1e6)
+   cow.srhdpack.onepointpdfs(P, 'gamma-rho' , fname, gname, 1e-6, 1e6)
+   cow.srhdpack.onepointpdfs(P, 'gamma-beta', fname, gname, 1e-6, 1e6)
+end
+
 -- *****************************************************************************
 -- Take power spectrum
 -- .............................................................................
@@ -71,9 +94,9 @@ local function PowerSpectrum(primitive, which, gname)
    local binloc, binval
    local fname = PowerSpectrumFile
    if which == 'velocity' then
-      local velocity = unigrid.DataManagerHDF5(primitive.domain, {'vx','vy','vz'})
-      local P = primitive.array
-      local V = velocity.array
+      local velocity = unigrid.UnigridDataField(primitive:domain(), {'vx','vy','vz'})
+      local P = primitive:array()
+      local V = velocity:array()
       V[{nil,nil,nil,{0,1}}] = P[{nil,nil,nil,{2,3}}]
       V[{nil,nil,nil,{1,2}}] = P[{nil,nil,nil,{3,4}}]
       V[{nil,nil,nil,{2,3}}] = P[{nil,nil,nil,{4,5}}]
@@ -84,9 +107,9 @@ local function PowerSpectrum(primitive, which, gname)
 	 binval[i] = binval[i] * (c^2)
       end
    elseif which == 'magnetic' then
-      local magnetic = unigrid.DataManagerHDF5(primitive.domain, {'Bx','By','Bz'})
-      local P = primitive.array
-      local B = magnetic.array
+      local magnetic = unigrid.UnigridDataField(primitive:domain(), {'Bx','By','Bz'})
+      local P = primitive:array()
+      local B = magnetic:array()
       B[{nil,nil,nil,{0,1}}] = P[{nil,nil,nil,{5,6}}]
       B[{nil,nil,nil,{1,2}}] = P[{nil,nil,nil,{6,7}}]
       B[{nil,nil,nil,{2,3}}] = P[{nil,nil,nil,{7,8}}]
@@ -97,9 +120,9 @@ local function PowerSpectrum(primitive, which, gname)
 	 binval[i] = binval[i] * (f^2)
       end
    elseif which == 'kinetic' then
-      local kinetic = unigrid.DataManagerHDF5(primitive.domain, {'Kx','Ky','Kz'})
-      local P = primitive.array
-      local K = kinetic.array
+      local kinetic = unigrid.UnigridDataField(primitive:domain(), {'Kx','Ky','Kz'})
+      local P = primitive:array()
+      local K = kinetic:array()
       local S = K:shape()
       local vx = array.array{S[1], S[2], S[3]}
       local vy = array.array{S[1], S[2], S[3]}
@@ -130,7 +153,7 @@ local function PowerSpectrum(primitive, which, gname)
 	 binval[i] = binval[i] * (c * d^2)
       end
    end
-   if cow.domain_getcartrank(primitive.domain) == 0 then
+   if primitive:domain():get_rank() == 0 then
       local h5f = hdf5.File(fname, 'r+')
       local grp = hdf5.Group(h5f, gname)
       local sgr = hdf5.Group(grp, which)
@@ -337,11 +360,15 @@ local function RunSimulation(Primitive, Status, MeasureLog, Howlong)
       end
 
       if Status.Iteration % RunArgs.pspec == 0 and RunArgs.pspec ~= 0 then
-       	 local fname = string.format("data/%s/power_spectrum.h5", RunArgs.id)
 	 local gname = string.format("pspec-%05d", Status.Iteration)
        	 PowerSpectrum(Primitive, 'magnetic', gname)
        	 PowerSpectrum(Primitive, 'velocity', gname)
        	 PowerSpectrum(Primitive, 'kinetic', gname)
+      end
+
+      if Status.Iteration % RunArgs.pdfs == 0 and RunArgs.pdfs ~= 0 then
+	 local gname = string.format("pdf-%05d", Status.Iteration)
+	 Distributions(Primitive, gname)
       end
 
       -- 'attempt' == 0 when the previous iteration completed without errors
@@ -396,7 +423,7 @@ local function CheckpointWrite(Primitive, Status, MeasureLog, OptionalName)
    end
    Primitive:write(chkpt, 'prim')
 
-   if Primitive._domain:get_rank() == 0 then
+   if Primitive:domain():get_rank() == 0 then
       local version = Mara.version()
       local program = " "
       local f = io.open(string.sub(debug.getinfo(1).source, 2), 'r')
@@ -559,7 +586,8 @@ local function main()
       Status, MeasureLog = CheckpointRead(RunArgs.restart, primitive)
    end
 
-   PowerSpectrumFile = string.format("data/%s/power_spectrum.h5", RunArgs.id)
+   PowerSpectrumFile = string.format("data/%s/%s.spec.h5", RunArgs.id, RunArgs.id)
+   DistributionsFile = string.format("data/%s/%s.pdfs.h5", RunArgs.id, RunArgs.id)
    local datadir = string.format("data/%s", RunArgs.id)
 
    if domain:get_rank() == 0 then
