@@ -73,15 +73,25 @@ function UnigridDomain:size(dim, which)
    end
 end
 
-function UnigridDomain:get_communicator(members)
+function UnigridDomain:get_comm()
    return self._comm
+end
+
+function UnigridDomain:get_rank()
+   return cow.domain_getcartrank(self._domain)
+end
+
+function UnigridDomain:set_collective(mode)
+   cow.domain_setcollective(self._domain, mode)
 end
 
 --------------------------------------------------------------------------------
 -- UnigridDataField implementation
 --------------------------------------------------------------------------------
 function UnigridDataField:__init__(domain, members)
+   self._domain = domain
    self._dfield = cow.dfield_new()
+
    cow.dfield_setdomain(self._dfield, domain._domain)
    for _,member in pairs(members) do
       cow.dfield_addmember(self._dfield, member)
@@ -97,6 +107,10 @@ end
 
 function UnigridDataField:__gc__(size, guard)
    cow.dfield_del(self._dfield)
+end
+
+function UnigridDataField:array()
+   return self._buffer
 end
 
 function UnigridDataField:read(fname, gname)

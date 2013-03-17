@@ -8,7 +8,7 @@ local MPI     = require 'MPI'
 local cow     = require 'cow'
 local hdf5    = require 'lua-hdf5.LuaHDF5'
 local Mara    = require 'Mara'
-local unigrid = require 'unigrid'
+local unigrid = require 'new-unigrid'
 local array   = require 'array'
 local json    = require 'json'
 local util    = require 'util'
@@ -315,7 +315,7 @@ local function RunSimulation(Primitive, Status, MeasureLog, Howlong)
    while Status.CurrentTime - t0 < Howlong do
       collectgarbage()
 
-      local P = Primitive.array:buffer()
+      local P = Primitive:array():buffer()
       local stopfname = string.format("data/%s/MARA_STOP", RunArgs.id)
       local stopfile = io.open(stopfname, "r")
       if stopfile then
@@ -391,9 +391,12 @@ local function CheckpointWrite(Primitive, Status, MeasureLog, OptionalName)
       chkpt = string.format("%s/chkpt.%04d.h5", datadir, Status.Checkpoint)
    end
 
-   Primitive:write(chkpt, {group='prim'})
+   if util.file_exists(chkpt) then
+      os.execute(string.format('rm %s', chkpt))
+   end
+   Primitive:write(chkpt, 'prim')
 
-   if cow.domain_getcartrank(Primitive.domain) == 0 then
+   if Primitive._domain:get_rank() == 0 then
       local version = Mara.version()
       local program = " "
       local f = io.open(string.sub(debug.getinfo(1).source, 2), 'r')
@@ -424,7 +427,7 @@ end
 -- .............................................................................
 local function CheckpointRead(chkpt, Primitive)
 
-   Primitive:read(chkpt, {group='prim'})
+   Primitive:read(chkpt, 'prim')
 
    local chkpt_h5 = hdf5.File(chkpt, 'r')
    local status_h5 = hdf5.Group(chkpt_h5, "status")
@@ -515,23 +518,16 @@ local function main()
       error("[drvtrb] problem must be either drvtrb or KH")
    end
 
-   local domain = cow.domain_new()
-   local domain_comm = MPI.Comm()
-   cow.domain_setndim(domain, 3)
-   cow.domain_setsize(domain, 0, Nx)
-   cow.domain_setsize(domain, 1, Ny)
-   cow.domain_setsize(domain, 2, Nz)
-   cow.domain_setguard(domain, Ng)
-   cow.domain_commit(domain)
-   cow.domain_getcomm(domain, domain_comm)
+   local domain = unigrid.UnigridDomain({Nx, Ny, Nz}, Ng)
+   local primitive = unigrid.UnigridDataField(domain, prim_names)
+   local domain_comm = domain:get_comm()
+   local P = primitive:array()
 
-   io_opts = { }
-   if hdf5.have_mpio() then io_opts.mpio = 'collective' end
+   if hdf5.have_mpio() then 
+      domain:set_collective(1)
+   end
 
-   local primitive = unigrid.DataManagerHDF5(domain, prim_names, io_opts)
-   local P = primitive.array
-
-   math.randomseed(cow.domain_getcartrank(domain))
+   math.randomseed(domain:get_rank())
    Mara.set_domain(L0, L1, {Nx, Ny, Nz}, Nq, Ng, domain_comm)
 
    local MeasureLog = { }
@@ -566,7 +562,7 @@ local function main()
    PowerSpectrumFile = string.format("data/%s/power_spectrum.h5", RunArgs.id)
    local datadir = string.format("data/%s", RunArgs.id)
 
-   if cow.domain_getcartrank(domain) == 0 then
+   if domain:get_rank() == 0 then
       os.execute(string.format("mkdir -p %s", datadir))
       if RunArgs.pspec ~= 0 then
 	 local testf = io.open(PowerSpectrumFile, "r")
