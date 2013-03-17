@@ -24,3 +24,6 @@
 /srt-tools
 /misc
 /bin/ctf-main
+/tools/pdf-machine
+/bin/pdf-machine
+/.DS_Store
