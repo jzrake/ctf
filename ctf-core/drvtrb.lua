@@ -49,17 +49,17 @@ local function process_cmdline()
    for k,v in pairs(arg) do
       local eqpos = string.find(v, '=')
       if eqpos then
-	 local key = string.sub(v, 0, eqpos-1)
-	 local val = string.sub(v, eqpos+1)
-	 if not RunArgs[key] then
-	    print("[Mara] warning: ignoring unrecognized option "..key)
-	 elseif type(RunArgs[key]) == 'number' then
-	    RunArgs[key] = tonumber(val)
-	 elseif type(RunArgs[key]) == 'boolean' then
-	    RunArgs[key] = val ~= "0"
-	 else
-	    RunArgs[key] = val
-	 end
+         local key = string.sub(v, 0, eqpos-1)
+         local val = string.sub(v, eqpos+1)
+         if not RunArgs[key] then
+            print("[Mara] warning: ignoring unrecognized option "..key)
+         elseif type(RunArgs[key]) == 'number' then
+            RunArgs[key] = tonumber(val)
+         elseif type(RunArgs[key]) == 'boolean' then
+            RunArgs[key] = val ~= "0"
+         else
+            RunArgs[key] = val
+         end
       end
    end
 end
@@ -75,8 +75,8 @@ local function Distributions(primitive, gname)
 
    if primitive:domain():get_rank() == 0 then
       if not util.file_exists(fname) then
-	 local h5f = hdf5.File(fname, 'w')
-	 h5f:close()
+         local h5f = hdf5.File(fname, 'w')
+         h5f:close()
       end
    end
 
@@ -104,7 +104,7 @@ local function PowerSpectrum(primitive, which, gname)
 
       local c = 1.0 / Mara.units.Velocity()
       for i=0,#binval-1 do
-	 binval[i] = binval[i] * (c^2)
+         binval[i] = binval[i] * (c^2)
       end
    elseif which == 'magnetic' then
       local magnetic = unigrid.UnigridDataField(primitive:domain(), {'Bx','By','Bz'})
@@ -117,7 +117,7 @@ local function PowerSpectrum(primitive, which, gname)
 
       local f = 1.0 / Mara.units.Gauss() / (8*math.pi)^0.5
       for i=0,#binval-1 do
-	 binval[i] = binval[i] * (f^2)
+         binval[i] = binval[i] * (f^2)
       end
    elseif which == 'kinetic' then
       local kinetic = unigrid.UnigridDataField(primitive:domain(), {'Kx','Ky','Kz'})
@@ -137,10 +137,10 @@ local function PowerSpectrum(primitive, which, gname)
       local vy_vec = vy:vector()
       local vz_vec = vz:vector()
       for i=0,#D0_vec-1 do
-	 local a = (0.5 * D0_vec[i])^0.5
-	 vx_vec[i] = vx_vec[i] * a
-	 vy_vec[i] = vy_vec[i] * a
-	 vz_vec[i] = vz_vec[i] * a
+         local a = (0.5 * D0_vec[i])^0.5
+         vx_vec[i] = vx_vec[i] * a
+         vy_vec[i] = vy_vec[i] * a
+         vz_vec[i] = vz_vec[i] * a
       end
       K[{nil,nil,nil,{0,1}}] = vx
       K[{nil,nil,nil,{1,2}}] = vy
@@ -150,7 +150,7 @@ local function PowerSpectrum(primitive, which, gname)
       local c = 1.0 / Mara.units.Velocity()
       local d = 1.0 / Mara.units.GramsPerCubicCentimeter()
       for i=0,#binval-1 do
-	 binval[i] = binval[i] * (c * d^2)
+         binval[i] = binval[i] * (c * d^2)
       end
    end
    if primitive:domain():get_rank() == 0 then
@@ -162,7 +162,7 @@ local function PowerSpectrum(primitive, which, gname)
       h5f:close()
    end
    print(string.format("[Mara] PowerSpectrum took %f seconds",
-		       os.clock() - start))
+                       os.clock() - start))
 end
 
 
@@ -210,12 +210,12 @@ local function HandleErrorsSrhd(P, Status, attempt)
    if attempt == 0 then -- healthy time-step
       Mara.set_advance("rk3")
       if RunArgs.scheme == 'weno' then
-	 Mara.set_godunov("weno-split")
+         Mara.set_godunov("weno-split")
       elseif RunArgs.scheme == 'hllc' then
-	 Mara.set_godunov("plm-split")
-	 Mara.set_riemann("hllc")
+         Mara.set_godunov("plm-split")
+         Mara.set_riemann("hllc")
       else
-	 error('no such scheme: '..RunArgs.scheme)
+         error('no such scheme: '..RunArgs.scheme)
       end
       Status.Timestep = 1.0 * Status.Timestep
       return 0
@@ -331,8 +331,8 @@ local function RunSimulation(Primitive, Status, MeasureLog, Howlong)
    local t0 = Status.CurrentTime
    local attempt = 0
    local ErrorHandlers = { euler=HandleErrorsEuler,
-			   srhd=HandleErrorsSrhd,
-			   rmhd=HandleErrorsRmhd }
+                           srhd=HandleErrorsSrhd,
+                           rmhd=HandleErrorsRmhd }
    local NumberOfConserved = { euler=5, srhd=5, rmhd=8 }
 
    while Status.CurrentTime - t0 < Howlong do
@@ -342,39 +342,41 @@ local function RunSimulation(Primitive, Status, MeasureLog, Howlong)
       local stopfname = string.format("data/%s/MARA_STOP", RunArgs.id)
       local stopfile = io.open(stopfname, "r")
       if stopfile then
-	 print("Mara exiting, detected", stopfname)
-	 stopfile.close()
-	 mpi_barrier()
-	 if mpi_get_rank() == 0 then
-	    os.remove(stopfname)
-	 end
-	 return "STOP"
+         print("Mara exiting, detected", stopfname)
+         stopfile.close()
+         mpi_barrier()
+         if mpi_get_rank() == 0 then
+            os.remove(stopfname)
+         end
+         return "STOP"
       end
 
       -- Measurements are made at the beginning of the timestep
       -- .......................................................................
-      if Status.Iteration % 10 == 0 then
-	 Mara.set_primitive(P)
-       	 MeasureLog[Status.Iteration] = Measurements(Status)
-	 Status.LastMeasurementTime = Status.CurrentTime
-      end
+      if attempt == 0 then
+         if Status.Iteration % 10 == 0 then
+            Mara.set_primitive(P)
+            MeasureLog[Status.Iteration] = Measurements(Status)
+            Status.LastMeasurementTime = Status.CurrentTime
+         end
 
-      if Status.Iteration % RunArgs.pspec == 0 and RunArgs.pspec ~= 0 then
-	 local gname = string.format("pspec-%05d", Status.Iteration)
-       	 PowerSpectrum(Primitive, 'magnetic', gname)
-       	 PowerSpectrum(Primitive, 'velocity', gname)
-       	 PowerSpectrum(Primitive, 'kinetic', gname)
-      end
+         if Status.Iteration % RunArgs.pspec == 0 and RunArgs.pspec ~= 0 then
+            local gname = string.format("pspec-%05d", Status.Iteration)
+            PowerSpectrum(Primitive, 'magnetic', gname)
+            PowerSpectrum(Primitive, 'velocity', gname)
+            PowerSpectrum(Primitive, 'kinetic', gname)
+         end
 
-      if Status.Iteration % RunArgs.pdfs == 0 and RunArgs.pdfs ~= 0 then
-	 local gname = string.format("pdf-%05d", Status.Iteration)
-	 Distributions(Primitive, gname)
+         if Status.Iteration % RunArgs.pdfs == 0 and RunArgs.pdfs ~= 0 then
+            local gname = string.format("pdf-%05d", Status.Iteration)
+            Distributions(Primitive, gname)
+         end
       end
 
       -- 'attempt' == 0 when the previous iteration completed without errors
       -- .......................................................................
       if ErrorHandlers[RunArgs.fluid](P, Status, attempt) ~= 0 then
-	 return 1
+         return 1
       end
       attempt = attempt + 1
 
@@ -382,20 +384,20 @@ local function RunSimulation(Primitive, Status, MeasureLog, Howlong)
       local kzps, errors = Mara.advance(P, dt)
 
       if errors == 0 then
-	 if RunArgs.problem == "drvtrb" and RunArgs.drive then
-	    Mara.driving.Advance(dt)
-	    if Status.Iteration % 10 == 0 then
-	       Mara.driving.Resample()
-	    end
-	 end
+         if RunArgs.problem == "drvtrb" and RunArgs.drive then
+            Mara.driving.Advance(dt)
+            if Status.Iteration % 10 == 0 then
+               Mara.driving.Resample()
+            end
+         end
 
-	 local Nq = NumberOfConserved[RunArgs.fluid]
+         local Nq = NumberOfConserved[RunArgs.fluid]
          print(string.format("%05d(%d): t=%5.4f dt=%5.4e %3.1fkz/s %3.2fus/(z*Nq)",
                              Status.Iteration, attempt-1, Status.CurrentTime, dt,
-			     kzps, 1e6/Nq/(1e3*kzps)))
-	 io.flush()
+                             kzps, 1e6/Nq/(1e3*kzps)))
+         io.flush()
 
-	 attempt = 0
+         attempt = 0
          Status.Timestep = Mara.get_timestep(RunArgs.CFL)
          Status.CurrentTime = Status.CurrentTime + Status.Timestep
          Status.Iteration = Status.Iteration + 1
@@ -418,9 +420,12 @@ local function CheckpointWrite(Primitive, Status, MeasureLog, OptionalName)
       chkpt = string.format("%s/chkpt.%04d.h5", datadir, Status.Checkpoint)
    end
 
-   if util.file_exists(chkpt) then
-      os.execute(string.format('rm %s', chkpt))
+   if Primitive:domain():get_rank() == 0 then
+      if util.file_exists(chkpt) then
+         os.execute(string.format('rm %s', chkpt))
+      end
    end
+
    Primitive:write(chkpt, 'prim')
 
    if Primitive:domain():get_rank() == 0 then
@@ -428,8 +433,8 @@ local function CheckpointWrite(Primitive, Status, MeasureLog, OptionalName)
       local program = " "
       local f = io.open(string.sub(debug.getinfo(1).source, 2), 'r')
       if f then
-	 program = f:read('*all')
-	 f:close()
+         program = f:read('*all')
+         f:close()
       end
       local chkpt_h5 = hdf5.File(chkpt, 'r+')
       chkpt_h5["runargs"] = json.encode(RunArgs)
@@ -437,11 +442,11 @@ local function CheckpointWrite(Primitive, Status, MeasureLog, OptionalName)
       chkpt_h5["program"] = program
       chkpt_h5["version"] = version
       if RunArgs.problem == "drvtrb" and RunArgs.drive then
-       	 chkpt_h5["driving"] = json.encode(Mara.driving.Serialize())
+         chkpt_h5["driving"] = json.encode(Mara.driving.Serialize())
       end
       local status = hdf5.Group(chkpt_h5, 'status')
       for k,v in pairs(Status) do
-	 status[k] = v
+         status[k] = v
       end
       status:close()
       chkpt_h5:close()
@@ -505,18 +510,18 @@ local function main()
       L1 = {  0.5,  0.5,  0.5 }
 
       if RunArgs.cool == "none" then
-	 print("[drvtrb] disabling cooling")
+         print("[drvtrb] disabling cooling")
       elseif RunArgs.cool == "T4" then
-	 Mara.set_cooling("T4", 25.0, 100.0)
+         Mara.set_cooling("T4", 25.0, 100.0)
       elseif RunArgs.cool == "E4" then
-	 Mara.set_cooling("E4", RunArgs.coolP, 100.0)
+         Mara.set_cooling("E4", RunArgs.coolP, 100.0)
       end
 
       pinit = function(x,y,z)
-	 local B0 = RunArgs.B0 * Mara.units.Gauss()
-	 local D0 = RunArgs.D0
-	 local P0 = RunArgs.P0
-	 return { D0, P0, 0, 0, 0, B0, 0.0, 0.0 }
+         local B0 = RunArgs.B0 * Mara.units.Gauss()
+         local D0 = RunArgs.D0
+         local P0 = RunArgs.P0
+         return { D0, P0, 0, 0, 0, B0, 0.0, 0.0 }
       end
    elseif RunArgs.problem == "KH" then
       Nx = RunArgs.N
@@ -526,20 +531,20 @@ local function main()
       L1 = {  0.5,  1.0,  0.5 }
 
       pinit = function(x,y,z)
-	 local Vs = 0.5 -- Shearing velocity
-	 local a = 0.01 -- Width of shearing layer
-	 local A0 = 0.1 -- Sinusoidal perturbation amplitude
-	 local sig = 0.1 -- Length scale of its decay
-	 local sin, tanh, exp, pi = math.sin, math.tanh, math.exp, math.pi
-	 local B0 = 1e-3
-	 local D0 = math.abs(y) < 0.5 and 0.01 or 1.0
-	 local P0 = 1.0
-	 local vx = y > 0.0 and Vs*tanh((y-0.5)/a) or -Vs*tanh((y+0.5)/a)
-	 local vy = (y > 0.0 and
-		     A0*Vs*sin(2*pi*x)*exp(-((y-0.5)/sig)^2) or
-		     A0*Vs*sin(2*pi*x)*exp(-((y+0.5)/sig)^2)*-1)
-	 local vz = (math.random() - 0.5) * 0.01
-	 return { D0, P0, vx, vy, vz, B0, 0.0, 0.0 }
+         local Vs = 0.5 -- Shearing velocity
+         local a = 0.01 -- Width of shearing layer
+         local A0 = 0.1 -- Sinusoidal perturbation amplitude
+         local sig = 0.1 -- Length scale of its decay
+         local sin, tanh, exp, pi = math.sin, math.tanh, math.exp, math.pi
+         local B0 = 1e-3
+         local D0 = math.abs(y) < 0.5 and 0.01 or 1.0
+         local P0 = 1.0
+         local vx = y > 0.0 and Vs*tanh((y-0.5)/a) or -Vs*tanh((y+0.5)/a)
+         local vy = (y > 0.0 and
+                     A0*Vs*sin(2*pi*x)*exp(-((y-0.5)/sig)^2) or
+                     A0*Vs*sin(2*pi*x)*exp(-((y+0.5)/sig)^2)*-1)
+         local vz = (math.random() - 0.5) * 0.01
+         return { D0, P0, vx, vy, vz, B0, 0.0, 0.0 }
       end
    else
       error("[drvtrb] problem must be either drvtrb or KH")
@@ -550,7 +555,7 @@ local function main()
    local domain_comm = domain:get_comm()
    local P = primitive:array()
 
-   if hdf5.have_mpio() then 
+   if hdf5.have_mpio() then
       domain:set_collective(1)
    end
 
@@ -569,19 +574,19 @@ local function main()
       Status.LastMeasurementTime = 0.0
 
       if RunArgs.problem == "drvtrb" and RunArgs.drive then
-	 print("[drvtrb] enabling driving field")
-	 local field = Mara.new_ou_field(3, RunArgs.F0, RunArgs.zeta, 3, 12345)
-	 Mara.set_driving(field)
+         print("[drvtrb] enabling driving field")
+         local field = Mara.new_ou_field(3, RunArgs.F0, RunArgs.zeta, 3, 12345)
+         Mara.set_driving(field)
       else
-	 print("[drvtrb] disabling driving field")
+         print("[drvtrb] disabling driving field")
       end
    else
       if RunArgs.problem == "drvtrb" and RunArgs.drive then
-	 print("[drvtrb] enabling serialized driving field")
-	 local restart_file = hdf5.File(RunArgs.restart, 'r')
-	 local field = json.decode(restart_file["driving"]:value())
-	 Mara.set_driving(field)
-	 restart_file:close()
+         print("[drvtrb] enabling serialized driving field")
+         local restart_file = hdf5.File(RunArgs.restart, 'r')
+         local field = json.decode(restart_file["driving"]:value())
+         Mara.set_driving(field)
+         restart_file:close()
       end
       Status, MeasureLog = CheckpointRead(RunArgs.restart, primitive)
    end
@@ -593,13 +598,13 @@ local function main()
    if domain:get_rank() == 0 then
       os.execute(string.format("mkdir -p %s", datadir))
       if RunArgs.pspec ~= 0 then
-	 local testf = io.open(PowerSpectrumFile, "r")
-	 if not testf then
-	    local h5f = hdf5.File(PowerSpectrumFile, "w")
-	    h5f:close()
-	 else
-	    testf:close()
-	 end
+         local testf = io.open(PowerSpectrumFile, "r")
+         if not testf then
+            local h5f = hdf5.File(PowerSpectrumFile, "w")
+            h5f:close()
+         else
+            testf:close()
+         end
       end
    end
 
@@ -615,18 +620,17 @@ local function main()
    while Status.CurrentTime < RunArgs.tmax do
       local error = RunSimulation(primitive, Status, MeasureLog, RunArgs.cpi)
       if error == "STOP" then
-	 print("exiting upon request\n")
-	 CheckpointWrite(primitive, Status, MeasureLog, "stop")
-	 break
+         print("exiting upon request\n")
+         CheckpointWrite(primitive, Status, MeasureLog, "stop")
+         break
       elseif error ~= 0 then
-	 print("exiting due to failures\n")
-	 CheckpointWrite(primitive, Status, MeasureLog, "fail")
-	 break
+         print("exiting due to failures\n")
+         CheckpointWrite(primitive, Status, MeasureLog, "fail")
+         break
       end
       CheckpointWrite(primitive, Status, MeasureLog)
    end
 
-   cow.domain_del(domain)
    Mara.close()
    MPI.Finalize()
 end
