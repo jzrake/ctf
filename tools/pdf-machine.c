@@ -10,8 +10,7 @@
  *
  * tests:
  *
- * gsl-randist 1234 10000 gaussian 1.0 | gsl-histogram -10.0 10.0 100 |
- * pdf-machine -r
+ * gsl-randist 12345 100000 gaussian 1 | gsl-histogram -10 10 1000 | pdf-machine
  *
  *
  * -----------------------------------------------------------------------------
@@ -26,14 +25,22 @@
 #define MAX_COLS (1<<8)
 #define PI (atan(1.0)*4.0)
 
+/* Be careful with portability of large integer types */
+#include <stdint.h>
+#include <inttypes.h>
+#define COUNT_FORMAT "%"PRIu64 // guarentee 64 byte integer
+typedef uint64_t count_t;
+
+
 static double BinEdges[MAX_ROWS];
-static int dN[MAX_ROWS][MAX_COLS];
+static count_t dN[MAX_ROWS][MAX_COLS];
 static int NR = 0;
 static int NC = 0;
 
-static char *OutputColumnDes[MAX_COLS];
-static int   OutputColumnKey[MAX_COLS];
-static int   OutputColumnNum = 0;
+static double OutputColumnTot[MAX_COLS];
+static char  *OutputColumnDes[MAX_COLS];
+static int    OutputColumnKey[MAX_COLS];
+static int    OutputColumnNum = 0;
 
 static void process_command_line(int argc, char **argv);
 static void report();
@@ -41,11 +48,12 @@ static void read_input();
 static void output(int nr);
 static double pdf_mean();
 static double pdf_variance();
-static int distribution_total_counts(int nc);
-static int distribution_total_counts_all();
+static count_t distribution_total_counts(int nc);
+static count_t distribution_total_counts_all();
 
 
 /* PDF models */
+static double pdf_model_normal(double x);
 static double pdf_model_lognormal(double x);
 static double pdf_model_hopkins2013(double x);
 
@@ -60,25 +68,28 @@ double bessk( int, double );
 /* cached values of repetitive function calls */
 static double cached_pdf_mean;
 static double cached_pdf_variance;
-
+static count_t cached_distribution_total_counts_all;
 
 struct {
   int help;
   int quiet;
   int skip_zeros;
+  int noprint_bins;
   double hopkins_T;
-} opts = {0,0,0,0.1};
+} opts = {0,0,0,0,0.1};
 
-enum { OC_IND, // bin index
-       OC_E0,  // bin left-edge
+enum { OC_E0,  // bin left-edge
        OC_E1,  // bin right-edge
        OC_MP,  // bin mid-point
        OC_MC,  // bin mean counts
        OC_TC,  // bin total counts
        OC_P,   // normalized PDF value
        OC_STD, // bin standard deviation over histograms
+       OC_GD,  // PDF model: Gaussian
        OC_LN,  // PDF model: log-normal
        OC_PH,  // PDF model: Hopkins (2013)
+       OC_R,   // model residual: |P - model|
+       OC_LR,  // model residual, log10: |log10(P) - log10(model)|
 };
 
 #define CH_CASE(key, descr) do {					\
@@ -99,6 +110,7 @@ void process_command_line(int argc, char **argv)
       case 'h': opts.help = 1; break;
       case 'q': opts.quiet = 1; break;
       case 'z': opts.skip_zeros = 1; break;
+      case 'r': opts.noprint_bins = 1; break;
       case 'T': opts.hopkins_T = atof(argv[++n]); break;
       default:
 	fprintf(stderr, "ERROR: unknown option %s\n", argv[n]);
@@ -107,7 +119,6 @@ void process_command_line(int argc, char **argv)
     }
     else {
       int MATCHED = 0;
-      CH_CASE(IND, "bin index");
       CH_CASE(E0,  "bin left-edge");
       CH_CASE(E1,  "bin right-edge");
       CH_CASE(MP,  "bin mid-point");
@@ -115,8 +126,12 @@ void process_command_line(int argc, char **argv)
       CH_CASE(TC,  "bin total counts");
       CH_CASE(P,   "normalized PDF value");
       CH_CASE(STD, "standard deviation of counts in bin");
+      CH_CASE(GD,  "PDF model: Gaussian");
       CH_CASE(LN,  "PDF model: log-normal");
       CH_CASE(PH,  "PDF model: Hopkins (2013)");
+      CH_CASE(R,   "model residual: |P - model|");
+      CH_CASE(LR,  "model residual, log10: |log10(P) - log10(model)|");
+
       if (!MATCHED) {
       	fprintf(stderr, "ERROR: unknown column header %s\n", argv[n]);
       	exit(2);
@@ -125,12 +140,20 @@ void process_command_line(int argc, char **argv)
   }
 
   if (opts.help) {
-    printf("usage: pdf-machine\n\n");
+    printf("usage: pdf-machine [<options>] [E0 E1 MP MC TC P STD GD LN PH]\n");
+    printf("output model PDF's from an ensemble of histograms\n\n");
     printf(" -h: output help message\n");
-    printf(" -q: limit output to raw pdf only, good if redirecting output\n");
+    printf(" -q: limit output to raw PDF only, good if redirecting output\n");
     printf(" -z: skip zeros in PDF output\n");
+    printf(" -r: skip bin output\n");
     printf(" -T 0.1: parameter for Hopkins (2013) model\n");
     printf("\n");
+    printf("  example input:\n\n");
+    printf("  0.0 0.1 8 4 2 1\n");
+    printf("  0.1 0.2 3 8 3 6\n");
+    printf("  0.2 0.3 6 5 8 1\n");
+    printf("  0.3 0.4 1 2 8 3\n\n");
+
     printf("  allows up to %d bin edges and %d simultaneous PDF's\n",
 	   MAX_ROWS, MAX_COLS);
     printf("  uses %ld MB of RAM\n", (sizeof(dN) + sizeof(BinEdges)) / (1<<20));
@@ -146,6 +169,9 @@ int main(int argc, char **argv)
 
   cached_pdf_mean = pdf_mean();
   cached_pdf_variance = pdf_variance();
+  cached_distribution_total_counts_all = distribution_total_counts_all();
+
+  for (i=0; i<MAX_COLS; ++i) OutputColumnTot[i] = 0.0;
 
   if (!opts.quiet) {
     report();
@@ -155,6 +181,12 @@ int main(int argc, char **argv)
     for (i=0; i<NR; ++i) {
       output(i);
     }
+  }
+
+  if (!opts.quiet) {
+    printf("COLUMN INTEGRALS:\n");
+    for (i=0; i<OutputColumnNum; ++i) printf("%lf ", OutputColumnTot[i]);
+    printf("\n");
   }
 
   return 0;
@@ -171,35 +203,37 @@ void report()
   printf("-S/2 (=M if log-normal and unit mean) ... %f\n", -pdf_variance()/2);
   printf("Hopkins (2013) T parameter ... %f\n", opts.hopkins_T);
 
-  for (i=0; i<NC; ++i) {
-    printf("total counts in distribution %d ... %d\n", i,
-	   distribution_total_counts(i));
-  }
+  printf("total counts over all distributions ... "COUNT_FORMAT"\n",
+	 cached_distribution_total_counts_all);
 
+  printf("COLUMN OUTPUT:\n");
   for (i=0; i<OutputColumnNum; ++i) {
-    printf("col %d: %s\n", i, OutputColumnDes[i]);
+    printf("col %d: %s\n", i+1, OutputColumnDes[i]);
   }
 }
 
-int distribution_total_counts(int nc)
+count_t distribution_total_counts(int nc)
 {
-  int N=0, i;
+  int i;
+  count_t N=0;
   for (i=0; i<NR; ++i) {
     N += dN[i][nc];
   }
   return N;
 }
 
-int distribution_total_counts_all()
+count_t distribution_total_counts_all()
 {
-  int i, c=0;
+  int i;
+  count_t c=0;
   for (i=0; i<NC; ++i) c += distribution_total_counts(i);
   return c;
 }
 
 double pdf_variance()
 {
-  int ntot=0, nbin, i, j;
+  int nbin, i, j;
+  count_t ntot=0;
   double sum=0.0, x, f;
   double mean = pdf_mean();
   for (i=0; i<NR; ++i) {
@@ -217,7 +251,8 @@ double pdf_variance()
 
 double pdf_mean()
 {
-  int ntot=0, nbin, i, j;
+  int nbin, i, j;
+  count_t ntot=0;
   double sum=0.0, x;
   for (i=0; i<NR; ++i) {
     nbin = 0;
@@ -235,10 +270,11 @@ double pdf_mean()
 void output(int nr)
 {
   int j, counts=0;
-  int N = distribution_total_counts_all();
+  count_t N = cached_distribution_total_counts_all;
   double x = 0.5 * (BinEdges[nr+1] + BinEdges[nr]);
   double h = 1.0 * (BinEdges[nr+1] - BinEdges[nr]);
   double v = 0.0; // bin count variance
+  double P, last_model_pdf=0.0;
 
   for (j=0; j<NC; ++j) {
     counts += dN[nr][j];
@@ -249,6 +285,8 @@ void output(int nr)
     v += pow(dN[nr][j] - (double) counts / NC, 2.0) / NC;
   }
 
+  P = (double)counts / N / h; // pdf value
+
   for (j=0; j<OutputColumnNum; ++j) {
     double colval;
     switch (OutputColumnKey[j]) {
@@ -257,17 +295,29 @@ void output(int nr)
     case OC_MP  : colval = x; break;
     case OC_TC  : colval = (double)counts; break;
     case OC_MC  : colval = (double)counts / NC; break;
-    case OC_P   : colval = (double)counts / N / h; break;
+    case OC_P   : colval = P; break;
     case OC_STD : colval = sqrt(v); break;
-    case OC_LN  : colval = pdf_model_lognormal(x); break;
-    case OC_PH  : colval = pdf_model_hopkins2013(x); break;
+    case OC_GD  : colval = last_model_pdf = pdf_model_normal(x); break;
+    case OC_LN  : colval = last_model_pdf = pdf_model_lognormal(x); break;
+    case OC_PH  : colval = last_model_pdf = pdf_model_hopkins2013(x); break;
+    case OC_R   : colval = fabs(last_model_pdf - P); break;
+    case OC_LR  : colval = fabs(log10(last_model_pdf) - log10(P)); break;
     default:
       fprintf(stderr, "ERROR: column header not implemented\n");
       exit(2);
     }
-    printf("%lf ", colval);
+    OutputColumnTot[j] += colval * h;
+    if (!opts.noprint_bins) printf("%lf ", colval);
   }
-  printf("\n");
+  if (!opts.noprint_bins) printf("\n");
+}
+
+double pdf_model_normal(double x)
+{
+  double S = cached_pdf_variance;
+  double M = cached_pdf_mean;
+  double P = 1.0 / sqrt(2 * PI * S) * exp(-0.5*pow(x - M, 2.0)/S);
+  return P;
 }
 
 double pdf_model_lognormal(double x)
@@ -283,9 +333,8 @@ double pdf_model_hopkins2013(double x)
   double S = cached_pdf_variance;
   double T = opts.hopkins_T;
   double L = S / (2*T*T);
-  double v = L / (1 + T) - x / T;
-  double u = v < 1e-12 ? 1e-12 : v;
-  double P = bessi(1, 2*sqrt(L*u)) * exp(-(L + u)) * sqrt(L/u) / T;
+  double u = L / (1 + T) - x / T;
+  double P = u < 0.0 ? 0.0 : bessi(1, 2*sqrt(L*u)) * exp(-(L + u)) * sqrt(L/u) / T;
 
   if (P != P) {
     fprintf(stderr, "ERROR: Bessel function failed, T is too small\n");
@@ -967,7 +1016,7 @@ double bessk( int n, double x )
    return bk;
 }
 
-
+#undef setdblank_c
 #undef ACC
 #undef BIGNO
 #undef BIGNI
