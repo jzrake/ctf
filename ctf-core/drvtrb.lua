@@ -631,6 +631,10 @@ local function main()
       CheckpointWrite(primitive, Status, MeasureLog)
    end
 
+   primitive = nil
+   domain = nil
+   collectgarbage()
+
    Mara.close()
    MPI.Finalize()
 end
