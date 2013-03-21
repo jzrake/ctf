@@ -53,7 +53,7 @@ function TestProblem:user_work_iteration() end
 function TestProblem:user_work_finish() end
 function TestProblem:boundary_conditions() return 'periodic' end
 function TestProblem:fluid() return self._fluid or 'nrhyd' end
-
+function TestProblem:set_initial_gravity() return false end
 
 function problems.soundwave:fluid()
    return self.user_opts.self_gravity and 'gravs' or 'nrhyd'
@@ -327,7 +327,7 @@ function problems.CylindricalPolytrope:initialize_problem()
    local util = require 'util'
 
    local cmd = string.format(
-      "./bin/polytrope s=1e-3 n=2 r=%f R RHO PRE PHI GPH -q", 10.0)
+      "./bin/polytrope s=1e-6 n=2 r=%f R RHO PRE PHI GPH M -q", 10.0)
 
    local file = assert(io.popen(cmd, 'r'))
    for line in file:lines() do
@@ -339,15 +339,24 @@ function problems.CylindricalPolytrope:initialize_problem()
 end
 function problems.CylindricalPolytrope:finish_time() return 5.0 end
 function problems.CylindricalPolytrope:boundary_conditions() return 'outflow' end
-function problems.CylindricalPolytrope:solution(x,y,z,t)
+function problems.CylindricalPolytrope:set_initial_gravity() return true end
+function problems.CylindricalPolytrope:_general_solution(x,y,z,t)
+
+   local L = 5.0
+
+   x = (x - 0.5) * L
+   y = (y - 0.5) * L
+   z = (z - 0.5) * L
 
    local r = (x^2 + y^2)^0.5 * 5.0
    local T = self._table
-   local atmopshere = { T[#T][2], T[#T][3], 0, 0, 0 }
+   local M = T[#T][6]
+   local atmopshere_P = { T[#T][2], T[#T][3], 0, 0, 0 }
+   local atmosphere_G = { }
 
    local function try_to_return(i)
 
-      if i >= #T then return atmosphere end
+      if i >= #T then return atmosphere_P, atmosphere_G end
 
       if T[i][1] < r and r <= T[i+1][1] then
 
@@ -358,21 +367,34 @@ function problems.CylindricalPolytrope:solution(x,y,z,t)
 	 for j=1,#T[i] do
 	    Tlin[j] = T[i][j] + (T[i+1][j] - T[i][j]) * (r - r0) / (r1 - r0)
 	 end
-	 local r, rho, pre, phi, gph = unpack(Tlin)
-	 return {rho, pre, 0, 0, 0}
+
+	 -- gph is the radial component of grad phi
+	 local r, rho, pre, phi, gph, M = unpack(Tlin)
+	 local gravity = { phi, gph * x/y, gph * y/r, 0.0 }
+
+	 return {rho, pre, 0, 0, 0}, gravity
       end
    end
 
    local guessi = math.floor(#T * r / (T[#T][1] - T[1][1]))
 
    for i=guessi, guessi+1 do
-      local try = try_to_return(i)
-      if try then
-	 return try
+      local P, G = try_to_return(i)
+      if P and G then
+	 return P, G
       end
    end
 
-   return atmopshere
+   return atmopshere_P, atmosphere_G
+end
+
+function problems.CylindricalPolytrope:solution(x,y,z,t)
+   local P, G = self:_general_solution(x,y,z,t)
+   return P
+end
+function problems.CylindricalPolytrope:gravity(x,y,z,t)
+   local P, G = self:_general_solution(x,y,z,t)
+   return G
 end
 
 

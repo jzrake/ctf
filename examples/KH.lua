@@ -20,8 +20,15 @@ function MyMara:initialize_physics()
    local function pinit(x,y,z)
       return self.problem:solution(x,y,z,0)
    end
+   local function ginit(x,y,z)
+      return self.problem:gravity(x,y,z,0)
+   end
+
    local P = self.Primitive
    Mara.init_prim(P:buffer(), pinit)
+   if self.problem:set_initial_gravity() then
+      Mara.set_gravity(ginit)
+   end
 end
 
 function MyMara:initialize_solver()
