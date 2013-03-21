@@ -351,8 +351,12 @@ function problems.CylindricalPolytrope:_general_solution(x,y,z,t)
    local r = (x^2 + y^2)^0.5 * 5.0
    local T = self._table
    local M = T[#T][6]
+
+   local phio =  M / (r   * 4 * math.pi) -- phi, grad-phi outside
+   local gpho = -M / (r^2 * 4 * math.pi)
+
    local atmopshere_P = { T[#T][2], T[#T][3], 0, 0, 0 }
-   local atmosphere_G = { }
+   local atmosphere_G = { phio, gpho * x/y, gpho * y/r, 0.0 }
 
    local function try_to_return(i)
 
