@@ -83,6 +83,9 @@ endif
 
 default : bin/ctf-main
 
+tools :
+	make -C tools
+
 $(LUA_A) :
 	$(CD) $(LVER); \
 	$(MAKE) $(OS) CC=$(CC); \
@@ -152,6 +155,6 @@ show :
 realclean : clean
 	$(RM) -r $(LVER)
 
-.PHONY : lua-glut
+.PHONY : lua-glut tools
 
 .FORCE : 
