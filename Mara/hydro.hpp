@@ -80,6 +80,7 @@ public:
   DrivingModule         *driving;
 
   std::valarray<double> PrimitiveArray;
+  std::valarray<double> GravityArray;
   std::valarray<int> FailureMask;
 } ;
 

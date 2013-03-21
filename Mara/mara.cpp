@@ -67,6 +67,7 @@ extern "C"
   static int luaC_Mara_advance(lua_State *L);
   static int luaC_Mara_diffuse(lua_State *L);
   static int luaC_Mara_init_prim(lua_State *L);
+  static int luaC_Mara_set_gravity(lua_State *L);
   static int luaC_Mara_prim_at_point(lua_State *L);
   static int luaC_Mara_get_timestep(lua_State *L);
 
@@ -141,6 +142,7 @@ int luaopen_Mara(lua_State *L)
     {"advance"      , luaC_Mara_advance},
     {"diffuse"      , luaC_Mara_diffuse},
     {"init_prim"    , luaC_Mara_init_prim},
+    {"set_gravity"  , luaC_Mara_set_gravity},
     {"prim_at_point", luaC_Mara_prim_at_point},
     {"get_timestep" , luaC_Mara_get_timestep},
 
@@ -508,6 +510,102 @@ EquationOfState *BuildGenericTabulatedEos(lua_State *L)
   free(tmp);
 
   return new GenericTabulatedEos(D_values, T_values, EOS_p, EOS_u, EOS_c);
+}
+
+
+int luaC_Mara_set_gravity(lua_State *L)
+{
+  if (Mara->domain == NULL) {
+    luaL_error(L, "[Mara] need a domain to run this, use set_domain");
+  }
+  if (lua_type(L, 1) != LUA_TFUNCTION) {
+    luaL_error(L, "[Mara] argument must be a function");
+  }
+
+  const PhysicalDomain *domain = Mara->domain;
+  const int Ng = domain->get_Ng();
+  const std::vector<int> Ninter(domain->GetLocalShape(),
+                                domain->GetLocalShape()+domain->get_Nd());
+
+  int ngrav = 4;
+  ValarrayIndexer N(Ninter);
+  ValarrayManager M(domain->aug_shape(), ngrav);
+  Mara->GravityArray.resize(domain->GetNumberOfZones() * ngrav);
+
+  switch (domain->get_Nd()) {
+  case 1:
+
+    for (int i=0; i<Ninter[0]; ++i) {
+
+      const double x = domain->x_at(i+Ng);
+      const double y = 0.0;
+      const double z = 0.0;
+
+      lua_pushvalue(L, 1);
+      lua_pushnumber(L, x);
+      lua_pushnumber(L, y);
+      lua_pushnumber(L, z);
+      lua_call(L, 3, 1);
+
+      double *P0 = luaU_checkarray(L, 2);
+      std::valarray<double> P(P0, ngrav);
+      free(P0);
+
+      Mara->GravityArray[ M(i+Ng) ] = P;
+      lua_pop(L, 1);
+    }
+    break;
+
+  case 2:
+    for (int i=0; i<Ninter[0]; ++i) {
+      for (int j=0; j<Ninter[1]; ++j) {
+
+        const double x = domain->x_at(i+Ng);
+        const double y = domain->y_at(j+Ng);
+        const double z = 0.0;
+
+	lua_pushvalue(L, 1);
+	lua_pushnumber(L, x);
+	lua_pushnumber(L, y);
+	lua_pushnumber(L, z);
+	lua_call(L, 3, 1);
+
+	double *P0 = luaU_checkarray(L, 2);
+	std::valarray<double> P(P0, ngrav);
+	free(P0);
+	Mara->GravityArray[ M(i+Ng,j+Ng) ] = P;
+	lua_pop(L, 1);
+      }
+    }
+    break;
+
+  case 3:
+    for (int i=0; i<Ninter[0]; ++i) {
+      for (int j=0; j<Ninter[1]; ++j) {
+        for (int k=0; k<Ninter[2]; ++k) {
+
+          const double x = domain->x_at(i+Ng);
+          const double y = domain->y_at(j+Ng);
+          const double z = domain->z_at(k+Ng);
+
+	  lua_pushvalue(L, 1);
+	  lua_pushnumber(L, x);
+	  lua_pushnumber(L, y);
+	  lua_pushnumber(L, z);
+	  lua_call(L, 3, 1);
+
+	  double *P0 = luaU_checkarray(L, 2);
+	  std::valarray<double> P(P0, ngrav);
+	  free(P0);
+	  
+	  Mara->GravityArray[ M(i+Ng,j+Ng,k+Ng) ] = P;
+	  lua_pop(L, 1);
+        }
+      }
+    }
+    break;
+  }
+  return 0;
 }
 
 
