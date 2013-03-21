@@ -31,6 +31,7 @@ local problems = {
    SmoothKelvinHelmholtz = oo.class('SmoothKelvinHelmholtz', TestProblem),
    TwoDimensionalImplosion = oo.class('TwoDimensionalImplosion', TestProblem),
    ThrowBlobs = oo.class('ThrowBlobs', TestProblem),
+   CylindricalPolytrope = oo.class('CylindricalPolytrope', TestProblem),
 }
 for k,v in pairs(problems) do
    if oo.isclass(v) and oo.issubclass(v, TwoStateProblem) then
@@ -318,6 +319,47 @@ function problems.TwoDimensionalImplosion:solution(x,y,z,t)
    else
       return { 0.125, 0.14, 0.0, 0.0, 0.0 }
    end
+end
+
+
+function problems.CylindricalPolytrope:initialize_problem()
+   self._table = { }
+   local util = require 'util'
+
+   local cmd = string.format(
+      "./bin/polytrope s=1e-3 n=2 r=%f R RHO PRE PHI GPH -q", 10.0)
+
+   local file = assert(io.popen(cmd, 'r'))
+   for line in file:lines() do
+      local row = util.string_split(line, ' ', nil, nil, true)
+      table.insert(self._table, row)
+   end
+   file:close()
+   print("[CylindricalPolytrope] read "..#self._table.." rows into table")
+end
+function problems.CylindricalPolytrope:finish_time() return 5.0 end
+function problems.CylindricalPolytrope:boundary_conditions() return 'outflow' end
+function problems.CylindricalPolytrope:solution(x,y,z,t)
+
+   local r = (x^2 + y^2)^0.5 * 5.0
+   local T = self._table
+
+   for i=1, #T-1 do
+      if T[i][1] < r and r < T[i+1][1] then
+
+	 local Tlin = { } -- interpolation of solution to midpoint
+	 local r0 = T[i+0][1]
+	 local r1 = T[i+1][1]
+
+	 for j=1,#T[i] do
+	    Tlin[j] = T[i][j] + (T[i+1][j] - T[i][j]) * (r - r0) / (r1 - r0)
+	 end
+
+	 local r, rho, pre, phi, gph = unpack(Tlin)
+	 return {rho, pre, 0, 0, 0}
+      end
+   end
+   return { T[#T][2], T[#T][3], 0, 0, 0 } -- atmosphere
 end
 
 

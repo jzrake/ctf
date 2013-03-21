@@ -148,7 +148,7 @@ end
 -- *****************************************************************************
 -- http://lua-users.org/wiki/SplitJoin
 -- -----------------------------------------------------------------------------
-function util.string_split(self, sSeparator, nMax, bRegexp)
+function util.string_split(self, sSeparator, nMax, bRegexp, asnumber)
    assert(sSeparator ~= '')
    assert(nMax == nil or nMax >= 1)
 
@@ -161,13 +161,21 @@ function util.string_split(self, sSeparator, nMax, bRegexp)
       local nField=1 nStart=1
       local nFirst,nLast = self:find(sSeparator, nStart, bPlain)
       while nFirst and nMax ~= 0 do
-         aRecord[nField] = self:sub(nStart, nFirst-1)
+	 if asnumber then
+	    aRecord[nField] = tonumber(self:sub(nStart, nFirst-1))
+	 else
+	    aRecord[nField] = self:sub(nStart, nFirst-1)
+	 end
          nField = nField+1
          nStart = nLast+1
          nFirst,nLast = self:find(sSeparator, nStart, bPlain)
          nMax = nMax-1
       end
-      aRecord[nField] = self:sub(nStart)
+      if asnumber then
+	 aRecord[nField] = tonumber(self:sub(nStart))
+      else
+	 aRecord[nField] = self:sub(nStart)
+      end
    end
 
    return aRecord

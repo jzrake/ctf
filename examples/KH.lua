@@ -168,7 +168,8 @@ local function main()
    local sim = MyMara(opts)
    --local problem = problems.SmoothKelvinHelmholtz(opts)
    --local problem = problems.ThrowBlobs(opts)
-   local problem = problems.TwoDimensionalImplosion(opts)
+   --local problem = problems.TwoDimensionalImplosion(opts)
+   local problem = problems.CylindricalPolytrope(opts)
    sim:run(problem)
 end
 
