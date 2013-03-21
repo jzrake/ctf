@@ -6,7 +6,7 @@
 #define MAX_ROWS (1<<16)
 #define MAX_COLS (1<<8)
 #define PI (atan(1.0)*4.0)
-#define NVAR 2
+#define NVAR 3
 
 static double OutputRadius = 10;
 static double StopDensity = 1e-8;
@@ -34,8 +34,9 @@ struct {
 
 enum { OC_Z,    // non-dimensional radial coordinate
        OC_R,    // dimensional radial coordinate
-       OC_T,    // T : T'' + T'/x + T^n = 0
        OC_W,    // W = T'
+       OC_T,    // T : T'' + T'/x + T^n = 0
+       OC_M,    // enclosed mass
        OC_RHO,  // density
        OC_PRE,  // pressure
        OC_PHI,  // gravitational potential
@@ -85,8 +86,9 @@ void process_command_line(int argc, char **argv)
       int MATCHED = 0;
       CH_CASE(Z,    "non-dimensional radial coordinate");
       CH_CASE(R,    "dimensional radial coordinate");
-      CH_CASE(T,    "T : T'' + T'/x + T^n = 0");
       CH_CASE(W,    "W = T'");
+      CH_CASE(T,    "T : T'' + T'/x + T^n = 0");
+      CH_CASE(M,    "enclosed mass");
       CH_CASE(RHO,  "density");
       CH_CASE(PRE,  "pressure");
       CH_CASE(PHI,  "gravitational potential");
@@ -110,7 +112,7 @@ void process_command_line(int argc, char **argv)
 
 
 static void rungekutta4(double *X, double dt, double t);
-static void dXdt(double *X, double t, double *dXdt);
+static void dXdt(double *X, double z, double *dXdt);
 static void integrate();
 
 
@@ -134,12 +136,21 @@ void rungekutta4(double *X, double dt, double t)
   }
 }
 
-void dXdt(double *X, double t, double *dXdt)
+void dXdt(double *X, double z, double *dXdt)
 {
-  double w = X[0];
-  double z = X[1];
-  dXdt[0] = -w / t - pow(z, PolytropeIndex); // = w'
-  dXdt[1] =  w;                 // = z'
+  double K      = PressureConstant;
+  double n      = PolytropeIndex;
+  double Lambda = LambdaValue;
+
+  double Z = z;
+  double R = z * sqrt((1 + n) * K * pow(Lambda, 1.0/n - 1.0) / FourPiG);
+  double W = X[0];
+  double T = X[1];
+  double density = Lambda * pow(T, n);
+
+  dXdt[0] = -W / Z - pow(T, PolytropeIndex);
+  dXdt[1] =  W;
+  dXdt[2] =  2*PI*density*R;
 }
 
 
@@ -156,6 +167,7 @@ void output(double z, double *X)
   double R = z * sqrt((1 + n) * K * pow(Lambda, 1.0/n - 1.0) / FourPiG);
   double W = X[0];
   double T = X[1];
+  double M = X[2];
 
   double V = T - 1; // equation 8
   double B = pow(Lambda, 1.0/n) * K * (1 + n) * V; // equation 7
@@ -171,8 +183,9 @@ void output(double z, double *X)
     switch (OutputColumnKey[j]) {
     case OC_Z: colval = Z; break;
     case OC_R: colval = R; break;
-    case OC_W: colval = W; break;
     case OC_T: colval = T; break;
+    case OC_W: colval = W; break;
+    case OC_M: colval = M; break;
     case OC_RHO: colval = density; break;
     case OC_PRE: colval = pressure; break;
     case OC_PHI: colval = potential; break;
@@ -192,14 +205,14 @@ void integrate()
   double K      = PressureConstant;
   double n      = PolytropeIndex;
   double Lambda = LambdaValue;
-  //  double Gamma  = 1.0 + 1.0/n;
 
   double R, W, T, density;
   double Z = 1e-10;
-  double dZ = 1e-3;
-  double X[2];
+  double dZ = 1e-4;
+  double X[3];
   X[0] = 0.0; // W
   X[1] = 1.0; // T
+  X[2] = 0.0; // M
 
   do {
     R = Z * sqrt( (1 + n) * K * pow(Lambda, 1.0/n - 1.0) / FourPiG);
