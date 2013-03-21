@@ -343,9 +343,13 @@ function problems.CylindricalPolytrope:solution(x,y,z,t)
 
    local r = (x^2 + y^2)^0.5 * 5.0
    local T = self._table
+   local atmopshere = { T[#T][2], T[#T][3], 0, 0, 0 }
 
-   for i=1, #T-1 do
-      if T[i][1] < r and r < T[i+1][1] then
+   local function try_to_return(i)
+
+      if i >= #T then return atmosphere end
+
+      if T[i][1] < r and r <= T[i+1][1] then
 
 	 local Tlin = { } -- interpolation of solution to midpoint
 	 local r0 = T[i+0][1]
@@ -354,13 +358,24 @@ function problems.CylindricalPolytrope:solution(x,y,z,t)
 	 for j=1,#T[i] do
 	    Tlin[j] = T[i][j] + (T[i+1][j] - T[i][j]) * (r - r0) / (r1 - r0)
 	 end
-
 	 local r, rho, pre, phi, gph = unpack(Tlin)
 	 return {rho, pre, 0, 0, 0}
       end
    end
-   return { T[#T][2], T[#T][3], 0, 0, 0 } -- atmosphere
+
+   local guessi = math.floor(#T * r / (T[#T][1] - T[1][1]))
+
+   for i=guessi, guessi+1 do
+      local try = try_to_return(i)
+      if try then
+	 return try
+      end
+   end
+
+   return atmopshere
 end
+
+
 
 
 function problems.ThrowBlobs:initialize_problem()
