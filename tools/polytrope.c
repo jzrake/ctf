@@ -6,7 +6,7 @@
 #define MAX_ROWS (1<<16)
 #define MAX_COLS (1<<8)
 #define PI (atan(1.0)*4.0)
-#define NVAR 3
+#define NVAR 4
 
 static double OutputRadius = 10;
 static double StopDensity = 1e-8;
@@ -23,6 +23,7 @@ static int    OutputColumnNum = 0;
 
 
 static void process_command_line(int argc, char **argv);
+static void output(double *X);
 static void report();
 
 
@@ -111,12 +112,12 @@ void process_command_line(int argc, char **argv)
 
 
 
-static void rungekutta4(double *X, double dt, double t);
-static void dXdt(double *X, double z, double *dXdt);
+static void rungekutta4(double *X, double dt);
+static void dXdt(double *X, double *dXdt);
 static void integrate();
 
 
-void rungekutta4(double *X, double dt, double t)
+void rungekutta4(double *X, double dt)
 {
   int n;
   double L1[NVAR], X1[NVAR];
@@ -124,37 +125,37 @@ void rungekutta4(double *X, double dt, double t)
   double L3[NVAR], X3[NVAR];
   double L4[NVAR], X4[NVAR];
   for (n=0; n<NVAR; ++n) { X1[n] = X[n] +         0.0 * dt; }
-  dXdt(X1, t + 0.0 * dt, L1);
+  dXdt(X1, L1);
   for (n=0; n<NVAR; ++n) { X2[n] = X[n] + L1[n] * 0.5 * dt; }
-  dXdt(X2, t + 0.5 * dt, L2);
+  dXdt(X2, L2);
   for (n=0; n<NVAR; ++n) { X3[n] = X[n] + L2[n] * 0.5 * dt; }
-  dXdt(X3, t + 0.5 * dt, L3);
+  dXdt(X3, L3);
   for (n=0; n<NVAR; ++n) { X4[n] = X[n] + L3[n] * 1.0 * dt; }
-  dXdt(X4, t + 1.0 * dt, L4);
+  dXdt(X4, L4);
   for (n=0; n<NVAR; ++n) {
     X[n] += (L1[n] + 2*L2[n] + 2*L3[n] + L4[n]) * dt/6.0;
   }
 }
 
-void dXdt(double *X, double z, double *dXdt)
+void dXdt(double *X, double *dXdt)
 {
   double K      = PressureConstant;
   double n      = PolytropeIndex;
   double Lambda = LambdaValue;
+  double Alpha  = sqrt((1 + n) * K * pow(Lambda, 1.0/n - 1.0) / FourPiG);
 
-  double Z = z;
-  double R = z * sqrt((1 + n) * K * pow(Lambda, 1.0/n - 1.0) / FourPiG);
-  double W = X[0];
-  double T = X[1];
-  double density = Lambda * pow(T, n);
+  double Z = X[0];
+  double W = X[1];
+  double T = X[2];
 
-  dXdt[0] = -W / Z - pow(T, PolytropeIndex);
-  dXdt[1] =  W;
-  dXdt[2] =  2*PI*density*R;
+  dXdt[0] =  1.0;
+  dXdt[1] = -W / Z - pow(T, PolytropeIndex);
+  dXdt[2] =  W;
+  dXdt[3] =  2 * PI * Lambda * Alpha * Alpha * Z * pow(T, n);
 }
 
 
-void output(double z, double *X)
+void output(double *X)
 {
   int j;
 
@@ -162,21 +163,21 @@ void output(double z, double *X)
   double n      = PolytropeIndex;
   double Lambda = LambdaValue;
   double Gamma  = 1.0 + 1.0/n;
+  double Alpha  = sqrt((1 + n) * K * pow(Lambda, 1.0/n - 1.0) / FourPiG);
 
-  double Z = z;
-  double R = z * sqrt((1 + n) * K * pow(Lambda, 1.0/n - 1.0) / FourPiG);
-  double W = X[0];
-  double T = X[1];
-  double M = X[2];
+  double Z = X[0];
+  double W = X[1];
+  double T = X[2];
+  double M = X[3];
 
-  double V = T - 1; // equation 8
+  double R = Z * Alpha;
+  double V = T == 1 ? 1e-14 : T - 1; // equation 8
   double B = pow(Lambda, 1.0/n) * K * (1 + n) * V; // equation 7
-  double B_prime = B * W / V;
 
   double density  = Lambda * pow(T, n);
   double pressure = K * pow(density, Gamma);
   double potential = -B;
-  double gradphi = -B_prime;
+  double gradphi = -pow(Lambda, 1.0/n) * K * (1 + n) * W / Alpha;
 
   for (j=0; j<OutputColumnNum; ++j) {
     double colval;
@@ -205,27 +206,28 @@ void integrate()
   double K      = PressureConstant;
   double n      = PolytropeIndex;
   double Lambda = LambdaValue;
+  double Alpha  = sqrt((1 + n) * K * pow(Lambda, 1.0/n - 1.0) / FourPiG);
 
-  double R, W, T, density;
-  double Z = 1e-10;
+  double Z, T, R, density;
   double dZ = 1e-4;
-  double X[3];
-  X[0] = 0.0; // W
-  X[1] = 1.0; // T
-  X[2] = 0.0; // M
+  double X[4];
+
+  X[0] = 1e-10; // Z
+  X[1] = 0.0; // W
+  X[2] = 1.0; // T
+  X[3] = 0.0; // M
 
   do {
-    R = Z * sqrt( (1 + n) * K * pow(Lambda, 1.0/n - 1.0) / FourPiG);
-    W = X[0];
-    T = X[1];
+    Z = X[0];
+    T = X[2];
+    R = Z * Alpha;
     density = LambdaValue * pow(T, n);
 
     if (OutputColumnNum > 0) {
-      output(Z, X);
+      output(X);
     }
 
-    rungekutta4(X, dZ, Z);
-    Z += dZ;
+    rungekutta4(X, dZ);
 
   } while (R < OutputRadius && density > StopDensity);
 }

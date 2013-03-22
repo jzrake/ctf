@@ -323,73 +323,73 @@ end
 
 
 function problems.CylindricalPolytrope:initialize_problem()
-   self._table = { }
    local util = require 'util'
-
-   local cmd = string.format(
-      "./bin/polytrope s=1e-6 n=2 r=%f R RHO PRE PHI GPH M -q", 10.0)
-
+   local cmd =
+      "./bin/polytrope s=1e-4 n=2 r=10 R RHO PRE PHI GPH M -q"
    local file = assert(io.popen(cmd, 'r'))
+   local T = { }
    for line in file:lines() do
       local row = util.string_split(line, ' ', nil, nil, true)
-      table.insert(self._table, row)
+      table.insert(T, row)
    end
    file:close()
+
+   self._Rstar = T[#T][1] -- stellar radius
+   self._Pstar = T[#T][4] -- potential at surface
+   self._Mstar = T[#T][6] -- stellar mass
+   self._table = T
+
    print("[CylindricalPolytrope] read "..#self._table.." rows into table")
+   print("[CylindricalPolytrope] star has mass "..self._Mstar)
+   print("[CylindricalPolytrope]        radius "..self._Rstar)
 end
 function problems.CylindricalPolytrope:finish_time() return 5.0 end
 function problems.CylindricalPolytrope:boundary_conditions() return 'outflow' end
 function problems.CylindricalPolytrope:set_initial_gravity() return true end
 function problems.CylindricalPolytrope:_general_solution(x,y,z,t)
 
-   local L = 5.0
+   local R = (x^2 + y^2)^0.5
 
-   x = (x - 0.5) * L
-   y = (y - 0.5) * L
-   z = (z - 0.5) * L
-
-   local r = (x^2 + y^2)^0.5 * 5.0
+   local FourPiG = 1.0
+   local Rstar = self._Rstar
+   local Pstar = self._Pstar
+   local Mstar = self._Mstar
    local T = self._table
-   local M = T[#T][6]
+   local G = FourPiG / (4 * math.pi)
 
-   local phio =  M / (r   * 4 * math.pi) -- phi, grad-phi outside
-   local gpho = -M / (r^2 * 4 * math.pi)
-
-   local atmopshere_P = { T[#T][2], T[#T][3], 0, 0, 0 }
-   local atmosphere_G = { phio, gpho * x/y, gpho * y/r, 0.0 }
+   if R > Rstar then
+      local phi = 2 * G * Mstar * math.log(R / Rstar) + Pstar
+      local gph = 2 * G * Mstar / R
+      local P = { 1e-3, 1e-3, 0, 0 }
+      local G = { phi, gph * x/R, gph * y/R, 0.0 }
+      return P, G
+   end
 
    local function try_to_return(i)
-
-      if i >= #T then return atmosphere_P, atmosphere_G end
-
-      if T[i][1] < r and r <= T[i+1][1] then
+      if T[i][1] < R and R <= T[i+1][1] then
 
 	 local Tlin = { } -- interpolation of solution to midpoint
 	 local r0 = T[i+0][1]
 	 local r1 = T[i+1][1]
 
 	 for j=1,#T[i] do
-	    Tlin[j] = T[i][j] + (T[i+1][j] - T[i][j]) * (r - r0) / (r1 - r0)
+	    Tlin[j] = T[i][j] + (T[i+1][j] - T[i][j]) * (R - r0) / (r1 - r0)
 	 end
-
 	 -- gph is the radial component of grad phi
 	 local r, rho, pre, phi, gph, M = unpack(Tlin)
-	 local gravity = { phi, gph * x/y, gph * y/r, 0.0 }
-
+	 local gravity = { phi, gph * x/R, gph * y/R, 0.0 }
 	 return {rho, pre, 0, 0, 0}, gravity
       end
    end
 
-   local guessi = math.floor(#T * r / (T[#T][1] - T[1][1]))
-
+   local guessi = math.floor(#T * R / Rstar)
    for i=guessi, guessi+1 do
       local P, G = try_to_return(i)
       if P and G then
 	 return P, G
       end
    end
-
-   return atmopshere_P, atmosphere_G
+   error "lookup in polytrope table failed"
 end
 
 function problems.CylindricalPolytrope:solution(x,y,z,t)
