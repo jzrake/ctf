@@ -325,7 +325,7 @@ end
 function problems.CylindricalPolytrope:initialize_problem()
    local util = require 'util'
    local cmd =
-      "./bin/polytrope s=1e-4 n=2 r=10 R RHO PRE PHI GPH M -q"
+      "./bin/polytrope s=1e-3 n=2 r=10 R RHO PRE PHI GPH M -q"
    local file = assert(io.popen(cmd, 'r'))
    local T = { }
    for line in file:lines() do
@@ -335,7 +335,8 @@ function problems.CylindricalPolytrope:initialize_problem()
    file:close()
 
    self._Rstar = T[#T][1] -- stellar radius
-   self._Pstar = T[#T][4] -- potential at surface
+   self._Pstar = T[#T][3] -- pressure at surface
+   self._Fstar = T[#T][4] -- potential at surface
    self._Mstar = T[#T][6] -- stellar mass
    self._table = T
 
@@ -353,14 +354,18 @@ function problems.CylindricalPolytrope:_general_solution(x,y,z,t)
    local FourPiG = 1.0
    local Rstar = self._Rstar
    local Pstar = self._Pstar
+   local Fstar = self._Fstar
    local Mstar = self._Mstar
    local T = self._table
    local G = FourPiG / (4 * math.pi)
 
    if R > Rstar then
-      local phi = 2 * G * Mstar * math.log(R / Rstar) + Pstar
+      local Rho_atm = 1e-6
+      local Pre_atm = Pstar - Rho_atm * G * Mstar * math.log(R / Rstar)
+
+      local phi = 2 * G * Mstar * math.log(R / Rstar) + Fstar
       local gph = 2 * G * Mstar / R
-      local P = { 1e-3, 1e-3, 0, 0 }
+      local P = { Rho_atm, Pre_atm, 0, 0 }
       local G = { phi, gph * x/R, gph * y/R, 0.0 }
       return P, G
    end
