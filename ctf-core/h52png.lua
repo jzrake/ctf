@@ -18,18 +18,21 @@ local function file_exists(name)
 end
 
 local function write_frames(opts, fnames)
+   local dset = opts.dset or 'rho'
    for _,fname in pairs(fnames) do
       local h5f = hdf5.File(fname, 'r')
-      local D = h5f['prim']['rho']:value()
+      local D = h5f['prim'][opts.dset]:value()
       local N = D:shape()
-      local ppmname = string.gsub(fname, '.h5', '.ppm')
-      local pngname = string.gsub(fname, '.h5', '.png')
+      local ppmname = string.gsub(fname, '.h5', '-'..dset..'.ppm')
+      local pngname = string.gsub(fname, '.h5', '-'..dset..'.png')
       print('[h52png]: '..fname..' -> '..pngname)
       visual.write_ppm(D:buffer(), N[1], N[2], ppmname,
                        opts.cmap, opts.dmin, opts.dmax)
-      os.execute(string.format('convert -flip %s %s', ppmname, pngname))
+      os.execute(string.format('convert -flip -resize %f%% %s %s',
+			       opts.resize or 100, ppmname, pngname))
       os.execute(string.format('rm %s', ppmname))
       table.insert(frames_written, pngname)
+      h5f:close()
    end
 end
 
@@ -40,6 +43,8 @@ local function main()
    parser.add_option{"--dmin", dest="dmin", help="data range minimum"}
    parser.add_option{"--dmax", dest="dmax", help="data range maximum"}
    parser.add_option{"--cmap", dest="cmap", help="color map index"}
+   parser.add_option{"--dset", dest="dset", help="which data set to read from"}
+   parser.add_option{"--resize", dest="resize", help="resize the image by percentage"}
    parser.add_option{"--movie", dest="movie", help="write a movie with the given name"}
    parser.add_option{"--format", dest="format",
                      help="use instead of direct filenames: for example, data/myrun.%04d"}
