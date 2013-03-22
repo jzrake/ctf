@@ -10,7 +10,7 @@
 class WenoSplit : public GodunovOperator, public RiemannSolver
 {
 private:
-  std::valarray<double> Uglb, Pglb, Lglb;
+  std::valarray<double> Uglb, Pglb, Lglb, Sglb;
   std::valarray<double> Fiph, Giph, Hiph;
 
   void intercell_flux_sweep(const double *U, const double *P,

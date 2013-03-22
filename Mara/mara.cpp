@@ -526,18 +526,16 @@ int luaC_Mara_set_gravity(lua_State *L)
   const int Ng = domain->get_Ng();
   const std::vector<int> Ninter(domain->GetLocalShape(),
                                 domain->GetLocalShape()+domain->get_Nd());
-
   int ngrav = 4;
-  ValarrayIndexer N(Ninter);
   ValarrayManager M(domain->aug_shape(), ngrav);
   Mara->GravityArray.resize(domain->GetNumberOfZones() * ngrav);
 
   switch (domain->get_Nd()) {
   case 1:
 
-    for (int i=0; i<Ninter[0]; ++i) {
+    for (int i=0; i<Ninter[0]+2*Ng; ++i) {
 
-      const double x = domain->x_at(i+Ng);
+      const double x = domain->x_at(i);
       const double y = 0.0;
       const double z = 0.0;
 
@@ -551,17 +549,17 @@ int luaC_Mara_set_gravity(lua_State *L)
       std::valarray<double> P(P0, ngrav);
       free(P0);
 
-      Mara->GravityArray[ M(i+Ng) ] = P;
+      Mara->GravityArray[ M(i) ] = P;
       lua_pop(L, 1);
     }
     break;
 
   case 2:
-    for (int i=0; i<Ninter[0]; ++i) {
-      for (int j=0; j<Ninter[1]; ++j) {
+    for (int i=0; i<Ninter[0]+2*Ng; ++i) {
+      for (int j=0; j<Ninter[1]+2*Ng; ++j) {
 
-        const double x = domain->x_at(i+Ng);
-        const double y = domain->y_at(j+Ng);
+        const double x = domain->x_at(i);
+        const double y = domain->y_at(j);
         const double z = 0.0;
 
 	lua_pushvalue(L, 1);
@@ -573,20 +571,21 @@ int luaC_Mara_set_gravity(lua_State *L)
 	double *P0 = luaU_checkarray(L, 2);
 	std::valarray<double> P(P0, ngrav);
 	free(P0);
-	Mara->GravityArray[ M(i+Ng,j+Ng) ] = P;
+
+	Mara->GravityArray[ M(i,j) ] = P;
 	lua_pop(L, 1);
       }
     }
     break;
 
   case 3:
-    for (int i=0; i<Ninter[0]; ++i) {
-      for (int j=0; j<Ninter[1]; ++j) {
-        for (int k=0; k<Ninter[2]; ++k) {
+    for (int i=0; i<Ninter[0]+2*Ng; ++i) {
+      for (int j=0; j<Ninter[1]+2*Ng; ++j) {
+        for (int k=0; k<Ninter[2]+2*Ng; ++k) {
 
-          const double x = domain->x_at(i+Ng);
-          const double y = domain->y_at(j+Ng);
-          const double z = domain->z_at(k+Ng);
+          const double x = domain->x_at(i);
+          const double y = domain->y_at(j);
+          const double z = domain->z_at(k);
 
 	  lua_pushvalue(L, 1);
 	  lua_pushnumber(L, x);
@@ -598,13 +597,42 @@ int luaC_Mara_set_gravity(lua_State *L)
 	  std::valarray<double> P(P0, ngrav);
 	  free(P0);
 	  
-	  Mara->GravityArray[ M(i+Ng,j+Ng,k+Ng) ] = P;
+	  Mara->GravityArray[ M(i,j,k) ] = P;
 	  lua_pop(L, 1);
         }
       }
     }
     break;
   }
+
+  FILE *fpre = fopen("fpre.dat", "w");
+  FILE *fphi = fopen("fphi.dat", "w");
+  FILE *gphx = fopen("gphx.dat", "w");
+  FILE *gphy = fopen("gphy.dat", "w");
+
+  ValarrayManager PM(domain->aug_shape(), 5);
+
+  for (int i=0; i<Ninter[0]+2*Ng; ++i) {
+    for (int j=0; j<Ninter[1]+2*Ng; ++j) {
+      std::valarray<double> P = Mara->PrimitiveArray[ PM(i,j) ];
+      std::valarray<double> G = Mara->GravityArray[ M(i,j) ];
+
+      fprintf(fpre, "%14.12f ", P[1]);
+      fprintf(fphi, "%14.12f ", G[0]);
+      fprintf(gphx, "%14.12f ", G[1]);
+      fprintf(gphy, "%14.12f ", G[2]);
+
+    }
+    fprintf(fpre, "\n");
+    fprintf(fphi, "\n");
+    fprintf(gphx, "\n");
+    fprintf(gphy, "\n");
+  }
+
+  fclose(fpre);
+  fclose(fphi);
+  fclose(gphx);
+  fclose(gphy);
   return 0;
 }
 

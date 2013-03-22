@@ -2,6 +2,7 @@
 #include "plm-split.hpp"
 #include "weno.h"
 #include "logging.hpp"
+#include "valman.hpp"
 
 #define MAXNQ 8 // Used for static array initialization
 typedef MethodOfLinesSplit Deriv;
@@ -14,8 +15,6 @@ std::valarray<double> Deriv::dUdt(const std::valarray<double> &Uin)
   std::valarray<double> L(U.size());
   std::valarray<double> &P = Mara->PrimitiveArray;
 
-  //  ConsToPrim(U, P);
-
   int err = ConsToPrim(U, P);
 
   if (err != 0) {
@@ -25,7 +24,37 @@ std::valarray<double> Deriv::dUdt(const std::valarray<double> &Uin)
 
   DriveSweeps(P, L);
 
-  return L;
+
+  std::valarray<double> Sglb(U.size());
+  const int ngrav = 4;
+  const int Ng = Mara->domain->get_Ng();
+  const std::vector<int> Ninter(Mara->domain->GetLocalShape(),
+                                Mara->domain->GetLocalShape()+Mara->domain->get_Nd());
+  ValarrayIndexer N(Ninter);
+  ValarrayManager M(Mara->domain->aug_shape(), Mara->domain->get_Nq());
+  ValarrayManager K(Mara->domain->aug_shape(), ngrav); // gravity array indexer
+
+  for (int i=0; i<Ninter[0]+2*Ng; ++i) {
+    for (int j=0; j<Ninter[1]+2*Ng; ++j) {
+
+      std::valarray<double> S(Mara->domain->get_Nq());
+      std::valarray<double> P0 = P                 [ M(i,j) ];
+      std::valarray<double> G0 = Mara->GravityArray[ K(i,j) ];
+
+      double fx = -G0[1]; // grad_phi
+      double fy = -G0[2];
+      double fz = -G0[3];
+
+      S[0] = 0.0;
+      S[1] = P0[0] * (fx*P0[2] + fy*P0[3] + fz*P0[4]);
+      S[2] = P0[0] * fx;
+      S[3] = P0[0] * fy;
+      S[4] = P0[0] * fz;
+
+      Sglb[ M(i,j) ] = S;
+    }
+  }
+  return L + Sglb;
 }
 void Deriv::DriveSweeps(const std::valarray<double> &P,
                         std::valarray<double> &L)

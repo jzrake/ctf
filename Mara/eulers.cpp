@@ -54,21 +54,31 @@ int Eulers::ConsToPrim(const double *U, double *P) const
   P[vz ] = U[pz ] / U[rho];
 
   if (P[rho] < 0.0) {
-    DebugLog.Error(__FUNCTION__) << "Got negative density." << std::endl;
-    DebugLog.Error() << PrintPrim(P) << std::endl
-                     << PrintCons(U) << std::endl;
+
+    /* X!X!X!X!X hard-coding pressure floor */
+    P[rho] = 1e-3;
+    return 0;
+
+    std::cout << "Got negative density." << std::endl;
+    std::cout << PrintPrim(P) << std::endl
+	      << PrintCons(U) << std::endl;
     return 1;
   }
   if (P[pre] < 0.0) {
-    DebugLog.Error(__FUNCTION__) << "Got negative pressure." << std::endl;
-    DebugLog.Error() << PrintPrim(P) << std::endl
-                     << PrintCons(U) << std::endl;
+
+    /* X!X!X!X!X hard-coding pressure floor */
+    P[pre] = 1e-3;
+    return 0;
+
+    std::cout << "Got negative pressure." << std::endl;
+    std::cout << PrintPrim(P) << std::endl
+	      << PrintCons(U) << std::endl;
     return 1;
   }
   if (U[nrg] < 0.0) {
-    DebugLog.Error(__FUNCTION__) << "Got negative energy." << std::endl;
-    DebugLog.Error() << PrintPrim(P) << std::endl
-                     << PrintCons(U) << std::endl;
+    std::cout << "Got negative energy." << std::endl;
+    std::cout << PrintPrim(P) << std::endl
+	      << PrintCons(U) << std::endl;
     return 1;
   }
 

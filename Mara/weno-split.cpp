@@ -9,6 +9,8 @@
 #include "riemann_hll.hpp"
 #include "matrix.h"
 #include "weno.h"
+#include "valman.hpp"
+
 
 typedef WenoSplit Deriv;
 
@@ -20,6 +22,7 @@ std::valarray<double> Deriv::dUdt(const std::valarray<double> &Uin)
   Uglb.resize(stride[0]);
   Pglb.resize(stride[0]);
   Lglb.resize(stride[0]);
+  Sglb.resize(stride[0]);
 
   Fiph.resize(stride[0]*(ND>=1));
   Giph.resize(stride[0]*(ND>=2));
@@ -40,7 +43,43 @@ std::valarray<double> Deriv::dUdt(const std::valarray<double> &Uin)
   case 3: drive_sweeps_3d(); break;
   }
 
-  return Lglb;
+
+  /*
+   *  -----
+   *
+   *  -----
+   */
+
+  const int ngrav = 4;
+  const int Ng = Mara->domain->get_Ng();
+  const std::vector<int> Ninter(Mara->domain->GetLocalShape(),
+                                Mara->domain->GetLocalShape()+Mara->domain->get_Nd());
+  ValarrayIndexer N(Ninter);
+  ValarrayManager M(Mara->domain->aug_shape(), Mara->domain->get_Nq());
+  ValarrayManager L(Mara->domain->aug_shape(), ngrav); // gravity array indexer
+
+  for (int i=0; i<Ninter[0]+2*Ng; ++i) {
+    for (int j=0; j<Ninter[1]+2*Ng; ++j) {
+
+      std::valarray<double> S(Mara->domain->get_Nq());
+      std::valarray<double> P = Pglb              [ M(i,j) ];
+      std::valarray<double> G = Mara->GravityArray[ L(i,j) ];
+
+      double fx = -G[1]; // grad_phi
+      double fy = -G[2];
+      double fz = -G[3];
+
+      S[0] = 0.0;
+      S[1] = P[0] * (fx*P[2] + fy*P[3] + fz*P[4]);
+      S[2] = P[0] * fx;
+      S[3] = P[0] * fy;
+      S[4] = P[0] * fz;
+
+      Sglb[ M(i,j) ] = S;
+    }
+  }
+
+  return Lglb + Sglb;
 }
 
 
@@ -85,23 +124,23 @@ void Deriv::intercell_flux_sweep(const double *U, const double *P,
       double Ul[5], Ur[5];
 
       for (int q=0; q<NQ; ++q) {
-	const int m = i*NQ + q;
-	double v[6] = { P[m-2*NQ], P[m-NQ], P[m], P[m+NQ], P[m+2*NQ], P[m+3*NQ] };
-	
-	switch (GodunovOperator::reconstruct_method) {
-	case RECONSTRUCT_PCM:
-	  Pl[q] = v[2];
-	  Pr[q] = v[3];
-	  break;
-	case RECONSTRUCT_PLM:
-	  Pl[q] = reconstruct(&v[2], PLM_C2R);
-	  Pr[q] = reconstruct(&v[3], PLM_C2L);
-	  break;
-	case RECONSTRUCT_WENO5:
-	  Pl[q] = reconstruct(&v[2], WENO5_FV_C2R);
-	  Pr[q] = reconstruct(&v[3], WENO5_FV_C2L);
-	  break;
-	}
+        const int m = i*NQ + q;
+        double v[6] = { P[m-2*NQ], P[m-NQ], P[m], P[m+NQ], P[m+2*NQ], P[m+3*NQ] };
+
+        switch (GodunovOperator::reconstruct_method) {
+        case RECONSTRUCT_PCM:
+          Pl[q] = v[2];
+          Pr[q] = v[3];
+          break;
+        case RECONSTRUCT_PLM:
+          Pl[q] = reconstruct(&v[2], PLM_C2R);
+          Pr[q] = reconstruct(&v[3], PLM_C2L);
+          break;
+        case RECONSTRUCT_WENO5:
+          Pl[q] = reconstruct(&v[2], WENO5_FV_C2R);
+          Pr[q] = reconstruct(&v[3], WENO5_FV_C2L);
+          break;
+        }
       }
       Mara->fluid->PrimToCons(Pl, Ul);
       Mara->fluid->PrimToCons(Pr, Ur);
@@ -157,7 +196,7 @@ void Deriv::intercell_flux_sweep(const double *U, const double *P,
       matrix_vector_product(Rr[0], fweno_m, Fweno_m, NQ, NQ);
 
       for (int q=0; q<NQ; ++q) {
-	Fiph[i*NQ + q] = Fweno_p[q] + Fweno_m[q];
+        Fiph[i*NQ + q] = Fweno_p[q] + Fweno_m[q];
       }
     }
 
@@ -333,4 +372,3 @@ void Deriv::drive_sweeps_3d()
       -(Hiph[i]-Hiph[i-Sz])/dz;
   }
 }
-
