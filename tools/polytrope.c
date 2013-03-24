@@ -196,7 +196,7 @@ void output(double *X)
       exit(2);
     }
     OutputColumnCur[j] = colval;
-    if (!opts.noprint_rows) printf("%lf ", colval);
+    if (!opts.noprint_rows) printf("%14.12e ", colval);
   }
   if (!opts.noprint_rows) printf("\n");
 }
