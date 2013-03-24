@@ -31,6 +31,7 @@ struct {
   int help;
   int quiet;
   int noprint_rows;
+  int binary_mode;
 } opts = {0,0};
 
 enum { OC_Z,    // non-dimensional radial coordinate
@@ -61,6 +62,7 @@ void process_command_line(int argc, char **argv)
       switch (argv[n][1]) {
       case 'h': opts.help = 1; break;
       case 'q': opts.quiet = 1; break;
+      case 'b': opts.binary_mode = 1;break;
       case 'r': opts.noprint_rows = 1; break;
       default:
 	fprintf(stderr, "ERROR: unknown option %s\n", argv[n]);
@@ -105,6 +107,9 @@ void process_command_line(int argc, char **argv)
     printf("usage: polytrope [<options>] [R RHO PRE PHI GPH]\n");
     printf("calculate solutions to stellar polytropes\n\n");
     printf(" -h: output help message\n");
+    printf(" -q: clean output, solution data only\n");
+    printf(" -b: output solution in binary format\n");
+    printf(" -r: skip row output, print solution at stellar surface only\n");
     printf("\n");
     exit(1);
   }
@@ -196,9 +201,16 @@ void output(double *X)
       exit(2);
     }
     OutputColumnCur[j] = colval;
-    if (!opts.noprint_rows) printf("%14.12e ", colval);
+    if (opts.binary_mode) {
+      fwrite(&colval, sizeof(double), 1, stdout);
+    }
+    else if (!opts.noprint_rows) {
+      printf("%14.12e ", colval);
+    }
   }
-  if (!opts.noprint_rows) printf("\n");
+  if (!opts.binary_mode && !opts.noprint_rows) {
+    printf("\n");
+  }
 }
 
 void integrate()
