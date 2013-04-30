@@ -31,6 +31,11 @@ local problems = {
    SmoothKelvinHelmholtz = oo.class('SmoothKelvinHelmholtz', TestProblem),
    TwoDimensionalImplosion = oo.class('TwoDimensionalImplosion', TestProblem),
    ThrowBlobs = oo.class('ThrowBlobs', TestProblem),
+   RelativisticVortex = oo.class('RelativisticVortex', TestProblem),
+   JetCavity = oo.class('JetCavity', TestProblem),
+   Reconnection = oo.class('Reconnection', TestProblem),
+   ShapiroLikeRotator = oo.class('ShapiroLikeRotator', TestProblem),
+   MagneticTower = oo.class('MagneticTower', TestProblem)
 }
 for k,v in pairs(problems) do
    if oo.isclass(v) and oo.issubclass(v, TwoStateProblem) then
@@ -52,6 +57,7 @@ function TestProblem:user_work_iteration() end
 function TestProblem:user_work_finish() end
 function TestProblem:boundary_conditions() return 'periodic' end
 function TestProblem:fluid() return self._fluid or 'nrhyd' end
+function TestProblem:adiabatic_index() return 1.4 end
 
 
 function problems.soundwave:fluid()
@@ -368,6 +374,139 @@ end
 function problems.ThrowBlobs:user_work_finish()
 
 end
+
+function problems.RelativisticVortex:initialize_problem()
+end
+function problems.RelativisticVortex:finish_time()
+   return 2.5
+end
+function problems.RelativisticVortex:solution(x,y,z,t)
+   local Power = math.pow
+   local E = math.exp(1)
+   local gamma = 1.4
+   local r0 = 0.10
+
+   local x = (x - 0.5)
+   local y = (y - 0.5)
+   local r = (x*x + y*y)^0.5
+
+   local P0   =  0.5 -- pressure at the origin
+   local D0   =  1.0 -- density at the origin
+   local u0   =  1.0 -- u-phi at the origin
+
+   local P = (D0 - D0*gamma + (D0*(-1 + gamma) + gamma*P0)/
+	      Power(E,(gamma*(2*r + r0 - Power(E,(2*r)/r0)*r0)*Power(u0,2))/Power(E,(2*r)/r0)/
+		    (4.*(-1 + gamma)*r0)))/gamma
+
+   local u    =  u0 * (r/r0) * math.exp(-r/r0)
+   local vf   =  u / (1 + u^2)^0.5
+   local vx   = -vf * y/r
+   local vy   =  vf * x/r
+
+   return { D0, P, vx, vy, 0.0 }
+end
+function problems.RelativisticVortex:boundary_conditions() return 'periodic' end
+function problems.RelativisticVortex:fluid() return 'srhyd' end
+
+function problems.JetCavity:solution(x,y,z,t)
+
+   local x = (x - 0.5)
+   local y = (y - 0.5)
+   local r = (x*x + y*y)^0.5
+
+   local vy
+   local D
+   local P=1.0
+
+   if r > 0.25 then
+      D = 100.0
+   else
+      D = 1.0
+   end
+
+   if r < 0.025 then
+      vy = 0.999
+   end
+
+   return { D, P, 0.0, vy, 0.0, 0, 0, 0 }
+end
+function problems.JetCavity:boundary_conditions() return 'outflow' end
+function problems.JetCavity:fluid() return 'srhyd' end
+
+function problems.Reconnection:initialize_problem(x,y,z,t)
+   if self.simulation.cart_rank then
+      math.randomseed(self.simulation.cart_rank)
+   end
+end
+function problems.Reconnection:solution(x,y,z,t)
+   local x = (x - 0.5)
+   local y = (y - 0.5)
+
+   local D=1.0
+   local P=1.0
+   local Bx
+
+   if math.abs(y) < 0.25 then
+      Bx = -1.0
+   else
+      Bx = 1.0
+   end
+   local vx = (math.random() - 0.5) * 1e-2
+   local vy = (math.random() - 0.5) * 1e-2
+   return { D, P, vx, vy, 0.0, Bx, 0.0, 0.0 }
+end
+function problems.Reconnection:boundary_conditions() return 'periodic' end
+function problems.Reconnection:fluid() return 'srmhd' end
+
+
+
+function problems.ShapiroLikeRotator:solution(x,y,z,t)
+   local x = (x - 0.5)
+   local y = (y - 0.5)
+   local r = (x*x + y*y)^0.5
+   local vx = 0.0
+   local vy = 0.0
+   local Bx = 0.01
+   local By = 0.0
+   local r0 = 0.25
+   if r < r0 then
+      vx = -0.5*y*(1 + (r/r0)^2)
+      vy =  0.5*x*(1 + (r/r0)^2)
+   end
+   return { 1, 1, vx, vy, 0.0, Bx, By, 0.0 }
+end
+function problems.ShapiroLikeRotator:boundary_conditions() return 'outflow' end
+function problems.ShapiroLikeRotator:fluid() return 'srmhd' end
+
+
+
+function problems.MagneticTower:solution(x,y,z,t)
+   local Power = math.pow
+   local E = math.exp(1)
+   local gamma = 1.4
+   local r0 = 0.15
+   local z0 = 0.10
+   local x = (x - 0.5)
+   local y = (y - 0.5)
+   local z = (z - 0.5)
+   local r = (x^2 + y^2)^0.5
+   local P0   =  0.5 -- pressure at the origin
+   local D0   =  1.0 -- density at the origin
+   local u0   =  1.0 -- / (1.0 + (z/z0)^2) -- u-phi at the origin
+   local P = (D0 - D0*gamma + (D0*(-1 + gamma) + gamma*P0)/
+	      Power(E,(gamma*(2*r + r0 - Power(E,(2*r)/r0)*r0)*Power(u0,2))/
+		    Power(E,(2*r)/r0)/(4.*(-1 + gamma)*r0)))/gamma
+   local u    =  u0 * (r/r0) * math.exp(-r/r0)
+   local vf   =  u / (1 + u^2)^0.5
+   local vx   = -vf * y/r
+   local vy   =  vf * x/r
+   local Bx = 0.0
+   local By = 0.0
+   local Bz = 0.0
+   return { D0, P, vx, vy, 0.0, Bx, By, Bz }
+end
+function problems.MagneticTower:boundary_conditions() return 'outflow' end
+function problems.MagneticTower:fluid() return 'srhyd' end
 
 
 

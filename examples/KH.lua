@@ -31,10 +31,7 @@ function MyMara:initialize_solver()
    self.Ng = 3
    self.Nx = opts.resolution or 128
    self.Ny = opts.resolution or 128
-   self.Nz = 1
-   self.dx = 1.0 / self.Nx
-   self.dy = 1.0 / self.Ny
-
+   self.Nz = opts.resolution or 128
 
    MPI.Init()
    cow.init(0, nil, 0) -- to reopen stdout to dev/null
@@ -49,6 +46,7 @@ function MyMara:initialize_solver()
    cow.domain_setguard(domain, self.Ng)
    cow.domain_commit(domain)
    cow.domain_getcomm(domain, domain_comm)
+   self.cart_rank = cow.domain_getcartrank(domain)
 
    local fluid = ({nrhyd='euler',
 		   srhyd='srhd',
@@ -71,6 +69,7 @@ function MyMara:initialize_solver()
 
    Mara.start()
    Mara.set_fluid(fluid)
+   Mara.set_eos('gamma-law', self.problem:adiabatic_index())
    Mara.set_advance(advance or 'rk3')
    Mara.set_godunov(solver)
    Mara.set_boundary(self.problem:boundary_conditions())
@@ -168,7 +167,11 @@ local function main()
    local sim = MyMara(opts)
    --local problem = problems.SmoothKelvinHelmholtz(opts)
    --local problem = problems.ThrowBlobs(opts)
-   local problem = problems.TwoDimensionalImplosion(opts)
+   --local problem = problems.TwoDimensionalImplosion(opts)
+   --local problem = problems.RelativisticVortex(opts)
+   --local problem = problems.JetCavity(opts)
+   --local problem = problems.Reconnection(opts)
+   local problem = problems.MagneticTower(opts)
    sim:run(problem)
 end
 

@@ -37,6 +37,7 @@ function MaraSimulation:initialize_solver()
 
    Mara.start()
    Mara.set_fluid(fluid)
+   Mara.set_eos('gamma-law', self.problem:adiabatic_index())
    Mara.set_advance(advance or 'rk3')
    Mara.set_godunov(solver)
    Mara.set_boundary(self.problem:boundary_conditions())
