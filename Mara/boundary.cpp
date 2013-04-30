@@ -207,7 +207,7 @@ void OutflowBoundary3d::ApplyBoundaries(std::valarray<double> &U) const
 void OutflowBoundary3d::set_bc_x0_wall(std::valarray<double> &U) const
 {
   const int Ny = Mara->domain->get_N(2);
-  const int Nz = Mara->domain->get_N(2);
+  const int Nz = Mara->domain->get_N(3);
   const int Ng = Mara->domain->get_Ng();
 
   ValarrayManager M(Mara->domain->aug_shape(), Mara->domain->get_Nq());
@@ -222,7 +222,7 @@ void OutflowBoundary3d::set_bc_x1_wall(std::valarray<double> &U) const
 {
   const int Nx = Mara->domain->get_N(1);
   const int Ny = Mara->domain->get_N(2);
-  const int Nz = Mara->domain->get_N(2);
+  const int Nz = Mara->domain->get_N(3);
   const int Ng = Mara->domain->get_Ng();
 
   ValarrayManager M(Mara->domain->aug_shape(), Mara->domain->get_Nq());
@@ -236,7 +236,7 @@ void OutflowBoundary3d::set_bc_x1_wall(std::valarray<double> &U) const
 void OutflowBoundary3d::set_bc_y0_wall(std::valarray<double> &U) const
 {
   const int Nx = Mara->domain->get_N(1);
-  const int Nz = Mara->domain->get_N(2);
+  const int Nz = Mara->domain->get_N(3);
   const int Ng = Mara->domain->get_Ng();
 
   ValarrayManager M(Mara->domain->aug_shape(), Mara->domain->get_Nq());
@@ -251,7 +251,7 @@ void OutflowBoundary3d::set_bc_y1_wall(std::valarray<double> &U) const
 {
   const int Nx = Mara->domain->get_N(1);
   const int Ny = Mara->domain->get_N(2);
-  const int Nz = Mara->domain->get_N(2);
+  const int Nz = Mara->domain->get_N(3);
   const int Ng = Mara->domain->get_Ng();
 
   ValarrayManager M(Mara->domain->aug_shape(), Mara->domain->get_Nq());
@@ -280,7 +280,7 @@ void OutflowBoundary3d::set_bc_z1_wall(std::valarray<double> &U) const
 {
   const int Nx = Mara->domain->get_N(1);
   const int Ny = Mara->domain->get_N(2);
-  const int Nz = Mara->domain->get_N(2);
+  const int Nz = Mara->domain->get_N(3);
   const int Ng = Mara->domain->get_Ng();
 
   ValarrayManager M(Mara->domain->aug_shape(), Mara->domain->get_Nq());
