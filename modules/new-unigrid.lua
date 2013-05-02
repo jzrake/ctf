@@ -54,7 +54,7 @@ function UnigridDomain:size(dim, which)
 
    if which == 'global' then
       func = cow.domain_getnumglobalzones
-   elseif which == 'interior' then
+   elseif which == 'local-interior' then
       func = cow.domain_getnumlocalzonesinterior
    elseif which == 'local-including-guard' then
       func = cow.domain_getnumlocalzonesincguard
@@ -76,13 +76,14 @@ end
 function UnigridDomain:get_comm()
    return self._comm
 end
-
 function UnigridDomain:get_rank()
    return cow.domain_getcartrank(self._domain)
 end
-
 function UnigridDomain:set_collective(mode)
    cow.domain_setcollective(self._domain, mode)
+end
+function UnigridDomain:barrier()
+   cow.domain_barrier(self._domain)
 end
 
 --------------------------------------------------------------------------------

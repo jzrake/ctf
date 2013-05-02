@@ -17,22 +17,22 @@ function MaraSimulation:initialize_solver()
    self.dx = 1.0 / self.N
 
    local fluid = ({nrhyd='euler',
-		   srhyd='srhd',
-		   srmhd='rmhd'})[self.problem:fluid()]
+                   srhyd='srhd',
+                   srmhd='rmhd'})[self.problem:fluid()]
    if not fluid then
       error('Mara does not support fluid system '..self.problem:fluid())
    end
 
    local advance = self.user_opts.advance
    local solver = ({
-      spectral = 'weno-split',
-      godunov = 'plm-split',
-      muscl = 'plm-muscl'})[self.user_opts.solver or 'godunov']
+                      spectral = 'weno-split',
+                      godunov = 'plm-split',
+                      muscl = 'plm-muscl'})[self.user_opts.solver or 'godunov']
 
    if self.user_opts.solver == 'muscl' and advance ~= 'single' then
       print('[MaraSim] Warning! --solver=muscl only supports --advance=single'
-	 ..', going with single')
-      advance = 'single'
+         ..', going with single')
+         advance = 'single'
    end
 
    Mara.start()
@@ -43,8 +43,8 @@ function MaraSimulation:initialize_solver()
    Mara.set_boundary(self.problem:boundary_conditions())
    Mara.set_riemann(self.user_opts.riemann or 'hllc')
    Mara.config_solver({theta  =  opts.plm_theta or 2.0,
-		       IS     =  opts.IS or 'js96',
-		       sz10A  =  100.0 or opts.sz10A}, false)
+                       IS     =  opts.IS or 'js96',
+                       sz10A  =  100.0 or opts.sz10A}, false)
 
    local prim_names = Mara.fluid.GetPrimNames()
    local Nq = #prim_names
@@ -93,7 +93,28 @@ end
 function MaraSimulation:advance_physics()
    local dt = self.status.time_increment
    local P = self.Primitive:buffer()
-   Mara.advance(P, dt)
+   local num_errors = 1
+   local kzps = 0.0
+   local attempt = 0
+
+   local function printf(str, fmt) print(string.format(str, fmt)) end
+
+   while true do
+      kzps, num_errors = Mara.advance(P, dt)
+
+      if num_errors == 0 then break end
+      printf("[!]  Mara crashed on %d zones.", num_errors)
+
+      local handler_code = self:handle_crash(attempt)
+      if handler_code == 0 then
+         printf("[!]  the crash handler did its thing on attempt %d", attempt)
+      else
+         self.status.emergency_abort = true
+         printf("[!]  the crash handler gave up on attempt %d", attempt)
+         break
+      end
+      attempt = attempt + 1
+   end
 end
 
 function MaraSimulation:local_mesh_size()

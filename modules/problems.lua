@@ -35,7 +35,8 @@ local problems = {
    JetCavity = oo.class('JetCavity', TestProblem),
    Reconnection = oo.class('Reconnection', TestProblem),
    ShapiroLikeRotator = oo.class('ShapiroLikeRotator', TestProblem),
-   MagneticTower = oo.class('MagneticTower', TestProblem)
+   MagneticTower = oo.class('MagneticTower', TestProblem),
+   MagneticSlinky = oo.class('MagneticSlinky', TestProblem)
 }
 for k,v in pairs(problems) do
    if oo.isclass(v) and oo.issubclass(v, TwoStateProblem) then
@@ -274,11 +275,9 @@ problems.SrhdHardTransverseRAM.state2 = {1, 1e-2, 0.0, 0.9, 0.0}
 function problems.SmoothKelvinHelmholtz:initialize_problem()
    self.vertical_Ek = { }
 end
-
 function problems.SmoothKelvinHelmholtz:finish_time()
    return 2.5
 end
-
 function problems.SmoothKelvinHelmholtz:solution(x,y,z,t)
    local P0   =  2.5
    local D1   =  1.0
@@ -293,7 +292,6 @@ function problems.SmoothKelvinHelmholtz:solution(x,y,z,t)
    local vy   = w0 * math.sin(4 * math.pi * x)
    return { rho, P0, vx, vy, 0.0 }
 end
-
 function problems.SmoothKelvinHelmholtz:user_work_iteration()
    local P = self.simulation.Primitive:vector()
    local t = self.simulation.status.simulation_time
@@ -305,13 +303,10 @@ function problems.SmoothKelvinHelmholtz:user_work_iteration()
       E = E + 0.5 * rho * vy^2
       n = n + 1
    end
-
    self.vertical_Ek[t] = E / n
 end
-
 function problems.SmoothKelvinHelmholtz:user_work_finish()
-   --local util = require 'util'
-   --util.pretty_print(self.vertical_Ek)
+
 end
 
 
@@ -395,8 +390,8 @@ function problems.RelativisticVortex:solution(x,y,z,t)
    local u0   =  1.0 -- u-phi at the origin
 
    local P = (D0 - D0*gamma + (D0*(-1 + gamma) + gamma*P0)/
-	      Power(E,(gamma*(2*r + r0 - Power(E,(2*r)/r0)*r0)*Power(u0,2))/Power(E,(2*r)/r0)/
-		    (4.*(-1 + gamma)*r0)))/gamma
+	      Power(E,(gamma*(2*r + r0 - Power(E,(2*r)/r0)*r0)*Power(u0,2))/
+		    Power(E,(2*r)/r0)/(4.*(-1 + gamma)*r0)))/gamma
 
    local u    =  u0 * (r/r0) * math.exp(-r/r0)
    local vf   =  u / (1 + u^2)^0.5
@@ -441,9 +436,10 @@ end
 function problems.Reconnection:solution(x,y,z,t)
    local x = (x - 0.5)
    local y = (y - 0.5)
+   local z = (z - 0.5)
 
-   local D=1.0
-   local P=1.0
+   local D=0.2
+   local P=0.2
    local Bx
 
    if math.abs(y) < 0.25 then
@@ -453,6 +449,7 @@ function problems.Reconnection:solution(x,y,z,t)
    end
    local vx = (math.random() - 0.5) * 1e-2
    local vy = (math.random() - 0.5) * 1e-2
+   local vz = (math.random() - 0.5) * 1e-2
    return { D, P, vx, vy, 0.0, Bx, 0.0, 0.0 }
 end
 function problems.Reconnection:boundary_conditions() return 'periodic' end
@@ -463,17 +460,21 @@ function problems.Reconnection:fluid() return 'srmhd' end
 function problems.ShapiroLikeRotator:solution(x,y,z,t)
    local x = (x - 0.5)
    local y = (y - 0.5)
+   local z = (z - 0.5)
    local r = (x*x + y*y)^0.5
    local vx = 0.0
    local vy = 0.0
-   local Bx = 0.01
+   local Bx = 0.0
    local By = 0.0
+   local Bz = 0.001
    local r0 = 0.25
+   local z0 = 0.2
+   local vmax = 0.95
    if r < r0 then
-      vx = -0.5*y*(1 + (r/r0)^2)
-      vy =  0.5*x*(1 + (r/r0)^2)
+      vx = -0.5 * vmax * (y/r0) * (1 + (r/r0)^2) / (1 + (z/z0)^2)
+      vy =  0.5 * vmax * (x/r0) * (1 + (r/r0)^2) / (1 + (z/z0)^2)
    end
-   return { 1, 1, vx, vy, 0.0, Bx, By, 0.0 }
+   return { 1, 1, vx, vy, 0.0, Bx, By, Bz }
 end
 function problems.ShapiroLikeRotator:boundary_conditions() return 'outflow' end
 function problems.ShapiroLikeRotator:fluid() return 'srmhd' end
@@ -483,16 +484,16 @@ function problems.ShapiroLikeRotator:fluid() return 'srmhd' end
 function problems.MagneticTower:solution(x,y,z,t)
    local Power = math.pow
    local E = math.exp(1)
-   local gamma = 1.4
-   local r0 = 0.15
-   local z0 = 0.10
+   local gamma = self:adiabatic_index()
+   local r0 = 0.10
+   local z0 = 0.20
    local x = (x - 0.5)
    local y = (y - 0.5)
    local z = (z - 0.5)
    local r = (x^2 + y^2)^0.5
    local P0   =  0.5 -- pressure at the origin
    local D0   =  1.0 -- density at the origin
-   local u0   =  1.0 -- / (1.0 + (z/z0)^2) -- u-phi at the origin
+   local u0   =  1.0 / (1.0 + (z/z0)^2) -- u-phi at the origin
    local P = (D0 - D0*gamma + (D0*(-1 + gamma) + gamma*P0)/
 	      Power(E,(gamma*(2*r + r0 - Power(E,(2*r)/r0)*r0)*Power(u0,2))/
 		    Power(E,(2*r)/r0)/(4.*(-1 + gamma)*r0)))/gamma
@@ -502,11 +503,39 @@ function problems.MagneticTower:solution(x,y,z,t)
    local vy   =  vf * x/r
    local Bx = 0.0
    local By = 0.0
-   local Bz = 0.0
+   local Bz = 0.001
    return { D0, P, vx, vy, 0.0, Bx, By, Bz }
 end
 function problems.MagneticTower:boundary_conditions() return 'outflow' end
-function problems.MagneticTower:fluid() return 'srhyd' end
+function problems.MagneticTower:fluid() return 'srmhd' end
+
+
+function problems.MagneticSlinky:solution(x,y,z,t)
+   local r0 = 0.500
+   local z0 = 0.025
+   local x = (x - 0.5)
+   local y = (y - 0.5)
+   local z = (z - 0.5)
+   local r = (x^2 + y^2)^0.5
+   local m = 4 -- exponent on radial coodinate
+
+   local ArcTan = math.atan
+   local Power = math.pow
+   local Br0 =  0.00
+   local Bz0 =  0.00  -- uniform vertical guide field
+   local Bp0 = 12.00  -- strength of toroidal field
+   local Br = Br0 * (z/z0) / (1 + (z/z0)^4) * (r/r0) / (1 + (r/r0)^m)
+   local Bz = Br0 * (math.pi/2 + ((-2 + (-2 + m)*Power(r/r0,m))*ArcTan(Power(z/z0,2)))/
+		    (2.*Power(1 + Power(r/r0,m),2))) + Bz0
+   local Bp = Bp0 * (z/z0) / (1 + (z/z0)^4) * (r/r0) / (1 + (r/r0)^2)
+   local Bx = -Bp * y/r + Br * x/r
+   local By =  Bp * x/r + Br * y/r
+   local D0 = 0.02
+   local P0 = 1.0
+   return { D0, P0, 0.0, 0.0, 0.0, Bx, By, Bz }
+end
+function problems.MagneticSlinky:boundary_conditions() return 'outflow' end
+function problems.MagneticSlinky:fluid() return 'srmhd' end
 
 
 

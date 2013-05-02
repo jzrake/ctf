@@ -51,7 +51,8 @@ function SimulationBase:continue_condition()
    return
       self.status.iteration_number < self.behavior.max_iteration and
       self.status.wall_runtime < self.behavior.max_wall_runtime and
-      self.status.simulation_time < self.behavior.max_simulation_time
+      self.status.simulation_time < self.behavior.max_simulation_time and
+      self.status.emergency_abort ~= true
 end
 function SimulationBase:main_loop()
    while self:continue_condition() do
@@ -105,6 +106,10 @@ function SimulationBase:time(func_name, ...)
    local start = os.clock()
    self[func_name](self, ...)
    self.profiler[func_name] = os.clock() - start
+end
+function SimulationBase:handle_crash(attempt)
+   print "[!]  there is no crash handler implemented"
+   return 1
 end
 
 return {SimulationBase=SimulationBase}
