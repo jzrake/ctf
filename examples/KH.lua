@@ -96,6 +96,10 @@ function MyMara:initialize_solver()
    self.domain = domain
    self.prim_manager = prim_manager
    Mara.set_domain(L0, L1, N, Nq, Ng, domain_comm)
+
+   if hdf5.have_mpio() then
+      domain:set_collective(1)
+   end
 end
 
 function MyMara:initialize_behavior()
@@ -128,6 +132,7 @@ function MyMara:checkpoint_write(fname)
    if self.cart_rank == 0 then
       local chkpt = hdf5.File(fname, 'r+')
       chkpt["measure_log"] = json.encode(self.measure_log)
+      chkpt["status"] = json.encode(self.status)
       chkpt:close()
    end
 end
@@ -166,7 +171,7 @@ function MyMara:finalize_solver()
    MPI.Finalize()
 end
 
-function MyMara:handle_crashs(attempt)
+function MyMara:handle_crash(attempt)
    local P = self.Primitive:buffer()
    local status = self.status
    Mara.set_advance("single")
