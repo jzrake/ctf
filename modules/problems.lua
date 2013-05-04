@@ -1,4 +1,5 @@
 
+local util     = require 'util'
 local oo       = require 'class'
 local array    = require 'array'
 local FishCls  = require 'FishClasses'
@@ -432,25 +433,34 @@ function problems.Reconnection:initialize_problem(x,y,z,t)
    if self.simulation.cart_rank then
       math.randomseed(self.simulation.cart_rank)
    end
+
+   if self.user_opts.model_parameters then
+      self.model_parameters = load('return '..self.user_opts.model_parameters)()
+   else
+      self.model_parameters = { }      
+   end
+   print "reconnection problem model parameters:"
+   util.pretty_print(self.model_parameters)
 end
 function problems.Reconnection:solution(x,y,z,t)
    local x = (x - 0.5)
    local y = (y - 0.5)
    local z = (z - 0.5)
 
-   local D=0.2
-   local P=0.2
+   local D0 = self.model_parameters.D0 or 0.2
+   local P0 = self.model_parameters.P0 or 0.2
+   local B0 = self.model_parameters.B0 or 1.0
    local Bx
 
    if math.abs(y) < 0.25 then
-      Bx = -1.0
+      Bx = -B0
    else
-      Bx = 1.0
+      Bx = B0
    end
    local vx = (math.random() - 0.5) * 1e-2
    local vy = (math.random() - 0.5) * 1e-2
    local vz = (math.random() - 0.5) * 1e-2
-   return { D, P, vx, vy, 0.0, Bx, 0.0, 0.0 }
+   return { D0, P0, vx, vy, 0.0, Bx, 0.0, 0.0 }
 end
 function problems.Reconnection:boundary_conditions() return 'periodic' end
 function problems.Reconnection:fluid() return 'srmhd' end

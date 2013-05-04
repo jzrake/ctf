@@ -133,6 +133,9 @@ function MyMara:checkpoint_write(fname)
       local chkpt = hdf5.File(fname, 'r+')
       chkpt["measure_log"] = json.encode(self.measure_log)
       chkpt["status"] = json.encode(self.status)
+      if self.problem.model_parameters then
+	 chkpt["model_parameters"] = json.encode(self.problem.model_parameters)
+      end
       chkpt:close()
    end
 end
@@ -242,6 +245,8 @@ local function main()
                      help="print a message every N iterations"}
    parser.add_option{"--output", "-o", dest="output",
                      help="write an HDF5 file of the final solution"}
+   parser.add_option{"--model_parameters", "-p", dest="model_parameters",
+		     help="extra problem-specific parameters (as a table)"}
 
    local opts, args = parser.parse_args()
    local problem_class = problems[arg[2]]
