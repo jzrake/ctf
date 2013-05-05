@@ -177,7 +177,7 @@ function MyMara:finalize_solver()
    MPI.Finalize()
 end
 
-function MyMara:handle_crash(attempt)
+function handle_crash_srmhd(self, attempt)
    local P = self.Primitive:buffer()
    local status = self.status
    Mara.set_advance("single")
@@ -264,6 +264,11 @@ local function main()
    --local problem = problems.ShapiroLikeRotator(opts)
    --local problem = problems.MagneticTower(opts)
    --local problem = problems.MagneticSlinky(opts)
+
+   if oo.isinstance(problem, problems.Reconnection) then
+      sim.handle_crash = handle_crash_srmhd
+   end
+
    sim:run(problem)
 end
 

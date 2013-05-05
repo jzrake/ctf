@@ -98,6 +98,7 @@ function MaraSimulation:advance_physics()
    local attempt = 0
 
    local function printf(str, fmt) print(string.format(str, fmt)) end
+   self:handle_crash(0) -- little bit of a mis-nomer, attempt=0 just means reset
 
    while true do
       kzps, num_errors = Mara.advance(P, dt)
@@ -105,6 +106,7 @@ function MaraSimulation:advance_physics()
       if num_errors == 0 then break end
       printf("[!]  Mara crashed on %d zones.", num_errors)
 
+      attempt = attempt + 1
       local handler_code = self:handle_crash(attempt)
       if handler_code == 0 then
          printf("[!]  the crash handler did its thing on attempt %d", attempt)
@@ -113,7 +115,6 @@ function MaraSimulation:advance_physics()
          printf("[!]  the crash handler gave up on attempt %d", attempt)
          break
       end
-      attempt = attempt + 1
    end
 end
 

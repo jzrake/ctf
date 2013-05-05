@@ -108,8 +108,12 @@ function SimulationBase:time(func_name, ...)
    self.profiler[func_name] = os.clock() - start
 end
 function SimulationBase:handle_crash(attempt)
-   print "[!]  there is no crash handler implemented"
-   return 1
+   if attempt == 0 then
+      return 0 -- On attempt 0, configure solver most aggressively
+   else
+      print "[!]  there is no crash handler implemented"
+      return 1
+   end
 end
 
 return {SimulationBase=SimulationBase}
