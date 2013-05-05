@@ -106,6 +106,7 @@ function MyMara:initialize_behavior()
    local opts = self.user_opts
    local cpi = opts.cpi or 0.1
    local tmax = opts.tmax or self.problem:finish_time()
+   self.behavior.run_identifier = opts.id or 'test'
    self.behavior.message_cadence = opts.message_cadence or 1
    self.behavior.checkpoint_cadence = tonumber(cpi)
    self.behavior.max_simulation_time = tonumber(tmax)
@@ -117,14 +118,16 @@ function MyMara:local_mesh_size()
 end
 
 function MyMara:checkpoint_write(fname)
-   local base = self.user_opts.id or 'chkpt'
+   local base = 'chkpt'
+   local id = self.behavior.run_identifier
    local n = self.status.checkpoint_number
-   local fname = fname or string.format('data/%s.%04d.h5', base, n)
+   local fname = fname or string.format('data/%s/%s.%04d.h5', id, base, n)
 
    if self.cart_rank == 0 then
       if util.file_exists(fname) then
 	 os.execute("rm "..fname)
       end
+      os.execute('mkdir -p data/'..id)
    end
 
    self.prim_manager:write(fname, 'prim')

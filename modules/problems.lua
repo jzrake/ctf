@@ -447,20 +447,21 @@ function problems.Reconnection:solution(x,y,z,t)
    local y = (y - 0.5)
    local z = (z - 0.5)
 
-   local D0 = self.model_parameters.D0 or 0.2
-   local P0 = self.model_parameters.P0 or 0.2
+   local D0 = self.model_parameters.D0 or 1.0
+   local P0 = self.model_parameters.P0 or 1.0
    local B0 = self.model_parameters.B0 or 1.0
+   local dv = self.model_parameters.dv or 1e-2
    local Bx
 
    if math.abs(y) < 0.25 then
       Bx = -B0
    else
-      Bx = B0
+      Bx =  B0
    end
-   local vx = (math.random() - 0.5) * 1e-2
-   local vy = (math.random() - 0.5) * 1e-2
-   local vz = (math.random() - 0.5) * 1e-2
-   return { D0, P0, vx, vy, 0.0, Bx, 0.0, 0.0 }
+   local vx = (math.random() - 0.5) * dv
+   local vy = (math.random() - 0.5) * dv
+   local vz = (math.random() - 0.5) * dv
+   return { D0, P0, vx, vy, vz, Bx, 0.0, 0.0 }
 end
 function problems.Reconnection:boundary_conditions() return 'periodic' end
 function problems.Reconnection:fluid() return 'srmhd' end
