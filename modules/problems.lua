@@ -434,10 +434,21 @@ function problems.Reconnection:initialize_problem(x,y,z,t)
       math.randomseed(self.simulation.cart_rank)
    end
 
+   self.model_parameters = { }
+   self.model_parameters.D0 = 1.0
+   self.model_parameters.P0 = 1.0
+   self.model_parameters.B0 = 1.0
+   self.model_parameters.dv = 1e-6
+
    if self.user_opts.model_parameters then
-      self.model_parameters = load('return '..self.user_opts.model_parameters)()
-   else
-      self.model_parameters = { }      
+      local u = load('return '..self.user_opts.model_parameters)()
+      for k,v in pairs(u) do
+	 if self.model_parameters[k] ~= nil then
+	    self.model_parameters[k] = v
+	 else
+	    print("[!]  warning! unkown model parameter '"..k.."' ignored")
+	 end
+      end
    end
    print "reconnection problem model parameters:"
    util.pretty_print(self.model_parameters)
@@ -447,10 +458,10 @@ function problems.Reconnection:solution(x,y,z,t)
    local y = (y - 0.5)
    local z = (z - 0.5)
 
-   local D0 = self.model_parameters.D0 or 1.0
-   local P0 = self.model_parameters.P0 or 1.0
-   local B0 = self.model_parameters.B0 or 1.0
-   local dv = self.model_parameters.dv or 1e-2
+   local D0 = self.model_parameters.D0
+   local P0 = self.model_parameters.P0
+   local B0 = self.model_parameters.B0
+   local dv = self.model_parameters.dv
    local Bx
 
    if math.abs(y) < 0.25 then

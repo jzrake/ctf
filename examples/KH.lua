@@ -16,12 +16,6 @@ local json     = require 'json'
 local MyBase = oo.class('MyBase', sim.SimulationBase)
 local MyMara = oo.class('MyMara', MaraSim.MaraSimulation)
 
-
-
--- *****************************************************************************
--- Function to collect all available measurements from Mara
--- .............................................................................
-
 function MyMara:initialize_physics()
    local function pinit(x,y,z)
       return self.problem:solution(x,y,z,0)
@@ -151,6 +145,10 @@ function MyMara:user_work_finish()
    self.problem:user_work_finish()
 end
 
+
+-- *****************************************************************************
+-- Function to collect all available measurements from Mara
+-- .............................................................................
 function MyMara:user_work_iteration()
    self.problem:user_work_iteration()
    if self.status.iteration_number % 4 == 0 then
