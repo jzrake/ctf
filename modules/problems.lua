@@ -439,6 +439,8 @@ function problems.Reconnection:initialize_problem(x,y,z,t)
    self.model_parameters.P0 = 1.0
    self.model_parameters.B0 = 1.0
    self.model_parameters.dv = 1e-6
+   self.model_parameters.vz = 0.0
+   self.model_parameters.geom = 'sheet'
 
    if self.user_opts.model_parameters then
       local u = load('return '..self.user_opts.model_parameters)()
@@ -462,17 +464,42 @@ function problems.Reconnection:solution(x,y,z,t)
    local P0 = self.model_parameters.P0
    local B0 = self.model_parameters.B0
    local dv = self.model_parameters.dv
-   local Bx
+   local vx, vy, vz, Bx, By, Bz
 
-   if math.abs(y) < 0.25 then
-      Bx = -B0
-   else
-      Bx =  B0
+   if self.model_parameters.geom == 'sheet' then
+      if math.abs(y) < 0.25 then
+	 Bx = -B0
+      else
+	 Bx =  B0
+      end
+      By = 0
+      Bz = 0
+      vx = 0
+      vy = 0
+      vz = 0
+   elseif self.model_parameters.geom == 'tube' then
+      local r = (x^2 + y^2)^0.5
+      if r > 0.25 then
+	 vz = 0
+	 Bz =-B0
+      else
+	 vz = self.model_parameters.vz
+	 Bz = B0
+      end
+      Bx = 0
+      By = 0
+      vx = 0
+      vy = 0
    end
-   local vx = (math.random() - 0.5) * dv
-   local vy = (math.random() - 0.5) * dv
-   local vz = (math.random() - 0.5) * dv
-   return { D0, P0, vx, vy, vz, Bx, 0.0, 0.0 }
+   vx = vx + (math.random() - 0.5) * dv
+   vy = vy + (math.random() - 0.5) * dv
+   vz = vz + (math.random() - 0.5) * dv
+
+   if self.simulation:domain_dimensions() == 2 then
+      vz = 0.0
+   end
+
+   return { D0, P0, vx, vy, vz, Bx, By, Bz }
 end
 function problems.Reconnection:boundary_conditions() return 'periodic' end
 function problems.Reconnection:fluid() return 'srmhd' end

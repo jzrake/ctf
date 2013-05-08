@@ -23,7 +23,7 @@ function MyMara:initialize_physics()
    local P = self.Primitive
    Mara.init_prim(P:buffer(), pinit)
 end
-
+function MyMara:domain_dimensions() return self.ndim end
 function MyMara:initialize_solver()
    local opts = self.user_opts
 
@@ -32,7 +32,7 @@ function MyMara:initialize_solver()
    self.Nx = opts.resolution or 128
    self.Ny = opts.resolution or 128
    self.Nz = opts.resolution or 128
-   self.ndim = 3
+   self.ndim = tonumber(opts.ndim) or 3
 
    MPI.Init()
    cow.init(0, nil, 0) -- to reopen stdout to dev/null
@@ -229,7 +229,7 @@ local function main()
                      help="Courant-Freidrichs-Lewy time-step constraint"}
    parser.add_option{"--tmax", dest="tmax", help="end simulation time"}
    parser.add_option{"--plot", dest="plot", action="store_true",
-                     help="pop a gnuplot window after run"}
+                     help="launch a gnuplot window after run (1d only)"}
    parser.add_option{"--reconstruction", dest="reconstruction"}
    parser.add_option{"--IS", dest="IS",
                      help='WENO smoothness indicator: [js96, b08, sz10]'}
@@ -242,6 +242,7 @@ local function main()
    parser.add_option{"--solver", dest="solver",
                      help="godunov (riemann solver) or spectral (characteristic-wise)"}
    parser.add_option{"--resolution", "-N", dest="resolution", help="grid resolution"}
+   parser.add_option{"--ndim", "-d", dest="ndim", help="domain dimensionality"}
    parser.add_option{"--message-cadence", dest="message_cadence",
                      help="print a message every N iterations"}
    parser.add_option{"--output", "-o", dest="output",

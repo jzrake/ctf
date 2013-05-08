@@ -17,6 +17,7 @@ end
 function SimulationBase:initialize_problem()
    self.problem:initialize_problem()
 end
+function SimulationBase:domain_dimensions() return 1 end
 function SimulationBase:finalize_solver() end
 function SimulationBase:advance_physics() self:_notimplemented() end
 function SimulationBase:local_mesh_size() self:_notimplemented() end
