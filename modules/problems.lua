@@ -441,6 +441,7 @@ function problems.Reconnection:initialize_problem(x,y,z,t)
    self.model_parameters.dv = 1e-6
    self.model_parameters.vz = 0.0
    self.model_parameters.geom = 'sheet'
+   self.model_parameters.Bout = true -- whether sheath is magnetized
 
    if self.user_opts.model_parameters then
       local u = load('return '..self.user_opts.model_parameters)()
@@ -464,7 +465,8 @@ function problems.Reconnection:solution(x,y,z,t)
    local P0 = self.model_parameters.P0
    local B0 = self.model_parameters.B0
    local dv = self.model_parameters.dv
-   local vx, vy, vz, Bx, By, Bz
+   local Bout = self.model_parameters.Bout -- whether sheath is magnetized
+   local P, vx, vy, vz, Bx, By, Bz
 
    if self.model_parameters.geom == 'sheet' then
       if math.abs(y) < 0.25 then
@@ -477,14 +479,22 @@ function problems.Reconnection:solution(x,y,z,t)
       vx = 0
       vy = 0
       vz = 0
+      P = P0
    elseif self.model_parameters.geom == 'tube' then
       local r = (x^2 + y^2)^0.5
       if r > 0.25 then
 	 vz = 0
-	 Bz =-B0
+	 if Bout then 
+	    Bz = -B0
+	    P = P0
+	 else
+	    Bz = 0.0
+	    P = P0 + 0.5*B0^2 -- for pressure balance
+	 end
       else
 	 vz = self.model_parameters.vz
 	 Bz = B0
+	 P = P0
       end
       Bx = 0
       By = 0
@@ -499,7 +509,7 @@ function problems.Reconnection:solution(x,y,z,t)
       vz = 0.0
    end
 
-   return { D0, P0, vx, vy, vz, Bx, By, Bz }
+   return { D0, P, vx, vy, vz, Bx, By, Bz }
 end
 function problems.Reconnection:boundary_conditions() return 'periodic' end
 function problems.Reconnection:fluid() return 'srmhd' end
