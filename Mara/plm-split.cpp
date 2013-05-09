@@ -1,4 +1,4 @@
-
+#include <cstdio>
 #include "plm-split.hpp"
 #include "weno.h"
 #include "logging.hpp"
