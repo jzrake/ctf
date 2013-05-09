@@ -373,3 +373,45 @@ void ReflectingBoundary2d::set_bc_y1_wall(std::valarray<double> &U) const
       }
 }
 
+#include "rmhd.hpp"
+void MagneticBubbleBoundary::set_bc_z0_wall(std::valarray<double> &U) const
+{
+  const int Nx = Mara->domain->get_N(1);
+  const int Ny = Mara->domain->get_N(2);
+  const int Ng = Mara->domain->get_Ng();
+
+  double r0 = 0.05;
+
+  ValarrayManager M(Mara->domain->aug_shape(), Mara->domain->get_Nq());
+  for (int i=0; i<Nx+2*Ng; ++i) {
+    for (int j=0; j<Ny+2*Ng; ++j) {
+      for (int k=0; k<Ng; ++k) {
+
+	double x = Mara->domain->x_at(i);
+	double y = Mara->domain->y_at(j);
+	double r = sqrt(x*x + y*y) / r0;
+
+	double Omega = r*r / (1 + r*r*r*r);
+
+        std::valarray<double> U1 = U[ M(i,j,2*Ng-k-1) ]; // reflected zone
+	std::valarray<double> P1(8); // reflected zone primitive variables
+	std::valarray<double> U0(8);
+	std::valarray<double> P0(8);
+
+	Mara->fluid->ConsToPrim(&U1[0], &P1[0]);
+
+	P0[0] =  P1[0];
+	P0[1] =  P1[1];
+	P0[2] = -y * Omega;
+	P0[3] =  x * Omega;
+	P0[4] = -P1[4];
+	P0[5] = -P1[5];
+	P0[6] = -P1[6];
+	P0[7] =  P1[7];
+
+	Mara->fluid->PrimToCons(&P0[0], &U0[0]);
+	U[ M(i,j,k) ] = U0;
+      }
+    }
+  }
+}

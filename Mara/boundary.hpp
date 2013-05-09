@@ -44,14 +44,12 @@ private:
   void set_bc_y1_wall(std::valarray<double> &U) const;
 } ;
 
-
 // PeriodicXOutflowY2d
 // -----------------------------------------------------------------------------
 class PeriodicXOutflowY2d : public BoundaryConditions
 {
 public:
   void ApplyBoundaries(std::valarray<double> &U) const;
-
 private:
   void set_bc_x0_wall(std::valarray<double> &U) const;
   void set_bc_x1_wall(std::valarray<double> &U) const;
@@ -59,21 +57,27 @@ private:
   void set_bc_y1_wall(std::valarray<double> &U) const;
 } ;
 
-
 // OutflowBoundary3d
 // -----------------------------------------------------------------------------
 class OutflowBoundary3d : public BoundaryConditions
 {
 public:
-  void ApplyBoundaries(std::valarray<double> &U) const;
-
+  virtual void ApplyBoundaries(std::valarray<double> &U) const;
 private:
-  void set_bc_x0_wall(std::valarray<double> &U) const;
-  void set_bc_x1_wall(std::valarray<double> &U) const;
-  void set_bc_y0_wall(std::valarray<double> &U) const;
-  void set_bc_y1_wall(std::valarray<double> &U) const;
-  void set_bc_z0_wall(std::valarray<double> &U) const;
-  void set_bc_z1_wall(std::valarray<double> &U) const;
+  virtual void set_bc_x0_wall(std::valarray<double> &U) const;
+  virtual void set_bc_x1_wall(std::valarray<double> &U) const;
+  virtual void set_bc_y0_wall(std::valarray<double> &U) const;
+  virtual void set_bc_y1_wall(std::valarray<double> &U) const;
+  virtual void set_bc_z0_wall(std::valarray<double> &U) const;
+  virtual void set_bc_z1_wall(std::valarray<double> &U) const;
+} ;
+
+// MagneticBubbleBoundary
+// -----------------------------------------------------------------------------
+class MagneticBubbleBoundary : public OutflowBoundary3d
+{
+private:
+  virtual void set_bc_z0_wall(std::valarray<double> &U) const;
 } ;
 
 

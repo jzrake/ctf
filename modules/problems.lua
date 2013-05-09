@@ -37,6 +37,7 @@ local problems = {
    Reconnection = oo.class('Reconnection', TestProblem),
    ShapiroLikeRotator = oo.class('ShapiroLikeRotator', TestProblem),
    MagneticTower = oo.class('MagneticTower', TestProblem),
+   MagneticBubble = oo.class('MagneticBubble', TestProblem),
    MagneticSlinky = oo.class('MagneticSlinky', TestProblem)
 }
 for k,v in pairs(problems) do
@@ -567,6 +568,13 @@ function problems.MagneticTower:solution(x,y,z,t)
 end
 function problems.MagneticTower:boundary_conditions() return 'outflow' end
 function problems.MagneticTower:fluid() return 'srmhd' end
+
+
+function problems.MagneticBubble:solution(x,y,z,t)
+   return { 1.0, 1.0,   0, 0, 0,   0, 0, 0.01 }
+end
+function problems.MagneticBubble:boundary_conditions() return 'magnetic-bubble' end
+function problems.MagneticBubble:fluid() return 'srmhd' end
 
 
 function problems.MagneticSlinky:solution(x,y,z,t)

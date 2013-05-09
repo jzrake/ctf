@@ -75,8 +75,8 @@ function MyMara:initialize_solver()
    local N = { }
    for d=1,3 do
       if self.ndim >= d then
-         L0[d] = 0.0
-         L1[d] = 1.0
+         L0[d] = -0.5 -- hard-coded location !!!
+         L1[d] =  0.5
          N[d] = ({self.Nx, self.Ny, self.Nz})[d]
       end
    end
@@ -262,6 +262,7 @@ local function main()
    local problem = problems.Reconnection(opts)
    --local problem = problems.ShapiroLikeRotator(opts)
    --local problem = problems.MagneticTower(opts)
+   local problem = problems.MagneticBubble(opts)
    --local problem = problems.MagneticSlinky(opts)
 
    if oo.isinstance(problem, problems.Reconnection) then

@@ -854,6 +854,9 @@ int luaC_set_boundary(lua_State *L)
     int revy = 3;//luaL_checkinteger(L, 3);
     new_f = new ReflectingBoundary2d(revx, revy);
   }
+  else if (strcmp(key, "magnetic-bubble") == 0) {
+    new_f = new MagneticBubbleBoundary;
+  }
 
   if (new_f) {
     if (Mara->boundary) delete Mara->boundary;
