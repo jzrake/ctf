@@ -402,12 +402,15 @@ void MagneticBubbleBoundary::set_bc_z0_wall(std::valarray<double> &U) const
 
 	P0[0] =  P1[0];
 	P0[1] =  P1[1];
-	P0[2] = -y * Omega;
-	P0[3] =  x * Omega;
+	P0[2] = -y/r0 * Omega;
+	P0[3] =  x/r0 * Omega;
 	P0[4] = -P1[4];
 	P0[5] = -P1[5];
 	P0[6] = -P1[6];
 	P0[7] =  P1[7];
+
+	//	double v = sqrt(P0[2]*P0[2] + P0[3]*P0[3]);
+	//	if (v > 0.5) printf("%f\n", v);
 
 	Mara->fluid->PrimToCons(&P0[0], &U0[0]);
 	U[ M(i,j,k) ] = U0;

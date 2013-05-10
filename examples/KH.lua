@@ -269,6 +269,10 @@ local function main()
       sim.handle_crash = handle_crash_srmhd
    end
 
+   if oo.isinstance(problem, problems.MagneticBubble) then
+      sim.handle_crash = handle_crash_srmhd
+   end
+
    sim:run(problem)
 end
 
