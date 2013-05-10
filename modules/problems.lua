@@ -34,7 +34,7 @@ local problems = {
    ThrowBlobs = oo.class('ThrowBlobs', TestProblem),
    RelativisticVortex = oo.class('RelativisticVortex', TestProblem),
    JetCavity = oo.class('JetCavity', TestProblem),
-   Reconnection = oo.class('Reconnection', TestProblem),
+   TearingMode = oo.class('TearingMode', TestProblem),
    ShapiroLikeRotator = oo.class('ShapiroLikeRotator', TestProblem),
    MagneticTower = oo.class('MagneticTower', TestProblem),
    MagneticBubble = oo.class('MagneticBubble', TestProblem),
@@ -61,6 +61,7 @@ function TestProblem:user_work_finish() end
 function TestProblem:boundary_conditions() return 'periodic' end
 function TestProblem:fluid() return self._fluid or 'nrhyd' end
 function TestProblem:adiabatic_index() return 1.4 end
+function TestProblem:domain_extent() return {0,0,0}, {1,1,1} end
 
 
 function problems.soundwave:fluid()
@@ -406,7 +407,6 @@ function problems.RelativisticVortex:boundary_conditions() return 'periodic' end
 function problems.RelativisticVortex:fluid() return 'srhyd' end
 
 function problems.JetCavity:solution(x,y,z,t)
-
    local x = (x - 0.5)
    local y = (y - 0.5)
    local r = (x*x + y*y)^0.5
@@ -430,7 +430,7 @@ end
 function problems.JetCavity:boundary_conditions() return 'outflow' end
 function problems.JetCavity:fluid() return 'srhyd' end
 
-function problems.Reconnection:initialize_problem(x,y,z,t)
+function problems.TearingMode:initialize_problem(x,y,z,t)
    if self.simulation.cart_rank then
       math.randomseed(self.simulation.cart_rank)
    end
@@ -457,11 +457,7 @@ function problems.Reconnection:initialize_problem(x,y,z,t)
    print "reconnection problem model parameters:"
    util.pretty_print(self.model_parameters)
 end
-function problems.Reconnection:solution(x,y,z,t)
-   local x = (x - 0.5)
-   local y = (y - 0.5)
-   local z = (z - 0.5)
-
+function problems.TearingMode:solution(x,y,z,t)
    local D0 = self.model_parameters.D0
    local P0 = self.model_parameters.P0
    local B0 = self.model_parameters.B0
@@ -512,8 +508,11 @@ function problems.Reconnection:solution(x,y,z,t)
 
    return { D0, P, vx, vy, vz, Bx, By, Bz }
 end
-function problems.Reconnection:boundary_conditions() return 'periodic' end
-function problems.Reconnection:fluid() return 'srmhd' end
+function problems.TearingMode:boundary_conditions() return 'periodic' end
+function problems.TearingMode:fluid() return 'srmhd' end
+function problems.TearingMode:domain_extent()
+   return {-0.5, -0.5, -0.5}, {0.5, 0.5, 0.5}
+end
 
 
 
@@ -602,7 +601,9 @@ function problems.MagneticBubble:solution(x,y,z,t)
 end
 function problems.MagneticBubble:boundary_conditions() return 'magnetic-bubble' end
 function problems.MagneticBubble:fluid() return 'srmhd' end
-
+function problems.MagneticBubble:domain_extent()
+   return {-0.5, -0.5, -0.5}, {0.5, 0.5, 0.5}
+end
 
 function problems.MagneticSlinky:solution(x,y,z,t)
    local r0 = 0.500

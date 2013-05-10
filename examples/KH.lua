@@ -29,9 +29,9 @@ function MyMara:initialize_solver()
 
    self.CFL = opts.CFL or 0.4
    self.Ng = 3
-   self.Nx = opts.resolution or 128
-   self.Ny = opts.resolution or 128
-   self.Nz = opts.resolution or 128
+   self.Nx = opts.resolution or 32
+   self.Ny = opts.resolution or 32
+   self.Nz = opts.resolution or 32
    self.ndim = tonumber(opts.ndim) or 3
 
    MPI.Init()
@@ -70,14 +70,14 @@ function MyMara:initialize_solver()
    local prim_names = Mara.fluid.GetPrimNames()
    local Nq = #prim_names
    local Ng = self.Ng
-   local L0 = { }
-   local L1 = { }
+   local L0, L1 = self.problem:domain_extent()
    local N = { }
    for d=1,3 do
       if self.ndim >= d then
-         L0[d] = -0.5 -- hard-coded location !!!
-         L1[d] =  0.5
          N[d] = ({self.Nx, self.Ny, self.Nz})[d]
+      else
+	 L0[d] = nil
+	 L1[d] = nil
       end
    end
 
@@ -178,38 +178,29 @@ end
 function handle_crash_srmhd(self, attempt)
    local P = self.Primitive:buffer()
    local status = self.status
+   local r = 0.0
    Mara.set_advance("single")
    if attempt == 0 then -- healthy time-step
       Mara.set_godunov("plm-muscl")
       Mara.set_riemann("hlld")
       Mara.config_solver({theta=2.0}, true)
-      status.time_increment = 1.0 * status.time_increment
       return 0
    elseif attempt == 1 then
-      Mara.set_godunov("plm-muscl")
-      Mara.config_solver({theta=1.5}, true)
-      Mara.diffuse(P, 0.2)
       status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 2 then
-      Mara.set_godunov("plm-muscl")
-      Mara.config_solver({theta=1.0}, true)
-      Mara.diffuse(P, 0.2)
       status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 3 then
-      Mara.set_godunov("plm-muscl")
-      Mara.config_solver({theta=0.0}, true)
       Mara.set_riemann("hll")
-      Mara.diffuse(P, 0.2)
       status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 4 then
-      Mara.diffuse(P, 0.2)
+      Mara.config_solver({theta=1.0}, true)
       status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 5 then
-      Mara.diffuse(P, 0.2)
+      Mara.config_solver({theta=0.0}, true)
       status.time_increment = 0.5 * status.time_increment
       return 0
    else
@@ -259,16 +250,15 @@ local function main()
    --local problem = problems.TwoDimensionalImplosion(opts)
    --local problem = problems.RelativisticVortex(opts)
    --local problem = problems.JetCavity(opts)
-   local problem = problems.Reconnection(opts)
+   local problem = problems.TearingMode(opts)
    --local problem = problems.ShapiroLikeRotator(opts)
    --local problem = problems.MagneticTower(opts)
-   local problem = problems.MagneticBubble(opts)
+   --local problem = problems.MagneticBubble(opts)
    --local problem = problems.MagneticSlinky(opts)
 
-   if oo.isinstance(problem, problems.Reconnection) then
+   if oo.isinstance(problem, problems.TearingMode) then
       sim.handle_crash = handle_crash_srmhd
    end
-
    if oo.isinstance(problem, problems.MagneticBubble) then
       sim.handle_crash = handle_crash_srmhd
    end
