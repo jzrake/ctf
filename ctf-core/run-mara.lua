@@ -1,4 +1,9 @@
 
+if arg[2] == '--explain' then
+   print "run a 2d/3d parallel research problem with Mara"
+   return
+end
+
 local optparse = require 'optparse'
 local MaraSim  = require 'MaraSim'
 local util     = require 'util'
