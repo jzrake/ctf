@@ -454,7 +454,7 @@ function problems.TearingMode:initialize_problem(x,y,z,t)
 	 end
       end
    end
-   print "reconnection problem model parameters:"
+   print "tearing mode problem model parameters:"
    util.pretty_print(self.model_parameters)
 end
 function problems.TearingMode:solution(x,y,z,t)
@@ -592,7 +592,6 @@ function problems.MagneticBubble:initialize_problem(x,y,z,t)
    print "magnetic bubble problem model parameters:"
    util.pretty_print(self.model_parameters)
 end
-
 function problems.MagneticBubble:solution(x,y,z,t)
    local D0 = self.model_parameters.D0
    local P0 = self.model_parameters.P0
@@ -602,7 +601,8 @@ end
 function problems.MagneticBubble:boundary_conditions() return 'magnetic-bubble' end
 function problems.MagneticBubble:fluid() return 'srmhd' end
 function problems.MagneticBubble:domain_extent()
-   return {-0.5, -0.5, -0.5}, {0.5, 0.5, 0.5}
+   local Lz = self.simulation.Nz / self.simulation.Nx
+   return {-0.5, -0.5, 0.0}, {0.5, 0.5, Lz}
 end
 
 function problems.MagneticSlinky:solution(x,y,z,t)

@@ -34,9 +34,9 @@ function MyMara:initialize_solver()
 
    self.CFL = opts.CFL or 0.4
    self.Ng = 3
-   self.Nx = opts.resolution or 32
-   self.Ny = opts.resolution or 32
-   self.Nz = opts.resolution or 32
+   self.Nx = opts.Nx or opts.resolution or 32
+   self.Ny = opts.Ny or opts.resolution or 32
+   self.Nz = opts.Nz or opts.resolution or 32
    self.ndim = tonumber(opts.ndim) or 3
 
    MPI.Init()
@@ -85,7 +85,9 @@ function MyMara:initialize_solver()
 	 L1[d] = nil
       end
    end
-
+   print("domain extent:")
+   print(unpack(L0))
+   print(unpack(L1))
    local domain = unigrid.UnigridDomain(N, Ng)
    local prim_manager = unigrid.UnigridDataField(domain, prim_names)
    local domain_comm = domain:get_comm()
@@ -237,7 +239,11 @@ local function main()
                      help="which Runge-Kutta to use for solution advance"}
    parser.add_option{"--solver", dest="solver",
                      help="godunov (riemann solver) or spectral (characteristic-wise)"}
-   parser.add_option{"--resolution", "-N", dest="resolution", help="grid resolution"}
+   parser.add_option{"--resolution", "-N", dest="resolution",
+		     help="default grid resolution"}
+   parser.add_option{"--Nx", dest="Nx", help="grid resolution along x-axis"}
+   parser.add_option{"--Ny", dest="Ny", help="grid resolution along y-axis"}
+   parser.add_option{"--Nz", dest="Nz", help="grid resolution along z-axis"}
    parser.add_option{"--ndim", "-d", dest="ndim", help="domain dimensionality"}
    parser.add_option{"--message-cadence", dest="message_cadence",
                      help="print a message every N iterations"}

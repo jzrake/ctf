@@ -18,6 +18,7 @@ CD       ?= cd
 RM       ?= rm -f
 OS       ?= generic
 
+LVER  ?=  5.2.1
 LUA_I ?= -I$(LUA_HOME)/include
 LUA_L ?= -L$(LUA_HOME)/lib -llua
 LUA_A ?=   $(LUA_HOME)/lib/liblua.a
