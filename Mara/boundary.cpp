@@ -9,7 +9,6 @@
  *------------------------------------------------------------------------------
  */
 
-
 #include "boundary.hpp"
 #include "valman.hpp"
 
@@ -373,14 +372,18 @@ void ReflectingBoundary2d::set_bc_y1_wall(std::valarray<double> &U) const
       }
 }
 
+#include <iostream>
 #include "rmhd.hpp"
+#include "rmhd-c2p.h"
+
 void MagneticBubbleBoundary::set_bc_z0_wall(std::valarray<double> &U) const
 {
   const int Nx = Mara->domain->get_N(1);
   const int Ny = Mara->domain->get_N(2);
   const int Ng = Mara->domain->get_Ng();
 
-  double r0 = 0.05;
+  //  double r0 = 0.05;
+  double r0 = 0.2;
 
   ValarrayManager M(Mara->domain->aug_shape(), Mara->domain->get_Nq());
   for (int i=0; i<Nx+2*Ng; ++i) {
@@ -389,16 +392,34 @@ void MagneticBubbleBoundary::set_bc_z0_wall(std::valarray<double> &U) const
 
 	double x = Mara->domain->x_at(i);
 	double y = Mara->domain->y_at(j);
-	double r = sqrt(x*x + y*y) / r0;
+	double r = sqrt(x*x + y*y);
+	double Omega;// = r*r / (1 + r*r*r*r);
 
-	double Omega = r*r / (1 + r*r*r*r);
+	if (r < r0) {
+	  Omega = 1.0;
+	}
+	else {
+	  Omega = 0.0;
+	}
 
         std::valarray<double> U1 = U[ M(i,j,2*Ng-k-1) ]; // reflected zone
 	std::valarray<double> P1(8); // reflected zone primitive variables
 	std::valarray<double> U0(8);
 	std::valarray<double> P0(8);
 
-	Mara->fluid->ConsToPrim(&U1[0], &P1[0]);
+	if (receive_primitive) {
+	  P1 = U1; // U was actually P (confusing, I know)
+	}
+	else {
+	  int err = Mara->fluid->ConsToPrim(&U1[0], &P1[0]);
+	  if (err) {
+	    fprintf(stderr,
+		    "[MagneticBubbleBoundary] unphysical boundary value\n");
+	    std::cerr << Mara->fluid->PrintCons(&U1[0]) << std::endl;
+	    std::cerr << rmhd_c2p_get_error(err) << std::endl;
+	    exit(1);
+	  }
+	}
 
 	P0[0] =  P1[0];
 	P0[1] =  P1[1];
@@ -409,10 +430,12 @@ void MagneticBubbleBoundary::set_bc_z0_wall(std::valarray<double> &U) const
 	P0[6] = -P1[6];
 	P0[7] =  P1[7];
 
-	//	double v = sqrt(P0[2]*P0[2] + P0[3]*P0[3]);
-	//	if (v > 0.5) printf("%f\n", v);
-
-	Mara->fluid->PrimToCons(&P0[0], &U0[0]);
+	if (receive_primitive) {
+	  U0 = P0; // U really is P
+	}
+	else {
+	  Mara->fluid->PrimToCons(&P0[0], &U0[0]);
+	}
 	U[ M(i,j,k) ] = U0;
       }
     }

@@ -104,7 +104,9 @@ void GodunovOperator::prepare_integration()
 int GodunovOperator::PrimToCons(const std::valarray<double> &P, std::valarray<double> &U)
 {
   this->prepare_integration();
+  Mara->boundary->SetToReceivePrimitive();
   Mara->boundary->ApplyBoundaries(const_cast<std::valarray<double> &>(P));
+  Mara->boundary->SetToReceiveConserved();
 
   for (int i=0; i<stride[0]; i+=NQ) {
     Mara->fluid->PrimToCons(&P[i], &U[i]);
@@ -116,8 +118,8 @@ int GodunovOperator::ConsToPrim(const std::valarray<double> &U, std::valarray<do
 {
   this->prepare_integration();
   if (&P != &Mara->PrimitiveArray) P = Mara->PrimitiveArray; // don't copy it to itself
-  Mara->boundary->ApplyBoundaries(const_cast<std::valarray<double> &>(U));
 
+  Mara->boundary->ApplyBoundaries(const_cast<std::valarray<double> &>(U));
   int ttl_error=0;
 
   for (int i=0; i<stride[0]; i+=NQ) {

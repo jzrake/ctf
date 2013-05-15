@@ -26,21 +26,43 @@ function MyMara:initialize_physics()
       return self.problem:solution(x,y,z,0)
    end
    local P = self.Primitive
-   Mara.init_prim(P:buffer(), pinit)
+   if self.user_opts.restart then
+      self.prim_manager:read(self.user_opts.restart, 'prim')
+      Mara.advance(P:buffer(), 0.0) -- copies array to Mara internal memory
+   else
+      Mara.init_prim(P:buffer(), pinit)
+   end
 end
 function MyMara:domain_dimensions() return self.ndim end
 function MyMara:initialize_solver()
    local opts = self.user_opts
 
-   self.CFL = opts.CFL or 0.4
-   self.Ng = 3
-   self.Nx = opts.Nx or opts.resolution or 32
-   self.Ny = opts.Ny or opts.resolution or 32
-   self.Nz = opts.Nz or opts.resolution or 32
-   self.ndim = tonumber(opts.ndim) or 3
+   if opts.restart then
+      local chkpt = hdf5.File(opts.restart, 'r')
+      local extent = chkpt['prim']['rho']:get_space():get_extent()
+      if opts.Nx or opts.Ny or opts.Nz or opts.resolution then
+	 print('[run-mara] Warning! command-line option specified a domain'..
+	       ' resolution which was ignored (inferred from checkpoint file)')
+      end
+      self.Nx = extent[1]
+      self.Ny = extent[2]
+      self.Nz = extent[3]
+      self.ndim = #extent
+   else
+      self.Nx = opts.Nx or opts.resolution or 32
+      self.Ny = opts.Ny or opts.resolution or 32
+      self.Nz = opts.Nz or opts.resolution or 32
+      self.ndim = tonumber(opts.ndim) or 3
+   end
 
-   MPI.Init()
-   cow.init(0, nil, 0) -- to reopen stdout to dev/null
+
+   self.Ng = 3
+   self.CFL = opts.CFL or 0.4
+
+   if not opts.serial then
+      MPI.Init()
+      cow.init(0, nil, 0) -- to reopen stdout to dev/null
+   end
 
    local fluid = ({nrhyd='euler',
                    srhyd='srhd',
@@ -56,7 +78,7 @@ function MyMara:initialize_solver()
                       muscl = 'plm-muscl'})[self.user_opts.solver or 'godunov']
 
    if self.user_opts.solver == 'muscl' and advance ~= 'single' then
-      print('[MaraSim] Warning! --solver=muscl only supports --advance=single'
+      print('[run-mara] Warning! --solver=muscl only supports --advance=single'
          ..', going with single')
          advance = 'single'
    end
@@ -107,11 +129,20 @@ function MyMara:initialize_behavior()
    local opts = self.user_opts
    local cpi = opts.cpi or 0.1
    local tmax = opts.tmax or self.problem:finish_time()
+
    self.behavior.run_identifier = opts.id or 'test'
    self.behavior.message_cadence = opts.message_cadence or 1
    self.behavior.checkpoint_cadence = tonumber(cpi)
    self.behavior.max_simulation_time = tonumber(tmax)
    self.measure_log = { }
+
+   if self.user_opts.restart then
+      local chkpt = hdf5.File(opts.restart, 'r')
+      local status_string = chkpt['status']:value()
+      local measure_log_string = chkpt['measure_log']:value()
+      self.status = json.decode(status_string)
+      self.measure_log = json.decode(measure_log_string)
+   end
 end
 
 function MyMara:local_mesh_size()
@@ -179,7 +210,9 @@ function MyMara:finalize_solver()
    self.domain = nil
    self.prim_manager = nil
    collectgarbage()
-   MPI.Finalize()
+   if not self.user_opts.serial then
+      MPI.Finalize()
+   end
 end
 
 function handle_crash_srmhd(self, attempt)
@@ -252,6 +285,10 @@ local function main()
    parser.add_option{"--model_parameters", "-p", dest="model_parameters",
 		     help="extra problem-specific parameters (as a table)"}
    parser.add_option{"--problem", dest="problem", help="name of a problem class"}
+   parser.add_option{"--restart", dest="restart",
+		     help="restart from named checkpoint file"}
+   parser.add_option{"--serial", "-s", dest="serial", action="store_true",
+		     help="run a serial job, disable MPI initialization"}
 
    local opts, args = parser.parse_args()
    local problem_class = problems[opts.problem]

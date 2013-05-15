@@ -130,12 +130,18 @@ end
 
 function UnigridDataField:read(fname, gname)
    cow.dfield_setname(self._dfield, gname)
-   cow.dfield_read(self._dfield, fname)
+   local err = cow.dfield_read(self._dfield, fname)
+   if err ~= 0 then
+      error("[UnigridDataField] read from "..fname.." failed")
+   end
 end
 
 function UnigridDataField:write(fname, gname)
    cow.dfield_setname(self._dfield, gname)
-   cow.dfield_write(self._dfield, fname)
+   local err = cow.dfield_write(self._dfield, fname)
+   if err ~= 0 then
+      error("[UnigridDataField] write to "..fname.." failed")
+   end
 end
 
 function UnigridDataField:power_spectrum(nbins)

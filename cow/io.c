@@ -33,8 +33,8 @@
 #define MODULE "hdf5"
 
 #if (COW_HDF5)
-static void _io_write(cow_dfield *f, char *fname);
-static void _io_read(cow_dfield *f, char *fname);
+static int _io_write(cow_dfield *f, char *fname);
+static int _io_read(cow_dfield *f, char *fname);
 static int _io_check_file_exists(char *fname);
 #endif
 
@@ -136,7 +136,7 @@ void cow_domain_readsize(cow_domain *d, char *fname, char *dname)
 	 MODULE, dims[0], dims[1], dims[2], fname, dname);
 #endif
 }
-void cow_dfield_write(cow_dfield *f, char *fname)
+int cow_dfield_write(cow_dfield *f, char *fname)
 {
 #if (COW_HDF5)
 #if (COW_MPI)
@@ -171,23 +171,25 @@ void cow_dfield_write(cow_dfield *f, char *fname)
 	 sec/60.0);
   fflush(stdout);
 #endif
+  return 0;
 }
-void cow_dfield_read(cow_dfield *f, char *fname)
+int cow_dfield_read(cow_dfield *f, char *fname)
 {
 #if (COW_HDF5)
-  if (_io_check_file_exists(fname)) return;
+  if (_io_check_file_exists(fname)) return 1;
   clock_t start = clock();
-  _io_read(f, fname);
+  int err = _io_read(f, fname);
   cow_dfield_syncguard(f);
   double sec = (double)(clock() - start) / CLOCKS_PER_SEC;
   printf("[%s] read from %s/%s took %f minutes\n", MODULE, fname, f->name,
 	 sec/60.0);
   fflush(stdout);
 #endif
+  return err;
 }
 
 #if (COW_HDF5)
-void _io_write(cow_dfield *f, char *fname)
+int _io_write(cow_dfield *f, char *fname)
 // -----------------------------------------------------------------------------
 // This function uses a collective MPI-IO procedure to write the contents of
 // 'data' to the HDF5 file named 'fname', which is assumed to have been created
@@ -272,11 +274,12 @@ void _io_write(cow_dfield *f, char *fname)
     }
   }
 #endif // !COW_HDF5_MPI && COW_MPI
+  return 0;
 }
 #endif
 
 #if (COW_HDF5)
-void _io_read(cow_dfield *f, char *fname)
+int _io_read(cow_dfield *f, char *fname)
 {
   cow_domain *d = f->domain;
   char **pnames = f->members;
@@ -335,6 +338,7 @@ void _io_read(cow_dfield *f, char *fname)
     }
   }
 #endif // !COW_HDF5_MPI && COW_MPI
+  return 0;
 }
 #endif
 

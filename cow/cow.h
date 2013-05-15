@@ -118,8 +118,8 @@ int cow_dfield_getownsdata(cow_dfield *f);
 void *cow_dfield_getdatabuffer(cow_dfield *f);
 void cow_dfield_syncguard(cow_dfield *f);
 void cow_dfield_reduce(cow_dfield *f, double *x);
-void cow_dfield_write(cow_dfield *f, char *fname);
-void cow_dfield_read(cow_dfield *f, char *fname);
+int cow_dfield_write(cow_dfield *f, char *fname);
+int cow_dfield_read(cow_dfield *f, char *fname);
 
 
 cow_histogram *cow_histogram_new(void);

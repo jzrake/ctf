@@ -58,9 +58,9 @@ end
 function SimulationBase:main_loop()
    while self:continue_condition() do
       if self:checkpoint_condition() then
-	 self:checkpoint_write()
 	 self.status.checkpoint_number = self.status.checkpoint_number + 1
 	 self.status.last_checkpoint_time = self.status.simulation_time
+	 self:checkpoint_write()
       end
       self:time('user_work_iteration')
       self:time('set_time_increment')
@@ -91,7 +91,7 @@ function SimulationBase:__init__(user_opts)
    self.status   = { iteration_number     = 0,
 		     wall_runtime         = 0.0,
 		     simulation_time      = 0.0,
-		     time_incremement     = 0.0,
+		     time_increment       = 0.0,
 		     checkpoint_number    = 0,
 		     last_checkpoint_time = 0.0,
 		     kilozones_per_second = 0.0 }

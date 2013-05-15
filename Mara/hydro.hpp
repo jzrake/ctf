@@ -95,7 +95,12 @@ public:
 class BoundaryConditions : public HydroModule
 // -----------------------------------------------------------------------------
 {
+protected:
+  int receive_primitive;
 public:
+  BoundaryConditions() : receive_primitive(0) { }
+  void SetToReceivePrimitive() { receive_primitive = 1; }
+  void SetToReceiveConserved() { receive_primitive = 0; }
   virtual ~BoundaryConditions() { }
   virtual void ApplyBoundaries(std::valarray<double> &U) const = 0;
 } ;

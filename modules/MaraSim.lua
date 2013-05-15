@@ -56,6 +56,9 @@ function MaraSimulation:report_configuration()
    Mara.show()
    Mara.units.Print()
    print()
+   print(" ** Initial status ** ")
+   util.pretty_print(self.status)
+   print()
 end
 
 function MaraSimulation:finalize_solver()

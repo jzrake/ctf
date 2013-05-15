@@ -101,18 +101,22 @@ int Rmhd::ConsToPrim(const double *U, double *P) const
   if (error) {
     rmhd_c2p_set_starting_prim(P);
     error = rmhd_c2p_solve_anton2dzw(P);
+    //    if (error) printf("%s\n", rmhd_c2p_get_error(error));
   }
   if (error) {
     rmhd_c2p_estimate_from_cons();
     error = rmhd_c2p_solve_anton2dzw(P);
+    //    if (error) printf("%s\n", rmhd_c2p_get_error(error));
   }
   if (error) {
     rmhd_c2p_set_starting_prim(P);
     error = rmhd_c2p_solve_noble1dw(P);
+    //    if (error) printf("%s\n", rmhd_c2p_get_error(error));
   }
   if (error) {
     rmhd_c2p_estimate_from_cons();
     error = rmhd_c2p_solve_noble1dw(P);
+    //    if (error) printf("%s\n", rmhd_c2p_get_error(error));
   }
 
   return error;

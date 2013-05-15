@@ -1266,7 +1266,7 @@ int luaC_fluid_ConsToPrim(lua_State *L)
     free(U);
     free(P);
     if (err) {
-      luaL_error(L, "[Mara] ConsToPrim failed");
+      luaL_error(L, "[Mara] %s", rmhd_c2p_get_error(err));
     }
   }
   return 1;
