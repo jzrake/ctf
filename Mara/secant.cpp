@@ -19,7 +19,6 @@
 
 int SecantMethodSolver::Solve(const EquationSystemBaseClass &eqn, double *x)
 {
-  const double TOL = 1e-15;
   double &x0 = *x;
   double y0, y1, y2, x1, x2;
   int WorseIteration = 0;
@@ -27,7 +26,7 @@ int SecantMethodSolver::Solve(const EquationSystemBaseClass &eqn, double *x)
   eqn.Function(&x0, &y0);
   x1 = x0 + 1e-6;
 
-  if (fabs(y0) < TOL) {
+  if (fabs(y0) < MinEpsilon) {
     return 0;
   }
   else {
@@ -36,7 +35,7 @@ int SecantMethodSolver::Solve(const EquationSystemBaseClass &eqn, double *x)
   }
 
   Iterations = 0;
-  while (fabs(y1) > TOL) {
+  while (fabs(y1) > MinEpsilon) {
 
     x2 = x1 - y1 * (x1-x0) / (y1-y0);
     eqn.Function(&x2, &y2);
@@ -55,7 +54,7 @@ int SecantMethodSolver::Solve(const EquationSystemBaseClass &eqn, double *x)
       throw NewtonRaphesonSolver::NanLocated();
     }
 
-    if (++Iterations > 15) return 1;
+    if (++Iterations > MaxIterations) return 1;
   }
   x0 = x1;
 
