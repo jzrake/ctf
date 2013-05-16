@@ -153,10 +153,10 @@ int rmhd_c2p_reconstruct_prim(double Z, double W, double *Pout)
 int rmhd_c2p_check_cons(const double *U)
 {
   int i;
-  if (Cons[ddd] < 0.0) return RMHD_C2P_CONS_NEGATIVE_DENSITY;
-  if (Cons[tau] < 0.0) return RMHD_C2P_CONS_NEGATIVE_ENERGY;
+  if (U[ddd] < 0.0) return RMHD_C2P_CONS_NEGATIVE_DENSITY;
+  if (U[tau] < 0.0) return RMHD_C2P_CONS_NEGATIVE_ENERGY;
   for (i=0; i<8; ++i) {
-    if (isnan(Cons[i])) {
+    if (isnan(U[i])) {
       return RMHD_C2P_CONS_CONTAINS_NAN;
     }
   }
