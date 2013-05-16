@@ -112,7 +112,7 @@ function MaraSimulation:advance_physics()
       attempt = attempt + 1
       local handler_code = self:handle_crash(attempt)
       if handler_code == 0 then
-         printf("[!]  the crash handler did its thing on attempt %d", attempt)
+         printf("[!]  the crash handler tried on attempt %d", attempt)
       else
          self.status.emergency_abort = true
          printf("[!]  the crash handler gave up on attempt %d", attempt)

@@ -227,24 +227,31 @@ function handle_crash.MagneticBubble(self, attempt)
       Mara.config_solver({theta=2.0, pfloor=1e-6}, true)
       return 0
    elseif attempt == 1 then
+      Mara.diffuse(P, 0.1)
       status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 2 then
+      Mara.diffuse(P, 0.1)
       status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 3 then
-      Mara.config_solver({theta=1.5}, true)
+      Mara.diffuse(P, 0.1)
       status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 4 then
-      Mara.config_solver({theta=1.0}, true)
+      Mara.diffuse(P, 0.1)
       status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 5 then
-      Mara.config_solver({theta=0.0}, true)
+      Mara.config_solver({theta=1.5}, true)
       status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 6 then
+      Mara.config_solver({theta=1.0}, true)
+      status.time_increment = 0.5 * status.time_increment
+      return 0
+   elseif attempt == 7 then
+      Mara.config_solver({theta=0.0}, true)
       status.time_increment = 0.5 * status.time_increment
       return 0
    else
