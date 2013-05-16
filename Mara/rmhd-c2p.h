@@ -20,6 +20,7 @@ extern "C" {
   } ;
 
   void rmhd_c2p_set_gamma(double adiabatic_gamma);
+  void rmhd_c2p_set_pressure_floor(double pf);
   void rmhd_c2p_new_state(const double *U);
   void rmhd_c2p_estimate_from_cons();
   void rmhd_c2p_set_starting_prim(const double *P);

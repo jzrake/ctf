@@ -215,7 +215,44 @@ function MyMara:finalize_solver()
    end
 end
 
-function handle_crash_srmhd(self, attempt)
+local handle_crash = { }
+function handle_crash.MagneticBubble(self, attempt)
+   local P = self.Primitive:buffer()
+   local status = self.status
+   local r = 0.0
+   Mara.set_advance("rk3")
+   if attempt == 0 then -- healthy time-step
+      Mara.set_godunov("plm-split")
+      Mara.set_riemann("hlld")
+      Mara.config_solver({theta=2.0, pfloor=1e-6}, true)
+      return 0
+   elseif attempt == 1 then
+      status.time_increment = 0.5 * status.time_increment
+      return 0
+   elseif attempt == 2 then
+      status.time_increment = 0.5 * status.time_increment
+      return 0
+   elseif attempt == 3 then
+      Mara.config_solver({theta=1.5}, true)
+      status.time_increment = 0.5 * status.time_increment
+      return 0
+   elseif attempt == 4 then
+      Mara.config_solver({theta=1.0}, true)
+      status.time_increment = 0.5 * status.time_increment
+      return 0
+   elseif attempt == 5 then
+      Mara.config_solver({theta=0.0}, true)
+      status.time_increment = 0.5 * status.time_increment
+      return 0
+   elseif attempt == 6 then
+      status.time_increment = 0.5 * status.time_increment
+      return 0
+   else
+      return 1
+   end
+end
+
+function handle_crash.TearingMode(self, attempt)
    local P = self.Primitive:buffer()
    local status = self.status
    local r = 0.0
@@ -232,7 +269,7 @@ function handle_crash_srmhd(self, attempt)
       status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 3 then
-      Mara.set_riemann("hll")
+      Mara.config_solver({theta=1.5}, true)
       status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 4 then
@@ -241,6 +278,9 @@ function handle_crash_srmhd(self, attempt)
       return 0
    elseif attempt == 5 then
       Mara.config_solver({theta=0.0}, true)
+      status.time_increment = 0.5 * status.time_increment
+      return 0
+   elseif attempt == 6 then
       status.time_increment = 0.5 * status.time_increment
       return 0
    else
@@ -303,13 +343,7 @@ local function main()
    local sim = MyMara(opts)
    local problem = problem_class(opts)
 
-   if oo.isinstance(problem, problems.TearingMode) then
-      sim.handle_crash = handle_crash_srmhd
-   end
-   if oo.isinstance(problem, problems.MagneticBubble) then
-      sim.handle_crash = handle_crash_srmhd
-   end
-
+   sim.handle_crash = handle_crash[oo.classname(problem)]
    sim:run(problem)
 end
 

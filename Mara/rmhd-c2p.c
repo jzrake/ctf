@@ -51,7 +51,7 @@ static double D,Tau;
 static double S2,B2,BS,BS2;
 static double Cons[8];
 static double Z_start, W_start;
-
+static double PressureFloor = -1.0;
 
 
 
@@ -68,6 +68,11 @@ void rmhd_c2p_set_gamma(double adiabatic_gamma)
 int rmhd_c2p_get_iterations()
 {
   return Iterations;
+}
+
+void rmhd_c2p_set_pressure_floor(double pf)
+{
+  PressureFloor = pf;
 }
 
 // Provide a new conserved state in memory. Before the solver is executed, the
@@ -126,6 +131,12 @@ int rmhd_c2p_reconstruct_prim(double Z, double W, double *Pout)
   P[Bx ] =  Cons[Bx];
   P[By ] =  Cons[By];
   P[Bz ] =  Cons[Bz];
+
+  if (P[pre] < PressureFloor && PressureFloor > 0.0) {
+    //    printf("setting pressure floor, p=%4.3e -> %2.1e\n",
+    //	   P[pre], PressureFloor);
+    P[pre] = PressureFloor;    
+  }
 
   int prim_error = rmhd_c2p_check_prim(P);
   if (prim_error) return prim_error;

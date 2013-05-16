@@ -932,19 +932,21 @@ int luaC_set_plm_theta(lua_State *L)
 }
 
 int luaC_config_solver(lua_State *L)
-// -----------------------------------------------------------------------------
-// Configures the GodunovOperator::reconstruct_method flag as well as internal
-// parameters specific to the reconstruction library. The input is a table which
-// may contain any of the following keys:
-//
-// fsplit (string) : one of [llf, marq]       ... flux splitting mode
-// extrap (string) : one of [pcm, plm, weno5] ... reconstruction type
-// theta  (number) : must be [0,2]            ... theta value for PLM/minmod
-// IS     (string) : one of [js96, b08, sz10] ... smoothness indicator
-// sz10A  (number) : should be in [0,100]     ... used by sz10 (see weno.c)
-//
-// A second positional argument, quiet (bool) may be provided.
-// -----------------------------------------------------------------------------
+/* -----------------------------------------------------------------------------
+ * Configures the GodunovOperator::reconstruct_method flag as well as internal
+ * parameters specific to the reconstruction library. The input is a table which
+ * may contain any of the following keys:
+ *
+ * fsplit (string) : one of [llf, marq]       .. flux splitting mode
+ * extrap (string) : one of [pcm, plm, weno5] .. reconstruction type
+ * theta  (number) : must be [0,2]            .. theta value for PLM/minmod
+ * IS     (string) : one of [js96, b08, sz10] .. smoothness indicator
+ * sz10A  (number) : should be in [0,100]     .. used by sz10 (see weno.c)
+ * pfloor (number) : disabled if < 0          .. pressure floor (see rmhd-c2p.c)
+ *
+ * A second positional argument, quiet (bool) may be provided.
+ -------------------------------------------------------------------------------
+*/
 {
   typedef std::map<std::string, GodunovOperator::FluxSplittingMethod> FSmap;
   typedef std::map<std::string, GodunovOperator::ReconstructMethod> RMmap;
@@ -1028,6 +1030,14 @@ int luaC_config_solver(lua_State *L)
     const double A = lua_tonumber(L, -1);
     if (!quiet) printf("[Mara] setting sz10A=%f\n", A);
     reconstruct_set_shenzha10_A(A);
+  }
+  lua_pop(L, 1);
+
+  lua_getfield(L, 1, "pfloor");
+  if (lua_isnumber(L, -1)) {
+    const double A = lua_tonumber(L, -1);
+    if (!quiet) printf("[Mara] setting pfloor=%f\n", A);
+    rmhd_c2p_set_pressure_floor(A);
   }
   lua_pop(L, 1);
 
