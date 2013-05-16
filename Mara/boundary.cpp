@@ -413,28 +413,41 @@ void MagneticBubbleBoundary::set_bc_z0_wall(std::valarray<double> &U) const
 	else {
 	  int err = Mara->fluid->ConsToPrim(&U1[0], &P1[0]);
 	  if (err) {
+	    /*
 	    fprintf(stderr,
 		    "[MagneticBubbleBoundary] unphysical boundary value\n");
 	    std::cerr << Mara->fluid->PrintCons(&U1[0]) << std::endl;
 	    std::cerr << rmhd_c2p_get_error(err) << std::endl;
-	    exit(1);
+	    */
+	    //	    exit(1);
+	    continue;
 	  }
 	}
 
+	/* not reflecting vz ensures that v < 1 in the guard zones */
 	P0[0] =  P1[0];
 	P0[1] =  P1[1];
 	P0[2] = -y/r0 * Omega;
 	P0[3] =  x/r0 * Omega;
-	P0[4] = -P1[4];
+	P0[4] =  0.0;//-P1[4];
 	P0[5] = -P1[5];
 	P0[6] = -P1[6];
 	P0[7] =  P1[7];
 
 	if (receive_primitive) {
 	  U0 = P0; // U really is P
+	  int err = rmhd_c2p_check_prim(&P0[0]);
+	  if (err) {
+	    std::cerr << rmhd_c2p_get_error(err) << std::endl;
+	    exit(1);
+	  }
 	}
 	else {
-	  Mara->fluid->PrimToCons(&P0[0], &U0[0]);
+	  int err = Mara->fluid->PrimToCons(&P0[0], &U0[0]);
+	  if (err) {
+	    std::cerr << rmhd_c2p_get_error(err) << std::endl;
+	    exit(1);
+	  }
 	}
 	U[ M(i,j,k) ] = U0;
       }

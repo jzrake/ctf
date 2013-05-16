@@ -127,10 +127,12 @@ int GodunovOperator::ConsToPrim(const std::valarray<double> &U, std::valarray<do
     if (error) {
       int N[3];
       absolute_index_to_3d(i/NQ, N);
-      fprintf(stderr, "recording c2p error at position [%f %f %f]\n",
-	      Mara->domain->x_at(N[0]),
-	      Mara->domain->y_at(N[1]),
-	      Mara->domain->z_at(N[2]));
+      fprintf(stderr, "[GodunovOperator::ConsToPrim] "
+              "recording c2p error at position [%f %f %f]\n"
+              "(local zone [%d %d %d])\n",
+              Mara->domain->x_at(N[0]),
+              Mara->domain->y_at(N[1]),
+              Mara->domain->z_at(N[2]), N[0], N[1], N[2]);
     }
     ttl_error += error;
     Mara->FailureMask[i/NQ] = error;
@@ -171,12 +173,12 @@ std::valarray<double> GodunovOperator::LaxDiffusion(const std::valarray<double> 
 
       if (FM[i/NQ] || FM[(i+sx)/NQ]) {
         for (int j=0; j<NQ; ++j) {
-	  Fiph[i+j] = -0.25*r*(U[i+j+sx] - U[i+j])*dx;
+          Fiph[i+j] = -0.25*r*(U[i+j+sx] - U[i+j])*dx;
         }
       }
       if (FM[i/NQ] || FM[(i+sy)/NQ]) {
         for (int j=0; j<NQ; ++j) {
-	  Giph[i+j] = -0.25*r*(U[i+j+sy] - U[i+j])*dy;
+          Giph[i+j] = -0.25*r*(U[i+j+sy] - U[i+j])*dy;
         }
       }
     }
