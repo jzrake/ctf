@@ -76,16 +76,10 @@ int ExactEulersRiemannSolver::IntercellFlux(const double *pl, const double *pr,
       return 0;
     }
     catch (const std::exception &e) {
-      DebugLog.Warning(__FUNCTION__)
-	<< "failed to find p* in Riemann solution on attempt "
-	<< Attempt << std::endl;
       ++Attempt;
     }
   }
   if (BackupRiemannSolver) {
-    DebugLog.Error(__FUNCTION__)
-      << "failed to find p* in Riemann solution. "
-      << "Reverting to backup riemann solver." << std::endl;
     BackupRiemannSolver->IntercellFlux(pl, pr, U_out, F, s, dim);
   }
   else {
@@ -112,7 +106,7 @@ EulersWavePattern::EulersWavePattern
     break;
   }
 
-  gm0 = AdiabaticGamma;
+  gm0 = this->AdiabaticGamma;
   gm1 = (gm0+1) / (2*gm0);
   gm2 = (gm0-1) / (2*gm0);
   gm3 = (gm0-1) / (gm0+1);

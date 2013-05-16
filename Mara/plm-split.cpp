@@ -14,12 +14,10 @@ std::valarray<double> Deriv::dUdt(const std::valarray<double> &Uin)
   std::valarray<double> L(U.size());
   std::valarray<double> &P = Mara->PrimitiveArray;
 
-  //  ConsToPrim(U, P);
-
   int err = ConsToPrim(U, P);
 
   if (err != 0) {
-    printf("c2p failed on %d zones\n", err);
+    printf("[MethodOfLinesSplit] c2p failed on %d zones\n", err);
     throw IntermediateFailure();
   }
 
@@ -64,10 +62,6 @@ void Deriv::intercell_flux_sweep(const double *P, double *F, int dim)
     int error = Mara->riemann->IntercellFlux(Pl, Pr, 0, &F[i], 0.0, dim);
     if (error) {
       error = Mara->riemann->IntercellFlux(&P[i], &P[i+S], 0, &F[i], 0.0, dim);
-
-      DebugLog.Warning(__FUNCTION__) << "Reverting to first order at zone interface... ";
-      if (!error) DebugLog.Warning() << "Success!" << std::endl;
-      else        DebugLog.Warning() << "Still failed!" << std::endl;
     }
   }
 }

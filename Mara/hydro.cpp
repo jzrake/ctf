@@ -13,7 +13,7 @@
 #include <fstream>
 #include "mara.hpp"
 
-
+static int absolute_index_to_3d(const int &m, int ind[3]);
 MaraApplication *HydroModule::Mara;
 
 MaraApplication::MaraApplication()
@@ -124,6 +124,14 @@ int GodunovOperator::ConsToPrim(const std::valarray<double> &U, std::valarray<do
 
   for (int i=0; i<stride[0]; i+=NQ) {
     int error = (Mara->fluid->ConsToPrim(&U[i], &P[i]) != 0);
+    if (error) {
+      int N[3];
+      absolute_index_to_3d(i/NQ, N);
+      fprintf(stderr, "recording c2p error at position [%f %f %f]\n",
+	      Mara->domain->x_at(N[0]),
+	      Mara->domain->y_at(N[1]),
+	      Mara->domain->z_at(N[2]));
+    }
     ttl_error += error;
     Mara->FailureMask[i/NQ] = error;
   }
@@ -211,4 +219,32 @@ std::valarray<double> GodunovOperator::LaxDiffusion(const std::valarray<double> 
   return L;
 }
 
+int absolute_index_to_3d(const int &m, int ind[3])
+{
+  const int Nd = HydroModule::Mara->domain->get_Nd();
+  const std::vector<int> &N = HydroModule::Mara->domain->aug_shape();
 
+  if (Nd == 1) {
+    const int i = m;
+    ind[0] = i;
+    ind[1] = 0;
+    ind[2] = 0;
+  }
+  else if (Nd == 2) {
+    const int i = (m         ) / (N[1]);
+    const int j = (m - i*N[1]) / (1);
+    ind[0] = i;
+    ind[1] = j;
+    ind[2] = 0;
+  }
+  else if (Nd == 3) {
+    const int i = (m                       ) / (N[1]*N[2]);
+    const int j = (m - i*N[1]*N[2]         ) / (N[2]);
+    const int k = (m - i*N[1]*N[2] - j*N[2]) / (1);
+    ind[0] = i;
+    ind[1] = j;
+    ind[2] = k;
+  }
+
+  return 0;
+}

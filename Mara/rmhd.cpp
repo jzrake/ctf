@@ -99,24 +99,24 @@ int Rmhd::ConsToPrim(const double *U, double *P) const
   rmhd_c2p_new_state(U);
 
   if (error) {
-    rmhd_c2p_set_starting_prim(P);
-    error = rmhd_c2p_solve_anton2dzw(P);
-    //    if (error) printf("%s\n", rmhd_c2p_get_error(error));
-  }
-  if (error) {
     rmhd_c2p_estimate_from_cons();
     error = rmhd_c2p_solve_anton2dzw(P);
-    //    if (error) printf("%s\n", rmhd_c2p_get_error(error));
+    //    if (error) fprintf(stderr, "[1] %s\n", rmhd_c2p_get_error(error));
   }
   if (error) {
     rmhd_c2p_set_starting_prim(P);
-    error = rmhd_c2p_solve_noble1dw(P);
-    //    if (error) printf("%s\n", rmhd_c2p_get_error(error));
+    error = rmhd_c2p_solve_anton2dzw(P);
+    //    if (error) fprintf(stderr, "[2] %s\n", rmhd_c2p_get_error(error));
   }
   if (error) {
     rmhd_c2p_estimate_from_cons();
     error = rmhd_c2p_solve_noble1dw(P);
-    //    if (error) printf("%s\n", rmhd_c2p_get_error(error));
+    //    if (error) fprintf(stderr, "[3] %s\n", rmhd_c2p_get_error(error));
+  }
+  if (error) {
+    rmhd_c2p_set_starting_prim(P);
+    error = rmhd_c2p_solve_noble1dw(P);
+    //    if (error) fprintf(stderr, "[4] %s\n", rmhd_c2p_get_error(error));
   }
 
   return error;
@@ -148,10 +148,9 @@ int Rmhd::PrimToCons(const double *P, double *U) const
   U[Bz ] = P[Bz ];
 
   if (V2 >= 1.0) {
-    return 1;
+    return RMHD_C2P_PRIM_SUPERLUMINAL;
   }
-
-  return 0;
+  return rmhd_c2p_check_cons(U);
 }
 void Rmhd::FluxAndEigenvalues(const double *U,
                               const double *P, double *F,
