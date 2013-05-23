@@ -497,6 +497,9 @@ function problems.TearingMode:solution(x,y,z,t)
       By = 0
       vx = 0
       vy = 0
+   else
+      error("[!] model parameter geom="..self.model_parameters.geom..
+	    " not recognized")
    end
    vx = vx + (math.random() - 0.5) * dv
    vy = vy + (math.random() - 0.5) * dv
@@ -578,6 +581,9 @@ function problems.MagneticBubble:initialize_problem(x,y,z,t)
    self.model_parameters.D0 = 1.0
    self.model_parameters.P0 = 1.0
    self.model_parameters.B0 = 0.01
+   self.model_parameters.z0 = 0.0
+   self.model_parameters.m = 1e-3
+   self.model_parameters.geom = 'uniform'
 
    if self.user_opts.model_parameters then
       local u = load('return '..self.user_opts.model_parameters)()
@@ -596,7 +602,24 @@ function problems.MagneticBubble:solution(x,y,z,t)
    local D0 = self.model_parameters.D0
    local P0 = self.model_parameters.P0
    local B0 = self.model_parameters.B0
-   return { D0, P0,  0, 0, 0,  0.0, 0.0, B0 }
+   local z0 = self.model_parameters.z0 -- dipole distance below plane
+   local m = self.model_parameters.m -- dipole parameter
+
+   if self.model_parameters.geom == 'uniform' then
+      return { D0, P0, 0, 0, 0, 0, 0, B0 }
+   elseif self.model_parameters.geom == 'dipole' then
+      local z = z + z0
+      local r = (x^2 + y^2)^0.5
+      local R = (x^2 + y^2 + z^2)^0.5
+      local Br = 4*m*r^2*z          / (r^2 + z^2)^3
+      local Bz = -m*r*(r^2 - 3*z^2) / (r^2 + z^2)^3
+      local Bx = Br * x/r
+      local By = Br * y/r
+      return { D0, P0, 0, 0, 0, Bx, By, Bz }
+   else
+      error("[!] model parameter geom="..self.model_parameters.geom..
+	    " not recognized")
+   end
 end
 function problems.MagneticBubble:boundary_conditions() return 'magnetic-bubble' end
 function problems.MagneticBubble:fluid() return 'srmhd' end
