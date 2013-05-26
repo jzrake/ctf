@@ -126,6 +126,7 @@ void LoadTexture()
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
   glTexImage2D(GL_TEXTURE_2D, 0, 3, Nx, Ny, 0, GL_RGB, GL_FLOAT, texture_data);
   glBindTexture(GL_TEXTURE_2D, 0);
+  free(texture_data);
 }
 
 void glutPrint(float x, float y, const char *text)
