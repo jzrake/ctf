@@ -602,11 +602,18 @@ function problems.MagneticBubble:solution(x,y,z,t)
    local D0 = self.model_parameters.D0
    local P0 = self.model_parameters.P0
    local B0 = self.model_parameters.B0
-   local z0 = self.model_parameters.z0 -- dipole distance below plane
-   local m = self.model_parameters.m -- dipole parameter
+   local z0 = self.model_parameters.z0 -- di(mono)pole distance below plane
+   local m = self.model_parameters.m -- di(mono)pole parameter
 
    if self.model_parameters.geom == 'uniform' then
       return { D0, P0, 0, 0, 0, 0, 0, B0 }
+   elseif self.model_parameters.geom == 'monopole' then
+      local z = z + z0
+      local R = (x^2 + y^2 + z^2)^0.5
+      local Bx = m * x / R^3
+      local By = m * y / R^3
+      local Bz = m * z / R^3
+      return { D0, P0, 0, 0, 0, Bx, By, Bz }      
    elseif self.model_parameters.geom == 'dipole' then
       local z = z + z0
       local r = (x^2 + y^2)^0.5
