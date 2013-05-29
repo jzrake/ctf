@@ -76,7 +76,14 @@ private:
 // -----------------------------------------------------------------------------
 class MagneticBubbleBoundary : public OutflowBoundary3d
 {
+public:
+  MagneticBubbleBoundary();
+  int set_rotation_radius(double r0);
+  int set_rotation_profile(const char *profile_string);
 private:
+  enum RotationProfile {RIGID_ROTATION, RIGID_IN_KEPLARIAN_OUT};
+  RotationProfile rotation_profile;
+  double rotation_radius;
   virtual void set_bc_z0_wall(std::valarray<double> &U) const;
 } ;
 

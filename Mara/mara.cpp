@@ -855,7 +855,16 @@ int luaC_set_boundary(lua_State *L)
     new_f = new ReflectingBoundary2d(revx, revy);
   }
   else if (strcmp(key, "magnetic-bubble") == 0) {
-    new_f = new MagneticBubbleBoundary;
+    MagneticBubbleBoundary *b = new MagneticBubbleBoundary;
+    double r0 = luaL_optnumber(L, 2, 0.2);
+    const char *prof = luaL_optstring(L, 3, "rigid_rotation");
+    int err = 0;
+    err += b->set_rotation_radius(r0);
+    err += b->set_rotation_profile(prof);
+    if (err) {
+      luaL_error(L, "[Mara] there was an error setting MagneticBubbleBoundary");
+    }
+    new_f = b;
   }
 
   if (new_f) {
