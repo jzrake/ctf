@@ -22,6 +22,19 @@ local MyBase = oo.class('MyBase', sim.SimulationBase)
 local MyMara = oo.class('MyMara', MaraSim.MaraSimulation)
 
 function MyMara:initialize_physics()
+   --
+   -- Custom boundary conditions configuration for MagneticBubble problem
+   --
+   local bc = self.problem:boundary_conditions()
+   if bc == 'magnetic-bubble' then
+      local r0 = self.problem.model_parameters.r0
+      local prof = self.problem.model_parameters.prof
+      Mara.set_boundary(bc, r0, prof)
+   end
+
+   --
+   -- Generic initial model data
+   --
    local function pinit(x,y,z)
       return self.problem:solution(x,y,z,0)
    end

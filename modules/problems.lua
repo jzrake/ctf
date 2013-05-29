@@ -582,8 +582,10 @@ function problems.MagneticBubble:initialize_problem(x,y,z,t)
    self.model_parameters.P0 = 1.0
    self.model_parameters.B0 = 0.01
    self.model_parameters.z0 = 0.0
+   self.model_parameters.r0 = 0.2 -- rotator radius
    self.model_parameters.m = 1e-3
    self.model_parameters.geom = 'uniform'
+   self.model_parameters.prof = 'rigid_in_keplarian_out'
 
    if self.user_opts.model_parameters then
       local u = load('return '..self.user_opts.model_parameters)()
