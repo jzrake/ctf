@@ -1144,7 +1144,12 @@ int luaC_set_fluxsrc(lua_State *L)
   FluxSourceTermsModule *new_f = NULL;
 
   if (strcmp("magnetar", key) == 0) {
-    new_f = new FluxSourceTermsMagnetar;
+    FluxSourceTermsMagnetar *magnetar = new FluxSourceTermsMagnetar;
+    double magnetar_radius = luaL_optnumber(L, 2, 0.1);
+    double field_strength = luaL_optnumber(L, 3, 24.0);
+    magnetar->set_magnetar_radius(magnetar_radius);
+    magnetar->set_field_strength(field_strength);
+    new_f = magnetar;
   }
   else {
     luaL_error(L, "[Mara] unrecognized flux source terms module: '%s'", key);

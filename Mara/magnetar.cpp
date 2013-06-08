@@ -4,6 +4,10 @@
 enum { ddd, tau, Sx, Sy, Sz, Bx, By, Bz }; // Conserved
 enum { rho, pre, vx, vy, vz };             // Primitive
 
+FluxSourceTermsMagnetar::FluxSourceTermsMagnetar() :
+  magnetar_radius(0.1),
+  field_strength(24.0) { }
+
 void FluxSourceTermsMagnetar::
 AddIntercellFlux(double x[3], int dim, double *F)
 {
@@ -11,7 +15,7 @@ AddIntercellFlux(double x[3], int dim, double *F)
   double z = x[2];
   double r = sqrt(x[0]*x[0] + x[1]*x[1]); // cylindrical r
   double R = sqrt(r*r + z*z);             // spherical r
-  double L = 0.1;
+  double L = magnetar_radius;
 
   double Omega = 1.0 / (1 + pow(R/L, 4));
   double vphi = Omega * r;
@@ -25,9 +29,9 @@ AddIntercellFlux(double x[3], int dim, double *F)
   P[vz] = 0.0;
 
   if (1) {
-    P[Bx] =  0.0;
-    P[By] =  0.0;
-    P[Bz] = 24.0;
+    P[Bx] = 0.0;
+    P[By] = 0.0;
+    P[Bz] = field_strength;
   }
   else if (0) {
     P[Bx] = rhat[0] / (R*R);
