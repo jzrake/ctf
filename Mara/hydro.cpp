@@ -129,12 +129,14 @@ int GodunovOperator::ConsToPrim(const std::valarray<double> &U, std::valarray<do
     if (error) {
       int N[3];
       absolute_index_to_3d(i/NQ, N);
-      fprintf(stderr, "[GodunovOperator::ConsToPrim] "
-              "recording c2p error at position [%f %f %f]\n"
-              "(local zone [%d %d %d])\n",
-              Mara->domain->x_at(N[0]),
-              Mara->domain->y_at(N[1]),
-              Mara->domain->z_at(N[2]), N[0], N[1], N[2]);
+      if (0) {
+	fprintf(stderr, "[GodunovOperator::ConsToPrim] "
+		"recording c2p error at position [%f %f %f]\n"
+		"(local zone [%d %d %d])\n",
+		Mara->domain->x_at(N[0]),
+		Mara->domain->y_at(N[1]),
+		Mara->domain->z_at(N[2]), N[0], N[1], N[2]);
+      }
     }
     ttl_error += error;
     Mara->FailureMask[i/NQ] = error;
