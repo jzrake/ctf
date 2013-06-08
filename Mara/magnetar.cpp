@@ -13,10 +13,10 @@ AddIntercellFlux(double x[3], int dim, double *F)
   double R = sqrt(r*r + z*z);             // spherical r
   double L = 0.1;
 
-  double Omega = 2.0 / (1 + pow(R/L, 4));
+  double Omega = 1.0 / (1 + pow(R/L, 4));
   double vphi = Omega * r;
   double phihat[3] = { -x[1]/r, x[0]/r, 0.0 };
-  double m[3] = { 0.0, 0.0, 0.001 };
+  double m[3] = { 0.0, 0.0, 0.0005 };
   double rhat[3] = { x[0]/R, x[1]/R, x[2]/R };
   double rhatdotm = rhat[0]*m[0] + rhat[1]*m[1] + rhat[2]*m[2];
 
@@ -25,9 +25,9 @@ AddIntercellFlux(double x[3], int dim, double *F)
   P[vz] = 0.0;
 
   if (1) {
-    P[Bx] = 0.0;
-    P[By] = 0.0;
-    P[Bz] = 1.0;
+    P[Bx] =  0.0;
+    P[By] =  0.0;
+    P[Bz] = 24.0;
   }
   else if (0) {
     P[Bx] = rhat[0] / (R*R);
