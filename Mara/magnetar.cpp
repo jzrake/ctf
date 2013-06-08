@@ -11,9 +11,9 @@ AddIntercellFlux(double x[3], int dim, double *F)
   double z = x[2];
   double r = sqrt(x[0]*x[0] + x[1]*x[1]); // cylindrical r
   double R = sqrt(r*r + z*z);             // spherical r
-  double L = 0.025;
+  double L = 0.1;
 
-  double Omega = 2.0 / (1 + r/L*r/L) / (1 + z/L*z/L);
+  double Omega = 2.0 / (1 + pow(R/L, 4));
   double vphi = Omega * r;
   double phihat[3] = { -x[1]/r, x[0]/r, 0.0 };
   double m[3] = { 0.0, 0.0, 0.001 };
