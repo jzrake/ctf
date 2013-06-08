@@ -28,6 +28,7 @@ MaraApplication::MaraApplication()
   advance  = NULL;
   driving  = NULL;
   cooling  = NULL;
+  fluxsrc  = NULL;
 }
 
 MaraApplication::~MaraApplication()
@@ -42,6 +43,7 @@ MaraApplication::~MaraApplication()
   if (advance)  delete advance;
   if (driving)  delete driving;
   if (cooling)  delete cooling;
+  if (fluxsrc)  delete fluxsrc;
 }
 
 
