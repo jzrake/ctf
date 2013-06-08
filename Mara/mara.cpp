@@ -80,6 +80,7 @@ extern "C"
   static int luaC_set_advance(lua_State *L);
   static int luaC_set_driving(lua_State *L);
   static int luaC_set_cooling(lua_State *L);
+  static int luaC_set_fluxsrc(lua_State *L);
   static int luaC_set_primitive(lua_State *L);
   static int luaC_cooling_rate(lua_State *L);
   static int luaC_config_solver(lua_State *L);
@@ -154,6 +155,7 @@ int luaopen_Mara(lua_State *L)
     {"set_advance"  , luaC_set_advance},
     {"set_driving"  , luaC_set_driving},
     {"set_cooling"  , luaC_set_cooling},
+    {"set_fluxsrc"  , luaC_set_fluxsrc},
     {"set_primitive", luaC_set_primitive},
     {"config_solver", luaC_config_solver},
 
@@ -408,6 +410,9 @@ int luaC_Mara_show(lua_State *L)
             << std::endl;
   std::cout << "\tcooling: "
             << (Mara->cooling ? Demangle(typeid(*Mara->cooling).name()) : "NULL")
+            << std::endl;
+  std::cout << "\tfluxsrc: "
+            << (Mara->fluxsrc ? Demangle(typeid(*Mara->fluxsrc).name()) : "NULL")
             << std::endl;
   std::cout << std::endl;
 
@@ -1129,6 +1134,24 @@ int luaC_set_cooling(lua_State *L)
   if (new_f) {
     if (Mara->cooling) delete Mara->cooling;
     Mara->cooling = new_f;
+  }
+  return 0;
+}
+
+int luaC_set_fluxsrc(lua_State *L)
+{
+  const char *key = luaL_checkstring(L, 1);
+  FluxSourceTermsModule *new_f = NULL;
+
+  if (strcmp("magnetar", key) == 0) {
+    new_f = new FluxSourceTermsMagnetar;
+  }
+  else {
+    luaL_error(L, "[Mara] unrecognized flux source terms module: '%s'", key);
+  }
+  if (new_f) {
+    if (Mara->fluxsrc) delete Mara->fluxsrc;
+    Mara->fluxsrc = new_f;
   }
   return 0;
 }

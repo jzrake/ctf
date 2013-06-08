@@ -141,7 +141,8 @@ int GodunovOperator::ConsToPrim(const std::valarray<double> &U, std::valarray<do
   return Mara_mpi_int_sum(ttl_error);
 }
 
-std::valarray<double> GodunovOperator::LaxDiffusion(const std::valarray<double> &U, double r)
+std::valarray<double> GodunovOperator::
+LaxDiffusion(const std::valarray<double> &U, double r)
 {
   this->prepare_integration();
 
@@ -219,6 +220,35 @@ std::valarray<double> GodunovOperator::LaxDiffusion(const std::valarray<double> 
     }
   }
   return L;
+}
+
+void GodunovOperator::
+AddFluxSourceTerms(double *Fiph, double *Giph, double *Hiph)
+{
+  if (Mara->fluxsrc == NULL) return;
+  this->prepare_integration();
+
+  for (int i=0; i<stride[0]; i+=NQ) {
+    int N[3];
+    absolute_index_to_3d(i/NQ, N);
+
+    double x[3] = {
+      Mara->domain->x_at(N[0]),
+      Mara->domain->y_at(N[1]),
+      Mara->domain->z_at(N[2]) };
+
+    double xx[3] = {x[0], x[1], x[2]};
+    double xy[3] = {x[0], x[1], x[2]};
+    double xz[3] = {x[0], x[1], x[2]};
+
+    xx[0] += 0.5*dx;
+    xy[1] += 0.5*dy;
+    xz[2] += 0.5*dz;
+
+    Mara->fluxsrc->AddIntercellFlux(xx, 1, &Fiph[i]);
+    Mara->fluxsrc->AddIntercellFlux(xy, 2, &Giph[i]);
+    Mara->fluxsrc->AddIntercellFlux(xz, 3, &Hiph[i]);
+  }
 }
 
 int absolute_index_to_3d(const int &m, int ind[3])

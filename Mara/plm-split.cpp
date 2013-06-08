@@ -105,6 +105,7 @@ void Deriv::drive_sweeps_3d(const double *P, double *L)
   intercell_flux_sweep(P,G,2);
   intercell_flux_sweep(P,H,3);
 
+  Mara->godunov->AddFluxSourceTerms(F, G, H);
   Mara->fluid->ConstrainedTransport3d(F,G,H,stride);
 
   for (i=sx; i<stride[0]; ++i) {

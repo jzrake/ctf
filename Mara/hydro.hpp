@@ -30,6 +30,7 @@ class DrivingModule;
 class StochasticVectorField;
 class EquationOfState;
 class FluidEquations;
+class FluxSourceTermsModule;
 class PhysicalDomain;
 class RiemannSolver;
 class GodunovOperator;
@@ -72,6 +73,7 @@ public:
   PhysicalDomain        *domain;
   BoundaryConditions    *boundary;
   FluidEquations        *fluid;
+  FluxSourceTermsModule *fluxsrc;
   EquationOfState       *eos;
   GodunovOperator       *godunov;
   RiemannSolver         *riemann;
@@ -255,6 +257,7 @@ public:
   virtual void SetPlmTheta(double plm) { }
   virtual void SetSafetyLevel(int level) { }
   const int *GetStride() const { return stride; }
+  void AddFluxSourceTerms(double *Fiph, double *Giph, double *Hiph);
   int GetNq() const { return NQ; }
   int GetNd() const { return ND; }
 
@@ -285,6 +288,13 @@ public:
   virtual StochasticVectorField *GetField() = 0;
   virtual void ResampleField() = 0;
   virtual double AveragePowerInFields() const = 0;
+} ;
+class FluxSourceTermsModule : public HydroModule
+// -----------------------------------------------------------------------------
+{
+public:
+  virtual ~FluxSourceTermsModule() { }
+  virtual void AddIntercellFlux(double x[3], int dim, double *F) = 0;
 } ;
 class CoolingModule : public HydroModule
 // -----------------------------------------------------------------------------

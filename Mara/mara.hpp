@@ -14,7 +14,7 @@
 #include "eulers.hpp"
 #include "hydro.hpp"
 #include "logging.hpp"
-#include "mara.hpp"
+#include "magnetar.hpp"
 #include "nrsolver.hpp"
 #include "ornuhl.hpp"
 #include "ou-field.hpp"
