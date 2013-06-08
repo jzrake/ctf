@@ -31,7 +31,9 @@ function MyMara:initialize_physics()
       local prof = self.problem.model_parameters.prof
       Mara.set_boundary(bc, r0, prof)
    elseif oo.classname(self.problem) == 'Magnetar' then
-      Mara.set_fluxsrc('magnetar')
+      local L0 = self.problem.model_parameters.L0
+      local B0 = self.problem.model_parameters.B0
+      Mara.set_fluxsrc('magnetar', L0, B0)
    end
 
    --
