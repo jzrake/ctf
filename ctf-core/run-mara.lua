@@ -30,6 +30,8 @@ function MyMara:initialize_physics()
       local r0 = self.problem.model_parameters.r0
       local prof = self.problem.model_parameters.prof
       Mara.set_boundary(bc, r0, prof)
+   elseif oo.classname(self.problem) == 'Magnetar' then
+      Mara.set_fluxsrc('magnetar')
    end
 
    --
@@ -268,6 +270,21 @@ function handle_crash.MagneticBubble(self, attempt)
       status.time_increment = 0.5 * status.time_increment
       return 0
    else
+      return 1
+   end
+end
+
+function handle_crash.Magnetar(self, attempt)
+   local P = self.Primitive:buffer()
+   local status = self.status
+   local r = 0.0
+   Mara.set_advance("rk3")
+   if attempt == 0 then -- healthy time-step
+      Mara.set_godunov("plm-split")
+      Mara.set_riemann("hll")
+      Mara.config_solver({theta=2.0, pfloor=1e-6}, true)
+      return 0
+   elseif attempt == 1 then
       return 1
    end
 end
