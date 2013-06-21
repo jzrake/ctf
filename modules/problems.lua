@@ -28,6 +28,7 @@ local problems = {
    SrhdCase1DFIM98       = oo.class('SrhdCase1DFIM98'      , TwoStateProblem),
    SrhdCase2DFIM98       = oo.class('SrhdCase2DFIM98'      , TwoStateProblem),
    SrhdHardTransverseRAM = oo.class('SrhdHardTransverseRAM', TwoStateProblem),
+   OneDimensionalTurbulence = oo.class('OneDimensionalTurbulence', TwoStateProblem),
 
    SmoothKelvinHelmholtz = oo.class('SmoothKelvinHelmholtz', TestProblem),
    TwoDimensionalImplosion = oo.class('TwoDimensionalImplosion', TestProblem),
@@ -68,7 +69,6 @@ function TestProblem:domain_extent() return {0,0,0}, {1,1,1} end
 function problems.soundwave:fluid()
    return self.user_opts.self_gravity and 'gravs' or 'nrhyd'
 end
-
 function problems.soundwave:initialize_problem()
    self.DomainLength = 1.0
    self.BackgroundDensity = 1.0
@@ -82,15 +82,12 @@ function problems.soundwave:initialize_problem()
    print("[soundwave] the Jeans length is "..self.JeansLength)
    print("[soundwave] the wave length is "..self.WaveLength)
 end
-
 function problems.soundwave:dynamical_time()
    return self.SoundCrossingTime
 end
-
 function problems.soundwave:finish_time()
    return self.SoundCrossingTime
 end
-
 function problems.soundwave:solution(x,y,z,t)
    local grav = self.user_opts.self_gravity
    local cs = self.SoundSpeed
@@ -103,24 +100,20 @@ function problems.soundwave:solution(x,y,z,t)
    local k0 = self.WaveNumber
    local w0 = grav and ((cs * k0)^2 - self.FourPiG * D0)^0.5 or cs * k0
    local P = { }
-
    P[1] = D0 + D1 * math.cos(k0*x - w0*t)
    P[2] = p0 + p1 * math.cos(k0*x - w0*t)
    P[3] = u0 + u1 * math.cos(k0*x - w0*t)
    P[4] = 0.0
    P[5] = 0.0
-
    return P
 end
 
 function problems.densitywave:dynamical_time()
    return 1.0
 end
-
 function problems.densitywave:finish_time()
    return 1.0
 end
-
 function problems.densitywave:solution(x,y,z,t)
    local cs = 1.0
    local u0 = cs -- Mach 1 density wave
@@ -129,38 +122,31 @@ function problems.densitywave:solution(x,y,z,t)
    local p0 = D0 * cs^2 / 1.4
    local k0 = 2 * math.pi
    local P = { }
-
    P[1] = D0 + D1 * math.cos(k0 * (x - u0 * t))
    P[2] = p0
    P[3] = u0
    P[4] = 0.0
    P[5] = 0.0
-
    return P
 end
 
 function problems.collapse1d:fluid()
    return'gravs'
 end
-
 function problems.collapse1d:initialize_problem()
    self.max_density = { }
 end
-
 function problems.collapse1d:solution(x,y,z,t)
    local p0 = 1e-6
    local d = 0.5
    local P = { }
-
    P[1] = math.abs(x - 0.5) < d/2 and 1.0 or 1e-6
    P[2] = p0
    P[3] = 0.0
    P[4] = 0.0
    P[5] = 0.0
-
    return P
 end
-
 function problems.collapse1d:user_work_iteration()
    local sim = self.simulation
    local D = sim.Primitive[{nil,{0,1}}]:vector()
@@ -194,30 +180,23 @@ end
 function TwoStateProblem:boundary_conditions()
    return 'outflow'
 end
-
 function TwoStateProblem:finish_time()
    return self._finish_time
 end
-
 function TwoStateProblem:solution(x,y,z,t)
-
    if t > 0.0 then
       return self:_exact_solution(x,y,z,t)
    end
-
    local L = self.state1
    local R = self.state2
    local P = { }
-
    P[1] = x < 0.5 and L[1] or R[1]
    P[2] = x < 0.5 and L[2] or R[2]
    P[3] = x < 0.5 and L[3] or R[3]
    P[4] = x < 0.5 and L[4] or R[4]
    P[5] = x < 0.5 and L[5] or R[5]
-
    return P
 end
-
 function TwoStateProblem:_exact_solution(x,y,z,t)
    --
    -- Return the exact solution to the Riemann problem defined by state1 and
@@ -227,17 +206,14 @@ function TwoStateProblem:_exact_solution(x,y,z,t)
       -- Exact solution to Riemann problem only available for fluid='nrhyd'.
       return {0,0,0,0,0}
    end
-
    local D = FishCls.FluidDescriptor{gamma=1.4, fluid='nrhyd'}
    local R = FishCls.RiemannSolver()
    local SL = FishCls.FluidState(D)
    local SR = FishCls.FluidState(D)
-
    for i=1,5 do
       SL.primitive[i-1] = self.state1[i]
       SR.primitive[i-1] = self.state2[i]
    end
-
    return R:solve(SL, SR, (x-0.5)/t):table()
 end
 
@@ -275,6 +251,37 @@ problems.SrhdCase2DFIM98.state2 = {1, 1e-2, 0.0, 0.0, 0.0}
 problems.SrhdHardTransverseRAM.state1 = {1, 1e+3, 0.0, 0.9, 0.0}
 problems.SrhdHardTransverseRAM.state2 = {1, 1e-2, 0.0, 0.9, 0.0}
 
+function problems.OneDimensionalTurbulence:initialize_problem()
+   self.N1 = 4096
+   self.phase = { }
+   local N1 = self.N1
+   for n=-N1,N1 do
+      self.phase[n] = math.random() * math.pi * 2
+   end
+end
+function problems.OneDimensionalTurbulence:solution(x,y,z,t)
+   local D0 = 1.0
+   local P0 = 1.0
+   local vx = 0.0
+   local Pt = 0.0 -- power
+   local N1 = self.N1
+   for n=-N1,N1 do
+      local Ak = math.abs(n)^3 * 1.0 * math.exp(-n*n/(0.01*N1*N1))--(1.0 + (n/N1)^2)
+      vx = vx + math.sin(2*n*math.pi*x + self.phase[n]) * Ak
+      Pt = Pt + Ak^2
+   end
+   return { D0, P0, 0.1*vx/Pt^0.5, 0.0, 0.0 }
+end
+function problems.OneDimensionalTurbulence:fluid() return 'nrhyd' end
+function problems.OneDimensionalTurbulence:boundary_conditions()
+   return 'periodic'
+end
+function problems.OneDimensionalTurbulence:finish_time()
+   return 1.0
+end
+function problems.OneDimensionalTurbulence:domain_extent()
+   return {0}, {1}
+end
 
 function problems.SmoothKelvinHelmholtz:initialize_problem()
    self.vertical_Ek = { }
@@ -310,7 +317,6 @@ function problems.SmoothKelvinHelmholtz:user_work_iteration()
    self.vertical_Ek[t] = E / n
 end
 function problems.SmoothKelvinHelmholtz:user_work_finish()
-
 end
 
 
@@ -327,17 +333,13 @@ end
 
 
 function problems.ThrowBlobs:initialize_problem()
-
 end
-
 function problems.ThrowBlobs:finish_time()
    return 1.0
 end
-
 function problems.ThrowBlobs:boundary_conditions()
    return 'outflow'
 end
-
 function problems.ThrowBlobs:solution(x,y,z,t)
    local R0 = 0.75
    local dR = 0.75 * R0
@@ -367,13 +369,9 @@ function problems.ThrowBlobs:solution(x,y,z,t)
 end
 
 function problems.ThrowBlobs:user_work_iteration()
-
 end
-
 function problems.ThrowBlobs:user_work_finish()
-
 end
-
 function problems.RelativisticVortex:initialize_problem()
 end
 function problems.RelativisticVortex:finish_time()
