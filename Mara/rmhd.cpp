@@ -58,7 +58,16 @@ int Rmhd::ConsCheck(const double *U) const
 
 int Rmhd::ConsToPrim(const double *U, double *P) const
 {
-  int error = 1;
+  int error = rmhd_c2p_check_cons(U);
+
+  if (error) {
+    fprintf(stderr, "[0] %s\n", rmhd_c2p_get_error(error));
+    std::cerr << PrintCons(U) << std::endl;
+    return error;
+  }
+  else {
+    error = 1;
+  }
 
   // This piece of code drives cons to prim inversions for an arbitrary equation
   // of state.

@@ -24,6 +24,8 @@ AddIntercellFlux(double x[3], int dim, double *F)
   double rhat[3] = { x[0]/R, x[1]/R, x[2]/R };
   double rhatdotm = rhat[0]*m[0] + rhat[1]*m[1] + rhat[2]*m[2];
 
+  P[rho] = 1.0;
+  P[pre] = 1.0;
   P[vx] = vphi * phihat[0];
   P[vy] = vphi * phihat[1];
   P[vz] = 0.0;
@@ -43,6 +45,12 @@ AddIntercellFlux(double x[3], int dim, double *F)
     P[By] = (3*rhatdotm*rhat[1] - m[1]) / (R*R*R);
     P[Bz] = (3*rhatdotm*rhat[2] - m[2]) / (R*R*R);
   }
+
+  /*
+  double U[8];
+  Mara->fluid->PrimToCons(P, U);
+  Mara->fluid->FluxAndEigenvalues(U, P, F, NULL, NULL, dim);
+  */
 
   switch (dim) {
   case 1:
