@@ -1147,8 +1147,10 @@ int luaC_set_fluxsrc(lua_State *L)
     FluxSourceTermsMagnetar *magnetar = new FluxSourceTermsMagnetar;
     double magnetar_radius = luaL_optnumber(L, 2, 0.1);
     double field_strength = luaL_optnumber(L, 3, 24.0);
+    double light_cylinder = luaL_optnumber(L, 4, 1.0);
     magnetar->set_magnetar_radius(magnetar_radius);
     magnetar->set_field_strength(field_strength);
+    magnetar->set_light_cylinder(light_cylinder);
     new_f = magnetar;
   }
   else {
