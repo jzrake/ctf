@@ -641,8 +641,9 @@ function problems.Magnetar:initialize_problem(x,y,z,t)
    self.model_parameters = { }
    self.model_parameters.D0 = 1.0
    self.model_parameters.P0 = 1.0
-   self.model_parameters.L0 = 0.1
-   self.model_parameters.B0 = 24.0
+   self.model_parameters.L0 = 0.1 -- magnetar radius
+   self.model_parameters.C0 = 1.0 -- light cylinder
+   self.model_parameters.B0 = 24.0 -- field strength
 
    if self.user_opts.model_parameters then
       local u = load('return '..self.user_opts.model_parameters)()
