@@ -283,36 +283,36 @@ function handle_crash.Magnetar(self, attempt)
    Mara.set_advance("rk3")
    if attempt == 0 then -- healthy time-step
       Mara.set_godunov("plm-split")
-      Mara.set_riemann("hll")
+      Mara.set_riemann("hlld")
       Mara.config_solver({theta=2.0, pfloor=1e-6}, true)
       return 0
    elseif attempt == 1 then
-      Mara.diffuse(P, 0.1)
-      status.time_increment = 0.5 * status.time_increment
+      Mara.diffuse(P, 0.5)
+      --status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 2 then
-      Mara.diffuse(P, 0.1)
-      status.time_increment = 0.5 * status.time_increment
+      Mara.diffuse(P, 0.5)
+      --status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 3 then
-      Mara.diffuse(P, 0.1)
-      status.time_increment = 0.5 * status.time_increment
+      Mara.diffuse(P, 0.5)
+      --status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 4 then
-      Mara.diffuse(P, 0.1)
-      status.time_increment = 0.5 * status.time_increment
+      Mara.diffuse(P, 0.5)
+      --status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 5 then
       Mara.config_solver({theta=1.5}, true)
-      status.time_increment = 0.5 * status.time_increment
+      --status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 6 then
       Mara.config_solver({theta=1.0}, true)
-      status.time_increment = 0.5 * status.time_increment
+      --status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 7 then
       Mara.config_solver({theta=0.0}, true)
-      status.time_increment = 0.5 * status.time_increment
+      --status.time_increment = 0.5 * status.time_increment
       return 0
    else
       return 1
