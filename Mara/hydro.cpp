@@ -129,7 +129,7 @@ int GodunovOperator::ConsToPrim(const std::valarray<double> &U, std::valarray<do
     if (error) {
       int N[3];
       absolute_index_to_3d(i/NQ, N);
-      if (0) {
+      if (1) {
 	fprintf(stderr, "[GodunovOperator::ConsToPrim] "
 		"recording c2p error at position [%f %f %f]\n"
 		"(local zone [%d %d %d])\n",
