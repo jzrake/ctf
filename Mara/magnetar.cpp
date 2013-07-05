@@ -19,7 +19,8 @@ AddIntercellFlux(double x[3], int dim, double *F)
   double L = magnetar_radius;
   double C = light_cylinder;
 
-  double Omega = 1.0 / (1.0 + pow(R/L, 8));
+  //  double Omega = 1.0 / (1.0 + pow(R/L, 8));
+  double Omega = 1.0 - R/L > 0.0 ? 1.0 - R/L : 0.0;
   double vphi = Omega * (r / C);
   double phihat[3] = { -x[1]/r, x[0]/r, 0.0 };
   double m[3] = { 0.0, 0.0, 0.0005 };
