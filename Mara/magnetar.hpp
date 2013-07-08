@@ -30,4 +30,17 @@ public:
   void set_light_cylinder(double C) { light_cylinder = C; }
 } ;
 
+class VolumeSourceTermsMagnetar : public VolumeSourceTermsModule
+// -----------------------------------------------------------------------------
+{
+private:
+  double magnetar_radius;
+  double field_strength;
+  double light_cylinder;
+public:
+  VolumeSourceTermsMagnetar();
+  virtual ~VolumeSourceTermsMagnetar() { }
+  virtual void AddSourceTerms(const double *P, double *L);
+} ;
+
 #endif // __Magnetar_HEADER__

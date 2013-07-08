@@ -73,3 +73,14 @@ AddIntercellFlux(double x[3], int dim, double *F)
     break;
   }
 }
+
+
+VolumeSourceTermsMagnetar::VolumeSourceTermsMagnetar() :
+  magnetar_radius(0.1),
+  field_strength(24.0),
+  light_cylinder(1.0) { }
+
+void VolumeSourceTermsMagnetar::AddSourceTerms(const double *P, double *L)
+{
+  printf("in the AddSourceTerms! %f %f %f\n", magnetar_radius, field_strength, light_cylinder);
+}

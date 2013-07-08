@@ -35,6 +35,7 @@ function MyMara:initialize_physics()
       local B0 = self.problem.model_parameters.B0
       local C0 = self.problem.model_parameters.C0
       Mara.set_fluxsrc('magnetar', L0, B0, C0)
+      Mara.set_volsrc('magnetar', L0, B0, C0)
    end
 
    --

@@ -81,6 +81,7 @@ extern "C"
   static int luaC_set_driving(lua_State *L);
   static int luaC_set_cooling(lua_State *L);
   static int luaC_set_fluxsrc(lua_State *L);
+  static int luaC_set_volsrc(lua_State *L);
   static int luaC_set_primitive(lua_State *L);
   static int luaC_cooling_rate(lua_State *L);
   static int luaC_config_solver(lua_State *L);
@@ -156,6 +157,7 @@ int luaopen_Mara(lua_State *L)
     {"set_driving"  , luaC_set_driving},
     {"set_cooling"  , luaC_set_cooling},
     {"set_fluxsrc"  , luaC_set_fluxsrc},
+    {"set_volsrc"   , luaC_set_volsrc},
     {"set_primitive", luaC_set_primitive},
     {"config_solver", luaC_config_solver},
 
@@ -1159,6 +1161,25 @@ int luaC_set_fluxsrc(lua_State *L)
   if (new_f) {
     if (Mara->fluxsrc) delete Mara->fluxsrc;
     Mara->fluxsrc = new_f;
+  }
+  return 0;
+}
+
+int luaC_set_volsrc(lua_State *L)
+{
+  const char *key = luaL_checkstring(L, 1);
+  VolumeSourceTermsModule *new_f = NULL;
+
+  if (strcmp("magnetar", key) == 0) {
+    VolumeSourceTermsMagnetar *magnetar = new VolumeSourceTermsMagnetar;
+    new_f = magnetar;
+  }
+  else {
+    luaL_error(L, "[Mara] unrecognized volume source terms module: '%s'", key);
+  }
+  if (new_f) {
+    if (Mara->volsrc) delete Mara->volsrc;
+    Mara->volsrc = new_f;
   }
   return 0;
 }
