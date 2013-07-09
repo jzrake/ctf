@@ -288,19 +288,19 @@ function handle_crash.Magnetar(self, attempt)
       Mara.config_solver({theta=2.0, pfloor=1e-6}, true)
       return 0
    elseif attempt == 1 then
-      Mara.diffuse(P, 0.5)
+      Mara.diffuse(P, 1.0)
       --status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 2 then
-      Mara.diffuse(P, 0.5)
+      Mara.diffuse(P, 1.0)
       --status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 3 then
-      Mara.diffuse(P, 0.5)
+      Mara.diffuse(P, 1.0)
       --status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 4 then
-      Mara.diffuse(P, 0.5)
+      Mara.diffuse(P, 1.0)
       --status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 5 then
