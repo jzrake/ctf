@@ -44,19 +44,19 @@ void SourceTermsMagnetar::intercell_flux(double x[3], int dim, double *F)
 
   switch (dim) {
   case 1:
-    F[Bx] += 0.0;
-    F[By] += P[vx]*P[By] - P[vy]*P[Bx];
-    F[Bz] += P[vx]*P[Bz] - P[vz]*P[Bx];
+    F[Bx] = 0.0;
+    F[By] = P[vx]*P[By] - P[vy]*P[Bx];
+    F[Bz] = P[vx]*P[Bz] - P[vz]*P[Bx];
     break;
   case 2:
-    F[Bx] += P[vy]*P[Bx] - P[vx]*P[By];
-    F[By] += 0.0;
-    F[Bz] += P[vy]*P[Bz] - P[vz]*P[By];
+    F[Bx] = P[vy]*P[Bx] - P[vx]*P[By];
+    F[By] = 0.0;
+    F[Bz] = P[vy]*P[Bz] - P[vz]*P[By];
     break;
   case 3:
-    F[Bx] += P[vz]*P[Bx] - P[vx]*P[Bz];
-    F[By] += P[vz]*P[By] - P[vy]*P[Bz];
-    F[Bz] += 0.0;
+    F[Bx] = P[vz]*P[Bx] - P[vx]*P[Bz];
+    F[By] = P[vz]*P[By] - P[vy]*P[Bz];
+    F[Bz] = 0.0;
     break;
   }
 }
@@ -81,12 +81,6 @@ std::valarray<double> SourceTermsMagnetar::dUdt(const std::valarray<double> &Uin
   double *G = (double*) malloc(stride[0]*sizeof(double));
   double *H = (double*) malloc(stride[0]*sizeof(double));
   int sx=stride[1],sy=stride[2],sz=stride[3];
-
-  for (int i=0; i<stride[0]; ++i) {
-    F[i] = 0.0;
-    G[i] = 0.0;
-    H[i] = 0.0;
-  }
 
   for (int i=0; i<stride[0]; i+=NQ) {
     int N[3];
@@ -130,6 +124,13 @@ std::valarray<double> SourceTermsMagnetar::dUdt(const std::valarray<double> &Uin
     for (int q=0; q<8; ++q) {
       L[i+q] += (U1[q] - U0[q]) / dt;
     }
+
+    /*
+    // changes B field only, but not the energy
+    L[i+Bx] = ((F[i+Bx]-F[i+Bx-sx])/dx + (G[i+Bx]-G[i+Bx-sy])/dy + (H[i+Bx]-H[i+Bx-sz])/dz);
+    L[i+By] = ((F[i+By]-F[i+By-sx])/dx + (G[i+By]-G[i+By-sy])/dy + (H[i+By]-H[i+By-sz])/dz);
+    L[i+Bz] = ((F[i+Bz]-F[i+Bz-sx])/dx + (G[i+Bz]-G[i+Bz-sy])/dy + (H[i+Bz]-H[i+Bz-sz])/dz);
+    */
   }
 
   free(F);
