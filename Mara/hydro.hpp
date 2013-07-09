@@ -30,8 +30,7 @@ class DrivingModule;
 class StochasticVectorField;
 class EquationOfState;
 class FluidEquations;
-class FluxSourceTermsModule;
-class VolumeSourceTermsModule;
+class SourceTermsModule;
 class PhysicalDomain;
 class RiemannSolver;
 class GodunovOperator;
@@ -74,8 +73,7 @@ public:
   PhysicalDomain          *domain;
   BoundaryConditions      *boundary;
   FluidEquations          *fluid;
-  FluxSourceTermsModule   *fluxsrc;
-  VolumeSourceTermsModule *volsrc;
+  SourceTermsModule       *srcterm;
   EquationOfState         *eos;
   GodunovOperator         *godunov;
   RiemannSolver           *riemann;
@@ -265,6 +263,7 @@ public:
 
 protected:
   void prepare_integration();
+  int absolute_index_to_3d(const int &m, int ind[3]);
 } ;
 class RungeKuttaIntegration : public HydroModule
 // -----------------------------------------------------------------------------
@@ -298,12 +297,9 @@ public:
   virtual ~FluxSourceTermsModule() { }
   virtual void AddIntercellFlux(double x[3], int dim, double *F) = 0;
 } ;
-class VolumeSourceTermsModule : public HydroModule
+class SourceTermsModule : public GodunovOperator
 // -----------------------------------------------------------------------------
 {
-public:
-  virtual ~VolumeSourceTermsModule() { }
-  virtual void AddSourceTerms(const double *P, double *L) = 0;
 } ;
 class CoolingModule : public HydroModule
 // -----------------------------------------------------------------------------

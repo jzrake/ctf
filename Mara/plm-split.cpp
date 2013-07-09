@@ -6,6 +6,8 @@
 #define MAXNQ 8 // Used for static array initialization
 typedef MethodOfLinesSplit Deriv;
 
+#include "magnetar.hpp"
+
 std::valarray<double> Deriv::dUdt(const std::valarray<double> &Uin)
 {
   this->prepare_integration();
@@ -22,6 +24,10 @@ std::valarray<double> Deriv::dUdt(const std::valarray<double> &Uin)
   }
 
   DriveSweeps(P, L);
+
+  if (Mara->srcterm) {
+    L += Mara->srcterm->dUdt(U);
+  }
 
   return L;
 }
@@ -100,19 +106,12 @@ void Deriv::drive_sweeps_3d(const double *P, double *L)
   double *G = (double*) malloc(stride[0]*sizeof(double));
   double *H = (double*) malloc(stride[0]*sizeof(double));
 
-  int i,sx=stride[1],sy=stride[2],sz=stride[3];
+  int sx=stride[1],sy=stride[2],sz=stride[3];
   intercell_flux_sweep(P,F,1);
   intercell_flux_sweep(P,G,2);
   intercell_flux_sweep(P,H,3);
 
-  Mara->godunov->AddFluxSourceTerms(F, G, H);
-  Mara->fluid->ConstrainedTransport3d(F,G,H,stride);
-
-  if (Mara->volsrc) {
-    Mara->volsrc->AddSourceTerms(P, L);
-  }
-
-  for (i=sx; i<stride[0]; ++i) {
+  for (int i=sx; i<stride[0]; ++i) {
     L[i] = -(F[i]-F[i-sx])/dx - (G[i]-G[i-sy])/dy - (H[i]-H[i-sz])/dz;
   }
 
