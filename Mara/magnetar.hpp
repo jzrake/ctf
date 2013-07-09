@@ -14,17 +14,17 @@
 
 #include "hydro.hpp"
 
-class FluxSourceTermsMagnetar : public FluxSourceTermsModule
+class SourceTermsMagnetar : public SourceTermsModule
 // -----------------------------------------------------------------------------
 {
 private:
   double magnetar_radius;
   double field_strength;
   double light_cylinder;
+  void intercell_flux(double x[3], int dim, double *F);
 public:
-  FluxSourceTermsMagnetar();
-  virtual ~FluxSourceTermsMagnetar() { }
-  virtual void AddIntercellFlux(double x[3], int dim, double *F);
+  SourceTermsMagnetar();
+  std::valarray<double> dUdt(const std::valarray<double> &Uin);
   void set_magnetar_radius(double L) { magnetar_radius = L; }
   void set_field_strength(double B) { field_strength = B; }
   void set_light_cylinder(double C) { light_cylinder = C; }

@@ -30,7 +30,7 @@ class DrivingModule;
 class StochasticVectorField;
 class EquationOfState;
 class FluidEquations;
-class FluxSourceTermsModule;
+class SourceTermsModule;
 class PhysicalDomain;
 class RiemannSolver;
 class GodunovOperator;
@@ -69,17 +69,17 @@ public:
     return dynamic_cast<T&>(*units);
   }
 
-  PhysicalUnits         *units;
-  PhysicalDomain        *domain;
-  BoundaryConditions    *boundary;
-  FluidEquations        *fluid;
-  FluxSourceTermsModule *fluxsrc;
-  EquationOfState       *eos;
-  GodunovOperator       *godunov;
-  RiemannSolver         *riemann;
-  RungeKuttaIntegration *advance;
-  CoolingModule         *cooling;
-  DrivingModule         *driving;
+  PhysicalUnits           *units;
+  PhysicalDomain          *domain;
+  BoundaryConditions      *boundary;
+  FluidEquations          *fluid;
+  SourceTermsModule       *srcterm;
+  EquationOfState         *eos;
+  GodunovOperator         *godunov;
+  RiemannSolver           *riemann;
+  RungeKuttaIntegration   *advance;
+  CoolingModule           *cooling;
+  DrivingModule           *driving;
 
   std::valarray<double> PrimitiveArray;
   std::valarray<int> FailureMask;
@@ -263,6 +263,7 @@ public:
 
 protected:
   void prepare_integration();
+  int absolute_index_to_3d(const int &m, int ind[3]);
 } ;
 class RungeKuttaIntegration : public HydroModule
 // -----------------------------------------------------------------------------
@@ -295,6 +296,10 @@ class FluxSourceTermsModule : public HydroModule
 public:
   virtual ~FluxSourceTermsModule() { }
   virtual void AddIntercellFlux(double x[3], int dim, double *F) = 0;
+} ;
+class SourceTermsModule : public GodunovOperator
+// -----------------------------------------------------------------------------
+{
 } ;
 class CoolingModule : public HydroModule
 // -----------------------------------------------------------------------------
