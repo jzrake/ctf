@@ -957,7 +957,9 @@ int luaC_config_solver(lua_State *L)
  * IS     (string) : one of [js96, b08, sz10] .. smoothness indicator
  * sz10A  (number) : should be in [0,100]     .. used by sz10 (see weno.c)
  * pfloor (number) : disabled if < 0          .. pressure floor (see rmhd-c2p.c)
- *
+ * ereset (bool)   : true or false            .. use emergency (see hydro.cpp)
+ * preset (number) : pressure reset value
+ * dreset (number) : density reset value
  * A second positional argument, quiet (bool) may be provided.
  -------------------------------------------------------------------------------
 */
@@ -1052,6 +1054,35 @@ int luaC_config_solver(lua_State *L)
     const double A = lua_tonumber(L, -1);
     if (!quiet) printf("[Mara] setting pfloor=%f\n", A);
     rmhd_c2p_set_pressure_floor(A);
+  }
+  lua_pop(L, 1);
+
+  lua_getfield(L, 1, "ereset");
+  if (lua_isboolean(L, -1)) {
+    const int A = lua_toboolean(L, -1);
+    if (!quiet) printf("[Mara] setting ereset=%d\n", A);
+    if (A) {
+      Mara->godunov->enable_emergency_reset();
+    }
+    else {
+      Mara->godunov->disable_emergency_reset();
+    }
+  }
+  lua_pop(L, 1);
+
+  lua_getfield(L, 1, "preset");
+  if (lua_isnumber(L, -1)) {
+    const double A = lua_tonumber(L, -1);
+    if (!quiet) printf("[Mara] setting preset=%f\n", A);
+    Mara->godunov->set_reset_pressure(A);
+  }
+  lua_pop(L, 1);
+
+  lua_getfield(L, 1, "dreset");
+  if (lua_isnumber(L, -1)) {
+    const double A = lua_tonumber(L, -1);
+    if (!quiet) printf("[Mara] setting dreset=%f\n", A);
+    Mara->godunov->set_reset_density(A);
   }
   lua_pop(L, 1);
 
