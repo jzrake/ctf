@@ -35,6 +35,8 @@ function MyMara:initialize_physics()
       local B0 = self.problem.model_parameters.B0
       local C0 = self.problem.model_parameters.C0
       Mara.set_srcterm('magnetar', L0, B0, C0)
+      Mara.config_solver({preset=self.problem.model_parameters.P0,
+			  dreset=self.problem.model_parameters.D0}, false)
    end
 
    --
@@ -72,7 +74,6 @@ function MyMara:initialize_solver()
       self.Nz = opts.Nz or opts.resolution or 32
       self.ndim = tonumber(opts.ndim) or 3
    end
-
 
    self.Ng = 3
    self.CFL = opts.CFL or 0.4
@@ -234,49 +235,6 @@ function MyMara:finalize_solver()
 end
 
 local handle_crash = { }
-function handle_crash.MagneticBubble(self, attempt)
-   local P = self.Primitive:buffer()
-   local status = self.status
-   local r = 0.0
-   Mara.set_advance("rk3")
-   if attempt == 0 then -- healthy time-step
-      Mara.set_godunov("plm-split")
-      Mara.set_riemann("hlld")
-      Mara.config_solver({theta=2.0, pfloor=1e-6}, true)
-      return 0
-   elseif attempt == 1 then
-      Mara.diffuse(P, 0.1)
-      status.time_increment = 0.5 * status.time_increment
-      return 0
-   elseif attempt == 2 then
-      Mara.diffuse(P, 0.1)
-      status.time_increment = 0.5 * status.time_increment
-      return 0
-   elseif attempt == 3 then
-      Mara.diffuse(P, 0.1)
-      status.time_increment = 0.5 * status.time_increment
-      return 0
-   elseif attempt == 4 then
-      Mara.diffuse(P, 0.1)
-      status.time_increment = 0.5 * status.time_increment
-      return 0
-   elseif attempt == 5 then
-      Mara.config_solver({theta=1.5}, true)
-      status.time_increment = 0.5 * status.time_increment
-      return 0
-   elseif attempt == 6 then
-      Mara.config_solver({theta=1.0}, true)
-      status.time_increment = 0.5 * status.time_increment
-      return 0
-   elseif attempt == 7 then
-      Mara.config_solver({theta=0.0}, true)
-      status.time_increment = 0.5 * status.time_increment
-      return 0
-   else
-      return 1
-   end
-end
-
 function handle_crash.Magnetar(self, attempt)
    local P = self.Primitive:buffer()
    local status = self.status
@@ -285,35 +243,20 @@ function handle_crash.Magnetar(self, attempt)
    if attempt == 0 then -- healthy time-step
       Mara.set_godunov("plm-split")
       Mara.set_riemann("hlld")
-      Mara.config_solver({theta=2.0, pfloor=1e-6}, true)
+      Mara.config_solver({theta=2.0, pfloor=1e-6, ereset=false}, true)
       return 0
    elseif attempt == 1 then
       Mara.diffuse(P, 0.5)
-      --status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 2 then
       Mara.diffuse(P, 0.5)
-      --status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 3 then
       Mara.diffuse(P, 0.5)
-      --status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 4 then
       Mara.diffuse(P, 0.5)
-      --status.time_increment = 0.5 * status.time_increment
-      return 0
-   elseif attempt == 5 then
-      Mara.config_solver({theta=1.5}, true)
-      --status.time_increment = 0.5 * status.time_increment
-      return 0
-   elseif attempt == 6 then
-      Mara.config_solver({theta=1.0}, true)
-      --status.time_increment = 0.5 * status.time_increment
-      return 0
-   elseif attempt == 7 then
-      Mara.config_solver({theta=0.0}, true)
-      --status.time_increment = 0.5 * status.time_increment
+      Mara.config_solver({ereset=true}, true)
       return 0
    else
       return 1
