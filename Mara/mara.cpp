@@ -66,6 +66,7 @@ extern "C"
   static int luaC_Mara_show(lua_State *L);
   static int luaC_Mara_advance(lua_State *L);
   static int luaC_Mara_diffuse(lua_State *L);
+  static int luaC_Mara_set_failmask(lua_State *L);
   static int luaC_Mara_init_prim(lua_State *L);
   static int luaC_Mara_prim_at_point(lua_State *L);
   static int luaC_Mara_get_timestep(lua_State *L);
@@ -97,8 +98,6 @@ extern "C"
   static int luaC_fluid_Eigensystem(lua_State *L);
   static int luaC_fluid_FluxFunction(lua_State *L);
   static int luaC_fluid_GetPrimNames(lua_State *L);
-
-  //  static int luaC_boundary_ApplyBoundaries(lua_State *L);
 
   static int luaC_driving_Advance(lua_State *L);
   static int luaC_driving_Resample(lua_State *L);
@@ -141,6 +140,7 @@ int luaopen_Mara(lua_State *L)
     {"show"         , luaC_Mara_show},
     {"advance"      , luaC_Mara_advance},
     {"diffuse"      , luaC_Mara_diffuse},
+    {"set_failmask" , luaC_Mara_set_failmask},
     {"init_prim"    , luaC_Mara_init_prim},
     {"prim_at_point", luaC_Mara_prim_at_point},
     {"get_timestep" , luaC_Mara_get_timestep},
@@ -290,7 +290,6 @@ int luaC_Mara_close(lua_State *L)
   return 0;
 }
 
-
 int luaC_Mara_advance(lua_State *L)
 {
   if (Mara->domain == NULL) {
@@ -357,6 +356,14 @@ int luaC_Mara_diffuse(lua_State *L)
   Mara->godunov->ConsToPrim(U, P);
   memcpy(UserPrim, &P[0], N * sizeof(double));
 
+  return 0;
+}
+
+int luaC_Mara_set_failmask(lua_State *L)
+{
+  int value = luaL_checkinteger(L, 1);
+  printf("[Mara] set fail mask value everywhere to %d\n", value);
+  Mara->FailureMask = value;
   return 0;
 }
 
