@@ -238,24 +238,34 @@ local handle_crash = { }
 function handle_crash.Magnetar(self, attempt)
    local P = self.Primitive:buffer()
    local status = self.status
-   local r = 0.0
+   local r = 0.5
    Mara.set_advance("rk3")
    if attempt == 0 then -- healthy time-step
       Mara.set_godunov("plm-split")
       Mara.set_riemann("hlld")
-      Mara.config_solver({theta=2.0, pfloor=1e-6, ereset=false}, true)
+      Mara.config_solver({theta=1.6, pfloor=1e-6, ereset=false}, true)
       return 0
    elseif attempt == 1 then
-      Mara.diffuse(P, 1.0)
+      Mara.diffuse(P, r)
       return 0
    elseif attempt == 2 then
-      Mara.diffuse(P, 1.0)
+      Mara.diffuse(P, r)
       return 0
    elseif attempt == 3 then
-      Mara.diffuse(P, 1.0)
+      Mara.set_failmask(1)
+      Mara.diffuse(P, 0.5*r)
       return 0
    elseif attempt == 4 then
-      Mara.diffuse(P, 1.0)
+      Mara.set_failmask(1)
+      Mara.diffuse(P, 0.5*r)
+      return 0
+   elseif attempt == 5 then
+      Mara.set_failmask(1)
+      Mara.diffuse(P, 0.5*r)
+      return 0
+   elseif attempt == 6 then
+      Mara.set_failmask(1)
+      Mara.diffuse(P, 0.5*r)
       Mara.config_solver({ereset=true}, true)
       return 0
    else
