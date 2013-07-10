@@ -249,23 +249,24 @@ function handle_crash.Magnetar(self, attempt)
       Mara.diffuse(P, r)
       return 0
    elseif attempt == 2 then
+      Mara.config_solver({theta=1.4}, true)
       Mara.diffuse(P, r)
       return 0
    elseif attempt == 3 then
-      Mara.set_failmask(1)
-      Mara.diffuse(P, 0.5*r)
+      Mara.config_solver({theta=1.2}, true)
+      Mara.diffuse(P, r)
       return 0
    elseif attempt == 4 then
-      Mara.set_failmask(1)
-      Mara.diffuse(P, 0.5*r)
+      Mara.config_solver({theta=1.0}, true)
+      Mara.diffuse(P, r)
       return 0
    elseif attempt == 5 then
       Mara.set_failmask(1)
-      Mara.diffuse(P, 0.5*r)
+      Mara.diffuse(P, 0.25*r)
       return 0
    elseif attempt == 6 then
       Mara.set_failmask(1)
-      Mara.diffuse(P, 0.5*r)
+      Mara.diffuse(P, 0.25*r)
       Mara.config_solver({ereset=true}, true)
       return 0
    else
