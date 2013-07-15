@@ -371,7 +371,7 @@ int luaC_Mara_get_timestep(lua_State *L)
 
 int luaC_Mara_git_sha(lua_State *L)
 {
-  lua_pushstring(L, GIT_SHA);
+  lua_pushfstring(L, "%s", GIT_SHA);
   return 1;
 }
 
