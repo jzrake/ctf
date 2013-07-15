@@ -35,7 +35,8 @@ LUA_GLUT   = lua-glut
 
 MODULES = $(LUA_CTF)
 LOCLIBS = $(LUA_A)
-DEFINES = -DGIT_SHA=$(shell git rev-parse HEAD | cut -c 1-10) -DINSTALL_DIR=$(PWD)
+DEFINES = -DINSTALL_DIR=$(PWD)
+GIT_SHA = $(shell git rev-parse HEAD | cut -c 1-10)
 
 ifeq ($(strip $(USE_MPI)), 1)
 MODULES += $(LUA_MPI)
@@ -115,7 +116,7 @@ Mara/libmara.a : $(LUA_A) .FORCE
 	$(MAKE) -C Mara libmara.a MAKEFILE_IN=$(MAKEFILE_IN)
 
 $(LUA_MARA) : $(LUA_A) .FORCE
-	$(MAKE) -C Mara mara.o MAKEFILE_IN=$(MAKEFILE_IN)
+	$(MAKE) -C Mara mara.o MAKEFILE_IN=$(MAKEFILE_IN) GIT_SHA=$(GIT_SHA)
 
 fish/libfish.a : $(LUA_A) .FORCE
 	$(MAKE) -C fish libfish.a MAKEFILE_IN=$(MAKEFILE_IN)

@@ -186,6 +186,7 @@ function MyMara:checkpoint_write(fname)
       local chkpt = hdf5.File(fname, 'r+')
       chkpt["measure_log"] = json.encode(self.measure_log)
       chkpt["status"] = json.encode(self.status)
+      chkpt["git_sha"] = Mara.git_sha()
       if self.problem.model_parameters then
 	 chkpt["model_parameters"] = json.encode(self.problem.model_parameters)
       end
