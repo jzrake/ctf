@@ -108,8 +108,13 @@ void Deriv::drive_sweeps_3d(const double *P, double *L)
   Mara->godunov->AddFluxSourceTerms(F, G, H);
   Mara->fluid->ConstrainedTransport3d(F,G,H,stride);
 
+  if (Mara->volsrc) {
+    Mara->volsrc->AddSourceTerms(P, L);
+  }
+
   for (i=sx; i<stride[0]; ++i) {
     L[i] = -(F[i]-F[i-sx])/dx - (G[i]-G[i-sy])/dy - (H[i]-H[i-sz])/dz;
   }
+
   free(F); free(G); free(H);
 }
