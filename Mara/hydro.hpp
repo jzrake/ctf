@@ -30,6 +30,7 @@ class DrivingModule;
 class StochasticVectorField;
 class EquationOfState;
 class FluidEquations;
+class FluxSourceTermsModule;
 class SourceTermsModule;
 class PhysicalDomain;
 class RiemannSolver;
@@ -221,6 +222,9 @@ class GodunovOperator : public HydroModule
 protected:
   double dx,dy,dz;
   int stride[4],NQ,ND;
+  int emergency_reset;
+  double reset_density;
+  double reset_pressure;
 
 public:
   enum ReconstructMethod { RECONSTRUCT_PCM,
@@ -248,6 +252,7 @@ public:
       return "The integration failed on an intermediate step.";
     }
   } ;
+  GodunovOperator();
   virtual ~GodunovOperator() { }
   virtual std::valarray<double> dUdt(const std::valarray<double> &Uin) = 0;
   virtual std::valarray<double> LaxDiffusion(const std::valarray<double> &U, double r);
@@ -260,7 +265,10 @@ public:
   void AddFluxSourceTerms(double *Fiph, double *Giph, double *Hiph);
   int GetNq() const { return NQ; }
   int GetNd() const { return ND; }
-
+  void enable_emergency_reset() { emergency_reset = 1; }
+  void disable_emergency_reset() { emergency_reset = 0; }
+  void set_reset_pressure(double pressure) { reset_pressure = pressure; }
+  void set_reset_density(double density) { reset_density = density; }
 protected:
   void prepare_integration();
   int absolute_index_to_3d(const int &m, int ind[3]);

@@ -34,7 +34,7 @@ extern "C" {
 #include "lauxlib.h"
 }
 #include "mara.hpp"
-
+#define MARA_STRMACRO(s) #s
 
 
 static void    luaU_pusharray(lua_State *L, double *A, int N);
@@ -62,7 +62,7 @@ extern "C"
 {
   static int luaC_Mara_start(lua_State *L);
   static int luaC_Mara_close(lua_State *L);
-  static int luaC_Mara_version(lua_State *L);
+  static int luaC_Mara_git_sha(lua_State *L);
   static int luaC_Mara_show(lua_State *L);
   static int luaC_Mara_advance(lua_State *L);
   static int luaC_Mara_diffuse(lua_State *L);
@@ -137,7 +137,7 @@ int luaopen_Mara(lua_State *L)
   luaL_Reg Mara_module[] = {
     {"start"        , luaC_Mara_start},
     {"close"        , luaC_Mara_close},
-    {"version"      , luaC_Mara_version},
+    {"git_sha"      , luaC_Mara_git_sha},
     {"show"         , luaC_Mara_show},
     {"advance"      , luaC_Mara_advance},
     {"diffuse"      , luaC_Mara_diffuse},
@@ -270,7 +270,7 @@ int luaC_Mara_start(lua_State *L)
   printf("\t***********************************\n");
   printf("\tMara Astrophysical gasdynamics code\n");
   printf("\t(C) Jonathan Zrake, NYU CCPP\n");
-  printf("\tVersion %s\n", __MARA_BASE_VERSION);
+  printf("\tVersion (SHA) "GIT_SHA"\n");
   printf("\t***********************************\n\n");
 
   if (Mara != NULL) {
@@ -369,11 +369,9 @@ int luaC_Mara_get_timestep(lua_State *L)
   return 1;
 }
 
-int luaC_Mara_version(lua_State *L)
+int luaC_Mara_git_sha(lua_State *L)
 {
-  char str[256];
-  sprintf(str, "%s", __MARA_BASE_VERSION);
-  lua_pushstring(L, str);
+  lua_pushfstring(L, "%s", GIT_SHA);
   return 1;
 }
 
@@ -957,7 +955,9 @@ int luaC_config_solver(lua_State *L)
  * IS     (string) : one of [js96, b08, sz10] .. smoothness indicator
  * sz10A  (number) : should be in [0,100]     .. used by sz10 (see weno.c)
  * pfloor (number) : disabled if < 0          .. pressure floor (see rmhd-c2p.c)
- *
+ * ereset (bool)   : true or false            .. use emergency (see hydro.cpp)
+ * preset (number) : pressure reset value
+ * dreset (number) : density reset value
  * A second positional argument, quiet (bool) may be provided.
  -------------------------------------------------------------------------------
 */
@@ -1052,6 +1052,35 @@ int luaC_config_solver(lua_State *L)
     const double A = lua_tonumber(L, -1);
     if (!quiet) printf("[Mara] setting pfloor=%f\n", A);
     rmhd_c2p_set_pressure_floor(A);
+  }
+  lua_pop(L, 1);
+
+  lua_getfield(L, 1, "ereset");
+  if (lua_isboolean(L, -1)) {
+    const int A = lua_toboolean(L, -1);
+    if (!quiet) printf("[Mara] setting ereset=%d\n", A);
+    if (A) {
+      Mara->godunov->enable_emergency_reset();
+    }
+    else {
+      Mara->godunov->disable_emergency_reset();
+    }
+  }
+  lua_pop(L, 1);
+
+  lua_getfield(L, 1, "preset");
+  if (lua_isnumber(L, -1)) {
+    const double A = lua_tonumber(L, -1);
+    if (!quiet) printf("[Mara] setting preset=%f\n", A);
+    Mara->godunov->set_reset_pressure(A);
+  }
+  lua_pop(L, 1);
+
+  lua_getfield(L, 1, "dreset");
+  if (lua_isnumber(L, -1)) {
+    const double A = lua_tonumber(L, -1);
+    if (!quiet) printf("[Mara] setting dreset=%f\n", A);
+    Mara->godunov->set_reset_density(A);
   }
   lua_pop(L, 1);
 
