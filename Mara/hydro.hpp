@@ -74,6 +74,7 @@ public:
   PhysicalDomain          *domain;
   BoundaryConditions      *boundary;
   FluidEquations          *fluid;
+  FluxSourceTermsModule   *fluxsrc;
   SourceTermsModule       *srcterm;
   EquationOfState         *eos;
   GodunovOperator         *godunov;

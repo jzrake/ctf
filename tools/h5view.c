@@ -15,7 +15,7 @@
 static char FileNameArr[MAX_FILENAMES][FILENAME_LENGTH];
 static int  FileNameNum = 0;
 static int  FileNameCur = 0;
-static char *data_set_arr[] = {"rho", "pre", "vx", "vy", "vz", "Bx", "By", "Bz"};
+static char *data_set_arr[] = {"rho", "pre", "vx", "vy", "vz" };//, "Bx", "By", "Bz"};
 static int   data_set_num = 0;
 
 static GLuint  WindowWidth  = 800;
@@ -38,7 +38,7 @@ static double scale(double z);
 
 void RefreshFileList()
 {
-  FILE *ls = popen("ls data/*", "r");
+  FILE *ls = popen("ls data/test/*", "r");
   char c[FILENAME_LENGTH];
 
   FileNameNum = 0;
@@ -210,9 +210,9 @@ void keyPressed(unsigned char key, int x, int y)
   case '3': data_set_num = 2; LoadFile(); LoadTexture(); break;
   case '4': data_set_num = 3; LoadFile(); LoadTexture(); break;
   case '5': data_set_num = 4; LoadFile(); LoadTexture(); break;
-  case '6': data_set_num = 5; LoadFile(); LoadTexture(); break;
-  case '7': data_set_num = 6; LoadFile(); LoadTexture(); break;
-  case '8': data_set_num = 7; LoadFile(); LoadTexture(); break;
+    //case '6': data_set_num = 5; LoadFile(); LoadTexture(); break;
+    //case '7': data_set_num = 6; LoadFile(); LoadTexture(); break;
+    //case '8': data_set_num = 7; LoadFile(); LoadTexture(); break;
   case '[':
     if (FileNameCur > 0) {
       --FileNameCur;

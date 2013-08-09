@@ -80,6 +80,7 @@ extern "C"
   static int luaC_set_advance(lua_State *L);
   static int luaC_set_driving(lua_State *L);
   static int luaC_set_cooling(lua_State *L);
+  static int luaC_set_fluxsrc(lua_State *L);
   static int luaC_set_srcterm(lua_State *L);
   static int luaC_set_primitive(lua_State *L);
   static int luaC_cooling_rate(lua_State *L);
@@ -155,6 +156,7 @@ int luaopen_Mara(lua_State *L)
     {"set_advance"  , luaC_set_advance},
     {"set_driving"  , luaC_set_driving},
     {"set_cooling"  , luaC_set_cooling},
+    {"set_fluxsrc"  , luaC_set_fluxsrc},
     {"set_srcterm"  , luaC_set_srcterm},
     {"set_primitive", luaC_set_primitive},
     {"config_solver", luaC_config_solver},
@@ -408,6 +410,9 @@ int luaC_Mara_show(lua_State *L)
             << std::endl;
   std::cout << "\tcooling: "
             << (Mara->cooling ? Demangle(typeid(*Mara->cooling).name()) : "NULL")
+            << std::endl;
+  std::cout << "\tfluxsrc: "
+            << (Mara->fluxsrc ? Demangle(typeid(*Mara->fluxsrc).name()) : "NULL")
             << std::endl;
   std::cout << "\tsrcterm: "
             << (Mara->srcterm ? Demangle(typeid(*Mara->srcterm).name()) : "NULL")
@@ -1167,6 +1172,31 @@ int luaC_set_cooling(lua_State *L)
   return 0;
 }
 
+int luaC_set_fluxsrc(lua_State *L)
+{
+  const char *key = luaL_checkstring(L, 1);
+  FluxSourceTermsModule *new_f = NULL;
+
+  if (strcmp("magnetar", key) == 0) {
+    FluxSourceTermsMagnetar *magnetar = new FluxSourceTermsMagnetar;
+    double magnetar_radius = luaL_optnumber(L, 2, 0.1);
+    double field_strength = luaL_optnumber(L, 3, 24.0);
+    double light_cylinder = luaL_optnumber(L, 4, 1.0);
+    magnetar->set_magnetar_radius(magnetar_radius);
+    magnetar->set_field_strength(field_strength);
+    magnetar->set_light_cylinder(light_cylinder);
+    new_f = magnetar;
+  }
+  else {
+    luaL_error(L, "[Mara] unrecognized flux source terms module: '%s'", key);
+  }
+  if (new_f) {
+    if (Mara->fluxsrc) delete Mara->fluxsrc;
+    Mara->fluxsrc = new_f;
+  }
+  return 0;
+}
+
 int luaC_set_srcterm(lua_State *L)
 {
   const char *key = luaL_checkstring(L, 1);
@@ -1181,6 +1211,10 @@ int luaC_set_srcterm(lua_State *L)
     magnetar->set_field_strength(field_strength);
     magnetar->set_light_cylinder(light_cylinder);
     new_f = magnetar;
+  }
+  if (strcmp("wind", key) == 0) {
+    SourceTermsWind *wind = new SourceTermsWind;
+    new_f = wind;
   }
   else {
     luaL_error(L, "[Mara] unrecognized source terms module: '%s'", key);

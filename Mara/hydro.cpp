@@ -27,7 +27,8 @@ MaraApplication::MaraApplication()
   advance  = NULL;
   driving  = NULL;
   cooling  = NULL;
-  srcterm = NULL;
+  fluxsrc  = NULL;
+  srcterm  = NULL;
 }
 
 MaraApplication::~MaraApplication()
@@ -42,6 +43,7 @@ MaraApplication::~MaraApplication()
   if (advance)  delete advance;
   if (driving)  delete driving;
   if (cooling)  delete cooling;
+  if (fluxsrc)  delete fluxsrc;
   if (srcterm)  delete srcterm;
 }
 
@@ -283,7 +285,6 @@ LaxDiffusion(const std::valarray<double> &U, double r)
 void GodunovOperator::
 AddFluxSourceTerms(double *Fiph, double *Giph, double *Hiph)
 {
-/*
   if (Mara->fluxsrc == NULL) return;
   this->prepare_integration();
 
@@ -308,7 +309,6 @@ AddFluxSourceTerms(double *Fiph, double *Giph, double *Hiph)
     Mara->fluxsrc->AddIntercellFlux(xy, 2, &Giph[i]);
     Mara->fluxsrc->AddIntercellFlux(xz, 3, &Hiph[i]);
   }
-*/
 }
 
 int GodunovOperator::absolute_index_to_3d(const int &m, int ind[3])
