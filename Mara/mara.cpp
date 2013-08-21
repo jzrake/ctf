@@ -874,6 +874,10 @@ int luaC_set_boundary(lua_State *L)
     }
     new_f = b;
   }
+  else if (strcmp(key, "wind-inflow") == 0) {
+    WindInflowBoundary *b = new WindInflowBoundary;
+    new_f = b;
+  }
 
   if (new_f) {
     if (Mara->boundary) delete Mara->boundary;
@@ -1212,7 +1216,7 @@ int luaC_set_srcterm(lua_State *L)
     magnetar->set_light_cylinder(light_cylinder);
     new_f = magnetar;
   }
-  if (strcmp("wind", key) == 0) {
+  else if (strcmp("wind", key) == 0) {
     SourceTermsWind *wind = new SourceTermsWind;
     new_f = wind;
   }

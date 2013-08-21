@@ -34,7 +34,8 @@ function MyMara:initialize_physics()
       local L0 = self.problem.model_parameters.L0
       local B0 = self.problem.model_parameters.B0
       local C0 = self.problem.model_parameters.C0
-      Mara.set_fluxsrc('magnetar', L0, B0, C0)
+      --Mara.set_fluxsrc('magnetar', L0, B0, C0)
+      Mara.set_srcterm('magnetar', L0, B0, C0)
       Mara.config_solver({preset=self.problem.model_parameters.P0,
 			  dreset=self.problem.model_parameters.D0}, false)
    elseif oo.classname(self.problem) == 'Wind' then

@@ -692,13 +692,13 @@ function problems.Wind:initialize_problem(x,y,z,t)
 end
 function problems.Wind:solution(x,y,z,t)
    local D0 = 1.0
-   local P0 = 1.0
-   return { D0, P0, 0.0, 0.0, 0.0 }
+   local P0 = 0.01
+   return { D0, P0, -1.0, 0.0, 0.0 }
 end
-function problems.Wind:boundary_conditions() return 'outflow' end
+function problems.Wind:boundary_conditions() return 'wind-inflow' end
 function problems.Wind:fluid() return 'nrhyd' end
 function problems.Wind:domain_extent()
-   return {-0.5, -0.5}, {0.5, 0.5}
+   return {-0.75, -1.0}, {0.25, 1.0}
 end
 
 

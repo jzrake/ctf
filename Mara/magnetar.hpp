@@ -13,6 +13,32 @@
 #define __Magnetar_HEADER__
 
 #include "hydro.hpp"
+#include "boundary.hpp"
+
+// MagneticBubbleBoundary
+// -----------------------------------------------------------------------------
+class MagneticBubbleBoundary : public OutflowBoundary3d
+{
+public:
+  MagneticBubbleBoundary();
+  int set_rotation_radius(double r0);
+  int set_rotation_profile(const char *profile_string);
+private:
+  enum RotationProfile {RIGID_ROTATION, RIGID_IN_KEPLARIAN_OUT};
+  RotationProfile rotation_profile;
+  double rotation_radius;
+  virtual void set_bc_z0_wall(std::valarray<double> &U) const;
+} ;
+
+class WindInflowBoundary : public OutflowBoundary2d
+{
+private:
+  virtual void set_bc_x0_wall(std::valarray<double> &U) const;
+  virtual void set_bc_x1_wall(std::valarray<double> &U) const;
+  virtual void set_bc_y0_wall(std::valarray<double> &U) const;
+  virtual void set_bc_y1_wall(std::valarray<double> &U) const;
+} ;
+
 
 class FluxSourceTermsMagnetar : public FluxSourceTermsModule
 // -----------------------------------------------------------------------------
