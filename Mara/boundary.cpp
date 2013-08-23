@@ -372,6 +372,7 @@ void ReflectingBoundary2d::set_bc_y1_wall(std::valarray<double> &U) const
       }
 }
 
+#include <cstdio>
 #include <iostream>
 #include <map>
 #include "rmhd.hpp"
