@@ -175,10 +175,11 @@ int cow_dfield_write(cow_dfield *f, char *fname)
 }
 int cow_dfield_read(cow_dfield *f, char *fname)
 {
+  int err = 0;
 #if (COW_HDF5)
   if (_io_check_file_exists(fname)) return 1;
   clock_t start = clock();
-  int err = _io_read(f, fname);
+  err = _io_read(f, fname);
   cow_dfield_syncguard(f);
   double sec = (double)(clock() - start) / CLOCKS_PER_SEC;
   printf("[%s] read from %s/%s took %f minutes\n", MODULE, fname, f->name,

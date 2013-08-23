@@ -113,7 +113,7 @@ $(LUA_COW) : $(LUA_A) .FORCE
 	$(MAKE) -C cow lua-cow.o MAKEFILE_IN=$(MAKEFILE_IN)
 
 Mara/libmara.a : $(LUA_A) .FORCE
-	$(MAKE) -C Mara libmara.a MAKEFILE_IN=$(MAKEFILE_IN)
+	$(MAKE) -C Mara libmara.a MAKEFILE_IN=$(MAKEFILE_IN) GIT_SHA=$(GIT_SHA)
 
 $(LUA_MARA) : $(LUA_A) .FORCE
 	$(MAKE) -C Mara mara.o MAKEFILE_IN=$(MAKEFILE_IN) GIT_SHA=$(GIT_SHA)

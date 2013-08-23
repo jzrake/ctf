@@ -1,4 +1,6 @@
 
+#include <cstdio>
+#include <cstring>
 #include "magnetar.hpp"
 
 enum { ddd, tau, Sx, Sy, Sz, Bx, By, Bz }; // Conserved
