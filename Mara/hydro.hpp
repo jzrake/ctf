@@ -30,6 +30,7 @@ class DrivingModule;
 class StochasticVectorField;
 class EquationOfState;
 class FluidEquations;
+class FluxSourceTermsModule;
 class SourceTermsModule;
 class PhysicalDomain;
 class RiemannSolver;
@@ -73,6 +74,7 @@ public:
   PhysicalDomain          *domain;
   BoundaryConditions      *boundary;
   FluidEquations          *fluid;
+  FluxSourceTermsModule   *fluxsrc;
   SourceTermsModule       *srcterm;
   EquationOfState         *eos;
   GodunovOperator         *godunov;

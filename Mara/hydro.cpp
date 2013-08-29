@@ -27,7 +27,8 @@ MaraApplication::MaraApplication()
   advance  = NULL;
   driving  = NULL;
   cooling  = NULL;
-  srcterm = NULL;
+  fluxsrc  = NULL;
+  srcterm  = NULL;
 }
 
 MaraApplication::~MaraApplication()
@@ -42,6 +43,7 @@ MaraApplication::~MaraApplication()
   if (advance)  delete advance;
   if (driving)  delete driving;
   if (cooling)  delete cooling;
+  if (fluxsrc)  delete fluxsrc;
   if (srcterm)  delete srcterm;
 }
 
@@ -167,16 +169,16 @@ int GodunovOperator::ConsToPrim(const std::valarray<double> &U, std::valarray<do
 
     for (int i=0; i<stride[0]; i+=NQ) {
       if (Mara->FailureMask[i/NQ]) { /* this is a bad zone */
-	P_fixed[i + 0] = this->reset_density;
-	P_fixed[i + 1] = this->reset_pressure;
-	P_fixed[i + 2] = 0.0; // vx
-	P_fixed[i + 3] = 0.0; // vy 
-	P_fixed[i + 4] = 0.0; // vz
-	if (NQ == 8) { /* MHD */
-	  P_fixed[i + 5] = U[i + 5]; // Bx
-	  P_fixed[i + 6] = U[i + 6]; // By
-	  P_fixed[i + 7] = U[i + 7]; // Bz
-	}
+        P_fixed[i + 0] = this->reset_density;
+        P_fixed[i + 1] = this->reset_pressure;
+        P_fixed[i + 2] = 0.0; // vx
+        P_fixed[i + 3] = 0.0; // vy
+        P_fixed[i + 4] = 0.0; // vz
+        if (NQ == 8) { /* MHD */
+          P_fixed[i + 5] = U[i + 5]; // Bx
+          P_fixed[i + 6] = U[i + 6]; // By
+          P_fixed[i + 7] = U[i + 7]; // Bz
+        }
       }
     }
 
@@ -187,8 +189,8 @@ int GodunovOperator::ConsToPrim(const std::valarray<double> &U, std::valarray<do
     for (int i=0; i<stride[0]; i+=NQ) {
       int perr = Mara->fluid->PrimToCons(&P_fixed[i], &U_fixed[i]);
       if (perr) {
-	fprintf(stderr, "[Mara] FATAL: could not recover a primitive state\n");
-	exit(1);
+        fprintf(stderr, "[Mara] FATAL: could not recover a primitive state\n");
+        exit(1);
       }
     }
   }
@@ -283,9 +285,8 @@ LaxDiffusion(const std::valarray<double> &U, double r)
 void GodunovOperator::
 AddFluxSourceTerms(double *Fiph, double *Giph, double *Hiph)
 {
-  /*
-    if (Mara->fluxsrc == NULL) return;
-    this->prepare_integration();
+  if (Mara->fluxsrc == NULL) return;
+  this->prepare_integration();
 
     for (int i=0; i<stride[0]; i+=NQ) {
     int N[3];
@@ -307,8 +308,7 @@ AddFluxSourceTerms(double *Fiph, double *Giph, double *Hiph)
     Mara->fluxsrc->AddIntercellFlux(xx, 1, &Fiph[i]);
     Mara->fluxsrc->AddIntercellFlux(xy, 2, &Giph[i]);
     Mara->fluxsrc->AddIntercellFlux(xz, 3, &Hiph[i]);
-    }
-  */
+  }
 }
 
 int GodunovOperator::absolute_index_to_3d(const int &m, int ind[3])

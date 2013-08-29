@@ -34,9 +34,12 @@ function MyMara:initialize_physics()
       local L0 = self.problem.model_parameters.L0
       local B0 = self.problem.model_parameters.B0
       local C0 = self.problem.model_parameters.C0
+      --Mara.set_fluxsrc('magnetar', L0, B0, C0)
       Mara.set_srcterm('magnetar', L0, B0, C0)
       Mara.config_solver({preset=self.problem.model_parameters.P0,
 			  dreset=self.problem.model_parameters.D0}, false)
+   elseif oo.classname(self.problem) == 'Wind' then
+      Mara.set_srcterm('wind')
    end
 
    --
@@ -187,6 +190,7 @@ function MyMara:checkpoint_write(fname)
       local chkpt = hdf5.File(fname, 'r+')
       chkpt["measure_log"] = json.encode(self.measure_log)
       chkpt["status"] = json.encode(self.status)
+      chkpt["git_sha"] = Mara.git_sha()
       if self.problem.model_parameters then
 	 chkpt["model_parameters"] = json.encode(self.problem.model_parameters)
       end
@@ -243,73 +247,33 @@ function handle_crash.Magnetar(self, attempt)
    if attempt == 0 then -- healthy time-step
       Mara.set_godunov("plm-split")
       Mara.set_riemann("hlld")
-      Mara.config_solver({theta=1.6, pfloor=1e-6, ereset=false}, true)
+      Mara.config_solver({theta=2.0, pfloor=1e-6, ereset=false}, true)
       return 0
    elseif attempt == 1 then
-      Mara.diffuse(P, r)
+      Mara.diffuse(P, 0.5)
       return 0
    elseif attempt == 2 then
-      Mara.config_solver({theta=1.4}, true)
-      Mara.diffuse(P, r)
+      Mara.diffuse(P, 0.5)
       return 0
    elseif attempt == 3 then
-      Mara.config_solver({theta=1.2}, true)
-      Mara.diffuse(P, r)
+      Mara.diffuse(P, 0.5)
       return 0
    elseif attempt == 4 then
-      Mara.config_solver({theta=1.0}, true)
-      Mara.diffuse(P, r)
+      Mara.diffuse(P, 0.5)
       return 0
    elseif attempt == 5 then
-      Mara.set_failmask(1)
-      Mara.diffuse(P, 0.25*r)
-      return 0
-   elseif attempt == 6 then
-      Mara.set_failmask(1)
-      Mara.diffuse(P, 0.25*r)
-      Mara.config_solver({ereset=true}, true)
-      return 0
-   else
-      return 1
-   end
-end
-
-function handle_crash.TearingMode(self, attempt)
-   local P = self.Primitive:buffer()
-   local status = self.status
-   local r = 0.0
-   Mara.set_advance("single")
-   if attempt == 0 then -- healthy time-step
-      Mara.set_godunov("plm-muscl")
-      Mara.set_riemann("hlld")
-      Mara.config_solver({theta=2.0}, true)
-      return 0
-   elseif attempt == 1 then
-      status.time_increment = 0.5 * status.time_increment
-      return 0
-   elseif attempt == 2 then
-      status.time_increment = 0.5 * status.time_increment
-      return 0
-   elseif attempt == 3 then
       Mara.config_solver({theta=1.5}, true)
-      status.time_increment = 0.5 * status.time_increment
-      return 0
-   elseif attempt == 4 then
-      Mara.config_solver({theta=1.0}, true)
-      status.time_increment = 0.5 * status.time_increment
-      return 0
-   elseif attempt == 5 then
-      Mara.config_solver({theta=0.0}, true)
-      status.time_increment = 0.5 * status.time_increment
       return 0
    elseif attempt == 6 then
-      status.time_increment = 0.5 * status.time_increment
+      Mara.config_solver({theta=1.0}, true)
+      return 0
+   elseif attempt == 7 then
+      Mara.config_solver({theta=0.0, ereset=true}, true)
       return 0
    else
       return 1
    end
 end
-
 
 local function main()
    local usage = "tests-1d <problem> [<options>]"

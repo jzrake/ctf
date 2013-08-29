@@ -15,30 +15,38 @@
 static char FileNameArr[MAX_FILENAMES][FILENAME_LENGTH];
 static int  FileNameNum = 0;
 static int  FileNameCur = 0;
-static char *data_set_arr[] = {"rho", "pre", "vx", "vy", "vz", "Bx", "By", "Bz"};
+static char *DataDirectory = NULL;
+static char *data_set_arr[] = {"rho", "pre", "vx", "vy", "vz" };//, "Bx", "By", "Bz"};
 static int   data_set_num = 0;
 
-static GLuint  WindowWidth  = 800;
-static GLuint  WindowHeight = 800;
+static GLuint  WindowWidth  = 512;
+static GLuint  WindowHeight = 768;
 static GLuint  WindowId = 0;
 static GLuint  texture_id = 0;
 
-static double  cut_increment = 1e-1;
+static double  cut_increment = 1e-2;
 static double  data_cut[2];
 static double *raw_data = NULL;
 static int     raw_data_dims[2] = {0,0};
 static int     colorbar_id = 3;
 static int     log_scale = 0;
 static int     user_cuts = 0;
+static int     screenshot_lock = 0;
+static int     take_screenshot_on_draw = 0;
+static int     auto_play = 0;
+static int     show_filename = 1;
 
-
+static void take_screenshot();
 static void auto_scale();
 static void get_rgb(double val, GLfloat rgb[3]);
 static double scale(double z);
 
+
 void RefreshFileList()
 {
-  FILE *ls = popen("ls data/*", "r");
+  char cmd[1024];
+  sprintf(cmd, "ls %s/*", DataDirectory);
+  FILE *ls = popen(cmd, "r");
   char c[FILENAME_LENGTH];
 
   FileNameNum = 0;
@@ -67,6 +75,7 @@ void RefreshFileList()
 
 void LoadFile()
 {
+  int i,j;
   const char *fname = FileNameArr[FileNameCur];
   const char *gname = "prim";
   const char *dname = data_set_arr[data_set_num];
@@ -85,9 +94,21 @@ void LoadFile()
   raw_data_dims[0] = dims[0];
   raw_data_dims[1] = dims[1];
 
+  double *raw_dataT = (double*) malloc(dims[0] * dims[1] * sizeof(double));
   raw_data = (double*) realloc(raw_data, dims[0] * dims[1] * sizeof(double));
-  H5Dread(set, H5T_NATIVE_DOUBLE, spc, spc, H5P_DEFAULT, raw_data);
+  H5Dread(set, H5T_NATIVE_DOUBLE, spc, spc, H5P_DEFAULT, raw_dataT);
 
+  int Nx = dims[0];
+  int Ny = dims[1];
+
+  /* transpose the data */
+  for (i=0; i<Nx; ++i) {
+    for (j=0; j<Ny; ++j) {
+      raw_data[i + j*Nx] = raw_dataT[i*Ny + j];
+    }
+  }
+
+  free(raw_dataT);
   H5Sclose(spc);
   H5Dclose(set);
   H5Gclose(grp);
@@ -171,20 +192,37 @@ void DrawGLScene()
   glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
   glLoadIdentity();
 
-  glTranslatef(0, 0, -2.5);
+  glTranslated(0, 0, -5.0);
 
   glEnable(GL_TEXTURE_2D);
   glBindTexture(GL_TEXTURE_2D, texture_id);
   glBegin(GL_QUADS);
-  glTexCoord2d(0, 0); glVertex3d(-1.0, 1.0, 0.0);
-  glTexCoord2d(1, 0); glVertex3d( 1.0, 1.0, 0.0);
-  glTexCoord2d(1, 1); glVertex3d( 1.0,-1.0, 0.0);
-  glTexCoord2d(0, 1); glVertex3d(-1.0,-1.0, 0.0);
+  glTexCoord2d(0, 0); glVertex3d(-1.0, 2.0, 0.0);
+  glTexCoord2d(1, 0); glVertex3d( 1.0, 2.0, 0.0);
+  glTexCoord2d(1, 1); glVertex3d( 1.0,-2.0, 0.0);
+  glTexCoord2d(0, 1); glVertex3d(-1.0,-2.0, 0.0);
   glEnd();
   glBindTexture(GL_TEXTURE_2D, 0);
   glDisable(GL_TEXTURE_2D);
 
-  glutPrint(-1 + 1e-2, -1 + 1e-2, FileNameArr[FileNameCur]);
+  if (show_filename) {
+    glutPrint(-1.0 + 1e-2, -2.0 + 1e-2, FileNameArr[FileNameCur]);
+  }
+
+  if (take_screenshot_on_draw) {
+    take_screenshot_on_draw = 0;
+    take_screenshot();
+  }
+  if (auto_play) {
+    if (FileNameCur < FileNameNum - 1) {
+      ++FileNameCur;
+      LoadFile();
+      LoadTexture();
+      if (screenshot_lock) {
+	take_screenshot_on_draw = 1;
+      }
+    }
+  }
 
   glutSwapBuffers();
 }
@@ -203,21 +241,30 @@ void keyPressed(unsigned char key, int x, int y)
       ++FileNameCur;
       LoadFile();
       LoadTexture();
+      if (screenshot_lock) {
+	take_screenshot_on_draw = 1;
+      }
     }
+    break;
+  case '}':
+    auto_play ^= 1;
     break;
   case '1': data_set_num = 0; LoadFile(); LoadTexture(); break;
   case '2': data_set_num = 1; LoadFile(); LoadTexture(); break;
   case '3': data_set_num = 2; LoadFile(); LoadTexture(); break;
   case '4': data_set_num = 3; LoadFile(); LoadTexture(); break;
   case '5': data_set_num = 4; LoadFile(); LoadTexture(); break;
-  case '6': data_set_num = 5; LoadFile(); LoadTexture(); break;
-  case '7': data_set_num = 6; LoadFile(); LoadTexture(); break;
-  case '8': data_set_num = 7; LoadFile(); LoadTexture(); break;
+    //case '6': data_set_num = 5; LoadFile(); LoadTexture(); break;
+    //case '7': data_set_num = 6; LoadFile(); LoadTexture(); break;
+    //case '8': data_set_num = 7; LoadFile(); LoadTexture(); break;
   case '[':
     if (FileNameCur > 0) {
       --FileNameCur;
       LoadFile();
       LoadTexture();
+      if (screenshot_lock) {
+	take_screenshot_on_draw = 1;
+      }
     }
     break;
   case 'c':
@@ -254,6 +301,16 @@ void keyPressed(unsigned char key, int x, int y)
     data_cut[1] += cut_increment * (data_cut[1] - data_cut[0]);
     LoadTexture();
     break;
+  case 's':
+    take_screenshot();
+    break;
+  case 'S':
+    screenshot_lock ^= 1;
+    printf("%s screenshot lock\n", screenshot_lock ? "enabling" : "disabling");
+    break;
+  case 'f':
+    show_filename ^= 1;
+    break;
   }
 }
 
@@ -271,6 +328,12 @@ int main(int argc, char **argv)
   glutKeyboardFunc(&keyPressed);
   InitGL(WindowWidth, WindowHeight);
 
+  if (argc == 1) {
+    DataDirectory = "data";
+  }
+  else {
+    DataDirectory = argv[1];
+  }
 
   glGenTextures(1, &texture_id);
 
@@ -427,4 +490,32 @@ void get_rgb(double val, GLfloat rgb[3])
   rgb[0] = rrr;
   rgb[1] = ggg;
   rgb[2] = bbb;
+}
+
+void take_screenshot()
+{
+  static int num = 0;
+  char fname[1024];
+  char convert[1024];
+  num += 1;
+
+  sprintf(fname, "%04d.ppm", num);
+  sprintf(convert, "convert -flip %04d.ppm %04d.png; rm %04d.ppm", num, num, num);
+
+  printf("writing a screenshot to %s\n", fname);
+ 
+  int dimx = glutGet(GLUT_WINDOW_WIDTH);
+  int dimy = glutGet(GLUT_WINDOW_HEIGHT);
+ 
+  size_t imsize = 3*dimx*dimy;
+  char *pixels = (char*) malloc(imsize*sizeof(char));
+  glReadPixels(0, 0, dimx, dimy, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+ 
+  FILE *fp = fopen(fname, "wb");
+  fprintf(fp, "P6\n%d %d\n255\n", dimx, dimy);
+  fwrite(pixels, sizeof(char), imsize, fp);
+  fclose(fp);
+ 
+  free(pixels);
+  system(convert);
 }

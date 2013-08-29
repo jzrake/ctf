@@ -40,6 +40,7 @@ local problems = {
    MagneticTower = oo.class('MagneticTower', TestProblem),
    MagneticBubble = oo.class('MagneticBubble', TestProblem),
    Magnetar = oo.class('Magnetar', TestProblem),
+   Wind = oo.class('Wind', TestProblem),
    MagneticSlinky = oo.class('MagneticSlinky', TestProblem)
 }
 for k,v in pairs(problems) do
@@ -644,6 +645,7 @@ function problems.Magnetar:initialize_problem(x,y,z,t)
    self.model_parameters.L0 = 0.1 -- magnetar radius
    self.model_parameters.C0 = 1.0 -- light cylinder
    self.model_parameters.B0 = 24.0 -- field strength
+   self.model_parameters.Bz =  0.0 -- background field in z-direction
 
    if self.user_opts.model_parameters then
       local u = load('return '..self.user_opts.model_parameters)()
@@ -661,13 +663,42 @@ end
 function problems.Magnetar:solution(x,y,z,t)
    local D0 = self.model_parameters.D0
    local P0 = self.model_parameters.P0
-   return { D0, P0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
+   local Bz = self.model_parameters.Bz
+   return { D0, P0, 0.0, 0.0, 0.0, 0.0, 0.0, Bz }
 end
 function problems.Magnetar:boundary_conditions() return 'outflow' end
 function problems.Magnetar:fluid() return 'srmhd' end
 function problems.Magnetar:domain_extent()
    local Lz = self.simulation.Nz / self.simulation.Nx
    return {-0.5, -0.5, -0.5*Lz}, {0.5, 0.5, 0.5*Lz}
+end
+
+
+function problems.Wind:initialize_problem(x,y,z,t)
+   self.model_parameters = { }
+
+   if self.user_opts.model_parameters then
+      local u = load('return '..self.user_opts.model_parameters)()
+      for k,v in pairs(u) do
+	 if self.model_parameters[k] ~= nil then
+	    self.model_parameters[k] = v
+	 else
+	    print("[!]  warning! unkown model parameter '"..k.."' ignored")
+	 end
+      end
+   end
+   print "wind problem model parameters:"
+   util.pretty_print(self.model_parameters)
+end
+function problems.Wind:solution(x,y,z,t)
+   local D0 = 1.0
+   local P0 = 0.01
+   return { D0, P0, -1.0, 0.0, 0.0 }
+end
+function problems.Wind:boundary_conditions() return 'wind-inflow' end
+function problems.Wind:fluid() return 'nrhyd' end
+function problems.Wind:domain_extent()
+   return {-0.75, -1.0}, {0.25, 1.0}
 end
 
 

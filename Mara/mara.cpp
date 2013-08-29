@@ -34,7 +34,7 @@ extern "C" {
 #include "lauxlib.h"
 }
 #include "mara.hpp"
-
+#define MARA_STRMACRO(s) #s
 
 
 static void    luaU_pusharray(lua_State *L, double *A, int N);
@@ -62,7 +62,7 @@ extern "C"
 {
   static int luaC_Mara_start(lua_State *L);
   static int luaC_Mara_close(lua_State *L);
-  static int luaC_Mara_version(lua_State *L);
+  static int luaC_Mara_git_sha(lua_State *L);
   static int luaC_Mara_show(lua_State *L);
   static int luaC_Mara_advance(lua_State *L);
   static int luaC_Mara_diffuse(lua_State *L);
@@ -81,6 +81,7 @@ extern "C"
   static int luaC_set_advance(lua_State *L);
   static int luaC_set_driving(lua_State *L);
   static int luaC_set_cooling(lua_State *L);
+  static int luaC_set_fluxsrc(lua_State *L);
   static int luaC_set_srcterm(lua_State *L);
   static int luaC_set_primitive(lua_State *L);
   static int luaC_cooling_rate(lua_State *L);
@@ -136,7 +137,7 @@ int luaopen_Mara(lua_State *L)
   luaL_Reg Mara_module[] = {
     {"start"        , luaC_Mara_start},
     {"close"        , luaC_Mara_close},
-    {"version"      , luaC_Mara_version},
+    {"git_sha"      , luaC_Mara_git_sha},
     {"show"         , luaC_Mara_show},
     {"advance"      , luaC_Mara_advance},
     {"diffuse"      , luaC_Mara_diffuse},
@@ -155,6 +156,7 @@ int luaopen_Mara(lua_State *L)
     {"set_advance"  , luaC_set_advance},
     {"set_driving"  , luaC_set_driving},
     {"set_cooling"  , luaC_set_cooling},
+    {"set_fluxsrc"  , luaC_set_fluxsrc},
     {"set_srcterm"  , luaC_set_srcterm},
     {"set_primitive", luaC_set_primitive},
     {"config_solver", luaC_config_solver},
@@ -270,7 +272,7 @@ int luaC_Mara_start(lua_State *L)
   printf("\t***********************************\n");
   printf("\tMara Astrophysical gasdynamics code\n");
   printf("\t(C) Jonathan Zrake, NYU CCPP\n");
-  printf("\tVersion %s\n", __MARA_BASE_VERSION);
+  printf("\tVersion (SHA) "GIT_SHA"\n");
   printf("\t***********************************\n\n");
 
   if (Mara != NULL) {
@@ -376,11 +378,9 @@ int luaC_Mara_get_timestep(lua_State *L)
   return 1;
 }
 
-int luaC_Mara_version(lua_State *L)
+int luaC_Mara_git_sha(lua_State *L)
 {
-  char str[256];
-  sprintf(str, "%s", __MARA_BASE_VERSION);
-  lua_pushstring(L, str);
+  lua_pushfstring(L, "%s", GIT_SHA);
   return 1;
 }
 
@@ -417,6 +417,9 @@ int luaC_Mara_show(lua_State *L)
             << std::endl;
   std::cout << "\tcooling: "
             << (Mara->cooling ? Demangle(typeid(*Mara->cooling).name()) : "NULL")
+            << std::endl;
+  std::cout << "\tfluxsrc: "
+            << (Mara->fluxsrc ? Demangle(typeid(*Mara->fluxsrc).name()) : "NULL")
             << std::endl;
   std::cout << "\tsrcterm: "
             << (Mara->srcterm ? Demangle(typeid(*Mara->srcterm).name()) : "NULL")
@@ -878,6 +881,10 @@ int luaC_set_boundary(lua_State *L)
     }
     new_f = b;
   }
+  else if (strcmp(key, "wind-inflow") == 0) {
+    WindInflowBoundary *b = new WindInflowBoundary;
+    new_f = b;
+  }
 
   if (new_f) {
     if (Mara->boundary) delete Mara->boundary;
@@ -1176,6 +1183,31 @@ int luaC_set_cooling(lua_State *L)
   return 0;
 }
 
+int luaC_set_fluxsrc(lua_State *L)
+{
+  const char *key = luaL_checkstring(L, 1);
+  FluxSourceTermsModule *new_f = NULL;
+
+  if (strcmp("magnetar", key) == 0) {
+    FluxSourceTermsMagnetar *magnetar = new FluxSourceTermsMagnetar;
+    double magnetar_radius = luaL_optnumber(L, 2, 0.1);
+    double field_strength = luaL_optnumber(L, 3, 24.0);
+    double light_cylinder = luaL_optnumber(L, 4, 1.0);
+    magnetar->set_magnetar_radius(magnetar_radius);
+    magnetar->set_field_strength(field_strength);
+    magnetar->set_light_cylinder(light_cylinder);
+    new_f = magnetar;
+  }
+  else {
+    luaL_error(L, "[Mara] unrecognized flux source terms module: '%s'", key);
+  }
+  if (new_f) {
+    if (Mara->fluxsrc) delete Mara->fluxsrc;
+    Mara->fluxsrc = new_f;
+  }
+  return 0;
+}
+
 int luaC_set_srcterm(lua_State *L)
 {
   const char *key = luaL_checkstring(L, 1);
@@ -1190,6 +1222,10 @@ int luaC_set_srcterm(lua_State *L)
     magnetar->set_field_strength(field_strength);
     magnetar->set_light_cylinder(light_cylinder);
     new_f = magnetar;
+  }
+  else if (strcmp("wind", key) == 0) {
+    SourceTermsWind *wind = new SourceTermsWind;
+    new_f = wind;
   }
   else {
     luaL_error(L, "[Mara] unrecognized source terms module: '%s'", key);
