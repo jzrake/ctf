@@ -284,7 +284,7 @@ function handle_crash.WindRMHD(self, attempt)
    Mara.set_advance("rk3")
    if attempt == 0 then -- healthy time-step
       Mara.set_godunov("plm-split")
-      Mara.set_riemann("hlld")
+      Mara.set_riemann("hll")
       Mara.config_solver({theta=2.0, pfloor=1e-6, ereset=false}, true)
       return 0
    elseif attempt == 1 then

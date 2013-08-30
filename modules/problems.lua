@@ -722,7 +722,7 @@ end
 function problems.WindRMHD:solution(x,y,z,t)
    local D0 = 1.0
    local P0 = 1.0
-   return { D0, P0, 0.0, 0.0, 0.0, 0, 0.0, 1.0 }
+   return { D0, P0, 0.0, 0.0, 0.0, 0, 0.0, 4.0 }
 end
 function problems.WindRMHD:boundary_conditions() return 'outflow' end
 function problems.WindRMHD:fluid() return 'srmhd' end
