@@ -1,10 +1,15 @@
-
 #include <cstdio>
 #include <cstring>
+#include <iostream>
+#include <map>
+#include "valman.hpp"
+#include "rmhd.hpp"
+#include "rmhd-c2p.h"
 #include "magnetar.hpp"
 
 enum { ddd, tau, Sx, Sy, Sz, Bx, By, Bz }; // Conserved
 enum { rho, pre, vx, vy, vz };             // Primitive
+
 
 FluxSourceTermsMagnetar::FluxSourceTermsMagnetar() :
   magnetar_radius(0.1),
@@ -225,7 +230,7 @@ std::valarray<double> SourceTermsWind::dUdt(const std::valarray<double> &Uin)
       Mara->domain->y_at(N[1]),
       Mara->domain->z_at(N[2]) };
 
-    double L0[8];
+    double L0[5] = {0, 0, 0, 0, 0};
     double L = 0.05;
     double R = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 
@@ -242,11 +247,48 @@ std::valarray<double> SourceTermsWind::dUdt(const std::valarray<double> &Uin)
 
 
 
-#include <iostream>
-#include <map>
-#include "valman.hpp"
-#include "rmhd.hpp"
-#include "rmhd-c2p.h"
+SourceTermsWindRMHD::SourceTermsWindRMHD() { }
+
+std::valarray<double> SourceTermsWindRMHD::dUdt(const std::valarray<double> &Uin)
+{
+  this->prepare_integration();
+
+  std::valarray<double> Lsrc(Uin.size());
+  //  std::valarray<double> &P = Mara->PrimitiveArray;
+
+  double Lc = 0.25; // light-cylinder
+  double L  = 0.50; // cut-off radius (in units of light-cylinder)
+
+  for (int i=0; i<stride[0]; i+=NQ) {
+
+    int N[3];
+    absolute_index_to_3d(i/NQ, N);
+
+    double x[3] = {
+      Mara->domain->x_at(N[0]) / Lc,
+      Mara->domain->y_at(N[1]) / Lc,
+      Mara->domain->z_at(N[2]) / Lc };
+
+    double L0[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    double R = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
+    double r = sqrt(x[0]*x[0] + x[1]*x[1]);
+
+    double phi_hat[2] = { -x[1]/r, x[0]/r };
+
+    double ramp = (1.0 - R/L > 0.0 ? 1.0 - R/L : 0.0);
+    L0[ddd] = 1e1 * ramp;
+    L0[tau] = 1e2 * ramp;
+    L0[Sx] = 1e2 * phi_hat[0] * ramp;
+    L0[Sy] = 1e2 * phi_hat[1] * ramp;
+
+    for (int q=0; q<NQ; ++q) {
+      Lsrc[i+q] += L0[q];
+    }
+  }
+
+  return Lsrc;
+}
+
 
 MagneticBubbleBoundary::MagneticBubbleBoundary()
   : rotation_profile(RIGID_ROTATION),

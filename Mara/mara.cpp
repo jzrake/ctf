@@ -1220,6 +1220,10 @@ int luaC_set_srcterm(lua_State *L)
     SourceTermsWind *wind = new SourceTermsWind;
     new_f = wind;
   }
+  else if (strcmp("wind-rmhd", key) == 0) {
+    SourceTermsWindRMHD *wind_rmhd = new SourceTermsWindRMHD;
+    new_f = wind_rmhd;
+  }
   else {
     luaL_error(L, "[Mara] unrecognized source terms module: '%s'", key);
   }

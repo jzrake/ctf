@@ -80,4 +80,12 @@ public:
   std::valarray<double> dUdt(const std::valarray<double> &Uin);
 } ;
 
+class SourceTermsWindRMHD : public SourceTermsModule
+// -----------------------------------------------------------------------------
+{
+public:
+  SourceTermsWindRMHD();
+  std::valarray<double> dUdt(const std::valarray<double> &Uin);
+} ;
+
 #endif // __Magnetar_HEADER__

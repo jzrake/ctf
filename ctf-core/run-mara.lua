@@ -40,6 +40,8 @@ function MyMara:initialize_physics()
 			  dreset=self.problem.model_parameters.D0}, false)
    elseif oo.classname(self.problem) == 'Wind' then
       Mara.set_srcterm('wind')
+   elseif oo.classname(self.problem) == 'WindRMHD' then
+      Mara.set_srcterm('wind-rmhd')
    end
 
    --
@@ -275,6 +277,42 @@ function handle_crash.Magnetar(self, attempt)
       return 1
    end
 end
+function handle_crash.WindRMHD(self, attempt)
+   local P = self.Primitive:buffer()
+   local status = self.status
+   local r = 0.0
+   Mara.set_advance("rk3")
+   if attempt == 0 then -- healthy time-step
+      Mara.set_godunov("plm-split")
+      Mara.set_riemann("hlld")
+      Mara.config_solver({theta=2.0, pfloor=1e-6, ereset=false}, true)
+      return 0
+   elseif attempt == 1 then
+      Mara.diffuse(P, 0.5)
+      return 0
+   elseif attempt == 2 then
+      Mara.diffuse(P, 0.5)
+      return 0
+   elseif attempt == 3 then
+      Mara.diffuse(P, 0.5)
+      return 0
+   elseif attempt == 4 then
+      Mara.diffuse(P, 0.5)
+      return 0
+   elseif attempt == 5 then
+      Mara.config_solver({theta=1.5}, true)
+      return 0
+   elseif attempt == 6 then
+      Mara.config_solver({theta=1.0}, true)
+      return 0
+   elseif attempt == 7 then
+      Mara.config_solver({theta=0.0, ereset=true}, true)
+      return 0
+   else
+      return 1
+   end
+end
+
 
 local function main()
    local usage = "tests-1d <problem> [<options>]"
