@@ -95,32 +95,32 @@ void current_loop_magnetic_field(double I, double a, double x[3],
  *
  */
 {
-  double XxL0[3] = { x[0] - dx[0], x[1] - dx[1], x[2] - dx[2] };
-  double XxR0[3] = { x[0] + dx[0], x[1] - dx[1], x[2] - dx[2] };
-  double XxL1[3] = { x[0] - dx[0], x[1] - dx[1], x[2] + dx[2] };
-  double XxR1[3] = { x[0] + dx[0], x[1] - dx[1], x[2] + dx[2] };
-  double XxL2[3] = { x[0] - dx[0], x[1] + dx[1], x[2] - dx[2] };
-  double XxR2[3] = { x[0] + dx[0], x[1] + dx[1], x[2] - dx[2] };
-  double XxL3[3] = { x[0] - dx[0], x[1] + dx[1], x[2] + dx[2] };
-  double XxR3[3] = { x[0] + dx[0], x[1] + dx[1], x[2] + dx[2] };
+  double XxL0[3] = { x[0] - 0.5*dx[0], x[1] - 0.5*dx[1], x[2] - 0.5*dx[2] };
+  double XxR0[3] = { x[0] + 0.5*dx[0], x[1] - 0.5*dx[1], x[2] - 0.5*dx[2] };
+  double XxL1[3] = { x[0] - 0.5*dx[0], x[1] - 0.5*dx[1], x[2] + 0.5*dx[2] };
+  double XxR1[3] = { x[0] + 0.5*dx[0], x[1] - 0.5*dx[1], x[2] + 0.5*dx[2] };
+  double XxL2[3] = { x[0] - 0.5*dx[0], x[1] + 0.5*dx[1], x[2] - 0.5*dx[2] };
+  double XxR2[3] = { x[0] + 0.5*dx[0], x[1] + 0.5*dx[1], x[2] - 0.5*dx[2] };
+  double XxL3[3] = { x[0] - 0.5*dx[0], x[1] + 0.5*dx[1], x[2] + 0.5*dx[2] };
+  double XxR3[3] = { x[0] + 0.5*dx[0], x[1] + 0.5*dx[1], x[2] + 0.5*dx[2] };
 
-  double XyL0[3] = { x[0] - dx[0], x[1] - dx[1], x[2] - dx[2] };
-  double XyR0[3] = { x[0] - dx[0], x[1] + dx[1], x[2] - dx[2] };
-  double XyL1[3] = { x[0] + dx[0], x[1] - dx[1], x[2] - dx[2] };
-  double XyR1[3] = { x[0] + dx[0], x[1] + dx[1], x[2] - dx[2] };
-  double XyL2[3] = { x[0] - dx[0], x[1] - dx[1], x[2] + dx[2] };
-  double XyR2[3] = { x[0] - dx[0], x[1] + dx[1], x[2] + dx[2] };
-  double XyL3[3] = { x[0] + dx[0], x[1] - dx[1], x[2] + dx[2] };
-  double XyR3[3] = { x[0] + dx[0], x[1] + dx[1], x[2] + dx[2] };
+  double XyL0[3] = { x[0] - 0.5*dx[0], x[1] - 0.5*dx[1], x[2] - 0.5*dx[2] };
+  double XyR0[3] = { x[0] - 0.5*dx[0], x[1] + 0.5*dx[1], x[2] - 0.5*dx[2] };
+  double XyL1[3] = { x[0] + 0.5*dx[0], x[1] - 0.5*dx[1], x[2] - 0.5*dx[2] };
+  double XyR1[3] = { x[0] + 0.5*dx[0], x[1] + 0.5*dx[1], x[2] - 0.5*dx[2] };
+  double XyL2[3] = { x[0] - 0.5*dx[0], x[1] - 0.5*dx[1], x[2] + 0.5*dx[2] };
+  double XyR2[3] = { x[0] - 0.5*dx[0], x[1] + 0.5*dx[1], x[2] + 0.5*dx[2] };
+  double XyL3[3] = { x[0] + 0.5*dx[0], x[1] - 0.5*dx[1], x[2] + 0.5*dx[2] };
+  double XyR3[3] = { x[0] + 0.5*dx[0], x[1] + 0.5*dx[1], x[2] + 0.5*dx[2] };
 
-  double XzL0[3] = { x[0] - dx[0], x[1] - dx[1], x[2] - dx[2] };
-  double XzR0[3] = { x[0] - dx[0], x[1] - dx[1], x[2] + dx[2] };
-  double XzL1[3] = { x[0] - dx[0], x[1] + dx[1], x[2] - dx[2] };
-  double XzR1[3] = { x[0] - dx[0], x[1] + dx[1], x[2] + dx[2] };
-  double XzL2[3] = { x[0] + dx[0], x[1] - dx[1], x[2] - dx[2] };
-  double XzR2[3] = { x[0] + dx[0], x[1] - dx[1], x[2] + dx[2] };
-  double XzL3[3] = { x[0] + dx[0], x[1] + dx[1], x[2] - dx[2] };
-  double XzR3[3] = { x[0] + dx[0], x[1] + dx[1], x[2] + dx[2] };
+  double XzL0[3] = { x[0] - 0.5*dx[0], x[1] - 0.5*dx[1], x[2] - 0.5*dx[2] };
+  double XzR0[3] = { x[0] - 0.5*dx[0], x[1] - 0.5*dx[1], x[2] + 0.5*dx[2] };
+  double XzL1[3] = { x[0] - 0.5*dx[0], x[1] + 0.5*dx[1], x[2] - 0.5*dx[2] };
+  double XzR1[3] = { x[0] - 0.5*dx[0], x[1] + 0.5*dx[1], x[2] + 0.5*dx[2] };
+  double XzL2[3] = { x[0] + 0.5*dx[0], x[1] - 0.5*dx[1], x[2] - 0.5*dx[2] };
+  double XzR2[3] = { x[0] + 0.5*dx[0], x[1] - 0.5*dx[1], x[2] + 0.5*dx[2] };
+  double XzL3[3] = { x[0] + 0.5*dx[0], x[1] + 0.5*dx[1], x[2] - 0.5*dx[2] };
+  double XzR3[3] = { x[0] + 0.5*dx[0], x[1] + 0.5*dx[1], x[2] + 0.5*dx[2] };
 
   double AxL0[3], AyL0[3], AzL0[3];
   double AxR0[3], AyR0[3], AzR0[3];
@@ -163,11 +163,11 @@ void current_loop_magnetic_field(double I, double a, double x[3],
 
   for (i=0; i<3; ++i) {
     dA[i][0] = 0.25 * ((AxR0[i] + AxR1[i] + AxR2[i] + AxR3[i]) -
-		       (AxL0[i] + AxL1[i] + AxL2[i] + AxL3[i])) / (2 * dx[0]);
+		       (AxL0[i] + AxL1[i] + AxL2[i] + AxL3[i])) / dx[0];
     dA[i][1] = 0.25 * ((AyR0[i] + AyR1[i] + AyR2[i] + AyR3[i]) -
-		       (AyL0[i] + AyL1[i] + AyL2[i] + AyL3[i])) / (2 * dx[1]);
+		       (AyL0[i] + AyL1[i] + AyL2[i] + AyL3[i])) / dx[1];
     dA[i][2] = 0.25 * ((AzR0[i] + AzR1[i] + AzR2[i] + AzR3[i]) -
-		       (AzL0[i] + AzL1[i] + AzL2[i] + AzL3[i])) / (2 * dx[2]);
+		       (AzL0[i] + AzL1[i] + AzL2[i] + AzL3[i])) / dx[2];
   }
 
   B[0] = dA[2][1] - dA[1][2];

@@ -2298,8 +2298,6 @@ int luaC_mean_max_divB(lua_State *L)
                              (fz[ M(i  ,j  ,k  ) ] + fz[ M(i+1,j  ,k  ) ] +
                               fz[ M(i  ,j+1,k  ) ] + fz[ M(i+1,j+1,k  ) ])) / 4.0;
 
-	  //	  printf("%d %d %d: %f\n", i, j, k, div[ M(i,j,k) ] );
-
         }
       }
     }
