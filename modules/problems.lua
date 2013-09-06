@@ -720,9 +720,11 @@ function problems.WindRMHD:initialize_problem(x,y,z,t)
    util.pretty_print(self.model_parameters)
 end
 function problems.WindRMHD:solution(x,y,z,t)
+   local Mara = require 'Mara'
    local D0 = 1.0
    local P0 = 1.0
-   return { D0, P0, 0.0, 0.0, 0.0, 0, 0.0, 4.0 }
+   local B = Mara.models.current_loop(1.0, 0.125, {x, y, z})
+   return { D0, P0, 0.0, 0.0, 0.0, B[1], B[2], B[3] }
 end
 function problems.WindRMHD:boundary_conditions() return 'outflow' end
 function problems.WindRMHD:fluid() return 'srmhd' end

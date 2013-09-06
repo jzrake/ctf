@@ -56,6 +56,9 @@ function MyMara:initialize_physics()
       Mara.advance(P:buffer(), 0.0) -- copies array to Mara internal memory
    else
       Mara.init_prim(P:buffer(), pinit)
+
+      local dbmean, dbmax = Mara.measure.mean_max_divB()
+      print("mean, max divB: ", dbmean, dbmax)
    end
 end
 function MyMara:domain_dimensions() return self.ndim end

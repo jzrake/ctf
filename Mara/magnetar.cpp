@@ -254,10 +254,7 @@ std::valarray<double> SourceTermsWindRMHD::dUdt(const std::valarray<double> &Uin
   this->prepare_integration();
 
   std::valarray<double> Lsrc(Uin.size());
-  //  std::valarray<double> &P = Mara->PrimitiveArray;
-
-  double Lc = 0.25; // light-cylinder
-  double L  = 0.50; // cut-off radius (in units of light-cylinder)
+  double L = 0.125; // cut-off radius
 
   for (int i=0; i<stride[0]; i+=NQ) {
 
@@ -265,9 +262,9 @@ std::valarray<double> SourceTermsWindRMHD::dUdt(const std::valarray<double> &Uin
     absolute_index_to_3d(i/NQ, N);
 
     double x[3] = {
-      Mara->domain->x_at(N[0]) / Lc,
-      Mara->domain->y_at(N[1]) / Lc,
-      Mara->domain->z_at(N[2]) / Lc };
+      Mara->domain->x_at(N[0]),
+      Mara->domain->y_at(N[1]),
+      Mara->domain->z_at(N[2]) };
 
     double L0[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     double R = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
