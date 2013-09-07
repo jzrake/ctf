@@ -36,21 +36,29 @@ double integrate_RK4(double k, double (*f)(double k, double t))
 
 double elliptic_K_integrand(double k2, double t)
 {
+  if (fabs(k2 - 1.0) < 1e-12) { /* little fudge to avoid inf's */
+    k2 -= 1e-12;
+  }
   return 1.0 / sqrt(1.0 - k2*sin(t)*sin(t));
 }
 
 double elliptic_E_integrand(double k2, double t)
 {
+  if (fabs(k2 - 1.0) < 1e-12) { /* little fudge to avoid inf's */
+    k2 -= 1e-12;
+  }
   return 1.0 * sqrt(1.0 - k2*sin(t)*sin(t));
 }
 
 double K_ell(double k2)
 {
+  //  printf("K got k2=%f\n", k2);
   return integrate_RK4(k2, elliptic_K_integrand);
 }
 
 double E_ell(double k2)
 {
+  //  printf("E got k2=%f\n", k2);
   return integrate_RK4(k2, elliptic_E_integrand);
 }
 
@@ -66,19 +74,43 @@ double vector_potential_phi_exact(double I, double a, double r, double t)
  * t: theta (polar angle, from loop normal)
  */
 {
-  double k2 = (4*a*r*sin(t)) / (r*r + a*a + 2*a*r*sin(t));
-  return -((1.0 / sqrt(r*r + a*a + 2*a*r*sin(t))) *
-	   (4*I*a/k2) * ((k2 - 2) * K_ell(k2) + 2*E_ell(k2)));
+  double num = 4*a*r*sin(t);
+  double den = r*r + a*a + 2*a*r*sin(t);
+  double k2 = num / den;
+
+  if (fabs(num) < 1e-12) {
+    return 0.0;
+  }
+  else if (fabs(den) < 1e-12) {
+    return 0.0;
+  }
+  else {
+    return -((1.0 / sqrt(r*r + a*a + 2*a*r*sin(t))) *
+	     (4*I*a/k2) * ((k2 - 2) * K_ell(k2) + 2*E_ell(k2)));
+  }
 }
 
 double vector_potential_phi_far(double I, double a, double r, double t)
 {
-  return I*PI*a*a * sin(t) / (r*r);
+  if (t < 1e-12) {
+    return 0.0;
+  }
+  else {
+    return I*PI*a*a * sin(t) / (r*r);
+  }
 }
 
 void vector_potential_cartesian(double I, double a, double x[3], double A[3])
 {
   double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
+
+  if (fabs(r) < 1e-12) {
+    A[0] = 0.0;
+    A[1] = 0.0;
+    A[2] = 0.0;
+    return;
+  }
+
   double t = acos(x[2] / r);
   double Aphi = vector_potential_phi_exact(I, a, r, t);
   A[0] = -Aphi * x[1]/r;
@@ -180,6 +212,7 @@ void current_loop_magnetic_field(double I, double a, double x[3],
 
 int main()
 {
+
   double k2 = 0.1;
   double K = K_ell(k2);
   double E = E_ell(k2);
@@ -196,6 +229,28 @@ int main()
 
   printf("far   : %10.8e\n", A_far);
   printf("exact : %10.8e\n", A_exact);
+
+  {
+    double B[3];
+    double x[3] = {-0.09375, -0.03125, 0.03125 };
+    double dx[3] = { 1.0/16, 1.0/16, 1.0/16 };
+    current_loop_magnetic_field(1.0, 0.125, x, dx, B);
+    printf("B = %f %f %f\n\n", B[0], B[1], B[2]);
+  }
+  {
+    double B[3];
+    double x[3] = {-0.03125, -0.03125, 0.96875};
+    double dx[3] = { 1.0/16, 1.0/16, 1.0/16 };
+    current_loop_magnetic_field(1.0, 2.0, x, dx, B);
+    printf("B = %f %f %f\n\n", B[0], B[1], B[2]);
+  }
+  {
+    double B[3];
+    double x[3] = {-0.03125, -0.03125, -0.03125};
+    double dx[3] = { 1.0/16, 1.0/16, 1.0/16 };
+    current_loop_magnetic_field(1.0, 2.0, x, dx, B);
+    printf("B = %f %f %f\n\n", B[0], B[1], B[2]);
+  }
 
   return 0;
 }
