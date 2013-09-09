@@ -277,7 +277,8 @@ std::valarray<double> SourceTermsWindRMHD::dUdt(const std::valarray<double> &Uin
 
     double phi_hat[2] = { -x[1]/r, x[0]/r };
 
-    double ramp = C * (1.0 - R/L > 0.0 ? 1.0 - R/L : 0.0);
+    //    double ramp = C * (1.0 - R/L > 0.0 ? 1.0 - R/L : 0.0);
+    double ramp = C * (R < L ? r * exp(L*L / (L*L - r*r)) : 0.0);
     L0[ddd] = ddot * ramp;
     L0[tau] = edot * ramp;
     L0[Sx] = sdot * phi_hat[0] * ramp;
