@@ -1254,6 +1254,12 @@ int luaC_set_srcterm(lua_State *L)
   }
   else if (strcmp("wind-rmhd", key) == 0) {
     SourceTermsWindRMHD *wind_rmhd = new SourceTermsWindRMHD;
+    double ddot = luaL_optnumber(L, 2, 1e1);
+    double edot = luaL_optnumber(L, 3, 1e3);
+    double sdot = luaL_optnumber(L, 4, 1e3);
+    wind_rmhd->set_ddot(ddot);
+    wind_rmhd->set_edot(edot);
+    wind_rmhd->set_sdot(sdot);
     new_f = wind_rmhd;
   }
   else {

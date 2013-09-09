@@ -41,7 +41,10 @@ function MyMara:initialize_physics()
    elseif oo.classname(self.problem) == 'Wind' then
       Mara.set_srcterm('wind')
    elseif oo.classname(self.problem) == 'WindRMHD' then
-      Mara.set_srcterm('wind-rmhd')
+      Mara.set_srcterm('wind-rmhd',
+		       self.problem.model_parameters.ddot,
+		       self.problem.model_parameters.edot,
+		       self.problem.model_parameters.sdot)
    end
 
    --

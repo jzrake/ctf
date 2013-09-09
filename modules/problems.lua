@@ -706,6 +706,14 @@ end
 function problems.WindRMHD:initialize_problem(x,y,z,t)
    self.model_parameters = { }
 
+   self.model_parameters.D0 = 1.0
+   self.model_parameters.P0 = 1.0
+   self.model_parameters.I = 1.0 -- current in loop
+   self.model_parameters.a = 2.0 -- current loop radius
+   self.model_parameters.ddot = 1e1
+   self.model_parameters.edot = 1e3
+   self.model_parameters.sdot = 1e3
+
    if self.user_opts.model_parameters then
       local u = load('return '..self.user_opts.model_parameters)()
       for k,v in pairs(u) do
@@ -721,9 +729,11 @@ function problems.WindRMHD:initialize_problem(x,y,z,t)
 end
 function problems.WindRMHD:solution(x,y,z,t)
    local Mara = require 'Mara'
-   local D0 = 1.0
-   local P0 = 1.0
-   local B = Mara.models.current_loop(1.0, 0.125, {x, y, z})
+   local D0 = self.model_parameters.D0
+   local P0 = self.model_parameters.P0
+   local I = self.model_parameters.I
+   local a = self.model_parameters.a
+   local B = Mara.models.current_loop(I, a, {x, y, z})
    return { D0, P0, 0.0, 0.0, 0.0, B[1], B[2], B[3] }
 end
 function problems.WindRMHD:boundary_conditions() return 'outflow' end
