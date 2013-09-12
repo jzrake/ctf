@@ -82,6 +82,7 @@ ifeq ($(strip $(USE_MPIO)), 1)
 DEFINES += -DUSE_MPIO
 endif
 
+DEFINES += -DGIT_SHA=$(GIT_SHA)
 
 default : bin/ctf-main
 
