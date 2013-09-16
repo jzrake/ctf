@@ -258,7 +258,7 @@ std::valarray<double> SourceTermsWindRMHD::dUdt(const std::valarray<double> &Uin
 
   std::valarray<double> Lsrc(Uin.size());
 
-  double C = 4.0; // compactness of source region (larger value is more compact)
+  double C = 2.0; // compactness of source region (larger value is more compact)
   double L = 0.125 / C; // cut-off radius, C=1 gives a source size of 1/8
 
   for (int i=0; i<stride[0]; i+=NQ) {
@@ -277,8 +277,8 @@ std::valarray<double> SourceTermsWindRMHD::dUdt(const std::valarray<double> &Uin
 
     double phi_hat[2] = { -x[1]/r, x[0]/r };
 
-    //    double ramp = C * (1.0 - R/L > 0.0 ? 1.0 - R/L : 0.0);
-    double ramp = C * (R < L ? r * exp(L*L / (L*L - r*r)) : 0.0);
+    double ramp = C * (1.0 - R/L > 0.0 ? 1.0 - R/L : 0.0);
+    //double ramp = C * (R < L ? exp(L*L / (L*L - r*r)) : 0.0);
     L0[ddd] = ddot * ramp;
     L0[tau] = edot * ramp;
     L0[Sx] = sdot * phi_hat[0] * ramp;
