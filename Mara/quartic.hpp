@@ -39,6 +39,7 @@ public:
     J[0] = 4*d4*x3 + 3*d3*x2 + 2*d2*x[0] + d1;
   }
   int Solve(double *const roots) const;
+  int SolveOld(double *const roots) const; /* possibly buggy but faster */
 
 private:
   void solve_cubic_equation

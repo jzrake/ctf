@@ -13,7 +13,19 @@
 #include <cmath>
 #include "quartic.hpp"
 
+extern "C" {
+  int m2_solve_quartic_equation(double d4, double d3,
+				double d2, double d1, double d0,
+				double roots[4]);
+}
+
 int QuarticEquation::Solve(double *const roots) const
+{
+  //return m2_solve_quartic_equation(d4, d3, d2, d1, d0, roots);
+  return this->SolveOld(roots);
+}
+
+int QuarticEquation::SolveOld(double *const roots) const
 {
   double r1, r2, r3, r4;
   int nr12, nr34;
