@@ -1,10 +1,15 @@
-
 #include <cstdio>
 #include <cstring>
+#include <iostream>
+#include <map>
+#include "valman.hpp"
+#include "rmhd.hpp"
+#include "rmhd-c2p.h"
 #include "magnetar.hpp"
 
 enum { ddd, tau, Sx, Sy, Sz, Bx, By, Bz }; // Conserved
 enum { rho, pre, vx, vy, vz };             // Primitive
+
 
 FluxSourceTermsMagnetar::FluxSourceTermsMagnetar() :
   magnetar_radius(0.1),
@@ -226,7 +231,7 @@ std::valarray<double> SourceTermsWind::dUdt(const std::valarray<double> &Uin)
       Mara->domain->y_at(N[1]),
       Mara->domain->z_at(N[2]) };
 
-    double L0[8];
+    double L0[5] = {0, 0, 0, 0, 0};
     double L = 0.05;
     double R = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 
@@ -243,11 +248,51 @@ std::valarray<double> SourceTermsWind::dUdt(const std::valarray<double> &Uin)
 
 
 
-#include <iostream>
-#include <map>
-#include "valman.hpp"
-#include "rmhd.hpp"
-#include "rmhd-c2p.h"
+SourceTermsWindRMHD::SourceTermsWindRMHD() :
+  ddot(1e1),
+  edot(1e3),
+  sdot(1e3) { }
+
+std::valarray<double> SourceTermsWindRMHD::dUdt(const std::valarray<double> &Uin)
+{
+  this->prepare_integration();
+
+  std::valarray<double> Lsrc(Uin.size());
+
+  double C = 2.0; // compactness of source region (larger value is more compact)
+  double L = 0.125 / C; // cut-off radius, C=1 gives a source size of 1/8
+
+  for (int i=0; i<stride[0]; i+=NQ) {
+
+    int N[3];
+    absolute_index_to_3d(i/NQ, N);
+
+    double x[3] = {
+      Mara->domain->x_at(N[0]),
+      Mara->domain->y_at(N[1]),
+      Mara->domain->z_at(N[2]) };
+
+    double L0[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    double R = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
+    double r = sqrt(x[0]*x[0] + x[1]*x[1]);
+
+    double phi_hat[2] = { -x[1]/r, x[0]/r };
+
+    double ramp = C * (1.0 - R/L > 0.0 ? 1.0 - R/L : 0.0);
+    //double ramp = C * (R < L ? exp(L*L / (L*L - r*r)) : 0.0);
+    L0[ddd] = ddot * ramp;
+    L0[tau] = edot * ramp;
+    L0[Sx] = sdot * phi_hat[0] * ramp;
+    L0[Sy] = sdot * phi_hat[1] * ramp;
+
+    for (int q=0; q<NQ; ++q) {
+      Lsrc[i+q] += L0[q];
+    }
+  }
+
+  return Lsrc;
+}
+
 
 MagneticBubbleBoundary::MagneticBubbleBoundary()
   : rotation_profile(RIGID_ROTATION),

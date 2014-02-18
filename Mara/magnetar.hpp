@@ -80,4 +80,19 @@ public:
   std::valarray<double> dUdt(const std::valarray<double> &Uin);
 } ;
 
+class SourceTermsWindRMHD : public SourceTermsModule
+// -----------------------------------------------------------------------------
+{
+private:
+  double ddot; // matter source term
+  double edot; // energy source term
+  double sdot; // phi-momentum source term
+public:
+  SourceTermsWindRMHD();
+  std::valarray<double> dUdt(const std::valarray<double> &Uin);
+  void set_ddot(double d) { ddot = d; }
+  void set_edot(double e) { edot = e; }
+  void set_sdot(double s) { sdot = s; }
+} ;
+
 #endif // __Magnetar_HEADER__

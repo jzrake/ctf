@@ -41,6 +41,7 @@ local problems = {
    MagneticBubble = oo.class('MagneticBubble', TestProblem),
    Magnetar = oo.class('Magnetar', TestProblem),
    Wind = oo.class('Wind', TestProblem),
+   WindRMHD = oo.class('WindRMHD', TestProblem),
    MagneticSlinky = oo.class('MagneticSlinky', TestProblem)
 }
 for k,v in pairs(problems) do
@@ -699,6 +700,47 @@ function problems.Wind:boundary_conditions() return 'wind-inflow' end
 function problems.Wind:fluid() return 'nrhyd' end
 function problems.Wind:domain_extent()
    return {-0.75, -1.0}, {0.25, 1.0}
+end
+
+
+function problems.WindRMHD:initialize_problem(x,y,z,t)
+   self.model_parameters = { }
+
+   self.model_parameters.D0 = 1.0
+   self.model_parameters.P0 = 1.0
+   self.model_parameters.I = 1.0 -- current in loop
+   self.model_parameters.a = 2.0 -- current loop radius
+   self.model_parameters.ddot = 1e1
+   self.model_parameters.edot = 1e3
+   self.model_parameters.sdot = 1e3
+
+   if self.user_opts.model_parameters then
+      local u = load('return '..self.user_opts.model_parameters)()
+      for k,v in pairs(u) do
+	 if self.model_parameters[k] ~= nil then
+	    self.model_parameters[k] = v
+	 else
+	    print("[!]  warning! unkown model parameter '"..k.."' ignored")
+	 end
+      end
+   end
+   print "wind-rmhd problem model parameters:"
+   util.pretty_print(self.model_parameters)
+end
+function problems.WindRMHD:solution(x,y,z,t)
+   local Mara = require 'Mara'
+   local D0 = self.model_parameters.D0
+   local P0 = self.model_parameters.P0
+   local I = self.model_parameters.I
+   local a = self.model_parameters.a
+   local B = Mara.models.current_loop(I, a, {x, y, z})
+   return { D0, P0, 0.0, 0.0, 0.0, B[1], B[2], B[3] }
+end
+function problems.WindRMHD:boundary_conditions() return 'outflow' end
+function problems.WindRMHD:fluid() return 'srmhd' end
+function problems.WindRMHD:domain_extent()
+   local Lz = self.simulation.Nz / self.simulation.Nx
+   return {-0.5, -0.5, -0.5*Lz}, {0.5, 0.5, 0.5*Lz}
 end
 
 

@@ -125,7 +125,9 @@ extern "C"
   static int luaC_units_ErgPerCubicCentimeter(lua_State *L);
   static int luaC_units_GramsPerCubicCentimeter(lua_State *L);
 
-  static int luaC_write_ppm(lua_State *L);
+  static int luaC_image_write_ppm(lua_State *L);
+
+  static int luaC_models_current_loop(lua_State *L);
 
   int luaopen_Mara(lua_State *L);
 }
@@ -191,10 +193,6 @@ int luaopen_Mara(lua_State *L)
     {"GetPrimNames", luaC_fluid_GetPrimNames},
     {NULL, NULL}};
 
-  luaL_Reg Mara_boundary[] = {
-    //    {"ApplyBoundaries", luaC_boundary_ApplyBoundaries},
-    {NULL, NULL}};
-
   luaL_Reg Mara_eos[] = {
     {"TemperatureMeV", luaC_eos_TemperatureMeV},
     {"TemperatureArb", luaC_eos_TemperatureArb},
@@ -227,7 +225,11 @@ int luaopen_Mara(lua_State *L)
     {NULL, NULL}};
 
   luaL_Reg Mara_image[] = {
-    {"write_ppm", luaC_write_ppm},
+    {"write_ppm", luaC_image_write_ppm},
+    {NULL, NULL}};
+
+  luaL_Reg Mara_models[] = {
+    {"current_loop", luaC_models_current_loop},
     {NULL, NULL}};
 
 
@@ -241,10 +243,6 @@ int luaopen_Mara(lua_State *L)
   lua_newtable(L); // Mara.fluid
   luaL_setfuncs(L, Mara_fluid, 0);
   lua_setfield(L, -2, "fluid");
-
-  lua_newtable(L); // Mara.boundary
-  luaL_setfuncs(L, Mara_boundary, 0);
-  lua_setfield(L, -2, "boundary");
 
   lua_newtable(L); // Mara.eos
   luaL_setfuncs(L, Mara_eos, 0);
@@ -261,6 +259,10 @@ int luaopen_Mara(lua_State *L)
   lua_newtable(L); // Mara.image
   luaL_setfuncs(L, Mara_image, 0);
   lua_setfield(L, -2, "image");
+
+  lua_newtable(L); // Mara.models
+  luaL_setfuncs(L, Mara_models, 0);
+  lua_setfield(L, -2, "models");
 
   return 1;
 }
@@ -752,7 +754,7 @@ int luaC_set_domain(lua_State *L)
   return 0;
 }
 
-int luaC_write_ppm(lua_State *L)
+int luaC_image_write_ppm(lua_State *L)
 {
   if (Mara->domain == NULL) {
     luaL_error(L, "[Mara] need a domain to run this, use set_domain");
@@ -774,6 +776,38 @@ int luaC_write_ppm(lua_State *L)
   free(data);
   free(range);
   return 0;
+}
+
+int luaC_models_current_loop(lua_State *L)
+{
+  if (Mara->domain == NULL) {
+    luaL_error(L, "[Mara] need a domain to run this, use set_domain");
+  }
+  if (Mara->domain->get_Nd() != 3) {
+    luaL_error(L, "[Mara] need a 3d domain to call current_loop");
+  }  
+
+  int N=3;
+  double I = luaL_checknumber(L, 1);
+  double a = luaL_checknumber(L, 2);
+  double *x = luaU_checklarray(L, 3, &N);
+  double dx[3];
+  double B[3];
+
+  if (N != 3) {
+    free(x);
+    luaL_error(L, "[Mara] need a 3D position vector");
+  }
+
+  dx[0] = Mara->domain->get_dx(1);
+  dx[1] = Mara->domain->get_dx(2);
+  dx[2] = Mara->domain->get_dx(3);
+
+  current_loop_magnetic_field(I, a, x, dx, B);
+
+  free(x);
+  luaU_pusharray(L, B, 3);
+  return 1;
 }
 
 int luaC_set_fluid(lua_State *L)
@@ -1226,6 +1260,16 @@ int luaC_set_srcterm(lua_State *L)
   else if (strcmp("wind", key) == 0) {
     SourceTermsWind *wind = new SourceTermsWind;
     new_f = wind;
+  }
+  else if (strcmp("wind-rmhd", key) == 0) {
+    SourceTermsWindRMHD *wind_rmhd = new SourceTermsWindRMHD;
+    double ddot = luaL_optnumber(L, 2, 1e1);
+    double edot = luaL_optnumber(L, 3, 1e3);
+    double sdot = luaL_optnumber(L, 4, 1e3);
+    wind_rmhd->set_ddot(ddot);
+    wind_rmhd->set_edot(edot);
+    wind_rmhd->set_sdot(sdot);
+    new_f = wind_rmhd;
   }
   else {
     luaL_error(L, "[Mara] unrecognized source terms module: '%s'", key);
@@ -2268,6 +2312,7 @@ int luaC_mean_max_divB(lua_State *L)
                               fz[ M(i  ,j+1,k+1) ] + fz[ M(i+1,j+1,k+1) ]) -
                              (fz[ M(i  ,j  ,k  ) ] + fz[ M(i+1,j  ,k  ) ] +
                               fz[ M(i  ,j+1,k  ) ] + fz[ M(i+1,j+1,k  ) ])) / 4.0;
+
         }
       }
     }
