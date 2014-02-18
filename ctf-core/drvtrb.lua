@@ -429,7 +429,7 @@ local function CheckpointWrite(Primitive, Status, MeasureLog, OptionalName)
    Primitive:write(chkpt, 'prim')
 
    if Primitive:domain():get_rank() == 0 then
-      local version = Mara.version()
+      local version = Mara.git_sha()
       local program = " "
       local f = io.open(string.sub(debug.getinfo(1).source, 2), 'r')
       if f then
