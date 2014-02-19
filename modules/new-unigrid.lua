@@ -167,5 +167,13 @@ function UnigridDataField:power_spectrum(nbins)
    return binloc, binval
 end
 
+function UnigridDataField:project_out_divergence()
+   cow.fft_helmholtzdecomp(self._dfield, cow.PROJECT_OUT_DIV)
+end
+
+function UnigridDataField:project_out_curl()
+   cow.fft_helmholtzdecomp(self._dfield, cow.PROJECT_OUT_CURL)
+end
+
 return { UnigridDomain=UnigridDomain,
 	 UnigridDataField=UnigridDataField }

@@ -27,8 +27,7 @@ local RunArgs = {
    tmax    = 72.0,
    cpi     = 1.0,      -- checkpoint interval, in code time units
    restart = "none",
-   rmdiv   = false,    -- run a div-clean on the input B-field
-   shen    = false,
+   rmdivB  = false,    -- run a div-clean on the input B-field
    eosfile = "none",   -- i.e. nseos.h5
    fluid   = "rmhd",   -- euler, srhd, rmhd
    gamma   = 4/3,      -- adiabatic gamma (1.001 for isothermal)
@@ -42,6 +41,8 @@ local RunArgs = {
 local PowerSpectrumFile = ""
 local DistributionsFile = ""
 
+
+
 -- *****************************************************************************
 -- Process command line options
 -- .............................................................................
@@ -51,14 +52,15 @@ local function process_cmdline()
       if eqpos then
          local key = string.sub(v, 0, eqpos-1)
          local val = string.sub(v, eqpos+1)
-         if not RunArgs[key] then
-            print("[Mara] warning: ignoring unrecognized option "..key)
+
+         if type(RunArgs[key]) == 'boolean' then
+            RunArgs[key] = (val == "1" or val == "true")
          elseif type(RunArgs[key]) == 'number' then
             RunArgs[key] = tonumber(val)
-         elseif type(RunArgs[key]) == 'boolean' then
-            RunArgs[key] = val ~= "0"
-         else
+         elseif type(RunArgs[key]) == 'string' then
             RunArgs[key] = val
+         else
+            print("[Mara] warning: ignoring unrecognized option "..key)
          end
       end
    end
@@ -68,7 +70,7 @@ end
 
 
 -- *****************************************************************************
--- Take power spectrum
+-- Take one-point pdf's
 -- .............................................................................
 local function Distributions(primitive, gname)
    local fname = DistributionsFile
@@ -86,10 +88,32 @@ local function Distributions(primitive, gname)
    cow.srhdpack.onepointpdfs(P, 'gamma-beta', fname, gname, 1e-6, 1e6)
 end
 
+
+
+
+-- *****************************************************************************
+-- Project out divergence of B
+-- .............................................................................
+local function RemoveDivergenceB(primitive)
+   local Bgrid = unigrid.UnigridDataField(primitive:domain(), {'Bx','By','Bz'})
+   local P = primitive:array()
+   local B = Bgrid:array()
+   B[{nil,nil,nil,{0,1}}] = P[{nil,nil,nil,{5,6}}]
+   B[{nil,nil,nil,{1,2}}] = P[{nil,nil,nil,{6,7}}]
+   B[{nil,nil,nil,{2,3}}] = P[{nil,nil,nil,{7,8}}]
+   Bgrid:project_out_divergence()
+   P[{nil,nil,nil,{5,6}}] = B[{nil,nil,nil,{0,1}}]
+   P[{nil,nil,nil,{6,7}}] = B[{nil,nil,nil,{1,2}}]
+   P[{nil,nil,nil,{7,8}}] = B[{nil,nil,nil,{2,3}}]
+end
+
+
+
+
 -- *****************************************************************************
 -- Take power spectrum
 -- .............................................................................
-local function PowerSpectrum(primitive, which, gname)
+local function PowerSpectrum(primitive, which, gname, helmholtz)
    local start = os.clock()
    local binloc, binval
    local fname = PowerSpectrumFile
@@ -100,12 +124,14 @@ local function PowerSpectrum(primitive, which, gname)
       V[{nil,nil,nil,{0,1}}] = P[{nil,nil,nil,{2,3}}]
       V[{nil,nil,nil,{1,2}}] = P[{nil,nil,nil,{3,4}}]
       V[{nil,nil,nil,{2,3}}] = P[{nil,nil,nil,{4,5}}]
-      binloc, binval = velocity:power_spectrum(128)
-
-      local c = 1.0 / Mara.units.Velocity()
-      for i=0,#binval-1 do
-         binval[i] = binval[i] * (c^2)
+      if helmholtz == 'solenoidal' then
+	 velocity:project_out_divergence()
+	 which = which .. "-solenoidal"
+      elseif helmholtz == 'dilatational' then
+	 velocity:project_out_curl()
+	 which = which .. "-dilatational"
       end
+      binloc, binval = velocity:power_spectrum(128)
    elseif which == 'magnetic' then
       local magnetic = unigrid.UnigridDataField(primitive:domain(), {'Bx','By','Bz'})
       local P = primitive:array()
@@ -113,12 +139,14 @@ local function PowerSpectrum(primitive, which, gname)
       B[{nil,nil,nil,{0,1}}] = P[{nil,nil,nil,{5,6}}]
       B[{nil,nil,nil,{1,2}}] = P[{nil,nil,nil,{6,7}}]
       B[{nil,nil,nil,{2,3}}] = P[{nil,nil,nil,{7,8}}]
-      binloc, binval = magnetic:power_spectrum(128)
-
-      local f = 1.0 / Mara.units.Gauss() / (8*math.pi)^0.5
-      for i=0,#binval-1 do
-         binval[i] = binval[i] * (f^2)
+      if helmholtz == 'solenoidal' then
+	 magnetic:project_out_divergence()
+	 which = which .. "-solenoidal"
+      elseif helmholtz == 'dilatational' then
+	 magnetic:project_out_curl()
+	 which = which .. "-dilatational"
       end
+      binloc, binval = magnetic:power_spectrum(128)
    elseif which == 'kinetic' then
       local kinetic = unigrid.UnigridDataField(primitive:domain(), {'Kx','Ky','Kz'})
       local P = primitive:array()
@@ -146,12 +174,6 @@ local function PowerSpectrum(primitive, which, gname)
       K[{nil,nil,nil,{1,2}}] = vy
       K[{nil,nil,nil,{2,3}}] = vz
       binloc, binval = kinetic:power_spectrum(128)
-
-      local c = 1.0 / Mara.units.Velocity()
-      local d = 1.0 / Mara.units.GramsPerCubicCentimeter()
-      for i=0,#binval-1 do
-         binval[i] = binval[i] * (c * d^2)
-      end
    end
    if primitive:domain():get_rank() == 0 then
       local h5f = hdf5.File(fname, 'r+')
@@ -362,9 +384,10 @@ local function RunSimulation(Primitive, Status, MeasureLog, Howlong)
 
          if Status.Iteration % RunArgs.pspec == 0 and RunArgs.pspec ~= 0 then
             local gname = string.format("pspec-%05d", Status.Iteration)
-            PowerSpectrum(Primitive, 'magnetic', gname)
-            PowerSpectrum(Primitive, 'velocity', gname)
-            PowerSpectrum(Primitive, 'kinetic', gname)
+            PowerSpectrum(Primitive, 'magnetic', gname, 'solenoidal')
+            PowerSpectrum(Primitive, 'magnetic', gname, 'dilatational')
+            PowerSpectrum(Primitive, 'velocity', gname, 'solenoidal')
+            PowerSpectrum(Primitive, 'velocity', gname, 'dilatational')
          end
 
          if Status.Iteration % RunArgs.pdfs == 0 and RunArgs.pdfs ~= 0 then
@@ -589,6 +612,9 @@ local function main()
          restart_file:close()
       end
       Status, MeasureLog = CheckpointRead(RunArgs.restart, primitive)
+      if RunArgs['rmdivB'] then
+	 RemoveDivergenceB(primitive)
+      end
    end
 
    PowerSpectrumFile = string.format("data/%s/%s.spec.h5", RunArgs.id, RunArgs.id)
