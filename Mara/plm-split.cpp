@@ -19,7 +19,7 @@ std::valarray<double> Deriv::dUdt(const std::valarray<double> &Uin)
   int err = ConsToPrim(U, P);
 
   if (err != 0) {
-    printf("[MethodOfLinesSplit] c2p failed on %d zones\n", err);
+    //printf("[MethodOfLinesSplit] c2p failed on %d zones\n", err);
     throw IntermediateFailure();
   }
 

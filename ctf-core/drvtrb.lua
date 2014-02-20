@@ -274,7 +274,7 @@ local function HandleErrorsRmhd(P, Status, attempt)
       return 0
    elseif attempt == 1 then
       Mara.set_godunov("plm-muscl")
-      Mara.config_solver({theta=1.5}, true)
+      Mara.config_solver({theta=1.25}, true)
       Mara.diffuse(P, 0.2)
       Status.Timestep = 0.5 * Status.Timestep
       return 0
@@ -298,6 +298,30 @@ local function HandleErrorsRmhd(P, Status, attempt)
    elseif attempt == 5 then
       Mara.diffuse(P, 0.2)
       Status.Timestep = 0.5 * Status.Timestep
+      return 0
+   else
+      return 1
+   end
+end
+
+local function HandleErrorsCascade(P, Status, attempt)
+   Mara.set_advance("rk3")
+   Mara.set_riemann("hll")
+   Mara.set_godunov("plm-split")
+   Mara.config_solver({theta=1.5}, true)
+   if attempt == 0 then -- healthy time-step
+      return 0
+   elseif attempt == 1 then
+      Status.Timestep = 0.5 * Status.Timestep
+      Mara.diffuse(P, 0.5)
+      return 0
+   elseif attempt == 2 then
+      Status.Timestep = 0.5 * Status.Timestep
+      Mara.diffuse(P, 0.5)
+      return 0
+   elseif attempt == 3 then
+      Status.Timestep = 0.5 * Status.Timestep
+      Mara.diffuse(P, 0.5)
       return 0
    else
       return 1
@@ -348,13 +372,11 @@ end
 -- *****************************************************************************
 -- Main driver, operates between checkpoints and then returns
 -- .............................................................................
-local function RunSimulation(Primitive, Status, MeasureLog, Howlong)
+local function RunSimulation(Primitive, Status, MeasureLog, Howlong,
+			     HandleErrors)
 
    local t0 = Status.CurrentTime
    local attempt = 0
-   local ErrorHandlers = { euler=HandleErrorsEuler,
-                           srhd=HandleErrorsSrhd,
-                           rmhd=HandleErrorsRmhd }
    local NumberOfConserved = { euler=5, srhd=5, rmhd=8 }
 
    while Status.CurrentTime - t0 < Howlong do
@@ -398,7 +420,7 @@ local function RunSimulation(Primitive, Status, MeasureLog, Howlong)
 
       -- 'attempt' == 0 when the previous iteration completed without errors
       -- .......................................................................
-      if ErrorHandlers[RunArgs.fluid](P, Status, attempt) ~= 0 then
+      if HandleErrors(P, Status, attempt) ~= 0 then
          return 1
       end
       attempt = attempt + 1
@@ -487,6 +509,7 @@ local function CheckpointRead(chkpt, Primitive)
    local chkpt_h5 = hdf5.File(chkpt, 'r')
    local status_h5 = hdf5.Group(chkpt_h5, "status")
    local MeasureLog = json.decode(chkpt_h5["measure"]:value())
+
    local Status = { }
    for key,val in pairs(status_h5) do
       Status[key] = val:value()
@@ -523,7 +546,7 @@ local function main()
    local prim_names = Mara.fluid.GetPrimNames()
    local Nq = #prim_names
    local Ng = 3
-   local Nx, Ny, Nz, L0, L1, pinit
+   local Nx, Ny, Nz, L0, L1, pinit, HandleErrors
 
    if RunArgs.problem == "drvtrb" then
       Nx = RunArgs.N
@@ -546,6 +569,10 @@ local function main()
          local P0 = RunArgs.P0
          return { D0, P0, 0, 0, 0, B0, 0.0, 0.0 }
       end
+      HandleErrors = ({ euler=HandleErrorsEuler,
+			srhd=HandleErrorsSrhd,
+			rmhd=HandleErrorsRmhd })[RunArgs.fluid]
+
    elseif RunArgs.problem == "KH" then
       Nx = RunArgs.N
       Ny = RunArgs.N * 2
@@ -569,8 +596,25 @@ local function main()
          local vz = (math.random() - 0.5) * 0.01
          return { D0, P0, vx, vy, vz, B0, 0.0, 0.0 }
       end
+
+      HandleErrors = ({ euler=HandleErrorsEuler,
+			srhd=HandleErrorsSrhd,
+			rmhd=HandleErrorsRmhd })[RunArgs.fluid]
+
+   elseif RunArgs.problem == "cascade" then
+      Nx = RunArgs.N
+      Ny = RunArgs.N
+      Nz = RunArgs.N
+      L0 = { -0.5, -0.5, -0.5 }
+      L1 = {  0.5,  0.5,  0.5 }
+      pinit = function(x,y,z)
+         local D0 = RunArgs.D0
+         local P0 = RunArgs.P0
+         return { D0, P0, 0, 0, 0, 0.0, 0.0, 0.0 }
+      end
+      HandleErrors = HandleErrorsCascade
    else
-      error("[drvtrb] problem must be either drvtrb or KH")
+      error("[drvtrb] problem must be either drvtrb, KH, or cascade")
    end
 
    local domain = unigrid.UnigridDomain({Nx, Ny, Nz}, Ng)
@@ -644,7 +688,8 @@ local function main()
 
 
    while Status.CurrentTime < RunArgs.tmax do
-      local error = RunSimulation(primitive, Status, MeasureLog, RunArgs.cpi)
+      local error = RunSimulation(primitive, Status, MeasureLog, RunArgs.cpi,
+				  HandleErrors)
       if error == "STOP" then
          print("exiting upon request\n")
          CheckpointWrite(primitive, Status, MeasureLog, "stop")
