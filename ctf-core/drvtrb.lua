@@ -510,6 +510,12 @@ local function CheckpointRead(chkpt, Primitive)
    local status_h5 = hdf5.Group(chkpt_h5, "status")
    local MeasureLog = json.decode(chkpt_h5["measure"]:value())
 
+   -- workaround! json-ing a table which was previously empty doesn't work?
+   if chkpt_h5["measure"]:value() == '[]' then
+      print('resetting measure to { }')
+      MeasureLog = { }
+   end
+
    local Status = { }
    for key,val in pairs(status_h5) do
       Status[key] = val:value()
