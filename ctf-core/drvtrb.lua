@@ -113,7 +113,7 @@ end
 -- *****************************************************************************
 -- Take power spectrum
 -- .............................................................................
-local function PowerSpectrum(primitive, which, gname, helmholtz)
+local function PowerSpectrum(primitive, which, gname, helmholtz, status)
    local start = os.clock()
    local binloc, binval
    local fname = PowerSpectrumFile
@@ -181,6 +181,7 @@ local function PowerSpectrum(primitive, which, gname, helmholtz)
       local sgr = hdf5.Group(grp, which)
       sgr['binloc'] = binloc
       sgr['binval'] = binval
+      sgr['time'] = status.CurrentTime
       h5f:close()
    end
    print(string.format("[Mara] PowerSpectrum took %f seconds",
@@ -406,10 +407,10 @@ local function RunSimulation(Primitive, Status, MeasureLog, Howlong,
 
          if Status.Iteration % RunArgs.pspec == 0 and RunArgs.pspec ~= 0 then
             local gname = string.format("pspec-%05d", Status.Iteration)
-            PowerSpectrum(Primitive, 'magnetic', gname, 'solenoidal')
-            PowerSpectrum(Primitive, 'magnetic', gname, 'dilatational')
-            PowerSpectrum(Primitive, 'velocity', gname, 'solenoidal')
-            PowerSpectrum(Primitive, 'velocity', gname, 'dilatational')
+            PowerSpectrum(Primitive, 'magnetic', gname, 'solenoidal', Status)
+            PowerSpectrum(Primitive, 'magnetic', gname, 'dilatational', Status)
+            PowerSpectrum(Primitive, 'velocity', gname, 'solenoidal', Status)
+            PowerSpectrum(Primitive, 'velocity', gname, 'dilatational', Status)
          end
 
          if Status.Iteration % RunArgs.pdfs == 0 and RunArgs.pdfs ~= 0 then
