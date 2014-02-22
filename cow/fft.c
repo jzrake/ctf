@@ -562,6 +562,20 @@ double k_at(cow_domain *d, int i, int j, int k, double *kvec)
   kvec[2] = (Nz % 2 == 0) ?
     ((k<  Nz   /2) ? k : k-Nz):
     ((k<=(Nz-1)/2) ? k : k-Nz);
+
+  /* Zero out the wavenumber value for the Nyquist frequency. This has two
+     effects: (1) For a power spectrum, the power in the Nyquist modes will get
+     dumped into the zero mode's bin - so don't trust the lowest wavenumber bin
+     value of a power spectrum. (2) For Helmholtz decompositions, the wavenumber
+     array K_{i,j,k} is made to remain anti-symmetric even when i, j, or k are
+     equal to their respective Nyquist frequencies. */
+
+  if (i == Nx/2 || j == Ny/2 || k == Nz/2) {
+    kvec[0] = 0.0;
+    kvec[1] = 0.0;
+    kvec[2] = 0.0;
+  }
+
   return sqrt(kvec[0]*kvec[0] + kvec[1]*kvec[1] + kvec[2]*kvec[2]);
 }
 double k_at_wspc(cow_domain *d, int i, int j, int k, double *kvec)
