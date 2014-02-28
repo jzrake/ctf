@@ -33,7 +33,7 @@ local RunArgs = {
    gamma   = 4/3,      -- adiabatic gamma (1.001 for isothermal)
    pspec   = 0,        -- pspec > 0 take power spectra every that many iterations
    pdfs    = 0,        -- pdfs > 0 take PDF's ' '
-   problem = "drvtrb", -- or KH
+   problem = "drvtrb", -- or KH, or cascade
    drive   = true,     -- set to false to disable driving,
    scheme  = 'weno',   -- weno or hllc,
 }
@@ -305,7 +305,7 @@ local function HandleErrorsRmhd(P, Status, attempt)
    end
 end
 
-local function HandleErrorsCascade(P, Status, attempt)
+local function HandleErrorsCascadeSrmhd(P, Status, attempt)
    Mara.set_advance("rk3")
    Mara.set_riemann("hll")
    Mara.set_godunov("plm-split")
@@ -323,6 +323,26 @@ local function HandleErrorsCascade(P, Status, attempt)
    elseif attempt == 3 then
       Status.Timestep = 0.5 * Status.Timestep
       Mara.diffuse(P, 0.5)
+      return 0
+   else
+      return 1
+   end
+end
+
+local function HandleErrorsCascadeNrhyd(P, Status, attempt)
+   Mara.set_advance("rk3")
+   Mara.config_solver({theta=2.0, IS="sz10", sz10A=100.0}, true)
+
+   if RunArgs.scheme == 'weno' then
+      Mara.set_godunov("weno-split")
+   elseif RunArgs.scheme == 'hllc' then
+      Mara.set_godunov("plm-split")
+      Mara.set_riemann("hllc")
+   else
+      error('no such scheme: '..RunArgs.scheme)
+   end
+
+   if attempt == 0 then -- healthy time-step
       return 0
    else
       return 1
@@ -407,8 +427,10 @@ local function RunSimulation(Primitive, Status, MeasureLog, Howlong,
 
          if Status.Iteration % RunArgs.pspec == 0 and RunArgs.pspec ~= 0 then
             local gname = string.format("pspec-%05d", Status.Iteration)
-            PowerSpectrum(Primitive, 'magnetic', gname, 'solenoidal', Status)
-            PowerSpectrum(Primitive, 'magnetic', gname, 'dilatational', Status)
+	    if RunArgs.fluid == 'rmhd' then
+	       PowerSpectrum(Primitive, 'magnetic', gname, 'solenoidal', Status)
+	       PowerSpectrum(Primitive, 'magnetic', gname, 'dilatational', Status)
+	    end
             PowerSpectrum(Primitive, 'velocity', gname, 'solenoidal', Status)
             PowerSpectrum(Primitive, 'velocity', gname, 'dilatational', Status)
          end
@@ -510,6 +532,10 @@ local function CheckpointRead(chkpt, Primitive)
    local chkpt_h5 = hdf5.File(chkpt, 'r')
    local status_h5 = hdf5.Group(chkpt_h5, "status")
    local MeasureLog = json.decode(chkpt_h5["measure"]:value())
+
+   print(json.decode(chkpt_h5["measure"]:value()))
+   print(chkpt_h5["measure"]:value())
+   print(MeasureLog)
 
    -- workaround! json-ing a table which was previously empty doesn't work?
    if chkpt_h5["measure"]:value() == '[]' then
@@ -619,7 +645,8 @@ local function main()
          local P0 = RunArgs.P0
          return { D0, P0, 0, 0, 0, 0.0, 0.0, 0.0 }
       end
-      HandleErrors = HandleErrorsCascade
+      HandleErrors = ({ euler=HandleErrorsCascadeNrhyd,
+			rmhd=HandleErrorsCascadeSrmhd })[RunArgs.fluid]
    else
       error("[drvtrb] problem must be either drvtrb, KH, or cascade")
    end
