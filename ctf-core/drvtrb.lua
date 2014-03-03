@@ -330,23 +330,7 @@ local function HandleErrorsCascadeSrmhd(P, Status, attempt)
 end
 
 local function HandleErrorsCascadeNrhyd(P, Status, attempt)
-   Mara.set_advance("rk3")
-   Mara.config_solver({theta=2.0, IS="sz10", sz10A=100.0}, true)
-
-   if RunArgs.scheme == 'weno' then
-      Mara.set_godunov("weno-split")
-   elseif RunArgs.scheme == 'hllc' then
-      Mara.set_godunov("plm-split")
-      Mara.set_riemann("hllc")
-   else
-      error('no such scheme: '..RunArgs.scheme)
-   end
-
-   if attempt == 0 then -- healthy time-step
-      return 0
-   else
-      return 1
-   end
+   return HandleErrorsSrhd(P, Status, attempt)
 end
 
 
