@@ -38,6 +38,7 @@ local RunArgs = {
    problem = "drvtrb", -- or KH, or cascade
    drive   = true,     -- set to false to disable driving,
    scheme  = 'weno',   -- weno or hllc,
+   riemann = 'hll',    -- used for cascade problem, can be either hll, hllc, or hlld
 }
 
 local PowerSpectrumFile = ""
@@ -333,22 +334,24 @@ end
 
 local function HandleErrorsCascadeSrmhd(P, Status, attempt)
    Mara.set_advance("rk3")
-   Mara.set_riemann("hll")
+   Mara.set_riemann(RunArgs.riemann)
    Mara.set_godunov("plm-split")
-   Mara.config_solver({theta=1.5}, true)
+   Mara.config_solver({theta=2.0}, true)
    if attempt == 0 then -- healthy time-step
       return 0
    elseif attempt == 1 then
       Status.Timestep = 0.5 * Status.Timestep
-      Mara.diffuse(P, 0.5)
+      Mara.config_solver({theta=1.5}, true)
+      Mara.diffuse(P, 0.1)
       return 0
    elseif attempt == 2 then
       Status.Timestep = 0.5 * Status.Timestep
-      Mara.diffuse(P, 0.5)
+      Mara.config_solver({theta=1.0}, true)
+      Mara.diffuse(P, 0.1)
       return 0
    elseif attempt == 3 then
       Status.Timestep = 0.5 * Status.Timestep
-      Mara.diffuse(P, 0.5)
+      Mara.diffuse(P, 0.1)
       return 0
    else
       return 1
@@ -557,9 +560,9 @@ local function CheckpointRead(chkpt, Primitive)
    local status_h5 = hdf5.Group(chkpt_h5, "status")
    local MeasureLog = json.decode(chkpt_h5["measure"]:value())
 
-   print(json.decode(chkpt_h5["measure"]:value()))
-   print(chkpt_h5["measure"]:value())
-   print(MeasureLog)
+   --print(json.decode(chkpt_h5["measure"]:value()))
+   --print(chkpt_h5["measure"]:value())
+   --print(MeasureLog)
 
    -- workaround! json-ing a table which was previously empty doesn't work?
    if chkpt_h5["measure"]:value() == '[]' then
