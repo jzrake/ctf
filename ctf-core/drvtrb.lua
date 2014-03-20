@@ -12,6 +12,7 @@ local unigrid = require 'new-unigrid'
 local array   = require 'array'
 local json    = require 'json'
 local util    = require 'util'
+local array   = require 'array'
 
 local RunArgs = {
    N       = 16,
@@ -33,6 +34,7 @@ local RunArgs = {
    gamma   = 4/3,      -- adiabatic gamma (1.001 for isothermal)
    pspec   = 0,        -- pspec > 0 take power spectra every that many iterations
    pdfs    = 0,        -- pdfs > 0 take PDF's ' '
+   cutp    = 0,        -- cutp > 0 take cutplanes at this cadence
    problem = "drvtrb", -- or KH, or cascade
    drive   = true,     -- set to false to disable driving,
    scheme  = 'weno',   -- weno or hllc,
@@ -40,7 +42,7 @@ local RunArgs = {
 
 local PowerSpectrumFile = ""
 local DistributionsFile = ""
-
+local CutplanesFile = ""
 
 
 -- *****************************************************************************
@@ -107,6 +109,30 @@ local function RemoveDivergenceB(primitive)
    P[{nil,nil,nil,{7,8}}] = B[{nil,nil,nil,{2,3}}]
 end
 
+
+
+
+-- *****************************************************************************
+-- Sample 2d slice
+-- .............................................................................
+local function Sample2dSlice(primitive, status, gname)
+   local nx =  primitive:domain():size(0)
+   local ny =  primitive:domain():size(1)
+   local nq = #primitive:members()
+   local raw = array.vector(nx*ny*nq, 'double')
+   cow.srmhdpack.sample2dslice(primitive._dfield, 0, 0, raw:buffer())
+   local image = raw:view{nx,ny,nq}
+   if primitive:domain():get_rank() == 0 then
+      local h5f = hdf5.File(CutplanesFile, 'r+')
+      local grp = hdf5.Group(h5f, gname)
+      grp['time'] = status.CurrentTime
+      grp['iteration'] = status.Iteration
+      for i,member in pairs(primitive:members()) do
+	 grp[member] = image[{nil,nil,{i-1,i}}]:vector():view{nx,ny}
+      end
+      h5f:close()
+   end
+end
 
 
 
@@ -419,9 +445,17 @@ local function RunSimulation(Primitive, Status, MeasureLog, Howlong,
             PowerSpectrum(Primitive, 'velocity', gname, 'dilatational', Status)
          end
 
+
          if Status.Iteration % RunArgs.pdfs == 0 and RunArgs.pdfs ~= 0 then
             local gname = string.format("pdf-%05d", Status.Iteration)
             Distributions(Primitive, gname)
+         end
+
+         if (Status.CurrentTime - Status.LastCutplaneTime > RunArgs.cutp
+	     and RunArgs.cutp ~= 0) then
+	     local gname = string.format("cutp-%05d", Status.Iteration)
+	    Sample2dSlice(Primitive, Status, gname)
+	    Status.LastCutplaneTime = Status.CurrentTime
          end
       end
 
@@ -657,6 +691,7 @@ local function main()
       Status.Checkpoint  = 0
       Status.Timestep    = 0.0
       Status.LastMeasurementTime = 0.0
+      Status.LastCutplaneTime = 0.0
 
       if RunArgs.problem == "drvtrb" and RunArgs.drive then
          print("[drvtrb] enabling driving field")
@@ -681,6 +716,7 @@ local function main()
 
    PowerSpectrumFile = string.format("data/%s/%s.spec.h5", RunArgs.id, RunArgs.id)
    DistributionsFile = string.format("data/%s/%s.pdfs.h5", RunArgs.id, RunArgs.id)
+   CutplanesFile     = string.format("data/%s/%s.cutp.h5", RunArgs.id, RunArgs.id)
    local datadir = string.format("data/%s", RunArgs.id)
 
    if domain:get_rank() == 0 then
@@ -689,6 +725,15 @@ local function main()
          local testf = io.open(PowerSpectrumFile, "r")
          if not testf then
             local h5f = hdf5.File(PowerSpectrumFile, "w")
+            h5f:close()
+         else
+            testf:close()
+         end
+      end
+      if RunArgs.cutplanes ~= 0 then
+         local testf = io.open(CutplanesFile, "r")
+         if not testf then
+            local h5f = hdf5.File(CutplanesFile, "w")
             h5f:close()
          else
             testf:close()
