@@ -1,5 +1,3 @@
-
-
 #ifndef SRHDPACK_HEADER_INCLUDED
 #define SRHDPACK_HEADER_INCLUDED
 #include "cow.h"

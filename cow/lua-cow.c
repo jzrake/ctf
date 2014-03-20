@@ -2,6 +2,7 @@
 #include <string.h>
 #include "cow.h"
 #include "srhdpack.h"
+#include "srmhdpack.h"
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
@@ -70,6 +71,16 @@ int _srhdpack_onepointpdfs(lua_State *L)
   return 0;
 }
 
+int _srmhdpack_sample2dslice(lua_State *L)
+{
+  cow_dfield *f = *((cow_dfield**) luaL_checkudata(L, 1, "cow::dfield"));
+  int axis = luaL_checkinteger(L, 2);
+  int index = luaL_checkinteger(L, 3);
+  double *result = lua_touserdata(L, 4);
+  srmhdpack_sample2dslice(f, axis, index, result);
+  return 0;
+}
+
 
 int luaopen_cow(lua_State *L)
 {
@@ -87,6 +98,10 @@ int luaopen_cow(lua_State *L)
     {"onepointpdfs", _srhdpack_onepointpdfs},
     {NULL, NULL}};
 
+  luaL_Reg cow_srmhdpack[] = {
+    {"sample2dslice", _srmhdpack_sample2dslice},
+    {NULL, NULL}};
+
   luaL_newmetatable(L, "cow::domain"); lua_pop(L, 1);
   luaL_newmetatable(L, "cow::dfield"); lua_pop(L, 1);
   luaL_newmetatable(L, "cow::histogram"); lua_pop(L, 1);
@@ -100,6 +115,10 @@ int luaopen_cow(lua_State *L)
   lua_newtable(L);
   luaL_setfuncs(L, cow_srhdpack, 0);
   lua_setfield(L, -2, "srhdpack");
+
+  lua_newtable(L);
+  luaL_setfuncs(L, cow_srmhdpack, 0);
+  lua_setfield(L, -2, "srmhdpack");
 
   lua_newtable(L);
   luacow_push_cow_transform(L, cow_trans_rot5); lua_setfield(L, -2, "rot5");

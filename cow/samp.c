@@ -96,8 +96,9 @@ void cow_dfield_sampleexecute(cow_dfield *f)
 void cow_dfield_sampleglobalind(cow_dfield *f, int i, int j, int k, double **x,
 				int *n0)
 {
-  int ng = f->domain->n_ghst;
   double xin[3];
+  int ng = f->domain->n_ghst;
+  int orig_mode = f->samplemode;
   i -= cow_domain_getglobalstartindex(f->domain, 0);
   j -= cow_domain_getglobalstartindex(f->domain, 1);
   k -= cow_domain_getglobalstartindex(f->domain, 2);
@@ -108,6 +109,7 @@ void cow_dfield_sampleglobalind(cow_dfield *f, int i, int j, int k, double **x,
   cow_dfield_setsamplemode(f, COW_SAMPLE_NEAREST);
   cow_dfield_sampleexecute(f);
   cow_dfield_getsampleresult(f, x, NULL, n0);
+  cow_dfield_setsamplemode(f, orig_mode);
 }
 
 /* -----------------------------------------------------------------------------
