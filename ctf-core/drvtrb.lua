@@ -32,9 +32,9 @@ local RunArgs = {
    eosfile = "none",   -- i.e. nseos.h5
    fluid   = "rmhd",   -- euler, srhd, rmhd
    gamma   = 4/3,      -- adiabatic gamma (1.001 for isothermal)
-   pspec   = 0,        -- pspec > 0 take power spectra every that many iterations
+   pspec   = 0,        -- pspec > 0 take power spectra at this cadence
    pdfs    = 0,        -- pdfs > 0 take PDF's ' '
-   cutp    = 0,        -- cutp > 0 take cutplanes at this cadence
+   cutp    = 0,        -- cutp > 0 take cutplanes ' '
    problem = "drvtrb", -- or KH, or cascade
    drive   = true,     -- set to false to disable driving,
    scheme  = 'weno',   -- weno or hllc,
@@ -435,7 +435,9 @@ local function RunSimulation(Primitive, Status, MeasureLog, Howlong,
             Status.LastMeasurementTime = Status.CurrentTime
          end
 
-         if Status.Iteration % RunArgs.pspec == 0 and RunArgs.pspec ~= 0 then
+
+         if (Status.CurrentTime - Status.LastSpectrumTime > RunArgs.pspec
+	     and RunArgs.pspec ~= 0) then
             local gname = string.format("pspec-%05d", Status.Iteration)
 	    if RunArgs.fluid == 'rmhd' then
 	       PowerSpectrum(Primitive, 'magnetic', gname, 'solenoidal', Status)
@@ -443,13 +445,17 @@ local function RunSimulation(Primitive, Status, MeasureLog, Howlong,
 	    end
             PowerSpectrum(Primitive, 'velocity', gname, 'solenoidal', Status)
             PowerSpectrum(Primitive, 'velocity', gname, 'dilatational', Status)
+	    Status.LastSpectrumTime = Status.CurrentTime
          end
 
 
-         if Status.Iteration % RunArgs.pdfs == 0 and RunArgs.pdfs ~= 0 then
+         if (Status.CurrentTime - Status.LastPdfTime > RunArgs.pdfs
+	     and RunArgs.pdfs ~= 0) then
             local gname = string.format("pdf-%05d", Status.Iteration)
             Distributions(Primitive, gname)
+	    Status.LastPdfTime = Status.CurrentTime
          end
+
 
          if (Status.CurrentTime - Status.LastCutplaneTime > RunArgs.cutp
 	     and RunArgs.cutp ~= 0) then
@@ -691,7 +697,9 @@ local function main()
       Status.Checkpoint  = 0
       Status.Timestep    = 0.0
       Status.LastMeasurementTime = 0.0
+      Status.LastSpectrumTime = 0.0
       Status.LastCutplaneTime = 0.0
+      Status.LastPdfTime = 0.0
 
       if RunArgs.problem == "drvtrb" and RunArgs.drive then
          print("[drvtrb] enabling driving field")
