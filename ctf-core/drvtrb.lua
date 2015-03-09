@@ -21,7 +21,7 @@ local RunArgs = {
    coolP   = 0.1,      -- cooling parameter, reference temp(T4) or e(E4)
    zeta    = 1.0,      -- driving vorticity (0=none -> 1=full)
    F0      = 0.01,     -- driving field power coefficient
-   B0      = 1e10,     -- B-field, in Gauss
+   B0      = 1,        -- B-field, in code units
    D0      = 1.00,     -- density, in code units
    P0      = 0.05,     -- pressure, in code units
    CFL     = 0.24,
@@ -36,6 +36,8 @@ local RunArgs = {
    pdfs    = 0,        -- pdfs > 0 take PDF's ' '
    cutp    = 0,        -- cutp > 0 take cutplanes ' '
    problem = "drvtrb", -- or KH, or cascade
+   subprob = "nhd3d",  -- nhd3d: nonhelical/3d, ffd2d: force-free/2d
+   alpha   = 8,        -- force-free equilibrium soln wavenumber
    drive   = true,     -- set to false to disable driving,
    scheme  = 'weno',   -- weno or hllc,
    riemann = 'hll',    -- used for cascade problem, can be either hll, hllc, or hlld
@@ -667,10 +669,30 @@ local function main()
       Nz = RunArgs.N
       L0 = { -0.5, -0.5, -0.5 }
       L1 = {  0.5,  0.5,  0.5 }
-      pinit = function(x,y,z)
-         local D0 = RunArgs.D0
-         local P0 = RunArgs.P0
-         return { D0, P0, 0, 0, 0, 0.0, 0.0, 0.0 }
+      if RunArgs.subprob == "nhd3d" then
+	 pinit = function(x,y,z)
+	    local D0 = RunArgs.D0
+	    local P0 = RunArgs.P0
+	    return { D0, P0, 0, 0, 0, 0.0, 0.0, 0.0 }
+	 end
+      elseif RunArgs.subprob == "ffd2d" then
+	 Nz = 1
+	 pinit = function(x,y,z)
+	    local D0 = RunArgs.D0
+	    local P0 = RunArgs.P0
+	    local B0 = RunArgs.B0
+	    local L0 = 1
+	    local alpha = RunArgs.alpha * (2 * math.pi / L0)
+	    local B1 = B0
+	    local B2 = B0
+	    local B3 = 0
+	    local Bx = B3 * math.cos(alpha * z) - B2 * math.sin(alpha * y)
+	    local By = B1 * math.cos(alpha * x) - B3 * math.sin(alpha * z)
+	    local Bz = B2 * math.cos(alpha * y) - B1 * math.sin(alpha * x)
+	    return { D0, P0, 0, 0, 0, Bx, By, Bz }
+	 end
+      else
+	 error("[drvtrb] subprob must be either nh3d or ffd2d")
       end
       HandleErrors = ({ euler=HandleErrorsCascadeNrhyd,
 			rmhd=HandleErrorsCascadeSrmhd })[RunArgs.fluid]
@@ -678,7 +700,7 @@ local function main()
       error("[drvtrb] problem must be either drvtrb, KH, or cascade")
    end
 
-   local domain = unigrid.UnigridDomain({Nx, Ny, Nz}, Ng)
+   local domain = unigrid.UnigridDomain({Nx, Ny, Nz~=1 and Nz or nil}, Ng)
    local primitive = unigrid.UnigridDataField(domain, prim_names)
    local domain_comm = domain:get_comm()
    local P = primitive:array()

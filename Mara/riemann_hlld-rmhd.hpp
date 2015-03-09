@@ -14,7 +14,7 @@
  */
 
 #ifndef __HlldRmhdRiemannSolver_HEADER__
-#define __HlldmhdRiemannSolver_HEADER__
+#define __HlldRmhdRiemannSolver_HEADER__
 
 #include "rmhd.hpp"
 
