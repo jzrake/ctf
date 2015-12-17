@@ -1069,7 +1069,7 @@ int cow_domain_intprod(cow_domain *d, int myval)
   int val, mpi_started;
   MPI_Initialized(&mpi_started);
   if (mpi_started) {
-    MPI_Allreduce(&myval, &val, 1, MPI_INTEGER, MPI_PROD, d->mpi_cart);
+    MPI_Allreduce(&myval, &val, 1, MPI_INT, MPI_PROD, d->mpi_cart);
   }
   else {
     val = myval;
@@ -1086,7 +1086,7 @@ int cow_domain_intsum(cow_domain *d, int myval)
   int val, mpi_started;
   MPI_Initialized(&mpi_started);
   if (mpi_started) {
-    MPI_Allreduce(&myval, &val, 1, MPI_INTEGER, MPI_SUM, d->mpi_cart);
+    MPI_Allreduce(&myval, &val, 1, MPI_INT, MPI_SUM, d->mpi_cart);
   }
   else {
     val = myval;

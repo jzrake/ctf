@@ -82,7 +82,7 @@ int Mara_mpi_int_prod(int myval)
   int val, run_uses_mpi;
   MPI_Initialized(&run_uses_mpi);
   if (run_uses_mpi) {
-    MPI_Allreduce(&myval, &val, 1, MPI_INTEGER, MPI_PROD, MPI_COMM_WORLD);
+    MPI_Allreduce(&myval, &val, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
   }
   else {
     val = myval;
@@ -99,7 +99,7 @@ int Mara_mpi_int_sum(int myval)
   int val, run_uses_mpi;
   MPI_Initialized(&run_uses_mpi);
   if (run_uses_mpi) {
-    MPI_Allreduce(&myval, &val, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&myval, &val, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   }
   else {
     val = myval;

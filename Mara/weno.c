@@ -1,5 +1,5 @@
 
-
+#include <stdlib.h>
 #include <math.h>
 #include "weno.h"
 
@@ -88,7 +88,7 @@ static inline double __plm_minmod(double ul, double u0, double ur)
   const double b =     0.5   * (ur - ul);
   const double c = plm_theta * (ur - u0);
   const double fabc[3] = { fabs(a), fabs(b), fabs(c) };
-  return 0.25*fabs(SGN(a)+SGN(b))*(SGN(a)+SGN(c))*min3(fabc);
+  return 0.25*abs(SGN(a)+SGN(b))*(SGN(a)+SGN(c))*min3(fabc);
 }
 double __plm(const double *v, double sgn)
 {

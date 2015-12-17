@@ -1,4 +1,5 @@
 
+#include <stdlib.h>
 #include <math.h>
 #define FISH_PRIVATE_DEFS
 #include "fish.h"
@@ -74,7 +75,7 @@ static inline double __plm_minmod(double ul, double u0, double ur, double tht)
   double b = 0.5 * (ur - ul);
   double c = tht * (ur - u0);
   double fabc[3] = { fabs(a), fabs(b), fabs(c) };
-  return 0.25*fabs(SGN(a)+SGN(b))*(SGN(a)+SGN(c))*min3(fabc);
+  return 0.25*abs(SGN(a)+SGN(b))*(SGN(a)+SGN(c))*min3(fabc);
 }
 double __pcm(fish_state *S, double *v)
 {
